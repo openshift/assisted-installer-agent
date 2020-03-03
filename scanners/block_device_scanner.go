@@ -8,15 +8,15 @@ import (
 )
 
 type BlockDeviceInfo struct {
-	Name string
-	MajorDeviceNumber int
-	MinorDeviceNumber int
-	RemovableDevice int
-	Size   uint64
-	ReadOnly bool
-	Type     string
-	Mountpoint string
-	Fstype   string
+	Name string  `json:"name"`
+	MajorDeviceNumber int  `json:"major_device_number"`
+	MinorDeviceNumber int `json:"minor_device_number"`
+	RemovableDevice int `json:"removable_device,omitempty"`
+	Size   uint64 `json:"size"`
+	ReadOnly bool `json:"read_only,omitempty"`
+	Type     string `json:"type"`
+	Mountpoint string `json:"mountpoint,omitempty"`
+	Fstype   string `json:"fstype,omitempty"`
 }
 
 const (

@@ -17,13 +17,13 @@ const (
 )
 
 type MemoryInfo struct {
-	Name  string
-	Total uint64
-	Used  uint64
-	Free  uint64
-	Shared uint64
-	BuffCached uint64
-	Available uint64
+	Name  string  `json:"name"`
+	Total uint64  `json:"total"`
+	Used  uint64  `json:"used"`
+	Free  uint64  `json:"free,omitempty"`
+	Shared uint64 `json:"shared,omitempty"`
+	BuffCached uint64 `json:"buff_cached,omitempty"`
+	Available uint64  `json:"available,omitempty"`
 }
 
 

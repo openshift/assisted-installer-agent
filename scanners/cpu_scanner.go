@@ -9,12 +9,12 @@ import (
 )
 
 type CpuInfo struct {
-	Architecture string
-	ModelName string
-	Cpus  int
-	ThreadsPerCore int
-	Sockets int
-	CPUMhz float64
+	Architecture string `json:"architecture"`
+	ModelName string  `json:"model_name"`
+	Cpus  int			`json:"cpus"`
+	ThreadsPerCore int  `json:"threads_per_core"`
+	Sockets int  `json:"sockets"`
+	CPUMhz float64  `json:"cpu_mhz"`
 }
 
 func ReadCpus() *CpuInfo {

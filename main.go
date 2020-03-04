@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/filanov/bm-inventory/client"
 	"github.com/filanov/bm-inventory/client/inventory"
@@ -12,7 +13,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
+	"time"
+)
+
+const (
+	RETRY_SLEEP_SECS = 60
 )
 
 type Config struct {
@@ -21,35 +26,20 @@ type Config struct {
 	TargetPort int
 }
 
+func printHelpAndExit() {
+	fmt.Printf("Usage: %s [--help] [--text] [--host <host>] [--port <port>]\n", os.Args[0])
+	os.Exit(0)
+}
+
 func processArgs() *Config {
-	ret := &Config{
-		IsText:     false,
-		TargetHost: client.DefaultHost,
-		TargetPort: 80,
-	}
-	args := os.Args[1:]
-	for i := 0; i < len(args) ; {
-		switch args[i] {
-		case "--text":
-			ret.IsText = true
-			i++
-		case "--host":
-			if i < len(args) -1 {
-				ret.TargetHost = args[i + 1]
-			}
-			i += 2
-		case "--port":
-			if i < len(args) -1 {
-				port, err := strconv.Atoi(args[i + 1])
-				if err != nil {
-					log.Fatalf("Bad port argument %s", args[i + 1])
-				}
-				ret.TargetPort = port
-			}
-			i += 2
-		default:
-			log.Fatalf("Unknown arg %s", args[i])
-		}
+	ret := &Config{}
+	flag.BoolVar(&ret.IsText, "text", false, "Should text be displayed")
+	flag.StringVar(&ret.TargetHost, "host", client.DefaultHost, "The target host")
+	flag.IntVar(&ret.TargetPort, "port", 80, "The target port")
+	h :=  flag.Bool("help", false, "Help message")
+	flag.Parse()
+	if h != nil && *h {
+		printHelpAndExit()
 	}
 	return ret
 }
@@ -99,9 +89,22 @@ func createRegisterParams() *inventory.RegisterNodeParams {
 		NewNodeParams: &models.NodeCreateParams{
 			HardwareInfo: &nodeInfo,
 			Namespace:    &namespace,
+			Serial: scanners.ReadMotherboadSerial(),
 		},
 	}
 	return ret
+}
+
+func registerNodeWithRetry(cfg *Config) {
+	bmInventory := createBmInventoryClient(cfg)
+	for {
+		_, err := bmInventory.Inventory.RegisterNode(context.Background(), createRegisterParams())
+		if err == nil {
+			return
+		}
+		log.Warnf("Error registering node: %s", err.Error())
+		time.Sleep(RETRY_SLEEP_SECS * time.Second)
+	}
 }
 
 func main() {
@@ -109,10 +112,6 @@ func main() {
 	if cfg.IsText {
 		fmt.Printf("%s", string(createNodeInfo()))
 	} else {
-		bmInventory := createBmInventoryClient(cfg)
-		_, err := bmInventory.Inventory.RegisterNode(context.Background(), createRegisterParams())
-		if err != nil {
-			log.Warnf("Could not register node: %s", err.Error())
-		}
+		registerNodeWithRetry(cfg)
 	}
 }

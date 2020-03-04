@@ -1,6 +1,3 @@
-PWD = $(shell pwd)
-UID = $(shell id -u)
-
 SERVICE = quay.io/oamizur/introspector:latest
 
 all: build

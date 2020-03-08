@@ -23,5 +23,6 @@ func ReadMotherboadSerial() *string {
 		}
 	}
 	log.Warn("Could not find motherboard serial number")
-	return nil
+	ret := "Missing serial"
+	return &ret
 }

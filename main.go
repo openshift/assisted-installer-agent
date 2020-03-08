@@ -27,13 +27,13 @@ type Config struct {
 }
 
 func printHelpAndExit() {
-	fmt.Printf("Usage: %s [--help] [--text] [--host <host>] [--port <port>]\n", os.Args[0])
+	flag.CommandLine.Usage()
 	os.Exit(0)
 }
 
 func processArgs() *Config {
 	ret := &Config{}
-	flag.BoolVar(&ret.IsText, "text", false, "Should text be displayed")
+	flag.BoolVar(&ret.IsText, "text", false, "Output only as text")
 	flag.StringVar(&ret.TargetHost, "host", client.DefaultHost, "The target host")
 	flag.IntVar(&ret.TargetPort, "port", 80, "The target port")
 	h :=  flag.Bool("help", false, "Help message")
@@ -45,11 +45,10 @@ func processArgs() *Config {
 }
 
 type NodeInfo struct {
-	Cpu *scanners.CpuInfo `json:"cpu"`
+	Cpu *scanners.CpuInfo                   `json:"cpu"`
 	BlockDevices []scanners.BlockDeviceInfo `json:"block_devices"`
-	Memory []scanners.MemoryInfo `json:"memory"`
-	Interfaces []scanners.InterfaceInfo `json:"interfaces"`
-	Addresses []scanners.AddressInfo `json:"addresses"`
+	Memory []scanners.MemoryInfo            `json:"memory"`
+	Nics []scanners.NicInfo                 `json:"nics"`
 }
 
 type RequestRoundTripper struct {next http.RoundTripper}
@@ -67,8 +66,7 @@ func createNodeInfo() [] byte {
 		Cpu:          scanners.ReadCpus(),
 		BlockDevices: scanners.ReadBlockDevices(),
 		Memory:       scanners.ReadMemory(),
-		Interfaces:   scanners.ReadInterfaces(),
-		Addresses:    scanners.ReadAddresses(),
+		Nics:   scanners.ReadNics(),
 	}
 	b, _ := json.Marshal(&info)
 	return b
@@ -110,7 +108,7 @@ func registerNodeWithRetry(cfg *Config) {
 func main() {
 	cfg := processArgs()
 	if cfg.IsText {
-		fmt.Printf("%s", string(createNodeInfo()))
+		fmt.Printf("%s\n", string(createNodeInfo()))
 	} else {
 		registerNodeWithRetry(cfg)
 	}

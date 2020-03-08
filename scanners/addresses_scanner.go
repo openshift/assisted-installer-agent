@@ -7,12 +7,7 @@ import (
 	"strings"
 )
 
-type AddressInfo struct {
-	InterfaceName string  `json:"interface_name"`
-	Address string  `json:"address"`
-}
-
-func ReadAddresses() [] AddressInfo {
+func ReadAddresses() map[string][]string {
 	cmd := exec.Command("ip", "-o",  "address", "list")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -20,17 +15,20 @@ func ReadAddresses() [] AddressInfo {
 		return nil
 	}
 	lines := strings.Split(string(bytes), "\n")
-	ret := make([]AddressInfo, 0)
+	ret := make(map[string][]string)
 	r := regexp.MustCompile("^\\d+: +([^ ]+) +.*inet +([^ ]+)")
 	for _, line := range lines {
-		netInterface := AddressInfo{}
 		matches := r.FindStringSubmatch(line)
 		if len(matches) != 3 {
 			continue
 		}
-		netInterface.InterfaceName = matches[1]
-		netInterface.Address = matches[2]
-		ret = append(ret, netInterface)
+		interfaceName := matches[1]
+		address := matches[2]
+		addresses, ok := ret[interfaceName]
+		if !ok {
+			addresses = make([]string, 0)
+		}
+		ret[interfaceName] = append(addresses, address)
 	}
 	return ret
 }

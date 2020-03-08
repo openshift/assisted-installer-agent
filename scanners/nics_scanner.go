@@ -8,14 +8,15 @@ import (
 	"strings"
 )
 
-type InterfaceInfo struct {
+type NicInfo struct {
 	Name string `json:"name"`
 	State string `json:"state"`
 	Mtu int `json:"mtu"`
 	Mac string `json:"mac"`
+	IPAddresses []string `json:"ip_addresses,omitempty"`
 }
 
-func ReadInterfaces() [] InterfaceInfo {
+func ReadNics() []NicInfo {
 	cmd := exec.Command("ip", "-o",  "link", "list")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -23,19 +24,21 @@ func ReadInterfaces() [] InterfaceInfo {
 		return nil
 	}
 	lines := strings.Split(string(bytes), "\n")
-	ret := make([]InterfaceInfo, 0)
+	ret := make([]NicInfo, 0)
+	addresses := ReadAddresses()
 	r := regexp.MustCompile("^\\d+: +([^:]+): +<([^>]+)>.* mtu +(\\d+) .*link/ether +([^ ]+)")
 	for _, line := range lines {
-		netInterface := InterfaceInfo{}
+		nic := NicInfo{}
 		matches := r.FindStringSubmatch(line)
 		if len(matches) != 5 {
 			continue
 		}
-		netInterface.Name = matches[1]
-		netInterface.State = matches[2]
-		netInterface.Mtu, _ = strconv.Atoi(matches[3])
-		netInterface.Mac = matches[4]
-		ret = append(ret, netInterface)
+		nic.Name = matches[1]
+		nic.State = matches[2]
+		nic.Mtu, _ = strconv.Atoi(matches[3])
+		nic.Mac = matches[4]
+		nic.IPAddresses, _ = addresses[nic.Name]
+		ret = append(ret, nic)
 	}
 	return ret
 }

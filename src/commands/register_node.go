@@ -23,7 +23,7 @@ func createRegisterParams() *inventory.RegisterNodeParams {
 		NewNodeParams: &models.NodeCreateParams{
 			HardwareInfo: &nodeInfo,
 			Namespace:    &config.GlobalConfig.Namespace,
-			Serial:       scanners.ReadMotherboadSerial(),
+			Serial:       scanners.ReadId(),
 		},
 	}
 	return ret

@@ -11,12 +11,31 @@ import (
 )
 
 var stepType2Handler = map[models.StepType] func(string) (string, error) {
-	//models.StepTypeHardawareInfo: hardwareInfoHandler,
+	models.StepTypeHardawareInfo: GetHardwareInfo,
 	//models.StepTypeConnectivityCheck: connectivityCheckHandler,
 }
 
-func handleSingleStep(stepType models.StepType, handler func(string) (string, error)) {
-
+func handleSingleStep(stepType models.StepType, data string, handler func(string) (string, error)) {
+	output, err := handler(data)
+	params := inventory.PostStepReplyParams{
+		NodeID:     *CurrentNode.ID,
+		Context:    nil,
+		HTTPClient: nil,
+	}
+	reply := models.StepReply{
+		Output:                output,
+		StepType:              stepType,
+		SucccessfulCompletion: err == nil,
+	}
+	if err != nil {
+		reply.Error = err.Error()
+	}
+	params.Reply = &reply
+	inventoryClient := client.CreateBmInventoryClient()
+	_, err = inventoryClient.Inventory.PostStepReply(context.Background(), &params)
+	if err != nil {
+		log.Warnf("Error posting step reply: %s")
+	}
 }
 
 func handleSteps(steps models.Steps) {
@@ -24,8 +43,9 @@ func handleSteps(steps models.Steps) {
 		handler, ok := stepType2Handler[step.StepType]
 		if !ok {
 			log.Warnf("Unexpected step type: %s", step.StepType)
+			continue
 		}
-		go handler(step.Data)
+		go handleSingleStep(step.StepType, step.Data, handler)
 	}
 }
 

@@ -13,5 +13,6 @@ func main() {
 		fmt.Printf("%s\n", string(commands.CreateNodeInfo()))
 	} else {
 		commands.RegisterNodeWithRetry()
+		commands.ProcessSteps()
 	}
 }

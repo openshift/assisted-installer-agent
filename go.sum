@@ -75,6 +75,14 @@ github.com/filanov/bm-inventory v0.0.0-20200309075337-9d6567429c83 h1:f9tBjCQa7i
 github.com/filanov/bm-inventory v0.0.0-20200309075337-9d6567429c83/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
 github.com/filanov/bm-inventory v0.0.0-20200309081149-8f23aa983793 h1:/XTp+kOa0E+0ShlvQ6Olgd31TnCXEG9FX/8EpZn5glM=
 github.com/filanov/bm-inventory v0.0.0-20200309081149-8f23aa983793/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
+github.com/filanov/bm-inventory v0.0.0-20200310063534-8d49efdde684 h1:qYV4MvDBANqjABZ8RLNDVsRdQXRCAoJxBWCpvwAokrQ=
+github.com/filanov/bm-inventory v0.0.0-20200310063534-8d49efdde684/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
+github.com/filanov/bm-inventory v0.0.0-20200310064616-e1ef0ab1a244 h1:LTep6KGe1lVw1rqHvOvIRo1sli69PaRFaXc3KgIssvc=
+github.com/filanov/bm-inventory v0.0.0-20200310064616-e1ef0ab1a244/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
+github.com/filanov/bm-inventory v0.0.0-20200310065940-7f0894df479e h1:zhI3ytTeaI2KWQ5VU05EZIqLIYAgFebGDrk5GvT6DEI=
+github.com/filanov/bm-inventory v0.0.0-20200310065940-7f0894df479e/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
+github.com/filanov/bm-inventory v0.0.0-20200310075252-6e0bd95a48e2 h1:8B6Z5NCrGDGFCjsfeoWofU1zFTmmAuHyUHosCes5Gjw=
+github.com/filanov/bm-inventory v0.0.0-20200310075252-6e0bd95a48e2/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=

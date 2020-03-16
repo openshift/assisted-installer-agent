@@ -1,13 +1,15 @@
 package scanners
 
 import (
+	"github.com/filanov/bm-inventory/models"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
-func ReadAddresses() map[string][]string {
+func ReadAddresses() map[string][]*models.Cidr {
 	cmd := exec.Command("ip", "-o",  "address", "list")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -15,20 +17,24 @@ func ReadAddresses() map[string][]string {
 		return nil
 	}
 	lines := strings.Split(string(bytes), "\n")
-	ret := make(map[string][]string)
-	r := regexp.MustCompile("^\\d+: +([^ ]+) +.*inet +([^ ]+)")
+	ret := make(map[string][]*models.Cidr)
+	r := regexp.MustCompile("^\\d+: +([^ ]+) +.*inet +([0-9.]+)/(\\d+)")
 	for _, line := range lines {
 		matches := r.FindStringSubmatch(line)
-		if len(matches) != 3 {
+		if len(matches) != 4 {
 			continue
 		}
 		interfaceName := matches[1]
 		address := matches[2]
-		addresses, ok := ret[interfaceName]
+		mask,_ := strconv.ParseInt(matches[3], 10, 64)
+		cidrs, ok := ret[interfaceName]
 		if !ok {
-			addresses = make([]string, 0)
+			cidrs = make([]*models.Cidr, 0)
 		}
-		ret[interfaceName] = append(addresses, address)
+		ret[interfaceName] = append(cidrs, &models.Cidr{
+			IPAddress: address,
+			Mask:      mask,
+		})
 	}
 	return ret
 }

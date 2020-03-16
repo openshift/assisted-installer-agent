@@ -1,23 +1,12 @@
 package scanners
 
 import (
+	"github.com/filanov/bm-inventory/models"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strconv"
 	"strings"
 )
-
-type BlockDeviceInfo struct {
-	Name string  `json:"name"`
-	MajorDeviceNumber int  `json:"major_device_number"`
-	MinorDeviceNumber int `json:"minor_device_number"`
-	RemovableDevice int `json:"removable_device,omitempty"`
-	Size   uint64 `json:"size"`
-	ReadOnly bool `json:"read_only,omitempty"`
-	Type     string `json:"type"`
-	Mountpoint string `json:"mountpoint,omitempty"`
-	Fstype   string `json:"fstype,omitempty"`
-}
 
 const (
 	NAME_LABLE = "NAME"
@@ -78,7 +67,7 @@ func nextToken(line string, start int) (token string, begin int) {
 	return ret, begin
 }
 
-func ReadBlockDevices() [] BlockDeviceInfo {
+func ReadBlockDevices() [] *models.BlockDevice {
 	cmd := exec.Command("lsblk", "-lab",  "-o",  "+FSTYPE")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -91,12 +80,12 @@ func ReadBlockDevices() [] BlockDeviceInfo {
 		return nil
 	}
 	headersMap := mapHeader(lines[0])
-	ret := make([] BlockDeviceInfo, 0)
+	ret := make([] *models.BlockDevice, 0)
 	for _, line := range lines[1:] {
 		if line == "" {
 			continue
 		}
-		binfo := BlockDeviceInfo{}
+		binfo := models.BlockDevice{}
 		for token, start := nextToken(line, 0) ; start < len(line) ; token, start = nextToken(line, start + len(token)) {
 			lable, ok := headersMap[start]
 			if !ok {
@@ -115,24 +104,24 @@ func ReadBlockDevices() [] BlockDeviceInfo {
 			case FSTYPE_LABLE:
 				binfo.Fstype = token
 			case TYPE_LABLE:
-				binfo.Type = token
+				binfo.DeviceType = token
 			case MOUNTPOINT_LABLE:
 				binfo.Mountpoint = token
 			case SIZE_LABLE:
-				binfo.Size, _ = strconv.ParseUint(token, 10, 64)
+				binfo.Size, _ = strconv.ParseInt(token, 10, 64)
 			case RO_LABLE:
 				binfo.ReadOnly = token != "0"
 			case RM_LABLE:
-				binfo.RemovableDevice, _ = strconv.Atoi(token)
+				binfo.RemovableDevice, _ = strconv.ParseInt(token, 10, 64)
 			case MAJ_MIN_LABLE:
 				majMinSplit := strings.Split(token, ":")
 				if len(majMinSplit) == 2 {
-					binfo.MajorDeviceNumber, _ = strconv.Atoi(majMinSplit[0])
-					binfo.MinorDeviceNumber, _ = strconv.Atoi(majMinSplit[1])
+					binfo.MajorDeviceNumber, _ = strconv.ParseInt(majMinSplit[0], 10, 64)
+					binfo.MinorDeviceNumber, _ = strconv.ParseInt(majMinSplit[1], 10, 64)
 				}
 			}
 		}
-		ret = append(ret, binfo)
+		ret = append(ret, &binfo)
 	}
 	return ret
 }

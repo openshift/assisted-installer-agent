@@ -12,7 +12,7 @@ import (
 
 var stepType2Handler = map[models.StepType] func(string) (string, error) {
 	models.StepTypeHardawareInfo: GetHardwareInfo,
-	//models.StepTypeConnectivityCheck: connectivityCheckHandler,
+	models.StepTypeConnectivityCheck: ConnectivityCheck,
 }
 
 func handleSingleStep(stepType models.StepType, data string, handler func(string) (string, error)) {
@@ -25,10 +25,12 @@ func handleSingleStep(stepType models.StepType, data string, handler func(string
 	reply := models.StepReply{
 		Output:                output,
 		StepType:              stepType,
-		SucccessfulCompletion: err == nil,
 	}
 	if err != nil {
+		reply.ExitCode = -1
 		reply.Error = err.Error()
+	} else {
+		reply.ExitCode = 0
 	}
 	params.Reply = &reply
 	inventoryClient := client.CreateBmInventoryClient()

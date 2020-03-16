@@ -1,6 +1,7 @@
 package scanners
 
 import (
+	"github.com/filanov/bm-inventory/models"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strconv"
@@ -16,17 +17,6 @@ const (
 	AVAILABLE_LABLE = "available"
 )
 
-type MemoryInfo struct {
-	Name  string  `json:"name"`
-	Total uint64  `json:"total"`
-	Used  uint64  `json:"used"`
-	Free  uint64  `json:"free,omitempty"`
-	Shared uint64 `json:"shared,omitempty"`
-	BuffCached uint64 `json:"buff_cached,omitempty"`
-	Available uint64  `json:"available,omitempty"`
-}
-
-
 func readHeader(header string) map[int] string {
 	ret := make(map[int]string)
 	for token, start := nextToken(header, 0) ; start < len(header) ; token, start = nextToken(header, start + len(token)) {
@@ -35,7 +25,7 @@ func readHeader(header string) map[int] string {
 	return ret
 }
 
-func ReadMemory() []MemoryInfo {
+func ReadMemory() []*models.Memory {
 	cmd := exec.Command("free")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -47,13 +37,13 @@ func ReadMemory() []MemoryInfo {
 		log.Warnf("ReadMemoey: Missing lines")
 		return nil
 	}
-	ret := make([]MemoryInfo, 0)
+	ret := make([]*models.Memory, 0)
 	headerMap := readHeader(lines[0])
 	for _, line := range lines[1:] {
 		if line == "" {
 			continue
 		}
-		minfo := MemoryInfo{}
+		minfo := &models.Memory{}
 		for token, start := nextToken(line, 0) ; start < len(line) ; token, start = nextToken(line, start + len(token)) {
 			switch start {
 			case 0:
@@ -63,7 +53,7 @@ func ReadMemory() []MemoryInfo {
 				if !ok {
 					continue
 				}
-				value, _  := strconv.ParseUint(token, 10, 64)
+				value, _  := strconv.ParseInt(token, 10, 64)
 				switch lable {
 				case TOTAL_LABLE:
 					minfo.Total = value

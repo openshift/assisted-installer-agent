@@ -2,21 +2,14 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/filanov/bm-inventory/models"
 	"github.com/ori-amizur/introspector/src/scanners"
 )
 
-type NodeInfo struct {
-	Cpu *scanners.CpuInfo                   `json:"cpu"`
-	BlockDevices []scanners.BlockDeviceInfo `json:"block_devices"`
-	Memory []scanners.MemoryInfo            `json:"memory"`
-	Nics []scanners.NicInfo                 `json:"nics"`
-}
-
-
 func CreateNodeInfo() [] byte {
-	info := NodeInfo{
-		Cpu:          scanners.ReadCpus(),
+	info := models.Introspection{
 		BlockDevices: scanners.ReadBlockDevices(),
+		CPU:          scanners.ReadCpus(),
 		Memory:       scanners.ReadMemory(),
 		Nics:         scanners.ReadNics(),
 	}

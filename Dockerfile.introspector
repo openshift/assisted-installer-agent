@@ -1,4 +1,4 @@
 FROM registry.access.redhat.com/ubi8/ubi:latest
-RUN yum install -y procps iproute
+RUN yum install -y procps iproute iputils
 ADD build/introspector /usr/bin/introspector
 CMD ["/usr/bin/introspector"]

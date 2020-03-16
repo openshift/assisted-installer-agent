@@ -1,6 +1,7 @@
 package scanners
 
 import (
+	"github.com/filanov/bm-inventory/models"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"regexp"
@@ -8,16 +9,7 @@ import (
 	"strings"
 )
 
-type CpuInfo struct {
-	Architecture string `json:"architecture"`
-	ModelName string  `json:"model_name"`
-	Cpus  int			`json:"cpus"`
-	ThreadsPerCore int  `json:"threads_per_core"`
-	Sockets int  `json:"sockets"`
-	CPUMhz float64  `json:"cpu_mhz"`
-}
-
-func ReadCpus() *CpuInfo {
+func ReadCpus() *models.CPU {
 	cmd := exec.Command("lscpu")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -26,7 +18,7 @@ func ReadCpus() *CpuInfo {
 	}
 	lines := strings.Split(string(bytes), "\n")
 	r := regexp.MustCompile("^([^:]+):[ \t]+([^ \t].*)$")
-	ret := &CpuInfo{}
+	ret := &models.CPU{}
 	for _ , line := range lines {
 		matches := r.FindStringSubmatch(line)
 		if len(matches) == 3 {
@@ -36,11 +28,11 @@ func ReadCpus() *CpuInfo {
 			case "Model name":
 				ret.ModelName = matches[2]
 			case "CPU(s)":
-				ret.Cpus, _ = strconv.Atoi(matches[2])
+				ret.Cpus, _ = strconv.ParseInt(matches[2], 10, 64)
 			case "Thread(s) per core":
-				ret.ThreadsPerCore, _ = strconv.Atoi(matches[2])
+				ret.ThreadsPerCore, _ = strconv.ParseInt(matches[2], 10, 64)
 			case "Socket(s)":
-				ret.Sockets, _ = strconv.Atoi(matches[2])
+				ret.Sockets, _ = strconv.ParseInt(matches[2], 10, 64)
 			case "CPU MHz":
 				ret.CPUMhz, _ = strconv.ParseFloat(matches[2], 64)
 			}

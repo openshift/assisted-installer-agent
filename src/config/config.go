@@ -12,6 +12,7 @@ type Config struct {
 	TargetPort int
 	Namespace string
 	IntervalSecs int
+	ConnectivityParams string
 }
 
 var GlobalConfig Config
@@ -28,6 +29,7 @@ func ProcessArgs()  {
 	flag.IntVar(&ret.TargetPort, "port", 80, "The target port")
 	flag.StringVar(&ret.Namespace, "namespace", "default-namespace", "The value of the namespace")
 	flag.IntVar(&ret.IntervalSecs, "interval", 60, "Interval between steps polling in seconds")
+	flag.StringVar(&ret.ConnectivityParams, "connectivity", "", "Test connectivity as output string")
 	h :=  flag.Bool("help", false, "Help message")
 	flag.Parse()
 	if h != nil && *h {

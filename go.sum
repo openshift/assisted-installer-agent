@@ -91,6 +91,8 @@ github.com/filanov/bm-inventory v0.0.0-20200316115127-6b419756d103 h1:6Zie3VljCW
 github.com/filanov/bm-inventory v0.0.0-20200316115127-6b419756d103/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
 github.com/filanov/bm-inventory v0.0.0-20200316174031-336519259b4a h1:gUfXo4mehyScauLQFeVOSbGvpkqQtdInN6cGZ5IQnL4=
 github.com/filanov/bm-inventory v0.0.0-20200316174031-336519259b4a/go.mod h1:b19JjZC8dJmYlypKwcWRIfKm98NYR5R8XKHMRI40Mqs=
+github.com/filanov/bm-inventory v0.0.0-20200318081824-c5b16c14a960 h1:IeQlafD3g8+MIIbcLMCXrZSmxrnHYPk0cDJmyBcxDp0=
+github.com/filanov/bm-inventory v0.0.0-20200318081824-c5b16c14a960/go.mod h1:bsZNf2G6BK+s5WT46AjojuXRgcoJqxQislpwSF3ZS8E=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
@@ -284,6 +286,8 @@ github.com/prometheus/procfs v0.0.2/go.mod h1:TjEm7ze935MbeOT/UhFTIMYKhuLP4wbCsT
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
+github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
+github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.2 h1:SPIRibHv4MatM3XXNO2BJeFLZwZ2LvZgfQ5+UNI2im4=

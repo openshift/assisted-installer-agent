@@ -18,12 +18,10 @@ const (
 var CurrentNode *models.Node
 
 func createRegisterParams() *inventory.RegisterNodeParams {
-	nodeInfo := string(CreateNodeInfo())
 	ret := &inventory.RegisterNodeParams{
 		NewNodeParams: &models.NodeCreateParams{
-			HardwareInfo: &nodeInfo,
 			Namespace:    &config.GlobalConfig.Namespace,
-			Serial:       scanners.ReadId(),
+			NodeID:       scanners.ReadId(),
 		},
 	}
 	return ret

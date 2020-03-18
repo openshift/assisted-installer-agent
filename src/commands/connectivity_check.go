@@ -102,7 +102,16 @@ func l3CheckConnectivity(addresses []string, outgoingNics [] string, l3chan chan
 	}
 }
 
-func l2CheckAddressOnNic(dstAddr string, dstMac string, srcNic string, l2chan chan Any) {
+func macInDstMacs(mac string, allDstMacs [] string) bool {
+	for _, dstMac := range allDstMacs {
+		if strings.ToLower(mac) == strings.ToLower(dstMac) {
+			return true
+		}
+	}
+	return false
+}
+
+func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs [] string, srcNic string, l2chan chan Any) {
 	defer sendDone(l2chan)
 	ret := &models.L2Connectivity{
 		OutgoingNic:       srcNic,
@@ -128,7 +137,6 @@ func l2CheckAddressOnNic(dstAddr string, dstMac string, srcNic string, l2chan ch
 
 	ret.OutgoingIPAddress = parts[2]
 	rRegexp := regexp.MustCompile("^Unicast reply from ([^ ]+) \\[([^]]+)\\]  [^ ]+$")
-	replies := 0
 	for _, line := range lines[1:] {
 		parts = rRegexp.FindStringSubmatch(line)
 		if len(parts) != 3 {
@@ -136,38 +144,34 @@ func l2CheckAddressOnNic(dstAddr string, dstMac string, srcNic string, l2chan ch
 		}
 		remoteMac := strings.ToLower(parts[2])
 		ret.RemoteMac = remoteMac
-		ret.Successful = strings.ToLower(dstMac) == remoteMac
+		ret.Successful = macInDstMacs(remoteMac, allDstMacs)
 		if !ret.Successful {
 			log.Warnf("Unexpected mac address for arping %s on nic %s: %s", dstAddr, srcNic, remoteMac)
+		} else if strings.ToLower(dstMac) != remoteMac {
+			log.Infof("Received remote mac %s different then expected mac %s", remoteMac, dstMac)
 		}
-		l2chan <- ret
-		replies++
-	}
-	if replies == 0 {
 		l2chan <- ret
 	}
 }
 
-func l2CheckAddress(dstAddr string, dstMac string , sourceNics []string, l2chan chan Any, l2DoneChan chan Any) {
+func l2CheckAddress(dstAddr string, dstMac string , allDstMacs, sourceNics []string, l2chan chan Any, l2DoneChan chan Any) {
 	defer sendDone(l2DoneChan)
 	innerChan := make(chan Any, 1000)
 	for _, srcNic := range sourceNics {
-		go l2CheckAddressOnNic(dstAddr, dstMac, srcNic, innerChan)
+		go l2CheckAddressOnNic(dstAddr, dstMac, allDstMacs, srcNic, innerChan)
 	}
-	successful := false
+	received := false
 	for numDone := 0 ; numDone != len(sourceNics); {
 		iret := <- innerChan
 		switch ret := iret.(type) {
 		case *models.L2Connectivity:
-			if ret.Successful {
-				successful = true
-				l2chan <- ret
-			}
+			received = true
+			l2chan <- ret
 		case Done:
 			numDone++
 		}
 	}
-	if !successful {
+	if !received {
 		ret := &models.L2Connectivity{
 			OutgoingNic:       "",
 			OutgoingIPAddress: "",
@@ -182,12 +186,18 @@ func l2CheckAddress(dstAddr string, dstMac string , sourceNics []string, l2chan 
 func l2CheckConnectivity(destinationNics []*models.ConnectivityCheckNic, sourceNics [] string, l2chan chan Any)  {
 	defer sendDone(l2chan)
 	doneChan := make(chan Any)
+	allDstMacs := make([]string,0)
+	for _, destNic := range destinationNics {
+		allDstMacs = append(allDstMacs, destNic.Mac)
+	}
+	numAddresses := 0
 	for _, destNic := range destinationNics {
 		for _, address := range destNic.IPAddresses {
-			go l2CheckAddress(address, destNic.Mac, sourceNics, l2chan, doneChan)
+			numAddresses++
+			go l2CheckAddress(address, destNic.Mac, allDstMacs, sourceNics, l2chan, doneChan)
 		}
 	}
-	for i := 0; i != len(destinationNics) ; i++ {
+	for i := 0; i != numAddresses ; i++ {
 		<- doneChan
 	}
 }

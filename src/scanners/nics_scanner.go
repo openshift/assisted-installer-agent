@@ -31,6 +31,9 @@ func ReadNics() []*models.Nic {
 		nic.Mtu, _ = strconv.ParseInt(matches[3], 10, 64)
 		nic.Mac = matches[4]
 		nic.Cidrs, _ = cidrs[nic.Name]
+		if nic.Cidrs == nil {
+			nic.Cidrs = make([]*models.Cidr, 0)
+		}
 		ret = append(ret, nic)
 	}
 	return ret

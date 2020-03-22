@@ -1,7 +1,5 @@
 registry: quay.io
 build-container-image: introspector-build
-build-container-tag: latest
-container-context: . 
 
 containers:
     introspector-build: Dockerfile.introspector-build

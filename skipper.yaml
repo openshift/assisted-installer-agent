@@ -8,3 +8,5 @@ volumes:
     - $HOME/.cache/go-build:$HOME/.cache/go-build
     - $HOME/go/pkg/mod:/go/pkg/mod
     - $HOME/.docker:$HOME/.docker
+env:
+    SERVICE: $SERVICE

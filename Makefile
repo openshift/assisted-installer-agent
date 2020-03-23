@@ -1,4 +1,4 @@
-SERVICE ?= quay.io/oamizur/introspector:latest
+SERVICE := $(or ${SERVICE},quay.io/oamizur/introspector:latest)
 
 all: build
 

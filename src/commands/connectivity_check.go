@@ -2,17 +2,18 @@ package commands
 
 import (
 	"encoding/json"
-	"github.com/filanov/bm-inventory/models"
-	"github.com/ori-amizur/introspector/src/scanners"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
+	"github.com/ori-amizur/introspector/src/scanners"
+	log "github.com/sirupsen/logrus"
 )
 
-type Done struct {}
+type Done struct{}
 
-type Any interface {}
+type Any interface{}
 
 func getOutgoingNics() []string {
 	ret := make([]string, 0)
@@ -50,10 +51,9 @@ func sendDone(ch chan Any) {
 	ch <- Done{}
 }
 
-
-func l3CheckAddressOnNic(address string, outgoingNic string, l3chan chan *models.L3Connectivity){
+func l3CheckAddressOnNic(address string, outgoingNic string, l3chan chan *models.L3Connectivity) {
 	ret := &models.L3Connectivity{
-		OutgoingNic:outgoingNic,
+		OutgoingNic:     outgoingNic,
 		RemoteIPAddress: address,
 		Successful:      false,
 	}
@@ -68,15 +68,15 @@ func l3CheckAddressOnNic(address string, outgoingNic string, l3chan chan *models
 	l3chan <- ret
 }
 
-func l3CheckAddress(address string, outgoingNics []string, l3chan, doneChan chan Any){
+func l3CheckAddress(address string, outgoingNics []string, l3chan, doneChan chan Any) {
 	defer sendDone(doneChan)
 	innerChan := make(chan *models.L3Connectivity, 1000)
 	for _, nic := range outgoingNics {
 		go l3CheckAddressOnNic(address, nic, innerChan)
 	}
 	successful := false
-	for i := 0; i != len(outgoingNics) ; i++ {
-		ret := <- innerChan
+	for i := 0; i != len(outgoingNics); i++ {
+		ret := <-innerChan
 		if ret.Successful {
 			l3chan <- ret
 			successful = true
@@ -91,18 +91,18 @@ func l3CheckAddress(address string, outgoingNics []string, l3chan, doneChan chan
 	}
 }
 
-func l3CheckConnectivity(addresses []string, outgoingNics [] string, l3chan chan Any)  {
+func l3CheckConnectivity(addresses []string, outgoingNics []string, l3chan chan Any) {
 	defer sendDone(l3chan)
 	doneChan := make(chan Any)
 	for _, address := range addresses {
 		go l3CheckAddress(address, outgoingNics, l3chan, doneChan)
 	}
 	for i := 0; i != len(addresses); i++ {
-		<- doneChan
+		<-doneChan
 	}
 }
 
-func macInDstMacs(mac string, allDstMacs [] string) bool {
+func macInDstMacs(mac string, allDstMacs []string) bool {
 	for _, dstMac := range allDstMacs {
 		if strings.ToLower(mac) == strings.ToLower(dstMac) {
 			return true
@@ -111,13 +111,13 @@ func macInDstMacs(mac string, allDstMacs [] string) bool {
 	return false
 }
 
-func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs [] string, srcNic string, l2chan chan Any) {
+func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs []string, srcNic string, l2chan chan Any) {
 	defer sendDone(l2chan)
 	ret := &models.L2Connectivity{
-		OutgoingNic:       srcNic,
-		RemoteIPAddress:   dstAddr,
-		RemoteMac:         "",
-		Successful:        false,
+		OutgoingNic:     srcNic,
+		RemoteIPAddress: dstAddr,
+		RemoteMac:       "",
+		Successful:      false,
 	}
 	cmd := exec.Command("arping", "-c", "1", "-w", "2", "-I", srcNic, dstAddr)
 	bytes, _ := cmd.CombinedOutput()
@@ -154,15 +154,15 @@ func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs [] string, sr
 	}
 }
 
-func l2CheckAddress(dstAddr string, dstMac string , allDstMacs, sourceNics []string, l2chan chan Any, l2DoneChan chan Any) {
+func l2CheckAddress(dstAddr string, dstMac string, allDstMacs, sourceNics []string, l2chan chan Any, l2DoneChan chan Any) {
 	defer sendDone(l2DoneChan)
 	innerChan := make(chan Any, 1000)
 	for _, srcNic := range sourceNics {
 		go l2CheckAddressOnNic(dstAddr, dstMac, allDstMacs, srcNic, innerChan)
 	}
 	received := false
-	for numDone := 0 ; numDone != len(sourceNics); {
-		iret := <- innerChan
+	for numDone := 0; numDone != len(sourceNics); {
+		iret := <-innerChan
 		switch ret := iret.(type) {
 		case *models.L2Connectivity:
 			received = true
@@ -183,10 +183,10 @@ func l2CheckAddress(dstAddr string, dstMac string , allDstMacs, sourceNics []str
 	}
 }
 
-func l2CheckConnectivity(destinationNics []*models.ConnectivityCheckNic, sourceNics [] string, l2chan chan Any)  {
+func l2CheckConnectivity(destinationNics []*models.ConnectivityCheckNic, sourceNics []string, l2chan chan Any) {
 	defer sendDone(l2chan)
 	doneChan := make(chan Any)
-	allDstMacs := make([]string,0)
+	allDstMacs := make([]string, 0)
 	for _, destNic := range destinationNics {
 		allDstMacs = append(allDstMacs, destNic.Mac)
 	}
@@ -197,22 +197,20 @@ func l2CheckConnectivity(destinationNics []*models.ConnectivityCheckNic, sourceN
 			go l2CheckAddress(address, destNic.Mac, allDstMacs, sourceNics, l2chan, doneChan)
 		}
 	}
-	for i := 0; i != numAddresses ; i++ {
-		<- doneChan
+	for i := 0; i != numAddresses; i++ {
+		<-doneChan
 	}
 }
 
-
-
-func checkNode(outgoingNics []string, node *models.ConnectivityCheckNode, nodeChan chan *models.ConnectivityRemoteNode) {
-	ret := &models.ConnectivityRemoteNode{
-		NodeID:         node.NodeID,
+func checkHost(outgoingNics []string, host *models.ConnectivityCheckHost, hostChan chan *models.ConnectivityRemoteHost) {
+	ret := &models.ConnectivityRemoteHost{
+		HostID:         host.HostID,
 		L2Connectivity: make([]*models.L2Connectivity, 0),
 		L3Connectivity: make([]*models.L3Connectivity, 0),
 	}
 	r := regexp.MustCompile("^(?:eth|ens|eno|enp)\\d")
 	checkedNics := make([]*models.ConnectivityCheckNic, 0)
-	for _, nic := range node.Nics {
+	for _, nic := range host.Nics {
 		if r.MatchString(nic.Name) {
 			checkedNics = append(checkedNics, nic)
 		}
@@ -221,8 +219,8 @@ func checkNode(outgoingNics []string, node *models.ConnectivityCheckNode, nodeCh
 	ch := make(chan Any, 1000)
 	go l3CheckConnectivity(addresses, outgoingNics, ch)
 	go l2CheckConnectivity(checkedNics, outgoingNics, ch)
-	for numDone := 0 ; numDone != 2 ;  {
-		iret := <- ch
+	for numDone := 0; numDone != 2; {
+		iret := <-ch
 		switch value := iret.(type) {
 		case *models.L2Connectivity:
 			ret.L2Connectivity = append(ret.L2Connectivity, value)
@@ -232,7 +230,7 @@ func checkNode(outgoingNics []string, node *models.ConnectivityCheckNode, nodeCh
 			numDone++
 		}
 	}
-	nodeChan <- ret
+	hostChan <- ret
 }
 
 func ConnectivityCheck(input string) (string, error) {
@@ -243,13 +241,13 @@ func ConnectivityCheck(input string) (string, error) {
 		return "", err
 	}
 	nics := getOutgoingNics()
-	nodeChan := make(chan *models.ConnectivityRemoteNode, 0)
-	for _, node := range params {
-		go checkNode(nics, node, nodeChan)
+	hostChan := make(chan *models.ConnectivityRemoteHost, 0)
+	for _, host := range params {
+		go checkHost(nics, host, hostChan)
 	}
-	ret := models.ConnectivityReport{RemoteNodes:make([]*models.ConnectivityRemoteNode, 0)}
-	for i := 0 ; i != len(params) ; i++ {
-		ret.RemoteNodes = append(ret.RemoteNodes, <- nodeChan)
+	ret := models.ConnectivityReport{RemoteHosts: make([]*models.ConnectivityRemoteHost, 0)}
+	for i := 0; i != len(params); i++ {
+		ret.RemoteHosts = append(ret.RemoteHosts, <-hostChan)
 	}
 	bytes, err := json.Marshal(&ret)
 	if err != nil {

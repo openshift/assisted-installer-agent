@@ -1,6 +1,5 @@
 package commands
 
-
 func GetHardwareInfo(_ string) (string, error) {
-	return string(CreateNodeInfo()), nil
+	return string(CreateHostInfo()), nil
 }

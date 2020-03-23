@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/ori-amizur/introspector/src/commands"
 	"github.com/ori-amizur/introspector/src/config"
 )
 
-
 func main() {
 	config.ProcessArgs()
 	if config.GlobalConfig.IsText {
-		fmt.Printf("%s\n", string(commands.CreateNodeInfo()))
+		fmt.Printf("%s\n", string(commands.CreateHostInfo()))
 	} else if config.GlobalConfig.ConnectivityParams != "" {
 		output, err := commands.ConnectivityCheck(config.GlobalConfig.ConnectivityParams)
 		if err != nil {
@@ -19,7 +19,7 @@ func main() {
 			fmt.Println(output)
 		}
 	} else {
-		commands.RegisterNodeWithRetry()
+		commands.RegisterHostWithRetry()
 		commands.ProcessSteps()
 	}
 }

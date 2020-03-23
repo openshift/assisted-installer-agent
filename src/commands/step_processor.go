@@ -2,29 +2,30 @@ package commands
 
 import (
 	"context"
+	"time"
+
 	"github.com/filanov/bm-inventory/client/inventory"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/ori-amizur/introspector/src/client"
 	"github.com/ori-amizur/introspector/src/config"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
-var stepType2Handler = map[models.StepType] func(string) (string, error) {
-	models.StepTypeHardawareInfo: GetHardwareInfo,
+var stepType2Handler = map[models.StepType]func(string) (string, error){
+	models.StepTypeHardawareInfo:     GetHardwareInfo,
 	models.StepTypeConnectivityCheck: ConnectivityCheck,
 }
 
 func handleSingleStep(stepType models.StepType, data string, handler func(string) (string, error)) {
 	output, err := handler(data)
 	params := inventory.PostStepReplyParams{
-		NodeID:     *CurrentNode.ID,
+		HostID:     *CurrentHost.ID,
 		Context:    nil,
 		HTTPClient: nil,
 	}
 	reply := models.StepReply{
-		Output:                output,
-		StepType:              stepType,
+		Output:   output,
+		StepType: stepType,
 	}
 	if err != nil {
 		reply.ExitCode = -1
@@ -55,7 +56,7 @@ func ProcessSteps() {
 	inventoryClient := client.CreateBmInventoryClient()
 	for {
 		params := inventory.GetNextStepsParams{
-			NodeID: *CurrentNode.ID,
+			HostID: *CurrentHost.ID,
 		}
 		result, err := inventoryClient.Inventory.GetNextSteps(context.Background(), &params)
 		if err != nil {

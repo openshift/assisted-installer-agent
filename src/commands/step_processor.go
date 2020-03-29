@@ -11,13 +11,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var stepType2Handler = map[models.StepType]func(string) (string, error){
+type HandlerType func(string, []string) (string, string, int)
+
+var stepType2Handler = map[models.StepType]HandlerType{
 	models.StepTypeHardawareInfo:     GetHardwareInfo,
 	models.StepTypeConnectivityCheck: ConnectivityCheck,
+	models.StepTypeExecute: 		  Execute,
 }
 
-func handleSingleStep(stepType models.StepType, data string, handler func(string) (string, error)) {
-	output, err := handler(data)
+func handleSingleStep(stepID string, command string, args []string, handler HandlerType) {
+	output, errStr, exitCode := handler(command, args)
 	params := inventory.PostStepReplyParams{
 		HostID:     *CurrentHost.ID,
 		Context:    nil,
@@ -25,17 +28,13 @@ func handleSingleStep(stepType models.StepType, data string, handler func(string
 	}
 	reply := models.StepReply{
 		Output:   output,
-		StepType: stepType,
-	}
-	if err != nil {
-		reply.ExitCode = -1
-		reply.Error = err.Error()
-	} else {
-		reply.ExitCode = 0
+		StepID:stepID,
+		ExitCode:int64(exitCode),
+		Error:errStr,
 	}
 	params.Reply = &reply
 	inventoryClient := client.CreateBmInventoryClient()
-	_, err = inventoryClient.Inventory.PostStepReply(context.Background(), &params)
+	_, err := inventoryClient.Inventory.PostStepReply(context.Background(), &params)
 	if err != nil {
 		log.Warnf("Error posting step reply: %s")
 	}
@@ -48,7 +47,7 @@ func handleSteps(steps models.Steps) {
 			log.Warnf("Unexpected step type: %s", step.StepType)
 			continue
 		}
-		go handleSingleStep(step.StepType, step.Data, handler)
+		go handleSingleStep(step.StepID,  step.Command, step.Args, handler)
 	}
 }
 
@@ -61,9 +60,9 @@ func ProcessSteps() {
 		result, err := inventoryClient.Inventory.GetNextSteps(context.Background(), &params)
 		if err != nil {
 			log.Warnf("Could not query next steps: %s", err.Error())
-			continue
+		} else {
+			handleSteps(result.Payload)
 		}
-		handleSteps(result.Payload)
 		time.Sleep(time.Duration(config.GlobalConfig.IntervalSecs) * time.Second)
 	}
 }

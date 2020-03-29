@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"github.com/go-openapi/strfmt"
 	"time"
 
 	"github.com/filanov/bm-inventory/client/inventory"
@@ -19,9 +20,10 @@ const (
 var CurrentHost *models.Host
 
 func createRegisterParams() *inventory.RegisterHostParams {
+	clusterID := strfmt.UUID(config.GlobalConfig.ClusterID)
 	ret := &inventory.RegisterHostParams{
 		NewHostParams: &models.HostCreateParams{
-			Namespace: &config.GlobalConfig.Namespace,
+			ClusterID: &clusterID,
 			HostID:    scanners.ReadId(),
 		},
 	}

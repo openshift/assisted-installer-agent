@@ -12,9 +12,9 @@ func main() {
 	if config.GlobalConfig.IsText {
 		fmt.Printf("%s\n", string(commands.CreateHostInfo()))
 	} else if config.GlobalConfig.ConnectivityParams != "" {
-		output, err := commands.ConnectivityCheck(config.GlobalConfig.ConnectivityParams)
-		if err != nil {
-			fmt.Println(err.Error())
+		output, errStr, exitCode := commands.ConnectivityCheck("", []string{config.GlobalConfig.ConnectivityParams})
+		if exitCode != 0 {
+			fmt.Println(errStr)
 		} else {
 			fmt.Println(output)
 		}

@@ -233,12 +233,15 @@ func checkHost(outgoingNics []string, host *models.ConnectivityCheckHost, hostCh
 	hostChan <- ret
 }
 
-func ConnectivityCheck(input string) (string, error) {
+func ConnectivityCheck(_ string, args[]string) (string, string, int) {
+	if len(args) != 1 {
+		return "", "Expecting exactly 1 argument for connectivity command", -1
+	}
 	params := make(models.ConnectivityCheckParams, 0)
-	err := json.Unmarshal([]byte(input), &params)
+	err := json.Unmarshal([]byte(args[0]), &params)
 	if err != nil {
-		log.Warnf("Error unmarshalling json %s: %s", input, err.Error())
-		return "", err
+		log.Warnf("Error unmarshalling json %s: %s", args[0], err.Error())
+		return "", err.Error(), -1
 	}
 	nics := getOutgoingNics()
 	hostChan := make(chan *models.ConnectivityRemoteHost, 0)
@@ -252,7 +255,7 @@ func ConnectivityCheck(input string) (string, error) {
 	bytes, err := json.Marshal(&ret)
 	if err != nil {
 		log.Warnf("Could not marshal json: $s", err.Error())
-		return "", err
+		return "", err.Error(), -1
 	}
-	return string(bytes), nil
+	return string(bytes), "", 0
 }

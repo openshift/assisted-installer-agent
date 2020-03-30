@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"github.com/go-openapi/strfmt"
 	"time"
 
 	"github.com/filanov/bm-inventory/client/inventory"
@@ -23,8 +24,7 @@ func handleSingleStep(stepID string, command string, args []string, handler Hand
 	output, errStr, exitCode := handler(command, args)
 	params := inventory.PostStepReplyParams{
 		HostID:     *CurrentHost.ID,
-		Context:    nil,
-		HTTPClient: nil,
+		ClusterID:  strfmt.UUID(config.GlobalConfig.ClusterID),
 	}
 	reply := models.StepReply{
 		Output:   output,
@@ -56,6 +56,7 @@ func ProcessSteps() {
 	for {
 		params := inventory.GetNextStepsParams{
 			HostID: *CurrentHost.ID,
+			ClusterID:strfmt.UUID(config.GlobalConfig.ClusterID),
 		}
 		result, err := inventoryClient.Inventory.GetNextSteps(context.Background(), &params)
 		if err != nil {

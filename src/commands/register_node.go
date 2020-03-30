@@ -20,10 +20,9 @@ const (
 var CurrentHost *models.Host
 
 func createRegisterParams() *inventory.RegisterHostParams {
-	clusterID := strfmt.UUID(config.GlobalConfig.ClusterID)
 	ret := &inventory.RegisterHostParams{
+		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 		NewHostParams: &models.HostCreateParams{
-			ClusterID: &clusterID,
 			HostID:    scanners.ReadId(),
 		},
 	}

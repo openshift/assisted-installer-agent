@@ -13,10 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	RETRY_SLEEP_SECS = 60
-)
-
 var CurrentHost *models.Host
 
 func createRegisterParams() *inventory.RegisterHostParams {
@@ -34,10 +30,11 @@ func RegisterHostWithRetry() {
 	for {
 		registerResult, err := bmInventory.Inventory.RegisterHost(context.Background(), createRegisterParams())
 		if err == nil {
+			log.Infof("Payload is %+v", registerResult.Payload)
 			CurrentHost = registerResult.Payload
 			return
 		}
 		log.Warnf("Error registering host: %s", err.Error())
-		time.Sleep(RETRY_SLEEP_SECS * time.Second)
+		time.Sleep(time.Duration(config.GlobalConfig.IntervalSecs) * time.Second)
 	}
 }

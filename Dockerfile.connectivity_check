@@ -1,0 +1,4 @@
+FROM alpine:3.7
+RUN apk add iputils
+ADD build/connectivity_check /usr/bin/connectivity_check
+CMD ["/usr/bin/connectivity_check"]

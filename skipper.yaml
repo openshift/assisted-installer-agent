@@ -3,7 +3,10 @@ build-container-image: introspector-build
 
 containers:
     introspector-build: Dockerfile.introspector-build
-    introspector: Dockerfile.introspector
+    agent: Dockerfile.agent
+    connectivity_check: Dockerfile.connectivity_check
+    dmidecode: Dockerfile.dmidecode
+    hardware_info: Dockerfile.hardware_info
 volumes:
     - $HOME/.cache/go-build:$HOME/.cache/go-build
     - $HOME/go/pkg/mod:/go/pkg/mod

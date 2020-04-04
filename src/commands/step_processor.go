@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -21,8 +22,8 @@ var stepType2Handler = map[models.StepType]HandlerType{
 	models.StepTypeExecute:           Execute,
 }
 
-func handleSingleStep(stepID string, command string, args []string, handler HandlerType) {
-	output, errStr, exitCode := handler(command, args)
+func sendStepReply(stepID, output, errStr string, exitCode int) {
+	log.Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
 	params := inventory.PostStepReplyParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
@@ -37,15 +38,22 @@ func handleSingleStep(stepID string, command string, args []string, handler Hand
 	inventoryClient := client.CreateBmInventoryClient()
 	_, err := inventoryClient.Inventory.PostStepReply(context.Background(), &params)
 	if err != nil {
-		log.Warnf("Error posting step reply: %s")
+		log.Warnf("Error posting step reply: %s", err.Error())
 	}
+}
+
+func handleSingleStep(stepID string, command string, args []string, handler HandlerType) {
+	output, errStr, exitCode := handler(command, args)
+	sendStepReply(stepID, output, errStr, exitCode)
 }
 
 func handleSteps(steps models.Steps) {
 	for _, step := range steps {
 		handler, ok := stepType2Handler[step.StepType]
 		if !ok {
-			log.Warnf("Unexpected step type: %s", step.StepType)
+			errStr := fmt.Sprintf("Unexpected step type: %s", step.StepType)
+			log.Warn(errStr)
+			sendStepReply(step.StepID, "", errStr, -1)
 			continue
 		}
 		go handleSingleStep(step.StepID, step.Command, step.Args, handler)
@@ -59,6 +67,7 @@ func ProcessSteps() {
 			HostID:    *CurrentHost.ID,
 			ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 		}
+		log.Info("Query for next steps")
 		result, err := inventoryClient.Inventory.GetNextSteps(context.Background(), &params)
 		if err != nil {
 			log.Warnf("Could not query next steps: %s", err.Error())

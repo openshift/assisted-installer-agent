@@ -1,0 +1,3 @@
+FROM alpine:3.7
+RUN apk add docker bash
+ADD build/agent /usr/bin/agent

@@ -40,7 +40,7 @@ func ReadMemory() []*models.Memory {
 	ret := make([]*models.Memory, 0)
 	headerMap := readHeader(lines[0])
 	for _, line := range lines[1:] {
-		if line == "" {
+		if line == "" || strings.HasPrefix(line, "-") {
 			continue
 		}
 		minfo := &models.Memory{}

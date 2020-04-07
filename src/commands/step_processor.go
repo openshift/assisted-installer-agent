@@ -2,8 +2,9 @@ package commands
 
 import (
 	"context"
-	"github.com/go-openapi/strfmt"
 	"time"
+
+	"github.com/go-openapi/strfmt"
 
 	"github.com/filanov/bm-inventory/client/inventory"
 	"github.com/filanov/bm-inventory/models"
@@ -15,22 +16,22 @@ import (
 type HandlerType func(string, []string) (string, string, int)
 
 var stepType2Handler = map[models.StepType]HandlerType{
-	models.StepTypeHardawareInfo:     GetHardwareInfo,
+	models.StepTypeHardwareInfo:      GetHardwareInfo,
 	models.StepTypeConnectivityCheck: ConnectivityCheck,
-	models.StepTypeExecute: 		  Execute,
+	models.StepTypeExecute:           Execute,
 }
 
 func handleSingleStep(stepID string, command string, args []string, handler HandlerType) {
 	output, errStr, exitCode := handler(command, args)
 	params := inventory.PostStepReplyParams{
-		HostID:     *CurrentHost.ID,
-		ClusterID:  strfmt.UUID(config.GlobalConfig.ClusterID),
+		HostID:    *CurrentHost.ID,
+		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 	}
 	reply := models.StepReply{
 		Output:   output,
-		StepID:stepID,
-		ExitCode:int64(exitCode),
-		Error:errStr,
+		StepID:   stepID,
+		ExitCode: int64(exitCode),
+		Error:    errStr,
 	}
 	params.Reply = &reply
 	inventoryClient := client.CreateBmInventoryClient()
@@ -47,7 +48,7 @@ func handleSteps(steps models.Steps) {
 			log.Warnf("Unexpected step type: %s", step.StepType)
 			continue
 		}
-		go handleSingleStep(step.StepID,  step.Command, step.Args, handler)
+		go handleSingleStep(step.StepID, step.Command, step.Args, handler)
 	}
 }
 
@@ -55,8 +56,8 @@ func ProcessSteps() {
 	inventoryClient := client.CreateBmInventoryClient()
 	for {
 		params := inventory.GetNextStepsParams{
-			HostID: *CurrentHost.ID,
-			ClusterID:strfmt.UUID(config.GlobalConfig.ClusterID),
+			HostID:    *CurrentHost.ID,
+			ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 		}
 		result, err := inventoryClient.Inventory.GetNextSteps(context.Background(), &params)
 		if err != nil {

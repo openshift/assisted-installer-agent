@@ -31,7 +31,7 @@ func readSystemUUID() *strfmt.UUID {
 }
 
 
-func readMotherboadSerial() *strfmt.UUID {
+func readMotherboardSerial() *strfmt.UUID {
 	value := getDmiValue("baseboard-serial-number")
 	if value == "" {
 		log.Warn("Could not find motherboard serial number")
@@ -42,7 +42,7 @@ func readMotherboadSerial() *strfmt.UUID {
 
 func ReadId() *strfmt.UUID {
 
-	ret := readMotherboadSerial()
+	ret := readMotherboardSerial()
 	if ret == nil {
 		ret = readSystemUUID()
 	}

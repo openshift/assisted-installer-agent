@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	TOTAL_LABLE = "total"
-	USED_LABLE = "used"
-	FREE_LABLE = "free"
-	SHARED_LABLE = "shared"
-	BUFF_CACHE_LABLE = "buff/cache"
-	AVAILABLE_LABLE = "available"
+	TOTAL_LABEL = "total"
+	USED_LABEL = "used"
+	FREE_LABEL = "free"
+	SHARED_LABEL = "shared"
+	BUFF_CACHE_LABEL = "buff/cache"
+	AVAILABLE_LABEL = "available"
 )
 
 func readHeader(header string) map[int] string {
@@ -34,7 +34,7 @@ func ReadMemory() []*models.Memory {
 	}
 	lines := strings.Split(string(bytes), "\n")
 	if len(lines) == 0 {
-		log.Warnf("ReadMemoey: Missing lines")
+		log.Warnf("ReadMemory: Missing lines")
 		return nil
 	}
 	ret := make([]*models.Memory, 0)
@@ -49,23 +49,23 @@ func ReadMemory() []*models.Memory {
 			case 0:
 				minfo.Name = token[:len(token) -1]
 			default:
-				lable, ok := headerMap[start + len(token) - 1]
+				label, ok := headerMap[start + len(token) - 1]
 				if !ok {
 					continue
 				}
 				value, _  := strconv.ParseInt(token, 10, 64)
-				switch lable {
-				case TOTAL_LABLE:
+				switch label {
+				case TOTAL_LABEL:
 					minfo.Total = value
-				case USED_LABLE:
+				case USED_LABEL:
 					minfo.Used = value
-				case FREE_LABLE:
+				case FREE_LABEL:
 					minfo.Free = value
-				case SHARED_LABLE:
+				case SHARED_LABEL:
 					minfo.Shared = value
-				case BUFF_CACHE_LABLE:
+				case BUFF_CACHE_LABEL:
 					minfo.BuffCached = value
-				case AVAILABLE_LABLE:
+				case AVAILABLE_LABEL:
 					minfo.Available = value
 				}
 			}

@@ -9,30 +9,28 @@ import (
 )
 
 const (
-	NAME_LABLE = "NAME"
-	MAJ_MIN_LABLE = "MAJ:MIN"
-	RM_LABLE = "RM"
-	SIZE_LABLE = "SIZE"
-	RO_LABLE = "RO"
-	TYPE_LABLE = "TYPE"
-	MOUNTPOINT_LABLE = "MOUNTPOINT"
-	FSTYPE_LABLE = "FSTYPE"
+	NAME_LABEL = "NAME"
+	MAJ_MIN_LABEL = "MAJ:MIN"
+	RM_LABEL = "RM"
+	SIZE_LABEL = "SIZE"
+	RO_LABEL = "RO"
+	TYPE_LABEL = "TYPE"
+	MOUNTPOINT_LABEL = "MOUNTPOINT"
+	FSTYPE_LABEL = "FSTYPE"
 	LEFT_ALIGHNMENT = "left"
 	RIGHT_ALIGNMENT = "right"
 	COLON_ALIGNMENT = "colon"
 )
 
-
-
 var lables = map[string] string {
-	NAME_LABLE: LEFT_ALIGHNMENT,
-	MAJ_MIN_LABLE: COLON_ALIGNMENT,
-	RM_LABLE: RIGHT_ALIGNMENT,
-	SIZE_LABLE: RIGHT_ALIGNMENT,
-	RO_LABLE: RIGHT_ALIGNMENT,
-	TYPE_LABLE: LEFT_ALIGHNMENT,
-	MOUNTPOINT_LABLE: LEFT_ALIGHNMENT,
-	FSTYPE_LABLE: LEFT_ALIGHNMENT,
+	NAME_LABEL: LEFT_ALIGHNMENT,
+	MAJ_MIN_LABEL: COLON_ALIGNMENT,
+	RM_LABEL: RIGHT_ALIGNMENT,
+	SIZE_LABEL: RIGHT_ALIGNMENT,
+	RO_LABEL: RIGHT_ALIGNMENT,
+	TYPE_LABEL: LEFT_ALIGHNMENT,
+	MOUNTPOINT_LABEL: LEFT_ALIGHNMENT,
+	FSTYPE_LABEL: LEFT_ALIGHNMENT,
 }
 
 func mapHeader(header string) map[int]string {
@@ -87,33 +85,33 @@ func ReadBlockDevices() [] *models.BlockDevice {
 		}
 		binfo := models.BlockDevice{}
 		for token, start := nextToken(line, 0) ; start < len(line) ; token, start = nextToken(line, start + len(token)) {
-			lable, ok := headersMap[start]
+			label, ok := headersMap[start]
 			if !ok {
-				lable, ok = headersMap[start + len(token) -1]
+				label, ok = headersMap[start + len(token) -1]
 			}
 			if !ok {
 				colonIndex := strings.Index(token, ":")
-				lable, ok = headersMap[start + colonIndex]
+				label, ok = headersMap[start + colonIndex]
 			}
 			if !ok {
 				continue
 			}
-			switch lable {
-			case NAME_LABLE:
+			switch label {
+			case NAME_LABEL:
 				binfo.Name = token
-			case FSTYPE_LABLE:
+			case FSTYPE_LABEL:
 				binfo.Fstype = token
-			case TYPE_LABLE:
+			case TYPE_LABEL:
 				binfo.DeviceType = token
-			case MOUNTPOINT_LABLE:
+			case MOUNTPOINT_LABEL:
 				binfo.Mountpoint = token
-			case SIZE_LABLE:
+			case SIZE_LABEL:
 				binfo.Size, _ = strconv.ParseInt(token, 10, 64)
-			case RO_LABLE:
+			case RO_LABEL:
 				binfo.ReadOnly = token != "0"
-			case RM_LABLE:
+			case RM_LABEL:
 				binfo.RemovableDevice, _ = strconv.ParseInt(token, 10, 64)
-			case MAJ_MIN_LABLE:
+			case MAJ_MIN_LABEL:
 				majMinSplit := strings.Split(token, ":")
 				if len(majMinSplit) == 2 {
 					binfo.MajorDeviceNumber, _ = strconv.ParseInt(majMinSplit[0], 10, 64)

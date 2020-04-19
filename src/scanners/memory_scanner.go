@@ -17,16 +17,46 @@ const (
 	AVAILABLE_LABEL = "available"
 )
 
-func readHeader(header string) map[int] string {
-	ret := make(map[int]string)
-	for token, start := nextToken(header, 0) ; start < len(header) ; token, start = nextToken(header, start + len(token)) {
-		ret[start + len(token) -1] = token
+type MemoryInfo struct {
+	Start int
+	End   int
+	Label string
+}
+
+func nextMemHeaderLabel(line string, start int) (label string, begin int, end int) {
+	label = ""
+	end = start
+	for ; end < len(line) && line[end] == ' ' ; end++ {
+	}
+	for ; end < len(line) && line[end] != ' '; end++ {
+		label = label + string(line[end])
+	}
+	return label, start, end
+}
+
+
+func readHeader(header string) []*MemoryInfo {
+	ret := make([]*MemoryInfo, 0)
+	for token, start, end := nextMemHeaderLabel(header, 0) ; start < len(header) ; token, start, end = nextMemHeaderLabel(header, end) {
+		ret = append(ret, &MemoryInfo{
+			Start: start,
+			End:   end,
+			Label: token,
+		})
 	}
 	return ret
 }
 
+func max(x,y int) int {
+	if x > y {
+		return x
+	} else {
+		return y
+	}
+}
+
 func ReadMemory() []*models.Memory {
-	cmd := exec.Command("free")
+	cmd := exec.Command("free", "-b")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Warnf("Error running free: %s", err.Error())
@@ -38,36 +68,37 @@ func ReadMemory() []*models.Memory {
 		return nil
 	}
 	ret := make([]*models.Memory, 0)
-	headerMap := readHeader(lines[0])
+	headerLabels := readHeader(lines[0])
 	for _, line := range lines[1:] {
 		if line == "" || strings.HasPrefix(line, "-") {
 			continue
 		}
 		minfo := &models.Memory{}
-		for token, start := nextToken(line, 0) ; start < len(line) ; token, start = nextToken(line, start + len(token)) {
-			switch start {
-			case 0:
-				minfo.Name = token[:len(token) -1]
-			default:
-				label, ok := headerMap[start + len(token) - 1]
-				if !ok {
-					continue
-				}
-				value, _  := strconv.ParseInt(token, 10, 64)
-				switch label {
-				case TOTAL_LABEL:
-					minfo.Total = value
-				case USED_LABEL:
-					minfo.Used = value
-				case FREE_LABEL:
-					minfo.Free = value
-				case SHARED_LABEL:
-					minfo.Shared = value
-				case BUFF_CACHE_LABEL:
-					minfo.BuffCached = value
-				case AVAILABLE_LABEL:
-					minfo.Available = value
-				}
+		name, _ := nextToken(line, 0)
+		minfo.Name = name[:len(name) -1]
+		minStart := len(name)
+		for _, m := range headerLabels{
+			if m.End > len(line) {
+				continue
+			}
+			token := strings.TrimSpace(line[max(minStart, m.Start): m.End])
+			if token == "" {
+				continue
+			}
+			value, _  := strconv.ParseInt(token, 10, 64)
+			switch m.Label {
+			case TOTAL_LABEL:
+				minfo.Total = value
+			case USED_LABEL:
+				minfo.Used = value
+			case FREE_LABEL:
+				minfo.Free = value
+			case SHARED_LABEL:
+				minfo.Shared = value
+			case BUFF_CACHE_LABEL:
+				minfo.BuffCached = value
+			case AVAILABLE_LABEL:
+				minfo.Available = value
 			}
 		}
 		ret = append(ret , minfo)

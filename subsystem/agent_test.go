@@ -83,7 +83,7 @@ var _ = Describe("Agent tests", func() {
 		time.Sleep(1 * time.Second)
 		verifyRegisterRequest()
 		verifyGetNextRequest(hostID, true)
-		expectedReply := &EqualReply{
+		expectedReply := &EqualReplyVerifier{
 			Error:    fmt.Sprintf("Unexpected step type: %s", stepType),
 			ExitCode: -1,
 			Output:   "",
@@ -119,13 +119,93 @@ var _ = Describe("Agent tests", func() {
 		time.Sleep(1 * time.Second)
 		verifyRegisterRequest()
 		verifyGetNextRequest(hostID, true)
-		expectedReply := &EqualReply{
+		expectedReply := &EqualReplyVerifier{
 			Error:    "",
 			ExitCode: 0,
 			Output:   "Hello world\n",
 			StepID:   stepID,
 		}
 		verifyStepReplyRequest(hostID, expectedReply)
+		err = deleteStub(registerStubID)
+		Expect(err).NotTo(HaveOccurred())
+		err = deleteStub(nextStepsStubID)
+		Expect(err).NotTo(HaveOccurred())
+		err = deleteStub(replyStubID)
+		Expect(err).NotTo(HaveOccurred())
+	})
+	It("Hardware info", func() {
+		hostID := nextHostID()
+		registerStubID, err := addRegisterStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		stepID := "hardware-info-step"
+		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{
+			StepType:models.StepTypeHardwareInfo,
+			StepID:stepID,
+		})
+		Expect(err).NotTo(HaveOccurred())
+		replyStubID, err := addStepReplyStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(1 * time.Second)
+		verifyRegisterRequest()
+		verifyGetNextRequest(hostID, true)
+		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
+		err = deleteStub(registerStubID)
+		Expect(err).NotTo(HaveOccurred())
+		err = deleteStub(nextStepsStubID)
+		Expect(err).NotTo(HaveOccurred())
+		err = deleteStub(replyStubID)
+		Expect(err).NotTo(HaveOccurred())
+	})
+	It("Multiple steps", func() {
+		hostID := nextHostID()
+		registerStubID, err := addRegisterStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		nextStepsStubID, err := addNextStepStub(hostID,
+			&models.Step{
+				StepType:models.StepTypeExecute,
+				StepID:"echo-step-1",
+				Command: "echo",
+				Args:[]string {
+					"Hello",
+					"world",
+				},
+			},
+			&models.Step{
+				StepType:models.StepTypeExecute,
+				StepID:"echo-step-2",
+				Command: "echo",
+				Args:[]string {
+					"Bye",
+					"bye",
+					"world",
+				},
+			},
+			&models.Step {
+				StepType:models.StepTypeHardwareInfo,
+				StepID:"hardware-info-step",
+			},
+		)
+		Expect(err).NotTo(HaveOccurred())
+		replyStubID, err := addStepReplyStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(1 * time.Second)
+		verifyRegisterRequest()
+		verifyGetNextRequest(hostID, true)
+		verifyStepReplyRequest(hostID, &EqualReplyVerifier{
+			Error:    "",
+			ExitCode: 0,
+			Output:   "Hello world\n",
+			StepID:   "echo-step-1",
+		})
+		verifyStepReplyRequest(hostID, &EqualReplyVerifier{
+			Error:    "",
+			ExitCode: 0,
+			Output:   "Bye bye world\n",
+			StepID:   "echo-step-2",
+		})
+		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
 		err = deleteStub(registerStubID)
 		Expect(err).NotTo(HaveOccurred())
 		err = deleteStub(nextStepsStubID)
@@ -210,10 +290,24 @@ type StepVerifier interface {
 	verify(actualReply *models.StepReply) bool
 }
 
-type EqualReply models.StepReply
+type EqualReplyVerifier models.StepReply
 
-func (e *EqualReply) verify(actualReply *models.StepReply) bool {
+func (e *EqualReplyVerifier) verify(actualReply *models.StepReply) bool {
 	return *(*models.StepReply)(e) == *actualReply
+}
+
+type HardwareInfoVerifier struct{}
+
+func (h *HardwareInfoVerifier) verify(actualReply *models.StepReply) bool {
+	if actualReply.ExitCode != 0 {
+		return false
+	}
+	var hardwareInfo models.Introspection
+	err := json.Unmarshal([]byte(actualReply.Output), &hardwareInfo)
+	if err != nil {
+		return false
+	}
+	return len(hardwareInfo.Memory) > 0 && hardwareInfo.CPU != nil &&hardwareInfo.CPU.Cpus > 0 && len(hardwareInfo.BlockDevices) > 0 && len(hardwareInfo.Nics) > 0
 }
 
 func verifyStepReplyRequest(hostID string, verifier StepVerifier) {
@@ -226,7 +320,7 @@ func verifyStepReplyRequest(hostID string, verifier StepVerifier) {
 			return
 		}
 	}
-	Expect(true).Should(BeFalse(), "Expected step not found")
+	ExpectWithOffset(1, true).Should(BeFalse(), "Expected step not found")
 }
 
 func getRegisterURL() string {

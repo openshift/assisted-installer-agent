@@ -1,0 +1,17 @@
+version: '3'
+services:
+  agent:
+      image: quay.io/oamizur/agent
+      entrypoint: ["/usr/bin/agent","--host","127.0.0.1","--port","8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
+      volumes:
+        - ./logs:/var/log
+        - /var/run/docker.sock:/var/run/docker.sock
+      privileged: true
+      network_mode: "host"
+      container_name: agent_container
+  wiremock:
+    image: "rodolpheche/wiremock"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./wiremock:/home/wiremock

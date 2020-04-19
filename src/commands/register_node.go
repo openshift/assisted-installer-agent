@@ -30,7 +30,6 @@ func RegisterHostWithRetry() {
 	for {
 		registerResult, err := bmInventory.Inventory.RegisterHost(context.Background(), createRegisterParams())
 		if err == nil {
-			log.Infof("Payload is %+v", registerResult.Payload)
 			CurrentHost = registerResult.Payload
 			return
 		}

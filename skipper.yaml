@@ -9,7 +9,7 @@ containers:
     hardware_info: Dockerfile.hardware_info
 volumes:
     - $HOME/.cache/go-build:$HOME/.cache/go-build
-    - $HOME/go/pkg/mod:/go/pkg/mod
+    - $HOME/go/pkg:/go/pkg
     - $HOME/.docker:$HOME/.docker
 env:
     SERVICE: $SERVICE

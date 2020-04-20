@@ -467,28 +467,6 @@ func deleteAllStubs() error {
 	return err
 }
 
-func findRequest(url, method string) (found bool, matched bool, err error) {
-	resp,err := http.Get("http://127.0.0.1:8080/__admin/requests")
-	if err != nil {
-		return false, false, err
-	}
-	requests := &Requests{}
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return false, false, err
-	}
-	err = json.Unmarshal(b , &requests)
-	if err != nil {
-		return false, false, err
-	}
-	for _, r := range requests.Requests {
-		if r.Request.URL == url && r.Request.Method == method {
-			return true, r.WasMatched, nil
-		}
-	}
-	return false, false, nil
-}
-
 func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
 	resp,err := http.Get("http://127.0.0.1:8080/__admin/requests")
 	if err != nil {

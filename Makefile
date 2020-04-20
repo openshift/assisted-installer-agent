@@ -21,7 +21,7 @@ connectivity-check-build : src/connectivity_check/main/main.go
 	CGO_ENABLED=0 go build -o build/connectivity_check src/connectivity_check/main/main.go
 
 clean:
-	rm -rf build
+	rm -rf build subsystem/logs
 
 build-image: build
 	docker build -f Dockerfile.agent . -t $(AGENT)

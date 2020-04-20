@@ -64,6 +64,7 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		time.Sleep(time.Second * 6)
 		verifyRegisterRequest()
+		verifyRegistersSameID()
 		verifyGetNextRequest(hostID, true)
 		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
 		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
@@ -264,18 +265,34 @@ type Requests struct {
 	Requests []*RequestOccurence
 }
 
+func jsonToMap(str string) map[string] interface{} {
+	m := make(map[string]interface{})
+	Expect(json.Unmarshal([]byte(str), &m)).ShouldNot(HaveOccurred())
+	return m
+}
+
 func verifyRegisterRequest() {
 	reqs, err := findAllMatchingRequests(getRegisterURL(), "POST")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(reqs)).Should(BeNumerically(">", 0))
-	foundReq := reqs[0]
-	m := make(map[string]interface{})
-	Expect(json.Unmarshal([]byte(foundReq.Request.Body), &m)).ShouldNot(HaveOccurred())
+	m := jsonToMap(reqs[0].Request.Body)
 	v, ok := m["hostId"]
 	Expect(ok).Should(BeTrue())
 	Expect(v).Should(MatchRegexp("[0-9a-f]{8}-?(?:[0-9a-f]{4}-?){3}[0-9a-f]{12}"))
 }
 
+func verifyRegistersSameID() {
+	reqs, err := findAllMatchingRequests(getRegisterURL(), "POST")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(len(reqs)).Should(BeNumerically(">", 1))
+	m1 := jsonToMap(reqs[0].Request.Body)
+	m2 := jsonToMap(reqs[1].Request.Body)
+	host1ID, ok1 := m1["hostId"]
+	host2ID, ok2 := m2["hostId"]
+	Expect(ok1).Should(BeTrue())
+	Expect(ok2).Should(BeTrue())
+	Expect(host1ID).Should(Equal(host2ID))
+}
 func verifyGetNextRequest(hostID string, matchExpected bool) {
 	reqs, err := findAllMatchingRequests(getNextStepsURL(hostID), "GET")
 	Expect(err).NotTo(HaveOccurred())

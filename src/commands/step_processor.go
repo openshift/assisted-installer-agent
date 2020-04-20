@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/ori-amizur/introspector/src/util"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -11,7 +12,6 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/ori-amizur/introspector/src/client"
 	"github.com/ori-amizur/introspector/src/config"
-	log "github.com/sirupsen/logrus"
 )
 
 type HandlerType func(string, []string) (string, string, int)
@@ -22,8 +22,9 @@ var stepType2Handler = map[models.StepType]HandlerType{
 	models.StepTypeExecute:           Execute,
 }
 
-func sendStepReply(stepID, output, errStr string, exitCode int) {
-	log.Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
+func sendStepReply(ctx context.Context, stepID, output, errStr string, exitCode int) {
+	logger := util.ToLogger(ctx)
+	logger.Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
 	params := inventory.PostStepReplyParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
@@ -38,25 +39,25 @@ func sendStepReply(stepID, output, errStr string, exitCode int) {
 	inventoryClient := client.CreateBmInventoryClient()
 	_, err := inventoryClient.Inventory.PostStepReply(context.Background(), &params)
 	if err != nil {
-		log.Warnf("Error posting step reply: %s", err.Error())
+		logger.Warnf("Error posting step reply: %s", err.Error())
 	}
 }
 
-func handleSingleStep(stepID string, command string, args []string, handler HandlerType) {
+func handleSingleStep(ctx context.Context, stepID string, command string, args []string, handler HandlerType) {
 	output, errStr, exitCode := handler(command, args)
-	sendStepReply(stepID, output, errStr, exitCode)
+	sendStepReply(ctx, stepID, output, errStr, exitCode)
 }
 
-func handleSteps(steps models.Steps) {
+func handleSteps(ctx context.Context, steps models.Steps) {
 	for _, step := range steps {
 		handler, ok := stepType2Handler[step.StepType]
 		if !ok {
 			errStr := fmt.Sprintf("Unexpected step type: %s", step.StepType)
-			log.Warn(errStr)
-			sendStepReply(step.StepID, "", errStr, -1)
+			util.ToLogger(ctx).Warn(errStr)
+			sendStepReply(ctx, step.StepID, "", errStr, -1)
 			continue
 		}
-		go handleSingleStep(step.StepID, step.Command, step.Args, handler)
+		go handleSingleStep(ctx, step.StepID, step.Command, step.Args, handler)
 	}
 }
 
@@ -67,12 +68,14 @@ func ProcessSteps() {
 			HostID:    *CurrentHost.ID,
 			ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 		}
-		log.Info("Query for next steps")
-		result, err := inventoryClient.Inventory.GetNextSteps(context.Background(), &params)
+		ctx := client.NewContext()
+		logger := util.ToLogger(ctx)
+		logger.Info("Query for next steps")
+		result, err := inventoryClient.Inventory.GetNextSteps(ctx, &params)
 		if err != nil {
-			log.Warnf("Could not query next steps: %s", err.Error())
+			logger.Warnf("Could not query next steps: %s", err.Error())
 		} else {
-			handleSteps(result.Payload)
+			handleSteps(ctx, result.Payload)
 		}
 		time.Sleep(time.Duration(config.GlobalConfig.IntervalSecs) * time.Second)
 	}

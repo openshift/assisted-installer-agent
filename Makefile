@@ -35,7 +35,7 @@ push: build-image subsystem
 	docker push $(DMIDECODE)
 	docker push $(HARDWARE_INFO)
 
-subsystem:
+subsystem: build-image
 	cd subsystem; docker-compose up -d
 	go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v -ginkgo.skip="system-test" || ( cd subsystem; docker-compose down && /bin/false)
 	cd subsystem; docker-compose down

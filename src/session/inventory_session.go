@@ -1,4 +1,4 @@
-package client
+package session
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"github.com/filanov/bm-inventory/client"
 	"github.com/filanov/bm-inventory/pkg/requestid"
 	"github.com/ori-amizur/introspector/src/config"
-	"github.com/ori-amizur/introspector/src/util"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
@@ -16,7 +15,26 @@ func createUrl() string {
 	return fmt.Sprintf("http://%s:%d/%s", config.GlobalConfig.TargetHost, config.GlobalConfig.TargetPort, client.DefaultBasePath)
 }
 
-func CreateBmInventoryClient() *client.BMInventory {
+
+type InventorySession struct {
+	ctx context.Context
+	logger logrus.FieldLogger
+	client *client.BMInventory
+}
+
+func (i *InventorySession) Context() context.Context {
+	return i.ctx
+}
+
+func (i *InventorySession) Logger() logrus.FieldLogger {
+	return i.logger
+}
+
+func (i *InventorySession) Client() *client.BMInventory {
+	return i.client
+}
+
+func createBmInventoryClient() *client.BMInventory {
 	clientConfig := client.Config{}
 	clientConfig.URL,_  = url.Parse(createUrl())
 	clientConfig.Transport = requestid.Transport(http.DefaultTransport)
@@ -24,8 +42,12 @@ func CreateBmInventoryClient() *client.BMInventory {
 	return bmInventory
 }
 
-func NewContext() context.Context {
+func New() *InventorySession {
 	id := requestid.NewID()
-	ctx := util.WithLogger(context.Background(), requestid.RequestIDLogger(logrus.StandardLogger(), id))
-	return requestid.ToContext(ctx, id)
+	ret := InventorySession{
+		ctx:    requestid.ToContext(context.Background(), id),
+		logger: requestid.RequestIDLogger(logrus.StandardLogger(), id),
+		client: createBmInventoryClient(),
+	}
+	return &ret
 }

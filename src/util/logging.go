@@ -1,7 +1,6 @@
 package util
 
 import (
-	"context"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -22,21 +21,4 @@ func setLoggingOnLogger(name string, logger *log.Logger) {
 
 func SetLogging(name string) {
 	setLoggingOnLogger(name, log.StandardLogger())
-}
-
-const (
-	loggerKey = "logger-key"
-)
-
-func WithLogger(ctx context.Context, logger log.FieldLogger) context.Context {
-	return context.WithValue(ctx, loggerKey, logger)
-}
-
-func ToLogger(ctx context.Context) log.FieldLogger {
-	logger := ctx.Value(loggerKey)
-	if logger == nil {
-		logger = log.New()
-		log.Warn("Did not found logger in context")
-	}
-	return logger.(log.FieldLogger)
 }

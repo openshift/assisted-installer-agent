@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/filanov/bm-inventory/client/inventory"
+	"github.com/filanov/bm-inventory/client/installer"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/ori-amizur/introspector/src/config"
 	"github.com/ori-amizur/introspector/src/session"
@@ -31,7 +31,7 @@ func newSession() *stepSession {
 
 func (s *stepSession) sendStepReply(stepID, output, errStr string, exitCode int) {
 	s.Logger().Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
-	params := inventory.PostStepReplyParams{
+	params := installer.PostStepReplyParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 	}
@@ -42,7 +42,7 @@ func (s *stepSession) sendStepReply(stepID, output, errStr string, exitCode int)
 		Error:    errStr,
 	}
 	params.Reply = &reply
-	_, err := s.Client().Inventory.PostStepReply(s.Context(), &params)
+	_, err := s.Client().Installer.PostStepReply(s.Context(), &params)
 	if err != nil {
 		s.Logger().Warnf("Error posting step reply: %s", err.Error())
 	}
@@ -67,12 +67,12 @@ func (s *stepSession) handleSteps(steps models.Steps) {
 }
 
 func (s *stepSession) processSingleSession() {
-	params := inventory.GetNextStepsParams{
+	params := installer.GetNextStepsParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 	}
 	s.Logger().Info("Query for next steps")
-	result, err := s.Client().Inventory.GetNextSteps(s.Context(), &params)
+	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)
 	if err != nil {
 		s.Logger().Warnf("Could not query next steps: %s", err.Error())
 	} else {

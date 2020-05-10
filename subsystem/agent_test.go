@@ -276,7 +276,7 @@ func verifyRegisterRequest() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(reqs)).Should(BeNumerically(">", 0))
 	m := jsonToMap(reqs[0].Request.Body)
-	v, ok := m["hostId"]
+	v, ok := m["host_id"]
 	Expect(ok).Should(BeTrue())
 	Expect(v).Should(MatchRegexp("[0-9a-f]{8}-?(?:[0-9a-f]{4}-?){3}[0-9a-f]{12}"))
 }
@@ -287,8 +287,8 @@ func verifyRegistersSameID() {
 	Expect(len(reqs)).Should(BeNumerically(">", 1))
 	m1 := jsonToMap(reqs[0].Request.Body)
 	m2 := jsonToMap(reqs[1].Request.Body)
-	host1ID, ok1 := m1["hostId"]
-	host2ID, ok2 := m2["hostId"]
+	host1ID, ok1 := m1["host_id"]
+	host2ID, ok2 := m2["host_id"]
 	Expect(ok1).Should(BeTrue())
 	Expect(ok2).Should(BeTrue())
 	Expect(host1ID).Should(Equal(host2ID))
@@ -341,15 +341,15 @@ func verifyStepReplyRequest(hostID string, verifier StepVerifier) {
 }
 
 func getRegisterURL() string {
-	return fmt.Sprintf("/api/bm-inventory/v1/clusters/%s/hosts", ClusterID)
+	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts", ClusterID)
 }
 
 func getNextStepsURL(hostID string) string {
-	return fmt.Sprintf("/api/bm-inventory/v1/clusters/%s/hosts/%s/instructions", ClusterID, hostID)
+	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", ClusterID, hostID)
 }
 
 func getStepReplyURL(hostID string) string {
-	return fmt.Sprintf("/api/bm-inventory/v1/clusters/%s/hosts/%s/instructions", ClusterID, hostID)
+	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", ClusterID, hostID)
 }
 
 func addStub(stub *StubDefinition) (string, error) {
@@ -380,10 +380,8 @@ func addRegisterStub(hostID string) (string, error) {
 	hostUUID := strfmt.UUID(hostID)
 	hostKind := "host"
 	returnedHost := &models.Host{
-		Base:             models.Base{
-			ID:   &hostUUID,
-			Kind: &hostKind,
-		},
+		ID:   &hostUUID,
+		Kind: &hostKind,
 	}
 	b, err := json.Marshal(&returnedHost)
 	if err != nil {

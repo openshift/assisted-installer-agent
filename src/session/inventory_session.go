@@ -19,7 +19,7 @@ func createUrl() string {
 type InventorySession struct {
 	ctx context.Context
 	logger logrus.FieldLogger
-	client *client.BMInventory
+	client *client.AssistedInstall
 }
 
 func (i *InventorySession) Context() context.Context {
@@ -30,11 +30,11 @@ func (i *InventorySession) Logger() logrus.FieldLogger {
 	return i.logger
 }
 
-func (i *InventorySession) Client() *client.BMInventory {
+func (i *InventorySession) Client() *client.AssistedInstall {
 	return i.client
 }
 
-func createBmInventoryClient() *client.BMInventory {
+func createBmInventoryClient() *client.AssistedInstall {
 	clientConfig := client.Config{}
 	clientConfig.URL,_  = url.Parse(createUrl())
 	clientConfig.Transport = requestid.Transport(http.DefaultTransport)

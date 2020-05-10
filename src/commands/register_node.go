@@ -4,7 +4,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"time"
 
-	"github.com/filanov/bm-inventory/client/inventory"
+	"github.com/filanov/bm-inventory/client/installer"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/ori-amizur/introspector/src/config"
 	"github.com/ori-amizur/introspector/src/scanners"
@@ -13,8 +13,8 @@ import (
 
 var CurrentHost *models.Host
 
-func createRegisterParams() *inventory.RegisterHostParams {
-	ret := &inventory.RegisterHostParams{
+func createRegisterParams() *installer.RegisterHostParams {
+	ret := &installer.RegisterHostParams{
 		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
 		NewHostParams: &models.HostCreateParams{
 			HostID:    scanners.ReadId(),
@@ -26,7 +26,7 @@ func createRegisterParams() *inventory.RegisterHostParams {
 func RegisterHostWithRetry() {
 	for {
 		s := session.New()
-		registerResult, err := s.Client().Inventory.RegisterHost(s.Context(), createRegisterParams())
+		registerResult, err := s.Client().Installer.RegisterHost(s.Context(), createRegisterParams())
 		if err == nil {
 			CurrentHost = registerResult.Payload
 			return

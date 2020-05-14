@@ -1,0 +1,4 @@
+FROM registry.fedoraproject.org/fedora-minimal:latest
+RUN microdnf install dmidecode ipmitool lshw biosdevname && microdnf clean all
+ADD build/inventory /usr/bin/inventory
+CMD ["/usr/bin/inventory"]

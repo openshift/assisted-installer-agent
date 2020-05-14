@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ReadCpus() *models.CPU {
+func ReadCpus() *models.CPUDetails {
 	cmd := exec.Command("lscpu")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -18,7 +18,7 @@ func ReadCpus() *models.CPU {
 	}
 	lines := strings.Split(string(bytes), "\n")
 	r := regexp.MustCompile("^([^:]+):[ \t]+([^ \t].*)$")
-	ret := &models.CPU{}
+	ret := &models.CPUDetails{}
 	for _ , line := range lines {
 		matches := r.FindStringSubmatch(line)
 		if len(matches) == 3 {

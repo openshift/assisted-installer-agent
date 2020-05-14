@@ -12,9 +12,10 @@ func main() {
 	util.SetLogging("agent")
 	config.ProcessArgs()
 	if config.GlobalConfig.IsText {
-		fmt.Printf("%s\n", string(commands.CreateHostInfo()))
+		o, _, _ := commands.GetInventory("")
+		fmt.Print(o)
 	} else if config.GlobalConfig.ConnectivityParams != "" {
-		output, errStr, exitCode := commands.ConnectivityCheck("", []string{config.GlobalConfig.ConnectivityParams})
+		output, errStr, exitCode := commands.ConnectivityCheck("", config.GlobalConfig.ConnectivityParams)
 		if exitCode != 0 {
 			fmt.Println(errStr)
 		} else {

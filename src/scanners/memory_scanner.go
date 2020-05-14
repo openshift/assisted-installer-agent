@@ -55,7 +55,7 @@ func max(x,y int) int {
 	}
 }
 
-func ReadMemory() []*models.Memory {
+func ReadMemory() []*models.MemoryDetails {
 	cmd := exec.Command("free", "-b")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -67,13 +67,13 @@ func ReadMemory() []*models.Memory {
 		log.Warnf("ReadMemory: Missing lines")
 		return nil
 	}
-	ret := make([]*models.Memory, 0)
+	ret := make([]*models.MemoryDetails, 0)
 	headerLabels := readHeader(lines[0])
 	for _, line := range lines[1:] {
 		if line == "" || strings.HasPrefix(line, "-") {
 			continue
 		}
-		minfo := &models.Memory{}
+		minfo := &models.MemoryDetails{}
 		name, _ := nextToken(line, 0)
 		minfo.Name = name[:len(name) -1]
 		minStart := len(name)

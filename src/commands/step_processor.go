@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/ori-amizur/introspector/src/util"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -12,12 +13,13 @@ import (
 	"github.com/ori-amizur/introspector/src/session"
 )
 
-type HandlerType func(string, []string) (string, string, int)
+type HandlerType func(string, ...string) (stdout string, stderr string, exitCode int)
 
 var stepType2Handler = map[models.StepType]HandlerType{
 	models.StepTypeHardwareInfo:      GetHardwareInfo,
 	models.StepTypeConnectivityCheck: ConnectivityCheck,
-	models.StepTypeExecute:           Execute,
+	models.StepTypeExecute:           util.Execute,
+	models.StepTypeInventory:         GetInventory,
 }
 
 type stepSession struct {
@@ -49,8 +51,8 @@ func (s *stepSession) sendStepReply(stepID, output, errStr string, exitCode int)
 }
 
 func (s *stepSession) handleSingleStep(stepID string, command string, args []string, handler HandlerType) {
-	output, errStr, exitCode := handler(command, args)
-	s.sendStepReply(stepID, output, errStr, exitCode)
+	stdout, stderr, exitCode := handler(command, args...)
+	s.sendStepReply(stepID, stdout, stderr, exitCode)
 }
 
 func (s *stepSession) handleSteps(steps models.Steps) {

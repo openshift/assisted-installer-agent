@@ -13,7 +13,7 @@ type Config struct {
 	ClusterID          string
 	IntervalSecs       int
 	ConnectivityParams string
-	DmidecodeImage     string
+	InventoryImage	   string
 }
 
 var GlobalConfig Config
@@ -31,7 +31,7 @@ func ProcessArgs()  {
 	flag.StringVar(&ret.ClusterID, "cluster-id", "default-cluster", "The value of the cluster-id")
 	flag.IntVar(&ret.IntervalSecs, "interval", 60, "Interval between steps polling in seconds")
 	flag.StringVar(&ret.ConnectivityParams, "connectivity", "", "Test connectivity as output string")
-	flag.StringVar(&ret.DmidecodeImage, "dmidecode-image", "quay.io/oamizur/dmidecode","The image of dmidecode")
+	flag.StringVar(&ret.InventoryImage, "inventory-image", "quay.io/oamizur/inventory","The image of inventory")
 	h :=  flag.Bool("help", false, "Help message")
 	flag.Parse()
 	if h != nil && *h {

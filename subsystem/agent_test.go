@@ -186,12 +186,16 @@ var _ = Describe("Agent tests", func() {
 				StepType:models.StepTypeHardwareInfo,
 				StepID:"hardware-info-step",
 			},
+			&models.Step{
+				StepType:models.StepTypeInventory,
+				StepID:"inventory-step",
+			},
 		)
 		Expect(err).NotTo(HaveOccurred())
 		replyStubID, err := addStepReplyStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(startAgent()).NotTo(HaveOccurred())
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 		verifyRegisterRequest()
 		verifyGetNextRequest(hostID, true)
 		verifyStepReplyRequest(hostID, &EqualReplyVerifier{
@@ -207,6 +211,7 @@ var _ = Describe("Agent tests", func() {
 			StepID:   "echo-step-2",
 		})
 		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
+		verifyStepReplyRequest(hostID, &InventoryVerifier{})
 		err = deleteStub(registerStubID)
 		Expect(err).NotTo(HaveOccurred())
 		err = deleteStub(nextStepsStubID)
@@ -325,6 +330,24 @@ func (h *HardwareInfoVerifier) verify(actualReply *models.StepReply) bool {
 		return false
 	}
 	return len(hardwareInfo.Memory) > 0 && hardwareInfo.CPU != nil &&hardwareInfo.CPU.Cpus > 0 && len(hardwareInfo.BlockDevices) > 0 && len(hardwareInfo.Nics) > 0
+}
+
+type InventoryVerifier struct{}
+
+func (i *InventoryVerifier) verify(actualReply *models.StepReply) bool {
+	if actualReply.ExitCode != 0 {
+		return false
+	}
+	var inventory models.Inventory
+	err := json.Unmarshal([]byte(actualReply.Output), &inventory)
+	if err != nil {
+		return false
+	}
+	return inventory.Memory != nil && inventory.Memory.UsableBytes > 0 && inventory.Memory.PhysicalBytes > 0 &&
+		inventory.CPU != nil && inventory.CPU.Count > 0 &&
+		len(inventory.Disks) > 0 &&
+		len(inventory.Interfaces) > 0 &&
+		inventory.Hostname != ""
 }
 
 func verifyStepReplyRequest(hostID string, verifier StepVerifier) {

@@ -5,7 +5,7 @@ containers:
     introspector-build: Dockerfile.introspector-build
     agent: Dockerfile.agent
     connectivity_check: Dockerfile.connectivity_check
-    dmidecode: Dockerfile.dmidecode
+    inventory: Dockerfile.inventory
     hardware_info: Dockerfile.hardware_info
 volumes:
     - $HOME/.cache/go-build:$HOME/.cache/go-build

@@ -57,3 +57,13 @@ jobs:
           dockerfile: Dockerfile.agent
           buildargs: GIT_REVISION
           tags: "stable,${{ env.GIT_REVISION }}"
+      - name: Publish inventory to Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.15
+        with:
+          name: inventory
+          username: ${{ secrets.OCPMETAL_USERNAME }}
+          password: ${{ secrets.OCPMETAL_PASSWORD }}
+          REGISTRY: 'quay.io/ocpmetal'
+          dockerfile: Dockerfile.inventory
+          buildargs: GIT_REVISION
+          tags: "stable,${{ env.GIT_REVISION }}"

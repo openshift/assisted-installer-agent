@@ -31,7 +31,7 @@ func ProcessArgs()  {
 	flag.StringVar(&ret.ClusterID, "cluster-id", "default-cluster", "The value of the cluster-id")
 	flag.IntVar(&ret.IntervalSecs, "interval", 60, "Interval between steps polling in seconds")
 	flag.StringVar(&ret.ConnectivityParams, "connectivity", "", "Test connectivity as output string")
-	flag.StringVar(&ret.InventoryImage, "inventory-image", "quay.io/oamizur/inventory","The image of inventory")
+	flag.StringVar(&ret.InventoryImage, "inventory-image", "quay.io/ocpmetal/inventory:stable","The image of inventory")
 	h :=  flag.Bool("help", false, "Help message")
 	flag.Parse()
 	if h != nil && *h {

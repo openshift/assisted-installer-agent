@@ -6,9 +6,12 @@ services:
       volumes:
         - ./logs:/var/log
         - /var/run/docker.sock:/var/run/docker.sock
+        - /run/systemd/journal/socket:/run/systemd/journal/socket
+        - /dev/log:/dev/log
       privileged: true
       network_mode: "host"
       container_name: agent_container
+
   wiremock:
     image: "rodolpheche/wiremock"
     ports:

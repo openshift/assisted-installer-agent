@@ -15,7 +15,7 @@ var CurrentHost *models.Host
 
 func createRegisterParams() *installer.RegisterHostParams {
 	ret := &installer.RegisterHostParams{
-		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
+		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		NewHostParams: &models.HostCreateParams{
 			HostID:    scanners.ReadId(),
 		},
@@ -32,6 +32,6 @@ func RegisterHostWithRetry() {
 			return
 		}
 		s.Logger().Warnf("Error registering host: %s", err.Error())
-		time.Sleep(time.Duration(config.GlobalConfig.IntervalSecs) * time.Second)
+		time.Sleep(time.Duration(config.GlobalAgentConfig.IntervalSecs) * time.Second)
 	}
 }

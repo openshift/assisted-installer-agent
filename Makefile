@@ -28,7 +28,7 @@ inventory-build : src/inventory
 clean:
 	rm -rf build subsystem/logs
 
-build-image: build
+build-image: unittest build
 	docker build -f Dockerfile.agent . -t $(AGENT)
 	docker build -f Dockerfile.connectivity_check . -t $(CONNECTIVITY_CHECK)
 	docker build -f Dockerfile.inventory . -t $(INVENTORY)

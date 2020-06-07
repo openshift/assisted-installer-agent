@@ -35,7 +35,7 @@ func (s *stepSession) sendStepReply(stepID, output, errStr string, exitCode int)
 	s.Logger().Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
 	params := installer.PostStepReplyParams{
 		HostID:    *CurrentHost.ID,
-		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
+		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 	}
 	reply := models.StepReply{
 		Output:   output,
@@ -71,7 +71,7 @@ func (s *stepSession) handleSteps(steps models.Steps) {
 func (s *stepSession) processSingleSession() {
 	params := installer.GetNextStepsParams{
 		HostID:    *CurrentHost.ID,
-		ClusterID: strfmt.UUID(config.GlobalConfig.ClusterID),
+		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 	}
 	s.Logger().Info("Query for next steps")
 	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)
@@ -87,6 +87,6 @@ func ProcessSteps() {
 	for {
 		s := newSession()
 		s.processSingleSession()
-		time.Sleep(time.Duration(config.GlobalConfig.IntervalSecs) * time.Second)
+		time.Sleep(time.Duration(config.GlobalAgentConfig.IntervalSecs) * time.Second)
 	}
 }

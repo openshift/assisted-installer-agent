@@ -3,7 +3,7 @@ name: image-push
 on:
   push:
     branches:
-      - eran/test
+      - master
 
 jobs:
   build:

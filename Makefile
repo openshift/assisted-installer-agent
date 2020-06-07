@@ -1,8 +1,8 @@
-TAG := $(or $(TAG),latest)
-AGENT := $(or ${AGENT},quay.io/oamizur/agent:$(TAG))
-CONNECTIVITY_CHECK := $(or ${CONNECTIVITY_CHECK},quay.io/oamizur/connectivity_check:$(TAG))
-INVENTORY := $(or ${INVENTORY},quay.io/oamizur/inventory:$(TAG))
-HARDWARE_INFO := $(or ${HARDWARE_INFO},quay.io/oamizur/hardware_info:$(TAG))
+TAG := $(or $(TAG),stable)
+AGENT := $(or ${AGENT},quay.io/ocpmetal/agent:$(TAG))
+CONNECTIVITY_CHECK := $(or ${CONNECTIVITY_CHECK},quay.io/ocpmetal/connectivity_check:$(TAG))
+INVENTORY := $(or ${INVENTORY},quay.io/ocpmetal/inventory:$(TAG))
+HARDWARE_INFO := $(or ${HARDWARE_INFO},quay.io/ocpmetal/hardware_info:$(TAG))
 
 all: build
 

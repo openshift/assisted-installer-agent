@@ -2,23 +2,23 @@ package inventory
 
 import (
 	"fmt"
-	"github.com/filanov/bm-inventory/models"
-	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
-)
 
+	"github.com/filanov/bm-inventory/models"
+	"github.com/sirupsen/logrus"
+)
 
 //go:generate mockery -name Interface -inpkg
 type Interface interface {
-	MTU()          int
-	Name()         string
+	MTU() int
+	Name() string
 	HardwareAddr() net.HardwareAddr
-	Flags()        net.Flags
-	Addrs()        ([]net.Addr, error)
-	IsPhysical()   bool
-	SpeedMbps()    int64
+	Flags() net.Flags
+	Addrs() ([]net.Addr, error)
+	IsPhysical() bool
+	SpeedMbps() int64
 }
 
 type NetworkInterface struct {
@@ -73,7 +73,7 @@ type interfaces struct {
 }
 
 func newInterfaces(dependencies IDependencies) *interfaces {
-	return &interfaces{dependencies:dependencies}
+	return &interfaces{dependencies: dependencies}
 }
 
 func (i *interfaces) hasCarrier(name string) bool {
@@ -103,7 +103,7 @@ func analyzeAddress(addr net.Addr) (isIpv4 bool, addrStr string, err error) {
 		return false, "", fmt.Errorf("Could not cast to *net.IPNet")
 	}
 	mask, _ := ipNet.Mask.Size()
-	addrStr = fmt.Sprintf("%s/%d",ipNet.IP.String(), mask)
+	addrStr = fmt.Sprintf("%s/%d", ipNet.IP.String(), mask)
 	isIpv4 = strings.Contains(addrStr, ".")
 	return
 }
@@ -116,7 +116,7 @@ func (i *interfaces) getBiosDevname(name string) string {
 	return strings.TrimSpace(o)
 }
 
-func getFlags(flags net.Flags) [] string {
+func getFlags(flags net.Flags) []string {
 	flagsStr := flags.String()
 	if flagsStr == "0" {
 		return make([]string, 0)
@@ -124,7 +124,6 @@ func getFlags(flags net.Flags) [] string {
 		return strings.Split(flagsStr, "|")
 	}
 }
-
 
 func (i *interfaces) getInterfaces() []*models.Interface {
 	ret := make([]*models.Interface, 0)
@@ -143,11 +142,11 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 			IPV6Addresses: make([]string, 0),
 			MacAddress:    in.HardwareAddr().String(),
 			Name:          in.Name(),
-			Mtu:		   int64(in.MTU()),
+			Mtu:           int64(in.MTU()),
 			Biosdevname:   i.getBiosDevname(in.Name()),
 			Product:       i.getDeviceField(in.Name(), "device"),
 			Vendor:        i.getDeviceField(in.Name(), "vendor"),
-			Flags: 		   getFlags(in.Flags()),
+			Flags:         getFlags(in.Flags()),
 			SpeedMbps:     in.SpeedMbps(),
 		}
 		addrs, err := in.Addrs()
@@ -171,7 +170,6 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 	}
 	return ret
 }
-
 
 func GetInterfaces(depenndecies IDependencies) []*models.Interface {
 	return newInterfaces(depenndecies).getInterfaces()

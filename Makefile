@@ -50,3 +50,7 @@ subsystem: build-image
 
 generate:
 	go generate $(shell go list ./...)
+
+go-import:
+	goimports -w -l .
+

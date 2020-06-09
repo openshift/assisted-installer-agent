@@ -1,16 +1,17 @@
 package scanners
 
 import (
-	"github.com/filanov/bm-inventory/models"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
+	log "github.com/sirupsen/logrus"
 )
 
 func ReadNics() []*models.Nic {
-	cmd := exec.Command("ip", "-o",  "link", "list")
+	cmd := exec.Command("ip", "-o", "link", "list")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Warnf("Error running ip-link: %s", err.Error())

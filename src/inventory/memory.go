@@ -1,31 +1,32 @@
 package inventory
 
 import (
-	"github.com/filanov/bm-inventory/models"
-	"github.com/sirupsen/logrus"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	BytesMultiplier int64 = 1
-	KbMultiplier    = BytesMultiplier << 10
-	MbMultiplier    = KbMultiplier << 10
-	GbMultiplier    = MbMultiplier << 10
-	TbMultiplier    = GbMultiplier << 10
-	EbMultiplier    = TbMultiplier << 10
-	ZbMultiplier    = EbMultiplier << 10
+	KbMultiplier          = BytesMultiplier << 10
+	MbMultiplier          = KbMultiplier << 10
+	GbMultiplier          = MbMultiplier << 10
+	TbMultiplier          = GbMultiplier << 10
+	EbMultiplier          = TbMultiplier << 10
+	ZbMultiplier          = EbMultiplier << 10
 )
 
-var multiplierMap = map[string] int64{
-	"bytes":  BytesMultiplier,
-	"kb":     KbMultiplier,
-	"mb":     MbMultiplier,
-	"gb":     GbMultiplier,
-	"tb":     TbMultiplier,
-	"eb":     EbMultiplier,
-	"zb":     ZbMultiplier,
+var multiplierMap = map[string]int64{
+	"bytes": BytesMultiplier,
+	"kb":    KbMultiplier,
+	"mb":    MbMultiplier,
+	"gb":    GbMultiplier,
+	"tb":    TbMultiplier,
+	"eb":    EbMultiplier,
+	"zb":    ZbMultiplier,
 }
 
 type memory struct {
@@ -33,10 +34,10 @@ type memory struct {
 }
 
 func newMemory(dependencies IDependencies) *memory {
-	return &memory{dependencies:dependencies}
+	return &memory{dependencies: dependencies}
 }
 
-func (m *memory)getTotalPhysicalBytes() int64 {
+func (m *memory) getTotalPhysicalBytes() int64 {
 	o, e, exitCode := m.dependencies.Execute("dmidecode", "-t", "17")
 	if exitCode != 0 {
 		logrus.Errorf("Could not run dmidecode: %s", e)
@@ -64,7 +65,6 @@ func (m *memory)getTotalPhysicalBytes() int64 {
 	return total
 }
 
-
 func (m *memory) getTotalUsabeBytes() int64 {
 	b, err := m.dependencies.ReadFile("/proc/meminfo")
 	if err != nil {
@@ -72,7 +72,7 @@ func (m *memory) getTotalUsabeBytes() int64 {
 		return 0
 	}
 	exp := regexp.MustCompile("^[ \t]*MemTotal:[ \t]+([0-9]+)[ \t]+([a-zA-Z]+)")
-	for _, line :=  range strings.Split(string(b), "\n"){
+	for _, line := range strings.Split(string(b), "\n") {
 		matches := exp.FindStringSubmatch(line)
 		if len(matches) == 3 {
 			value, err := strconv.ParseInt(matches[1], 10, 64)
@@ -95,7 +95,7 @@ func (m *memory) getTotalUsabeBytes() int64 {
 func (m *memory) getMemory() *models.Memory {
 	ret := models.Memory{
 		PhysicalBytes: m.getTotalPhysicalBytes(),
-		UsableBytes  : m.getTotalUsabeBytes(),
+		UsableBytes:   m.getTotalUsabeBytes(),
 	}
 	return &ret
 }

@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/filanov/bm-inventory/models"
-	"github.com/go-openapi/strfmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"testing"
 	"time"
+
+	"github.com/filanov/bm-inventory/models"
+	"github.com/go-openapi/strfmt"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 const (
@@ -36,7 +37,6 @@ var _ = Describe("Agent tests", func() {
 		Expect(resetRequests()).NotTo(HaveOccurred())
 		Expect(deleteAllStubs()).NotTo(HaveOccurred())
 	})
-
 
 	It("Happy flow", func() {
 		hostID := nextHostID()
@@ -76,7 +76,7 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "wrong-step"
 		stepType := "Step-not-exists"
-		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{StepType:models.StepType(stepType), StepID:stepID, Args:make([]string, 0)})
+		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{StepType: models.StepType(stepType), StepID: stepID, Args: make([]string, 0)})
 		Expect(err).NotTo(HaveOccurred())
 		replyStubID, err := addStepReplyStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
@@ -105,10 +105,10 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "execute-step"
 		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{
-			StepType:models.StepTypeExecute,
-			StepID:stepID,
-			Command: "echo",
-			Args:[]string {
+			StepType: models.StepTypeExecute,
+			StepID:   stepID,
+			Command:  "echo",
+			Args: []string{
 				"Hello",
 				"world",
 			},
@@ -140,8 +140,8 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "hardware-info-step"
 		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{
-			StepType:models.StepTypeHardwareInfo,
-			StepID:stepID,
+			StepType: models.StepTypeHardwareInfo,
+			StepID:   stepID,
 		})
 		Expect(err).NotTo(HaveOccurred())
 		replyStubID, err := addStepReplyStub(hostID)
@@ -164,31 +164,31 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		nextStepsStubID, err := addNextStepStub(hostID,
 			&models.Step{
-				StepType:models.StepTypeExecute,
-				StepID:"echo-step-1",
-				Command: "echo",
-				Args:[]string {
+				StepType: models.StepTypeExecute,
+				StepID:   "echo-step-1",
+				Command:  "echo",
+				Args: []string{
 					"Hello",
 					"world",
 				},
 			},
 			&models.Step{
-				StepType:models.StepTypeExecute,
-				StepID:"echo-step-2",
-				Command: "echo",
-				Args:[]string {
+				StepType: models.StepTypeExecute,
+				StepID:   "echo-step-2",
+				Command:  "echo",
+				Args: []string{
 					"Bye",
 					"bye",
 					"world",
 				},
 			},
-			&models.Step {
-				StepType:models.StepTypeHardwareInfo,
-				StepID:"hardware-info-step",
+			&models.Step{
+				StepType: models.StepTypeHardwareInfo,
+				StepID:   "hardware-info-step",
 			},
 			&models.Step{
-				StepType:models.StepTypeInventory,
-				StepID:"inventory-step",
+				StepType: models.StepTypeInventory,
+				StepID:   "inventory-step",
 			},
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -226,39 +226,38 @@ type EqualToJsonDefinition struct {
 }
 
 type RequestDefinition struct {
-	URL string  `json:"url"`
-	Method string `json:"method"`
+	URL          string        `json:"url"`
+	Method       string        `json:"method"`
 	BodyPatterns []interface{} `json:"bodyPatterns"`
 }
 
 type ResponseDefinition struct {
-	Status int  `json:"status"`
-	Body string  `json:"body"`
+	Status  int               `json:"status"`
+	Body    string            `json:"body"`
 	Headers map[string]string `json:"headers"`
 }
 
 type StubDefinition struct {
-	Request *RequestDefinition `json:"request"`
+	Request  *RequestDefinition  `json:"request"`
 	Response *ResponseDefinition `json:"response"`
 }
 
 type ReceivedRequest struct {
-	URL string
+	URL    string
 	Method string
-	Body string
+	Body   string
 }
 
 type ReceivedResponse struct {
-	Status int
-	Body string
+	Status  int
+	Body    string
 	Headers map[string]string
 }
 
-
 type RequestOccurence struct {
-	ID string
-	Request *ReceivedRequest
-	Response *ReceivedResponse
+	ID         string
+	Request    *ReceivedRequest
+	Response   *ReceivedResponse
 	WasMatched bool
 }
 
@@ -270,7 +269,7 @@ type Requests struct {
 	Requests []*RequestOccurence
 }
 
-func jsonToMap(str string) map[string] interface{} {
+func jsonToMap(str string) map[string]interface{} {
 	m := make(map[string]interface{})
 	Expect(json.Unmarshal([]byte(str), &m)).ShouldNot(HaveOccurred())
 	return m
@@ -329,7 +328,7 @@ func (h *HardwareInfoVerifier) verify(actualReply *models.StepReply) bool {
 	if err != nil {
 		return false
 	}
-	return len(hardwareInfo.Memory) > 0 && hardwareInfo.CPU != nil &&hardwareInfo.CPU.Cpus > 0 && len(hardwareInfo.BlockDevices) > 0 && len(hardwareInfo.Nics) > 0
+	return len(hardwareInfo.Memory) > 0 && hardwareInfo.CPU != nil && hardwareInfo.CPU.Cpus > 0 && len(hardwareInfo.BlockDevices) > 0 && len(hardwareInfo.Nics) > 0
 }
 
 type InventoryVerifier struct{}
@@ -386,7 +385,7 @@ func addStub(stub *StubDefinition) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	responseBody,err := ioutil.ReadAll(resp.Body)
+	responseBody, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
 		return "", err
@@ -411,14 +410,14 @@ func addRegisterStub(hostID string) (string, error) {
 		return "", err
 	}
 	stub := StubDefinition{
-		Request:  &RequestDefinition{
-			URL: getRegisterURL(),
+		Request: &RequestDefinition{
+			URL:    getRegisterURL(),
 			Method: "POST",
 		},
 		Response: &ResponseDefinition{
-			Status:  201,
-			Body:    string(b),
-			Headers: map[string] string {
+			Status: 201,
+			Body:   string(b),
+			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
 		},
@@ -436,14 +435,14 @@ func addNextStepStub(hostID string, steps ...*models.Step) (string, error) {
 		return "", err
 	}
 	stub := StubDefinition{
-		Request:  &RequestDefinition{
-			URL: getNextStepsURL(hostID),
+		Request: &RequestDefinition{
+			URL:    getNextStepsURL(hostID),
 			Method: "GET",
 		},
 		Response: &ResponseDefinition{
-			Status:  200,
-			Body:    string(b),
-			Headers: map[string] string {
+			Status: 200,
+			Body:   string(b),
+			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
 		},
@@ -453,13 +452,13 @@ func addNextStepStub(hostID string, steps ...*models.Step) (string, error) {
 
 func addStepReplyStub(hostID string) (string, error) {
 	stub := StubDefinition{
-		Request:  &RequestDefinition{
-			URL: getStepReplyURL(hostID),
+		Request: &RequestDefinition{
+			URL:    getStepReplyURL(hostID),
 			Method: "POST",
 		},
 		Response: &ResponseDefinition{
-			Status:  204,
-			Headers: map[string] string {
+			Status: 204,
+			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
 		},
@@ -469,7 +468,7 @@ func addStepReplyStub(hostID string) (string, error) {
 }
 
 func deleteStub(stubID string) error {
-	req, err := http.NewRequest("DELETE", "http://127.0.0.1:8080/__admin/mappings/" + stubID, nil)
+	req, err := http.NewRequest("DELETE", "http://127.0.0.1:8080/__admin/mappings/"+stubID, nil)
 	if err != nil {
 		return err
 	}
@@ -489,7 +488,7 @@ func deleteAllStubs() error {
 }
 
 func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
-	resp,err := http.Get("http://127.0.0.1:8080/__admin/requests")
+	resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
 	if err != nil {
 		return nil, err
 	}
@@ -498,7 +497,7 @@ func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(b , &requests)
+	err = json.Unmarshal(b, &requests)
 	if err != nil {
 		return nil, err
 	}
@@ -511,14 +510,13 @@ func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
 	return ret, nil
 }
 
-
-func resetRequests() error{
+func resetRequests() error {
 	req, err := http.NewRequest("DELETE", "http://127.0.0.1:8080/__admin/requests", nil)
 	if err != nil {
 		return err
 	}
 	client := &http.Client{}
-	_ , err = client.Do(req)
+	_, err = client.Do(req)
 	return err
 }
 
@@ -538,14 +536,12 @@ func nextHostID() string {
 	return hostID
 }
 
-func waitForWiremock() error{
-	_,err := http.Get("http://127.0.0.1:8080/__admin/requests")
+func waitForWiremock() error {
+	_, err := http.Get("http://127.0.0.1:8080/__admin/requests")
 	return err
 }
 
 func TestSubsystem(t *testing.T) {
-        RegisterFailHandler(Fail)
-        RunSpecs(t, "Subsystem Suite")
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Subsystem Suite")
 }
-
-

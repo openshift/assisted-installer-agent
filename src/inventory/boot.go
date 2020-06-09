@@ -1,19 +1,20 @@
 package inventory
 
 import (
-	"github.com/filanov/bm-inventory/models"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
 )
 
-type boot struct{
+type boot struct {
 	dependencies IDependencies
 }
 
 func newBoot(dependencies IDependencies) *boot {
-	return &boot{dependencies:dependencies}
+	return &boot{dependencies: dependencies}
 }
 
-func (b *boot)getPxeInterface() string {
+func (b *boot) getPxeInterface() string {
 	cmdline, err := b.dependencies.ReadFile("/proc/cmdline")
 	if err != nil {
 		return ""
@@ -27,7 +28,7 @@ func (b *boot)getPxeInterface() string {
 	return ""
 }
 
-func (b *boot)getCurrentBootMode() (ret string) {
+func (b *boot) getCurrentBootMode() (ret string) {
 	ret = "bios"
 	mode, err := b.dependencies.Stat("/sys/firmware/efi")
 	if err != nil {
@@ -39,7 +40,7 @@ func (b *boot)getCurrentBootMode() (ret string) {
 	return
 }
 
-func (b *boot)getBoot() *models.Boot {
+func (b *boot) getBoot() *models.Boot {
 	ret := models.Boot{
 		CurrentBootMode: b.getCurrentBootMode(),
 		PxeInterface:    b.getPxeInterface(),

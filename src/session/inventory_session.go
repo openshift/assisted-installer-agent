@@ -3,21 +3,21 @@ package session
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/filanov/bm-inventory/client"
 	"github.com/filanov/bm-inventory/pkg/requestid"
 	"github.com/ori-amizur/introspector/src/config"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 )
 
 func createUrl() string {
 	return fmt.Sprintf("http://%s:%d/%s", config.GlobalAgentConfig.TargetHost, config.GlobalAgentConfig.TargetPort, client.DefaultBasePath)
 }
 
-
 type InventorySession struct {
-	ctx context.Context
+	ctx    context.Context
 	logger logrus.FieldLogger
 	client *client.AssistedInstall
 }
@@ -36,7 +36,7 @@ func (i *InventorySession) Client() *client.AssistedInstall {
 
 func createBmInventoryClient() *client.AssistedInstall {
 	clientConfig := client.Config{}
-	clientConfig.URL,_  = url.Parse(createUrl())
+	clientConfig.URL, _ = url.Parse(createUrl())
 	clientConfig.Transport = requestid.Transport(http.DefaultTransport)
 	bmInventory := client.New(clientConfig)
 	return bmInventory

@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"fmt"
+
 	"github.com/filanov/bm-inventory/models"
 	"github.com/jaypipes/ghw"
 	"github.com/sirupsen/logrus"
@@ -12,7 +13,7 @@ type disks struct {
 }
 
 func newDisks(dependencies IDependencies) *disks {
-	return &disks{dependencies:dependencies}
+	return &disks{dependencies: dependencies}
 }
 
 func (d *disks) getPath(busPath string) string {
@@ -30,7 +31,7 @@ func (d *disks) getPath(busPath string) string {
 	return ret
 }
 
-func  (d *disks)  getHctl(name string) string {
+func (d *disks) getHctl(name string) string {
 	dir := fmt.Sprintf("/sys/block/%s/device/scsi_device", name)
 	files, err := d.dependencies.ReadDir(dir)
 	if err != nil || len(files) == 0 {
@@ -46,7 +47,7 @@ func diskVendor(vendor string) string {
 	return vendor
 }
 
-func (d *disks) getDisks() [] *models.Disk {
+func (d *disks) getDisks() []*models.Disk {
 	ret := make([]*models.Disk, 0)
 	blockInfo, err := d.dependencies.Block()
 	if err != nil {
@@ -54,26 +55,26 @@ func (d *disks) getDisks() [] *models.Disk {
 		return ret
 	}
 	for _, disk := range blockInfo.Disks {
-		if disk.IsRemovable || disk.BusPath == ghw.UNKNOWN  {
+		if disk.IsRemovable || disk.BusPath == ghw.UNKNOWN {
 			continue
 		}
 		rec := models.Disk{
-			ByPath:             fmt.Sprintf("/dev/disk/by-path/%s", disk.BusPath),
-			Hctl:               d.getHctl(disk.Name),
-			Model:              disk.Model,
-			Name:				disk.Name,
-			Path:               d.getPath(disk.BusPath),
-			DriveType:          disk.DriveType.String(),
-			Serial:             disk.SerialNumber,
-			SizeBytes:          int64(disk.SizeBytes),
-			Vendor:             diskVendor(disk.Vendor),
-			Wwn:                disk.WWN,
+			ByPath:    fmt.Sprintf("/dev/disk/by-path/%s", disk.BusPath),
+			Hctl:      d.getHctl(disk.Name),
+			Model:     disk.Model,
+			Name:      disk.Name,
+			Path:      d.getPath(disk.BusPath),
+			DriveType: disk.DriveType.String(),
+			Serial:    disk.SerialNumber,
+			SizeBytes: int64(disk.SizeBytes),
+			Vendor:    diskVendor(disk.Vendor),
+			Wwn:       disk.WWN,
 		}
 		ret = append(ret, &rec)
 	}
 	return ret
 }
 
-func GetDisks(dependencies IDependencies) [] *models.Disk {
+func GetDisks(dependencies IDependencies) []*models.Disk {
 	return newDisks(dependencies).getDisks()
 }

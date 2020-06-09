@@ -1,13 +1,13 @@
 package inventory
 
-
 import (
 	"fmt"
+	"os"
+
 	"github.com/filanov/bm-inventory/models"
 	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"os"
 )
 
 var _ = Describe("Disks test", func() {
@@ -38,34 +38,33 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("EvalSymlinks", "/dev/disk/by-path/bus-path").Return("/dev/disk/by-path/../../disk1", nil).Once()
 		dependencies.On("Abs", "/dev/disk/by-path/../../disk1").Return("/dev/disk1", nil).Once()
 		dependencies.On("Block").Return(&ghw.BlockInfo{
-			Disks:              []*ghw.Disk{
+			Disks: []*ghw.Disk{
 				{
-					Name:                   "disk1",
-					SizeBytes:              5555,
-					DriveType:              ghw.DRIVE_TYPE_HDD,
-					BusPath:                "bus-path",
-					Vendor:                 "disk1-vendor",
-					Model:                  "disk1-model",
-					SerialNumber:           "disk1-serial",
-					WWN:                    "disk1-wwn",
+					Name:         "disk1",
+					SizeBytes:    5555,
+					DriveType:    ghw.DRIVE_TYPE_HDD,
+					BusPath:      "bus-path",
+					Vendor:       "disk1-vendor",
+					Model:        "disk1-model",
+					SerialNumber: "disk1-serial",
+					WWN:          "disk1-wwn",
 				},
 			},
 		}, nil).Once()
 		ret := GetDisks(dependencies)
 		Expect(ret).To(Equal([]*models.Disk{
 			{
-				ByPath: "/dev/disk/by-path/bus-path",
+				ByPath:    "/dev/disk/by-path/bus-path",
 				DriveType: "HDD",
-				Hctl: "scsi",
-				Model: "disk1-model",
-				Name: "disk1",
-				Path: "/dev/disk1",
-				Serial: "disk1-serial",
+				Hctl:      "scsi",
+				Model:     "disk1-model",
+				Name:      "disk1",
+				Path:      "/dev/disk1",
+				Serial:    "disk1-serial",
 				SizeBytes: 5555,
-				Vendor: "disk1-vendor",
-				Wwn: "disk1-wwn",
+				Vendor:    "disk1-vendor",
+				Wwn:       "disk1-wwn",
 			},
 		}))
 	})
 })
-

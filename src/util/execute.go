@@ -9,7 +9,7 @@ func getExitCode(err error) int {
 	if err == nil {
 		return 0
 	}
-	switch  value := err.(type) {
+	switch value := err.(type) {
 	case *exec.ExitError:
 		return value.ExitCode()
 	default:

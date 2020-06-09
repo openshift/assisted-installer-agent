@@ -1,12 +1,13 @@
 package inventory
 
 import (
-	"github.com/jaypipes/ghw"
-	"github.com/ori-amizur/introspector/src/util"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
+
+	"github.com/jaypipes/ghw"
+	"github.com/ori-amizur/introspector/src/util"
 )
 
 //go:generate mockery -name IDependencies -inpkg
@@ -47,11 +48,10 @@ func (d *Dependencies) Interfaces() ([]Interface, error) {
 	}
 	ret := make([]Interface, 0)
 	for _, in := range ins {
-		ret = append(ret, &NetworkInterface{netInterface:in, dependencies:d})
+		ret = append(ret, &NetworkInterface{netInterface: in, dependencies: d})
 	}
 	return ret, nil
 }
-
 
 func (d *Dependencies) Block(opts ...*ghw.WithOption) (*ghw.BlockInfo, error) {
 	return ghw.Block(opts...)

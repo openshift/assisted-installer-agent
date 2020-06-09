@@ -3,10 +3,11 @@ package scanners
 import (
 	"crypto/md5"
 	"fmt"
+	"strings"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/jaypipes/ghw"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 func md5GenerateUUID(str string) *strfmt.UUID {
-	md5Str := fmt.Sprintf("%x",md5.Sum([]byte(str)))
+	md5Str := fmt.Sprintf("%x", md5.Sum([]byte(str)))
 	uuidStr := strfmt.UUID(md5Str[0:8] + "-" + md5Str[8:12] + "-" + md5Str[12:16] + "-" + md5Str[16:20] + "-" + md5Str[20:])
 	return &uuidStr
 }
@@ -34,7 +35,6 @@ func readSystemUUID() *strfmt.UUID {
 	ret := strfmt.UUID(strings.ToLower(value))
 	return &ret
 }
-
 
 func readMotherboardSerial() *strfmt.UUID {
 	basedboard, err := ghw.Baseboard()

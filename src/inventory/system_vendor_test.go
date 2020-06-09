@@ -138,7 +138,6 @@ var _ = Describe("System vendor test", func() {
 		dependencies.AssertExpectations(GinkgoT())
 	})
 
-
 	It("Execute error", func() {
 		dependencies.On("Execute", "lshw", "-quiet", "-json").Return(lshwOutput, "Execute error", -1)
 		ret := GetVendor(dependencies)
@@ -154,7 +153,7 @@ var _ = Describe("System vendor test", func() {
 		ret := GetVendor(dependencies)
 		Expect(ret).To(Equal(&models.SystemVendor{
 			Manufacturer: "LENOVO",
-			ProductName: "20NYS7K91V (LENOVO_MT_20NY_BU_Think_FM_ThinkPad T490s)",
+			ProductName:  "20NYS7K91V (LENOVO_MT_20NY_BU_Think_FM_ThinkPad T490s)",
 			SerialNumber: "PC1E81XA",
 		}))
 	})

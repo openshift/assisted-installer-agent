@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/ori-amizur/introspector/src/commands"
 	"github.com/ori-amizur/introspector/src/config"
 	"github.com/ori-amizur/introspector/src/util"

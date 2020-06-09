@@ -113,7 +113,7 @@ var _ = Describe("CPU test", func() {
 		ret := GetCPU(dependencies)
 		expected := models.CPU{
 			Architecture: "x86_64",
-			Count: 8,
+			Count:        8,
 			Flags: []string{"fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce", "cx8", "apic", "sep", "mtrr", "pge",
 				"mca", "cmov", "pat", "pse36", "clflush", "dts", "acpi", "mmx", "fxsr", "sse", "sse2", "ss", "ht", "tm",
 				"pbe", "syscall", "nx", "pdpe1gb", "rdtscp", "lm", "constant_tsc", "art", "arch_perfmon", "pebs", "bts",

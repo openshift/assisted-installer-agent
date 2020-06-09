@@ -2,18 +2,18 @@ package inventory
 
 import (
 	"encoding/json"
+
 	"github.com/filanov/bm-inventory/models"
 	"github.com/sirupsen/logrus"
 )
 
 type systemVendor struct {
 	Product string
-	Serial string
-	Vendor string
+	Serial  string
+	Vendor  string
 }
 
-
-func GetVendor(dependencies IDependencies)*models.SystemVendor {
+func GetVendor(dependencies IDependencies) *models.SystemVendor {
 	o, e, exitCode := dependencies.Execute("lshw", "-quiet", "-json")
 	var ret models.SystemVendor
 	if exitCode != 0 {

@@ -12,8 +12,7 @@ import (
 	"github.com/ssgreg/journald"
 )
 
-
-var getLogFileWriter = func (name string) (io.Writer, error) {
+var getLogFileWriter = func(name string) (io.Writer, error) {
 	fname := "/var/log/" + name + ".log"
 	file, err := os.OpenFile(fname, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -62,18 +61,18 @@ type IJournalWriter interface {
 	Send(msg string, p journald.Priority, fields map[string]interface{}) error
 }
 
-type journalHook struct{
+type journalHook struct {
 	writer IJournalWriter
 }
 
-type JournalWriter struct {}
+type JournalWriter struct{}
 
 func (*JournalWriter) Send(msg string, p journald.Priority, fields map[string]interface{}) error {
 	return journald.Send(msg, p, fields)
 }
 
 func newJournalHook(writer IJournalWriter) *journalHook {
-	return &journalHook{writer:writer}
+	return &journalHook{writer: writer}
 }
 
 func (hook *journalHook) getPriority(entry *logrus.Entry) journald.Priority {
@@ -100,7 +99,7 @@ func (hook *journalHook) Fire(entry *logrus.Entry) error {
 	if err != nil {
 		return err
 	}
-	fields := map[string] interface{} {
+	fields := map[string]interface{}{
 		"TAG": "agent",
 	}
 	return hook.writer.Send(line, hook.getPriority(entry), fields)

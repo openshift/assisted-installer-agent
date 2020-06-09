@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"encoding/json"
+
 	"github.com/filanov/bm-inventory/models"
 )
 

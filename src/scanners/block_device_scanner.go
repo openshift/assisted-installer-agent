@@ -1,41 +1,42 @@
 package scanners
 
 import (
-	"github.com/filanov/bm-inventory/models"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
-	NAME_LABEL = "NAME"
-	MAJ_MIN_LABEL = "MAJ:MIN"
-	RM_LABEL = "RM"
-	SIZE_LABEL = "SIZE"
-	RO_LABEL = "RO"
-	TYPE_LABEL = "TYPE"
+	NAME_LABEL       = "NAME"
+	MAJ_MIN_LABEL    = "MAJ:MIN"
+	RM_LABEL         = "RM"
+	SIZE_LABEL       = "SIZE"
+	RO_LABEL         = "RO"
+	TYPE_LABEL       = "TYPE"
 	MOUNTPOINT_LABEL = "MOUNTPOINT"
-	FSTYPE_LABEL = "FSTYPE"
-	LEFT_ALIGHNMENT = "left"
-	RIGHT_ALIGNMENT = "right"
-	COLON_ALIGNMENT = "colon"
+	FSTYPE_LABEL     = "FSTYPE"
+	LEFT_ALIGHNMENT  = "left"
+	RIGHT_ALIGNMENT  = "right"
+	COLON_ALIGNMENT  = "colon"
 )
 
-var lables = map[string] string {
-	NAME_LABEL: LEFT_ALIGHNMENT,
-	MAJ_MIN_LABEL: COLON_ALIGNMENT,
-	RM_LABEL: RIGHT_ALIGNMENT,
-	SIZE_LABEL: RIGHT_ALIGNMENT,
-	RO_LABEL: RIGHT_ALIGNMENT,
-	TYPE_LABEL: LEFT_ALIGHNMENT,
+var lables = map[string]string{
+	NAME_LABEL:       LEFT_ALIGHNMENT,
+	MAJ_MIN_LABEL:    COLON_ALIGNMENT,
+	RM_LABEL:         RIGHT_ALIGNMENT,
+	SIZE_LABEL:       RIGHT_ALIGNMENT,
+	RO_LABEL:         RIGHT_ALIGNMENT,
+	TYPE_LABEL:       LEFT_ALIGHNMENT,
 	MOUNTPOINT_LABEL: LEFT_ALIGHNMENT,
-	FSTYPE_LABEL: LEFT_ALIGHNMENT,
+	FSTYPE_LABEL:     LEFT_ALIGHNMENT,
 }
 
 func mapHeader(header string) map[int]string {
 	ret := make(map[int]string)
-	for l,alighment := range lables {
+	for l, alighment := range lables {
 		index := strings.Index(header, l)
 		if index == -1 {
 			log.Warnf("No index found for %s", l)
@@ -45,10 +46,10 @@ func mapHeader(header string) map[int]string {
 		case LEFT_ALIGHNMENT:
 			ret[index] = l
 		case RIGHT_ALIGNMENT:
-			ret[index + len(l) - 1] = l
+			ret[index+len(l)-1] = l
 		case COLON_ALIGNMENT:
 			colonIndex := strings.Index(l, ":")
-			ret[index + colonIndex] = l
+			ret[index+colonIndex] = l
 		}
 	}
 	return ret
@@ -56,7 +57,7 @@ func mapHeader(header string) map[int]string {
 
 func nextToken(line string, start int) (token string, begin int) {
 	ret := ""
-	for ; start < len(line) && line[start] == ' ' ; start++ {
+	for ; start < len(line) && line[start] == ' '; start++ {
 	}
 	begin = start
 	for ; start < len(line) && line[start] != ' '; start++ {
@@ -65,8 +66,8 @@ func nextToken(line string, start int) (token string, begin int) {
 	return ret, begin
 }
 
-func ReadBlockDevices() [] *models.BlockDevice {
-	cmd := exec.Command("lsblk", "-lab",  "-o",  "+FSTYPE")
+func ReadBlockDevices() []*models.BlockDevice {
+	cmd := exec.Command("lsblk", "-lab", "-o", "+FSTYPE")
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Warnf("Error running lsblk: %s", err.Error())
@@ -78,20 +79,20 @@ func ReadBlockDevices() [] *models.BlockDevice {
 		return nil
 	}
 	headersMap := mapHeader(lines[0])
-	ret := make([] *models.BlockDevice, 0)
+	ret := make([]*models.BlockDevice, 0)
 	for _, line := range lines[1:] {
 		if line == "" {
 			continue
 		}
 		binfo := models.BlockDevice{}
-		for token, start := nextToken(line, 0) ; start < len(line) ; token, start = nextToken(line, start + len(token)) {
+		for token, start := nextToken(line, 0); start < len(line); token, start = nextToken(line, start+len(token)) {
 			label, ok := headersMap[start]
 			if !ok {
-				label, ok = headersMap[start + len(token) -1]
+				label, ok = headersMap[start+len(token)-1]
 			}
 			if !ok {
 				colonIndex := strings.Index(token, ":")
-				label, ok = headersMap[start + colonIndex]
+				label, ok = headersMap[start+colonIndex]
 			}
 			if !ok {
 				continue

@@ -2,11 +2,12 @@ package inventory
 
 import (
 	"fmt"
+	"os"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
-	"os"
-	"time"
 )
 
 type FileInfoMock struct {
@@ -43,10 +44,9 @@ func (f *FileInfoMock) Sys() interface{} {
 }
 
 const (
-	cmdlineNoPxe = `BOOT_IMAGE=(hd0,gpt2)/vmlinuz-5.5.17-200.fc31.x86_64 root=/dev/mapper/fedora_dhcp--0--223-root ro resume=/dev/mapper/fedora_dhcp--0--223-swap rd.lvm.lv=fedora_dhcp-0-223/root rd.luks.uuid=luks-47bb99f4-7573-42cf-bfcf-92aaa826fb9b rd.lvm.lv=fedora_dhcp-0-223/swap rhgb quiet psmouse.elantech_smbus=0 systemd.unified_cgroup_hierarchy=0`
+	cmdlineNoPxe   = `BOOT_IMAGE=(hd0,gpt2)/vmlinuz-5.5.17-200.fc31.x86_64 root=/dev/mapper/fedora_dhcp--0--223-root ro resume=/dev/mapper/fedora_dhcp--0--223-swap rd.lvm.lv=fedora_dhcp-0-223/root rd.luks.uuid=luks-47bb99f4-7573-42cf-bfcf-92aaa826fb9b rd.lvm.lv=fedora_dhcp-0-223/swap rhgb quiet psmouse.elantech_smbus=0 systemd.unified_cgroup_hierarchy=0`
 	cmdlineWithPxe = `BOOT_IMAGE=(hd0,gpt2)/vmlinuz-5.5.17-200.fc31.x86_64 root=/dev/mapper/fedora_dhcp--0--223-root ro BOOTIF=80:32:53:4f:cf:d6 resume=/dev/mapper/fedora_dhcp--0--223-swap rd.lvm.lv=fedora_dhcp-0-223/root rd.luks.uuid=luks-47bb99f4-7573-42cf-bfcf-92aaa826fb9b rd.lvm.lv=fedora_dhcp-0-223/swap rhgb quiet psmouse.elantech_smbus=0 systemd.unified_cgroup_hierarchy=0`
 )
-
 
 var _ = Describe("boot", func() {
 
@@ -59,7 +59,6 @@ var _ = Describe("boot", func() {
 	AfterEach(func() {
 		dependencies.AssertExpectations(GinkgoT())
 	})
-
 
 	It("pxe+mode fail", func() {
 		fileInfoMock := FileInfoMock{}

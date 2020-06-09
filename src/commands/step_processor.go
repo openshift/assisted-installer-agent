@@ -2,8 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"github.com/ori-amizur/introspector/src/util"
 	"time"
+
+	"github.com/ori-amizur/introspector/src/util"
 
 	"github.com/go-openapi/strfmt"
 

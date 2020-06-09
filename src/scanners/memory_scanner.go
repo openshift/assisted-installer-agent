@@ -1,20 +1,21 @@
 package scanners
 
 import (
-	"github.com/filanov/bm-inventory/models"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
-	TOTAL_LABEL = "total"
-	USED_LABEL = "used"
-	FREE_LABEL = "free"
-	SHARED_LABEL = "shared"
+	TOTAL_LABEL      = "total"
+	USED_LABEL       = "used"
+	FREE_LABEL       = "free"
+	SHARED_LABEL     = "shared"
 	BUFF_CACHE_LABEL = "buff/cache"
-	AVAILABLE_LABEL = "available"
+	AVAILABLE_LABEL  = "available"
 )
 
 type MemoryInfo struct {
@@ -26,7 +27,7 @@ type MemoryInfo struct {
 func nextMemHeaderLabel(line string, start int) (label string, begin int, end int) {
 	label = ""
 	end = start
-	for ; end < len(line) && line[end] == ' ' ; end++ {
+	for ; end < len(line) && line[end] == ' '; end++ {
 	}
 	for ; end < len(line) && line[end] != ' '; end++ {
 		label = label + string(line[end])
@@ -34,10 +35,9 @@ func nextMemHeaderLabel(line string, start int) (label string, begin int, end in
 	return label, start, end
 }
 
-
 func readHeader(header string) []*MemoryInfo {
 	ret := make([]*MemoryInfo, 0)
-	for token, start, end := nextMemHeaderLabel(header, 0) ; start < len(header) ; token, start, end = nextMemHeaderLabel(header, end) {
+	for token, start, end := nextMemHeaderLabel(header, 0); start < len(header); token, start, end = nextMemHeaderLabel(header, end) {
 		ret = append(ret, &MemoryInfo{
 			Start: start,
 			End:   end,
@@ -47,7 +47,7 @@ func readHeader(header string) []*MemoryInfo {
 	return ret
 }
 
-func max(x,y int) int {
+func max(x, y int) int {
 	if x > y {
 		return x
 	} else {
@@ -75,17 +75,17 @@ func ReadMemory() []*models.MemoryDetails {
 		}
 		minfo := &models.MemoryDetails{}
 		name, _ := nextToken(line, 0)
-		minfo.Name = name[:len(name) -1]
+		minfo.Name = name[:len(name)-1]
 		minStart := len(name)
-		for _, m := range headerLabels{
+		for _, m := range headerLabels {
 			if m.End > len(line) {
 				continue
 			}
-			token := strings.TrimSpace(line[max(minStart, m.Start): m.End])
+			token := strings.TrimSpace(line[max(minStart, m.Start):m.End])
 			if token == "" {
 				continue
 			}
-			value, _  := strconv.ParseInt(token, 10, 64)
+			value, _ := strconv.ParseInt(token, 10, 64)
 			switch m.Label {
 			case TOTAL_LABEL:
 				minfo.Total = value
@@ -101,7 +101,7 @@ func ReadMemory() []*models.MemoryDetails {
 				minfo.Available = value
 			}
 		}
-		ret = append(ret , minfo)
+		ret = append(ret, minfo)
 	}
 	return ret
 }

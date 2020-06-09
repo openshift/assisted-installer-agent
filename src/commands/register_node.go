@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"github.com/go-openapi/strfmt"
 	"time"
+
+	"github.com/go-openapi/strfmt"
 
 	"github.com/filanov/bm-inventory/client/installer"
 	"github.com/filanov/bm-inventory/models"
@@ -17,7 +18,7 @@ func createRegisterParams() *installer.RegisterHostParams {
 	ret := &installer.RegisterHostParams{
 		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		NewHostParams: &models.HostCreateParams{
-			HostID:    scanners.ReadId(),
+			HostID: scanners.ReadId(),
 		},
 	}
 	return ret

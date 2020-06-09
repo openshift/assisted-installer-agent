@@ -2,18 +2,19 @@ package inventory
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
 )
 
 const MaxIpmiChannel = 12
 
-type bmc struct{
+type bmc struct {
 	dependicies IDependencies
 }
 
@@ -21,7 +22,7 @@ func newBMC(dependencies IDependencies) *bmc {
 	return &bmc{dependicies: dependencies}
 }
 
-func (b *bmc) modprobe (module string) error {
+func (b *bmc) modprobe(module string) error {
 	_, stderr, exitCode := b.dependicies.Execute("modprobe", module)
 	if exitCode != 0 {
 		logrus.Warnf("Could not modprobe module %s: %s", module, stderr)
@@ -30,14 +31,14 @@ func (b *bmc) modprobe (module string) error {
 	return nil
 }
 
-func (b *bmc)loadModules() {
+func (b *bmc) loadModules() {
 	_ = b.modprobe("ipmi_msghandler")
 	_ = b.modprobe("ipmi_devintf")
 	_ = b.modprobe("ipmi_si")
 }
 
-func (b *bmc)getIpForChannnel(ch int) string{
-	o, e, exitCode := b.dependicies.Execute("ipmitool","lan", "print", strconv.FormatInt(int64(ch), 10))
+func (b *bmc) getIpForChannnel(ch int) string {
+	o, e, exitCode := b.dependicies.Execute("ipmitool", "lan", "print", strconv.FormatInt(int64(ch), 10))
 	if exitCode != 0 || strings.HasPrefix(e, "Invalid channel") {
 		return ""
 	}
@@ -51,14 +52,13 @@ func (b *bmc)getIpForChannnel(ch int) string{
 	return ""
 }
 
-
-func (b *bmc)getIsEnabled(value interface{}) bool {
+func (b *bmc) getIsEnabled(value interface{}) bool {
 	return value != false && value != ""
 }
 
-func (b *bmc)getBmcAddress() string {
+func (b *bmc) getBmcAddress() string {
 	b.loadModules()
-	for ch := 1 ; ch <= MaxIpmiChannel ; ch++ {
+	for ch := 1; ch <= MaxIpmiChannel; ch++ {
 		ret := b.getIpForChannnel(ch)
 		if ret == "" {
 			continue
@@ -78,8 +78,8 @@ func GetBmcAddress(dependencies IDependencies) string {
 	return newBMC(dependencies).getBmcAddress()
 }
 
-func (b *bmc)getV6Address(ch int, addressType string) string {
-	o, _, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print",  strconv.FormatInt(int64(ch), 10), addressType + "_addr")
+func (b *bmc) getV6Address(ch int, addressType string) string {
+	o, _, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), addressType+"_addr")
 	if exitCode != 0 {
 		return ""
 	}
@@ -101,11 +101,11 @@ func (b *bmc)getV6Address(ch int, addressType string) string {
 		var enabled bool
 		if addressType == "dynamic" {
 			st, ok := addressMap["Source/Type"]
-			if ! ok {
+			if !ok {
 				continue
 			}
 			switch st {
-			case "DHCPv6","SLAAC":
+			case "DHCPv6", "SLAAC":
 				enabled = true
 			}
 		} else {
@@ -122,8 +122,8 @@ func (b *bmc)getV6Address(ch int, addressType string) string {
 	return ""
 }
 
-func (b *bmc)getAddrMode(ch int) string {
-	o, _, exitCode := b.dependicies.Execute("ipmitool",  "lan6", "print", strconv.FormatInt(int64(ch), 10), "enables")
+func (b *bmc) getAddrMode(ch int) string {
+	o, _, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), "enables")
 	if exitCode != 0 {
 		return ""
 	}
@@ -137,9 +137,9 @@ func (b *bmc)getAddrMode(ch int) string {
 	return ""
 }
 
-func (b *bmc)getBmcV6Address() string {
+func (b *bmc) getBmcV6Address() string {
 	b.loadModules()
-	for ch := 1 ; ch <= MaxIpmiChannel ; ch++ {
+	for ch := 1; ch <= MaxIpmiChannel; ch++ {
 		addrMode := b.getAddrMode(ch)
 		if addrMode == "" {
 			continue

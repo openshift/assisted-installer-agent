@@ -39,6 +39,9 @@ jobs:
         mkdir -p ~/.docker
         echo "{}" > ~/.docker/config.json
         touch ${HOME}/.gitconfig
+    - name: go-check
+      run: |
+        skipper make go-import
     - name: test
       run: |
         skipper make subsystem

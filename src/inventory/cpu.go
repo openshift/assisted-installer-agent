@@ -2,10 +2,11 @@ package inventory
 
 import (
 	"encoding/json"
-	"github.com/filanov/bm-inventory/models"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
+	"github.com/sirupsen/logrus"
 )
 
 func max(f1, f2 float64) float64 {
@@ -17,7 +18,7 @@ func max(f1, f2 float64) float64 {
 
 type field struct {
 	Field string
-	Data string
+	Data  string
 }
 
 type lscpu struct {
@@ -26,7 +27,7 @@ type lscpu struct {
 
 func GetCPU(dependencies IDependencies) *models.CPU {
 	ret := &models.CPU{}
-	o ,e, exitCode := dependencies.Execute("lscpu", "-J")
+	o, e, exitCode := dependencies.Execute("lscpu", "-J")
 	if exitCode != 0 {
 		logrus.Warnf("Error running lscpu: %s", e)
 		return ret
@@ -37,8 +38,8 @@ func GetCPU(dependencies IDependencies) *models.CPU {
 		logrus.Warnf("Error unmarshaling lscpu: %s", err.Error())
 		return ret
 	}
-	for _ , f := range l.Lscpu {
-		switch f.Field[:len(f.Field) - 1] {
+	for _, f := range l.Lscpu {
+		switch f.Field[:len(f.Field)-1] {
 		case "Architecture":
 			ret.Architecture = f.Data
 		case "Model name":

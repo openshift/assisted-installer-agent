@@ -1,10 +1,10 @@
 package inventory
 
 import (
-	"github.com/sirupsen/logrus"
 	"strings"
-)
 
+	"github.com/sirupsen/logrus"
+)
 
 func GetHostname(dependencies IDependencies) string {
 	h, err := dependencies.Hostname()

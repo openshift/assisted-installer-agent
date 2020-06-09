@@ -1,12 +1,13 @@
 package scanners
 
 import (
-	"github.com/filanov/bm-inventory/models"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/filanov/bm-inventory/models"
+	log "github.com/sirupsen/logrus"
 )
 
 func ReadCpus() *models.CPUDetails {
@@ -19,7 +20,7 @@ func ReadCpus() *models.CPUDetails {
 	lines := strings.Split(string(bytes), "\n")
 	r := regexp.MustCompile("^([^:]+):[ \t]+([^ \t].*)$")
 	ret := &models.CPUDetails{}
-	for _ , line := range lines {
+	for _, line := range lines {
 		matches := r.FindStringSubmatch(line)
 		if len(matches) == 3 {
 			switch matches[1] {

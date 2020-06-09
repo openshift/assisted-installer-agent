@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"fmt"
+
 	"github.com/filanov/bm-inventory/models"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -101,7 +102,7 @@ var _ = Describe("Memory test", func() {
 		ret := GetMemory(dependencies)
 		Expect(ret).To(Equal(&models.Memory{
 			PhysicalBytes: 34359738368,
-			UsableBytes: 33441513472,
+			UsableBytes:   33441513472,
 		}))
 	})
 	It("Execute GB+read MB OK", func() {
@@ -110,7 +111,7 @@ var _ = Describe("Memory test", func() {
 		ret := GetMemory(dependencies)
 		Expect(ret).To(Equal(&models.Memory{
 			PhysicalBytes: 35184372088832,
-			UsableBytes: 34244109795328,
+			UsableBytes:   34244109795328,
 		}))
 	})
 })

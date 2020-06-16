@@ -1,4 +1,4 @@
-TAG := $(or $(TAG),stable)
+TAG := $(or $(TAG),latest)
 AGENT := $(or ${AGENT},quay.io/ocpmetal/agent:$(TAG))
 CONNECTIVITY_CHECK := $(or ${CONNECTIVITY_CHECK},quay.io/ocpmetal/connectivity_check:$(TAG))
 INVENTORY := $(or ${INVENTORY},quay.io/ocpmetal/inventory:$(TAG))

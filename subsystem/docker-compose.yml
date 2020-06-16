@@ -1,7 +1,7 @@
 version: '3'
 services:
   agent:
-      image: quay.io/ocpmetal/agent:stable
+      image: quay.io/ocpmetal/agent:latest
       entrypoint: ["/usr/bin/agent","--host","127.0.0.1","--port","8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
       volumes:
         - ./logs:/var/log

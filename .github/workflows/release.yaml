@@ -2,8 +2,8 @@ name: image-push
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - "*"
 
 jobs:
   build:

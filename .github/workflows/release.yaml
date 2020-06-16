@@ -30,7 +30,7 @@ jobs:
       - name: Get the tag
         id: get_tag
         run: echo ::set-env name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
-    - name: Publish connectivity_check to Registry
+      - name: Publish connectivity_check to Registry
         uses: elgohr/Publish-Docker-Github-Action@2.15
         with:
           name: connectivity_check

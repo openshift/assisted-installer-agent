@@ -1,0 +1,72 @@
+name: image-push
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.x
+      - name: Install dependencies
+        run: |
+          sudo pip install strato-skipper
+          mkdir -p ~/.docker
+          echo "{}" > ~/.docker/config.json
+          touch ${HOME}/.gitconfig
+      - name: build
+        run: |
+          skipper make build
+      - name: Get release version
+        id: get_version
+        run: echo ::set-env name=GIT_REVISION::$(echo ${GITHUB_SHA})
+      - name: Get the tag
+        id: get_tag
+        run: echo ::set-env name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+    - name: Publish connectivity_check to Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.15
+        with:
+          name: connectivity_check
+          username: ${{ secrets.OCPMETAL_USERNAME }}
+          password: ${{ secrets.OCPMETAL_PASSWORD }}
+          REGISTRY: 'quay.io/ocpmetal'
+          dockerfile: Dockerfile.connectivity_check
+          buildargs: GIT_REVISION
+          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"
+      - name: Publish hardware_info to Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.15
+        with:
+          name: hardware_info
+          username: ${{ secrets.OCPMETAL_USERNAME }}
+          password: ${{ secrets.OCPMETAL_PASSWORD }}
+          REGISTRY: 'quay.io/ocpmetal'
+          dockerfile: Dockerfile.hardware_info
+          buildargs: GIT_REVISION
+          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"
+      - name: Publish agent to Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.15
+        with:
+          name: agent
+          username: ${{ secrets.OCPMETAL_USERNAME }}
+          password: ${{ secrets.OCPMETAL_PASSWORD }}
+          REGISTRY: 'quay.io/ocpmetal'
+          dockerfile: Dockerfile.agent
+          buildargs: GIT_REVISION
+          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"
+      - name: Publish inventory to Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.15
+        with:
+          name: inventory
+          username: ${{ secrets.OCPMETAL_USERNAME }}
+          password: ${{ secrets.OCPMETAL_PASSWORD }}
+          REGISTRY: 'quay.io/ocpmetal'
+          dockerfile: Dockerfile.inventory
+          buildargs: GIT_REVISION
+          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"

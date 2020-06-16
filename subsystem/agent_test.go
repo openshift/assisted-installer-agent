@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -75,8 +76,8 @@ var _ = Describe("Agent tests", func() {
 		registerStubID, err := addRegisterStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "wrong-step"
-		stepType := "Step-not-exists"
-		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{StepType: models.StepType(stepType), StepID: stepID, Args: make([]string, 0)})
+		stepType := models.StepType("Step-not-exists")
+		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{StepType: stepType, StepID: stepID, Args: make([]string, 0)})
 		Expect(err).NotTo(HaveOccurred())
 		replyStubID, err := addStepReplyStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
@@ -89,6 +90,7 @@ var _ = Describe("Agent tests", func() {
 			ExitCode: -1,
 			Output:   "",
 			StepID:   stepID,
+			StepType: stepType,
 		}
 		verifyStepReplyRequest(hostID, expectedReply)
 		err = deleteStub(registerStubID)
@@ -125,6 +127,7 @@ var _ = Describe("Agent tests", func() {
 			ExitCode: 0,
 			Output:   "Hello world\n",
 			StepID:   stepID,
+			StepType: models.StepTypeExecute,
 		}
 		verifyStepReplyRequest(hostID, expectedReply)
 		err = deleteStub(registerStubID)
@@ -142,6 +145,8 @@ var _ = Describe("Agent tests", func() {
 		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{
 			StepType: models.StepTypeHardwareInfo,
 			StepID:   stepID,
+			Command:  "docker",
+			Args:     strings.Split("run,--rm,--privileged,--net=host,-v,/var/log:/var/log,quay.io/ocpmetal/hardware_info:latest,/usr/bin/hardware_info", ","),
 		})
 		Expect(err).NotTo(HaveOccurred())
 		replyStubID, err := addStepReplyStub(hostID)
@@ -151,6 +156,36 @@ var _ = Describe("Agent tests", func() {
 		verifyRegisterRequest()
 		verifyGetNextRequest(hostID, true)
 		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
+		err = deleteStub(registerStubID)
+		Expect(err).NotTo(HaveOccurred())
+		err = deleteStub(nextStepsStubID)
+		Expect(err).NotTo(HaveOccurred())
+		err = deleteStub(replyStubID)
+		Expect(err).NotTo(HaveOccurred())
+	})
+	It("Multiple steps backward compatible", func() {
+		hostID := nextHostID()
+		registerStubID, err := addRegisterStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		nextStepsStubID, err := addNextStepStub(hostID,
+			&models.Step{
+				StepType: models.StepTypeHardwareInfo,
+				StepID:   "hardware-info-step",
+			},
+			&models.Step{
+				StepType: models.StepTypeInventory,
+				StepID:   "inventory-step",
+			},
+		)
+		Expect(err).NotTo(HaveOccurred())
+		replyStubID, err := addStepReplyStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(5 * time.Second)
+		verifyRegisterRequest()
+		verifyGetNextRequest(hostID, true)
+		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
+		verifyStepReplyRequest(hostID, &InventoryVerifier{})
 		err = deleteStub(registerStubID)
 		Expect(err).NotTo(HaveOccurred())
 		err = deleteStub(nextStepsStubID)
@@ -185,10 +220,22 @@ var _ = Describe("Agent tests", func() {
 			&models.Step{
 				StepType: models.StepTypeHardwareInfo,
 				StepID:   "hardware-info-step",
+				Command:  "docker",
+				Args:     strings.Split("run,--rm,--privileged,--net=host,-v,/var/log:/var/log,quay.io/ocpmetal/hardware_info:latest,/usr/bin/hardware_info", ","),
 			},
 			&models.Step{
 				StepType: models.StepTypeInventory,
 				StepID:   "inventory-step",
+				Command:  "docker",
+				Args: []string{
+					"run", "--privileged", "--net=host", "--rm",
+					"-v", "/var/log:/var/log",
+					"-v", "/run/udev:/run/udev",
+					"-v", "/dev/disk:/dev/disk",
+					"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
+					"quay.io/ocpmetal/inventory:latest",
+					"inventory",
+				},
 			},
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -203,12 +250,14 @@ var _ = Describe("Agent tests", func() {
 			ExitCode: 0,
 			Output:   "Hello world\n",
 			StepID:   "echo-step-1",
+			StepType: models.StepTypeExecute,
 		})
 		verifyStepReplyRequest(hostID, &EqualReplyVerifier{
 			Error:    "",
 			ExitCode: 0,
 			Output:   "Bye bye world\n",
 			StepID:   "echo-step-2",
+			StepType: models.StepTypeExecute,
 		})
 		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
 		verifyStepReplyRequest(hostID, &InventoryVerifier{})
@@ -335,6 +384,9 @@ type InventoryVerifier struct{}
 
 func (i *InventoryVerifier) verify(actualReply *models.StepReply) bool {
 	if actualReply.ExitCode != 0 {
+		return false
+	}
+	if actualReply.StepType != models.StepTypeInventory {
 		return false
 	}
 	var inventory models.Inventory

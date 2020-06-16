@@ -32,16 +32,17 @@ func newSession() *stepSession {
 	return &ret
 }
 
-func (s *stepSession) sendStepReply(stepID, output, errStr string, exitCode int) {
+func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, errStr string, exitCode int) {
 	s.Logger().Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
 	params := installer.PostStepReplyParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 	}
 	reply := models.StepReply{
-		Output:   output,
+		StepType: stepType,
 		StepID:   stepID,
 		ExitCode: int64(exitCode),
+		Output:   output,
 		Error:    errStr,
 	}
 	params.Reply = &reply
@@ -51,21 +52,27 @@ func (s *stepSession) sendStepReply(stepID, output, errStr string, exitCode int)
 	}
 }
 
-func (s *stepSession) handleSingleStep(stepID string, command string, args []string, handler HandlerType) {
+func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, command string, args []string, handler HandlerType) {
 	stdout, stderr, exitCode := handler(command, args...)
-	s.sendStepReply(stepID, stdout, stderr, exitCode)
+	s.sendStepReply(stepType, stepID, stdout, stderr, exitCode)
 }
 
 func (s *stepSession) handleSteps(steps models.Steps) {
 	for _, step := range steps {
-		handler, ok := stepType2Handler[step.StepType]
-		if !ok {
-			errStr := fmt.Sprintf("Unexpected step type: %s", step.StepType)
-			s.Logger().Warn(errStr)
-			s.sendStepReply(step.StepID, "", errStr, -1)
-			continue
+		var handler HandlerType
+		if step.Command != "" {
+			handler = util.Execute
+		} else {
+			// This part will be deprecated and will be removed after bm-inventory will be adapted to execute only commands
+			handler = stepType2Handler[step.StepType]
+			if handler == nil {
+				errStr := fmt.Sprintf("Unexpected step type: %s", step.StepType)
+				s.Logger().Warn(errStr)
+				s.sendStepReply(step.StepType, step.StepID, "", errStr, -1)
+				continue
+			}
 		}
-		go s.handleSingleStep(step.StepID, step.Command, step.Args, handler)
+		go s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, handler)
 	}
 }
 

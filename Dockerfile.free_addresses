@@ -1,0 +1,4 @@
+FROM registry.fedoraproject.org/fedora-minimal:latest
+RUN microdnf install nmap && microdnf clean all
+ADD build/free_addresses /usr/bin/free_addresses
+CMD ["/usr/bin/free_addresses"]

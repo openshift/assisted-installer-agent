@@ -70,3 +70,13 @@ jobs:
           dockerfile: Dockerfile.inventory
           buildargs: GIT_REVISION
           tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"
+      - name: Publish free_addresses to Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.15
+        with:
+          name: free_addresses
+          username: ${{ secrets.OCPMETAL_USERNAME }}
+          password: ${{ secrets.OCPMETAL_PASSWORD }}
+          REGISTRY: 'quay.io/ocpmetal'
+          dockerfile: Dockerfile.free_addresses
+          buildargs: GIT_REVISION
+          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"

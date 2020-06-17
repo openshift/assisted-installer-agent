@@ -10,6 +10,6 @@ import (
 
 func main() {
 	config.ProcessSubprocessArgs(true, false)
-	util.SetLogging("connectivity-check", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
+	util.SetLogging("inventory", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
 	fmt.Print(string(inventory.CreateInveroryInfo()))
 }

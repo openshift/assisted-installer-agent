@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -261,6 +262,41 @@ var _ = Describe("Agent tests", func() {
 		})
 		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
 		verifyStepReplyRequest(hostID, &InventoryVerifier{})
+		stepReply := getSpecificStep(hostID, &InventoryVerifier{})
+		inventory := getInventoryFromStepReply(stepReply)
+		Expect(len(inventory.Interfaces) > 0).To(BeTrue())
+		Expect(len(inventory.Interfaces[0].IPV4Addresses) > 0).To(BeTrue())
+		ip, cidr, err := net.ParseCIDR(inventory.Interfaces[0].IPV4Addresses[0])
+		Expect(err).ToNot(HaveOccurred())
+		ones, _ := cidr.Mask.Size()
+		if ones < 24 {
+			_, cidr, err = net.ParseCIDR(ip.To4().String() + "/24")
+			Expect(err).ToNot(HaveOccurred())
+		}
+		freeAddressesRequest := models.FreeAddressesRequest{
+			cidr.String(),
+		}
+		b, err := json.Marshal(&freeAddressesRequest)
+		Expect(err).ToNot(HaveOccurred())
+		err = deleteStub(nextStepsStubID)
+		Expect(err).NotTo(HaveOccurred())
+		nextStepsStubID, err = addNextStepStub(hostID,
+			&models.Step{
+				StepType: models.StepTypeFreeNetworkAddresses,
+				StepID:   "free-addresses",
+				Command:  "docker",
+				Args: []string{"run", "--privileged", "--net=host", "--rm",
+					"-v", "/var/log:/var/log",
+					"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
+					"quay.io/ocpmetal/free_addresses:latest",
+					"free_addresses",
+					string(b),
+				},
+			},
+		)
+		Eventually(func() bool {
+			return isReplyFound(hostID, &FreeAddressesVerifier{})
+		}, 300*time.Second, 5*time.Second).Should(BeTrue())
 		err = deleteStub(registerStubID)
 		Expect(err).NotTo(HaveOccurred())
 		err = deleteStub(nextStepsStubID)
@@ -401,6 +437,26 @@ func (i *InventoryVerifier) verify(actualReply *models.StepReply) bool {
 		inventory.Hostname != ""
 }
 
+type FreeAddressesVerifier struct{}
+
+func (f *FreeAddressesVerifier) verify(actualReply *models.StepReply) bool {
+	if actualReply.StepType != models.StepTypeFreeNetworkAddresses {
+		return false
+	}
+	Expect(actualReply.ExitCode).To(BeZero())
+	var freeAddresses models.FreeNetworksAddresses
+	Expect(json.Unmarshal([]byte(actualReply.Output), &freeAddresses)).ToNot(HaveOccurred())
+	Expect(len(freeAddresses) > 0).To(BeTrue())
+	_, _, err := net.ParseCIDR(freeAddresses[0].Network)
+	Expect(err).ToNot(HaveOccurred())
+	if len(freeAddresses[0].FreeAddresses) > 0 {
+		ip := net.ParseIP(freeAddresses[0].FreeAddresses[0].String())
+		Expect(ip).ToNot(BeNil())
+		Expect(ip.To4()).ToNot(BeNil())
+	}
+	return true
+}
+
 func verifyStepReplyRequest(hostID string, verifier StepVerifier) {
 	reqs, err := findAllMatchingRequests(getStepReplyURL(hostID), "POST")
 	Expect(err).NotTo(HaveOccurred())
@@ -412,6 +468,40 @@ func verifyStepReplyRequest(hostID string, verifier StepVerifier) {
 		}
 	}
 	ExpectWithOffset(1, true).Should(BeFalse(), "Expected step not found")
+}
+
+func isReplyFound(hostID string, verifier StepVerifier) bool {
+	reqs, err := findAllMatchingRequests(getStepReplyURL(hostID), "POST")
+	Expect(err).NotTo(HaveOccurred())
+	for _, r := range reqs {
+		var actualReply models.StepReply
+		Expect(json.Unmarshal([]byte(r.Request.Body), &actualReply)).NotTo(HaveOccurred())
+		if verifier.verify(&actualReply) {
+			return true
+		}
+	}
+	return false
+}
+
+func getInventoryFromStepReply(actualReply *models.StepReply) *models.Inventory {
+	var inventory models.Inventory
+	err := json.Unmarshal([]byte(actualReply.Output), &inventory)
+	Expect(err).NotTo(HaveOccurred())
+	return &inventory
+}
+
+func getSpecificStep(hostID string, verifier StepVerifier) *models.StepReply {
+	reqs, err := findAllMatchingRequests(getStepReplyURL(hostID), "POST")
+	Expect(err).NotTo(HaveOccurred())
+	for _, r := range reqs {
+		var actualReply models.StepReply
+		Expect(json.Unmarshal([]byte(r.Request.Body), &actualReply)).NotTo(HaveOccurred())
+		if verifier.verify(&actualReply) {
+			return &actualReply
+		}
+	}
+	ExpectWithOffset(1, true).Should(BeFalse(), "Expected step not found")
+	return nil
 }
 
 func getRegisterURL() string {

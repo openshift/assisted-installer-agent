@@ -17,6 +17,7 @@ var GlobalAgentConfig struct {
 	InventoryImage     string
 	JournalLogging     bool
 	TextLogging        bool
+	AgentVersion       string
 }
 
 func printHelpAndExit() {
@@ -30,6 +31,7 @@ func ProcessArgs() {
 	flag.StringVar(&ret.TargetHost, "host", client.DefaultHost, "The target host")
 	flag.IntVar(&ret.TargetPort, "port", 80, "The target port")
 	flag.StringVar(&ret.ClusterID, "cluster-id", "default-cluster", "The value of the cluster-id")
+	flag.StringVar(&ret.AgentVersion, "agent-version", "", "Discovery agent version")
 	flag.IntVar(&ret.IntervalSecs, "interval", 60, "Interval between steps polling in seconds")
 	flag.StringVar(&ret.ConnectivityParams, "connectivity", "", "Test connectivity as output string")
 	flag.StringVar(&ret.InventoryImage, "inventory-image", "quay.io/ocpmetal/inventory:latest", "The image of inventory")

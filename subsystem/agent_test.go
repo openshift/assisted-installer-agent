@@ -293,17 +293,20 @@ var _ = Describe("Agent tests", func() {
 		stepReply := getSpecificStep(hostID, &InventoryVerifier{})
 		inventory := getInventoryFromStepReply(stepReply)
 		Expect(len(inventory.Interfaces) > 0).To(BeTrue())
-		Expect(len(inventory.Interfaces[0].IPV4Addresses) > 0).To(BeTrue())
-		ip, cidr, err := net.ParseCIDR(inventory.Interfaces[0].IPV4Addresses[0])
-		Expect(err).ToNot(HaveOccurred())
-		ones, _ := cidr.Mask.Size()
-		if ones < 24 {
-			_, cidr, err = net.ParseCIDR(ip.To4().String() + "/24")
-			Expect(err).ToNot(HaveOccurred())
+		freeAddressesRequest := models.FreeAddressesRequest{}
+		for _, intf := range inventory.Interfaces {
+			for _, ipAddr := range intf.IPV4Addresses {
+				ip, cidr, err := net.ParseCIDR(ipAddr)
+				Expect(err).ToNot(HaveOccurred())
+				ones, _ := cidr.Mask.Size()
+				if ones < 24 {
+					_, cidr, err = net.ParseCIDR(ip.To4().String() + "/24")
+					Expect(err).ToNot(HaveOccurred())
+				}
+				freeAddressesRequest = append(freeAddressesRequest, cidr.String())
+			}
 		}
-		freeAddressesRequest := models.FreeAddressesRequest{
-			cidr.String(),
-		}
+		Expect(len(freeAddressesRequest)).ToNot(BeZero())
 		b, err := json.Marshal(&freeAddressesRequest)
 		Expect(err).ToNot(HaveOccurred())
 		err = deleteStub(nextStepsStubID)

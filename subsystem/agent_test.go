@@ -27,6 +27,7 @@ var (
 )
 
 var _ = Describe("Agent tests", func() {
+	defaultnextInstructionSeconds := int64(1)
 	BeforeSuite(func() {
 		Eventually(waitForWiremock).ShouldNot(HaveOccurred())
 	})
@@ -44,7 +45,7 @@ var _ = Describe("Agent tests", func() {
 		hostID := nextHostID()
 		registerStubID, err := addRegisterStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
-		nextStepsStubID, err := addNextStepStub(hostID)
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(startAgent()).NotTo(HaveOccurred())
 		time.Sleep(1 * time.Second)
@@ -54,9 +55,36 @@ var _ = Describe("Agent tests", func() {
 		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
 	})
 
+	It("Verify nextInstructionSeconds", func() {
+		hostID := nextHostID()
+		registerStubID, err := addRegisterStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(5 * time.Second)
+		verifyRegisterRequest()
+		verifyNumberOfGetNextRequest(hostID, ">", 3)
+		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
+		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
+
+		By("verify changing nextInstructionSeconds to large number")
+		hostID = nextHostID()
+		registerStubID, err = addRegisterStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		nextStepsStubID, err = addNextStepStub(hostID, 100)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(30 * time.Second)
+		verifyRegisterRequest()
+		verifyNumberOfGetNextRequest(hostID, "<", 2)
+		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
+		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
+	})
+
 	It("Register recovery", func() {
 		hostID := nextHostID()
-		nextStepsStubID, err := addNextStepStub(hostID)
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(startAgent()).NotTo(HaveOccurred())
 		time.Sleep(1 * time.Second)
@@ -78,7 +106,7 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "wrong-step"
 		stepType := models.StepType("Step-not-exists")
-		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{StepType: stepType, StepID: stepID, Args: make([]string, 0)})
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds, &models.Step{StepType: stepType, StepID: stepID, Args: make([]string, 0)})
 		Expect(err).NotTo(HaveOccurred())
 		replyStubID, err := addStepReplyStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
@@ -107,7 +135,7 @@ var _ = Describe("Agent tests", func() {
 		registerStubID, err := addRegisterStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "execute-step"
-		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds, &models.Step{
 			StepType: models.StepTypeExecute,
 			StepID:   stepID,
 			Command:  "echo",
@@ -143,7 +171,7 @@ var _ = Describe("Agent tests", func() {
 		registerStubID, err := addRegisterStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "hardware-info-step"
-		nextStepsStubID, err := addNextStepStub(hostID, &models.Step{
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds, &models.Step{
 			StepType: models.StepTypeHardwareInfo,
 			StepID:   stepID,
 			Command:  "docker",
@@ -168,7 +196,7 @@ var _ = Describe("Agent tests", func() {
 		hostID := nextHostID()
 		registerStubID, err := addRegisterStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
-		nextStepsStubID, err := addNextStepStub(hostID,
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds,
 			&models.Step{
 				StepType: models.StepTypeHardwareInfo,
 				StepID:   "hardware-info-step",
@@ -198,7 +226,7 @@ var _ = Describe("Agent tests", func() {
 		hostID := nextHostID()
 		registerStubID, err := addRegisterStub(hostID)
 		Expect(err).NotTo(HaveOccurred())
-		nextStepsStubID, err := addNextStepStub(hostID,
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds,
 			&models.Step{
 				StepType: models.StepTypeExecute,
 				StepID:   "echo-step-1",
@@ -280,7 +308,7 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).ToNot(HaveOccurred())
 		err = deleteStub(nextStepsStubID)
 		Expect(err).NotTo(HaveOccurred())
-		nextStepsStubID, err = addNextStepStub(hostID,
+		nextStepsStubID, err = addNextStepStub(hostID, defaultnextInstructionSeconds,
 			&models.Step{
 				StepType: models.StepTypeFreeNetworkAddresses,
 				StepID:   "free-addresses",
@@ -390,6 +418,12 @@ func verifyGetNextRequest(hostID string, matchExpected bool) {
 	} else {
 		Expect(len(reqs)).Should(BeNumerically(">", 0))
 	}
+}
+
+func verifyNumberOfGetNextRequest(hostID string, comaparator string, number int) {
+	reqs, err := findAllMatchingRequests(getNextStepsURL(hostID), "GET")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(len(reqs)).Should(BeNumerically(comaparator, number))
 }
 
 type StepVerifier interface {
@@ -568,10 +602,11 @@ func addRegisterStub(hostID string) (string, error) {
 	return addStub(&stub)
 }
 
-func addNextStepStub(hostID string, steps ...*models.Step) (string, error) {
-	if steps == nil {
-		steps = make([]*models.Step, 0)
+func addNextStepStub(hostID string, nextInstructionSeconds int64, instructions ...*models.Step) (string, error) {
+	if instructions == nil {
+		instructions = make([]*models.Step, 0)
 	}
+	steps := models.Steps{NextInstructionSeconds: nextInstructionSeconds, Instructions: instructions}
 	b, err := json.Marshal(steps)
 	if err != nil {
 		return "", err

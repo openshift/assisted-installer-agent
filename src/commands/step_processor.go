@@ -57,8 +57,8 @@ func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, 
 	s.sendStepReply(stepType, stepID, stdout, stderr, exitCode)
 }
 
-func (s *stepSession) handleSteps(steps models.Steps) {
-	for _, step := range steps {
+func (s *stepSession) handleSteps(steps *models.Steps) {
+	for _, step := range steps.Instructions {
 		var handler HandlerType
 		if step.Command != "" {
 			handler = util.Execute
@@ -76,7 +76,7 @@ func (s *stepSession) handleSteps(steps models.Steps) {
 	}
 }
 
-func (s *stepSession) processSingleSession() {
+func (s *stepSession) processSingleSession() int64 {
 	params := installer.GetNextStepsParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
@@ -85,16 +85,18 @@ func (s *stepSession) processSingleSession() {
 	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)
 	if err != nil {
 		s.Logger().Warnf("Could not query next steps: %s", err.Error())
+		return int64(config.GlobalAgentConfig.IntervalSecs)
 	} else {
 		s.handleSteps(result.Payload)
 	}
-
+	return result.Payload.NextInstructionSeconds
 }
 
 func ProcessSteps() {
+	var nextRunIn int64
 	for {
 		s := newSession()
-		s.processSingleSession()
-		time.Sleep(time.Duration(config.GlobalAgentConfig.IntervalSecs) * time.Second)
+		nextRunIn = s.processSingleSession()
+		time.Sleep(time.Duration(nextRunIn) * time.Second)
 	}
 }

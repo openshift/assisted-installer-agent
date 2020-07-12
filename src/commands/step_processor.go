@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/ori-amizur/introspector/src/util"
@@ -85,6 +86,10 @@ func (s *stepSession) processSingleSession() int64 {
 	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)
 	if err != nil {
 		s.Logger().Warnf("Could not query next steps: %s", err.Error())
+		if reflect.TypeOf(err) == reflect.TypeOf(installer.NewGetNextStepsNotFound()) {
+			s.Logger().WithError(err).Errorf("Cluster %s was not fount in inventory, going to sleep forever", params.ClusterID)
+			return -1
+		}
 		return int64(config.GlobalAgentConfig.IntervalSecs)
 	} else {
 		s.handleSteps(result.Payload)
@@ -97,6 +102,10 @@ func ProcessSteps() {
 	for {
 		s := newSession()
 		nextRunIn = s.processSingleSession()
+		if nextRunIn == -1 {
+			// sleep forever
+			select {}
+		}
 		time.Sleep(time.Duration(nextRunIn) * time.Second)
 	}
 }

@@ -82,6 +82,20 @@ var _ = Describe("Agent tests", func() {
 		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
 	})
 
+	It("Cluster not exists", func() {
+		hostID := nextHostID()
+		registerStubID, err := addNextStepClusterNotExistsStub(hostID)
+		Expect(err).NotTo(HaveOccurred())
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(10 * time.Second)
+		verifyRegisterRequest()
+		verifyNumberOfGetNextRequest(hostID, "<", 2)
+		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
+		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
+	})
+
 	It("Register recovery", func() {
 		hostID := nextHostID()
 		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
@@ -630,6 +644,31 @@ func addNextStepStub(hostID string, nextInstructionSeconds int64, instructions .
 	return addStub(&stub)
 }
 
+func addNextStepClusterNotExistsStub(hostID string, instructions ...*models.Step) (string, error) {
+	if instructions == nil {
+		instructions = make([]*models.Step, 0)
+	}
+	steps := models.Steps{NextInstructionSeconds: 1, Instructions: instructions}
+	b, err := json.Marshal(steps)
+	if err != nil {
+		return "", err
+	}
+	stub := StubDefinition{
+		Request: &RequestDefinition{
+			URL:    getNextStepsURL(hostID),
+			Method: "GET",
+		},
+		Response: &ResponseDefinition{
+			Status: 404,
+			Body:   string(b),
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		},
+	}
+	return addStub(&stub)
+}
+
 func addStepReplyStub(hostID string) (string, error) {
 	stub := StubDefinition{
 		Request: &RequestDefinition{
@@ -644,7 +683,6 @@ func addStepReplyStub(hostID string) (string, error) {
 		},
 	}
 	return addStub(&stub)
-
 }
 
 func deleteStub(stubID string) error {

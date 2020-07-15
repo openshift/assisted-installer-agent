@@ -18,7 +18,7 @@ func createRegisterParams() *installer.RegisterHostParams {
 	ret := &installer.RegisterHostParams{
 		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		NewHostParams: &models.HostCreateParams{
-			HostID:                scanners.ReadId(),
+			HostID:                scanners.ReadId(&scanners.GHWSerialDiscovery{}),
 			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
 		},
 	}

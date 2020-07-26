@@ -42,7 +42,7 @@ var _ = Describe("Agent tests", func() {
 
 	It("Happy flow", func() {
 		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID)
+		registerStubID, err := addRegisterStub(hostID, http.StatusCreated)
 		Expect(err).NotTo(HaveOccurred())
 		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
 		Expect(err).NotTo(HaveOccurred())
@@ -54,9 +54,63 @@ var _ = Describe("Agent tests", func() {
 		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
 	})
 
+	It("register forbidden", func() {
+		hostID := nextHostID()
+		registerStubID, err := addRegisterStub(hostID, http.StatusForbidden)
+		Expect(err).NotTo(HaveOccurred())
+
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(5 * time.Second)
+
+		// validate only register request was called
+		resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
+		Expect(err).ShouldNot(HaveOccurred())
+		requests := &Requests{}
+		b, err := ioutil.ReadAll(resp.Body)
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
+		req := make([]*RequestOccurence, 0, len(requests.Requests))
+		for _, r := range requests.Requests {
+			req = append(req, r)
+		}
+		Expect(len(req)).Should(Equal(1))
+		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
+		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
+	})
+
+	It("register not found - agent should stop trying to register", func() {
+		hostID := nextHostID()
+		registerStubID, err := addRegisterStub(hostID, http.StatusNotFound)
+		Expect(err).NotTo(HaveOccurred())
+
+		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(startAgent()).NotTo(HaveOccurred())
+		time.Sleep(5 * time.Second)
+
+		// validate only register request was called
+		resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
+		Expect(err).ShouldNot(HaveOccurred())
+		requests := &Requests{}
+		b, err := ioutil.ReadAll(resp.Body)
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
+		req := make([]*RequestOccurence, 0, len(requests.Requests))
+		for _, r := range requests.Requests {
+			req = append(req, r)
+		}
+		Expect(len(req)).Should(Equal(1))
+		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
+		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
+	})
+
 	It("Verify nextInstructionSeconds", func() {
 		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID)
+		registerStubID, err := addRegisterStub(hostID, http.StatusCreated)
 		Expect(err).NotTo(HaveOccurred())
 		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
 		Expect(err).NotTo(HaveOccurred())
@@ -69,7 +123,7 @@ var _ = Describe("Agent tests", func() {
 
 		By("verify changing nextInstructionSeconds to large number")
 		hostID = nextHostID()
-		registerStubID, err = addRegisterStub(hostID)
+		registerStubID, err = addRegisterStub(hostID, http.StatusCreated)
 		Expect(err).NotTo(HaveOccurred())
 		nextStepsStubID, err = addNextStepStub(hostID, 100)
 		Expect(err).NotTo(HaveOccurred())
@@ -103,7 +157,7 @@ var _ = Describe("Agent tests", func() {
 		time.Sleep(1 * time.Second)
 		verifyRegisterRequest()
 		verifyGetNextRequest(hostID, false)
-		registerStubID, err := addRegisterStub(hostID)
+		registerStubID, err := addRegisterStub(hostID, http.StatusCreated)
 		Expect(err).NotTo(HaveOccurred())
 		time.Sleep(time.Second * 6)
 		verifyRegisterRequest()
@@ -115,7 +169,7 @@ var _ = Describe("Agent tests", func() {
 
 	It("Step not exists", func() {
 		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID)
+		registerStubID, err := addRegisterStub(hostID, http.StatusCreated)
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "wrong-step"
 		stepType := models.StepType("Step-not-exists")
@@ -145,7 +199,7 @@ var _ = Describe("Agent tests", func() {
 
 	It("Execute echo", func() {
 		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID)
+		registerStubID, err := addRegisterStub(hostID, http.StatusCreated)
 		Expect(err).NotTo(HaveOccurred())
 		stepID := "execute-step"
 		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds, &models.Step{
@@ -181,7 +235,7 @@ var _ = Describe("Agent tests", func() {
 	})
 	It("Multiple steps", func() {
 		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID)
+		registerStubID, err := addRegisterStub(hostID, http.StatusCreated)
 		Expect(err).NotTo(HaveOccurred())
 		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds,
 			&models.Step{
@@ -509,7 +563,7 @@ func addStub(stub *StubDefinition) (string, error) {
 	return ret.ID, nil
 }
 
-func addRegisterStub(hostID string) (string, error) {
+func addRegisterStub(hostID string, reply int) (string, error) {
 	hostUUID := strfmt.UUID(hostID)
 	hostKind := "host"
 	returnedHost := &models.Host{
@@ -526,7 +580,7 @@ func addRegisterStub(hostID string) (string, error) {
 			Method: "POST",
 		},
 		Response: &ResponseDefinition{
-			Status: 201,
+			Status: reply,
 			Body:   string(b),
 			Headers: map[string]string{
 				"Content-Type": "application/json",

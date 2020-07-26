@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
@@ -16,13 +15,6 @@ import (
 )
 
 type HandlerType func(string, ...string) (stdout string, stderr string, exitCode int)
-
-var stepType2Handler = map[models.StepType]HandlerType{
-	models.StepTypeHardwareInfo:      GetHardwareInfo,
-	models.StepTypeConnectivityCheck: ConnectivityCheck,
-	models.StepTypeExecute:           util.Execute,
-	models.StepTypeInventory:         GetInventory,
-}
 
 type stepSession struct {
 	session.InventorySession
@@ -60,20 +52,13 @@ func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, 
 
 func (s *stepSession) handleSteps(steps *models.Steps) {
 	for _, step := range steps.Instructions {
-		var handler HandlerType
-		if step.Command != "" {
-			handler = util.Execute
-		} else {
-			// This part will be deprecated and will be removed after bm-inventory will be adapted to execute only commands
-			handler = stepType2Handler[step.StepType]
-			if handler == nil {
-				errStr := fmt.Sprintf("Unexpected step type: %s", step.StepType)
-				s.Logger().Warn(errStr)
-				s.sendStepReply(step.StepType, step.StepID, "", errStr, -1)
-				continue
-			}
+		if step.Command == "" {
+			errStr := "Missing command"
+			s.Logger().Warn(errStr)
+			s.sendStepReply(step.StepType, step.StepID, "", errStr, -1)
+			continue
 		}
-		go s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, handler)
+		go s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, util.Execute)
 	}
 }
 

@@ -37,16 +37,6 @@ jobs:
           dockerfile: Dockerfile.connectivity_check
           buildargs: GIT_REVISION
           tags: "latest,${{ env.GIT_REVISION }}"
-      - name: Publish hardware_info to Registry
-        uses: elgohr/Publish-Docker-Github-Action@2.15
-        with:
-          name: hardware_info
-          username: ${{ secrets.OCPMETAL_USERNAME }}
-          password: ${{ secrets.OCPMETAL_PASSWORD }}
-          REGISTRY: 'quay.io/ocpmetal'
-          dockerfile: Dockerfile.hardware_info
-          buildargs: GIT_REVISION
-          tags: "latest,${{ env.GIT_REVISION }}"
       - name: Publish agent to Registry
         uses: elgohr/Publish-Docker-Github-Action@2.15
         with:

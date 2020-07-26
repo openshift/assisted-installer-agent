@@ -1,4 +1,0 @@
-FROM alpine:3.7
-RUN apk add iproute2 util-linux
-ADD build/hardware_info /usr/bin/hardware_info
-CMD ["/usr/bin/hardware_info"]

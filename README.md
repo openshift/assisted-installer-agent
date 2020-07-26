@@ -3,13 +3,12 @@
 This projects generates couple of products.  Each one packed in a docker image:
 * **agent** - Agent to bm-inventory
 * **inventory** - A container image that provides inventory information
-* **hardware_info** - A container image for running hardware_info
 * **connectivity_check** - A container image for running connectivity_check
+* **free_addresses** - A container image for running nmap to detect free addresses
 ## agent
 The agent communicates with bm-inventory.  It uses the **ghw** library to generate unique uuid identifying the host 
 that the agent is running on.
-Currently, the functionality of **hardware_info** and **connectivity_check** is also bundled in the agent itself, besides their dedicated container images.
-**hardware_info** is deprecated and will be removed.  **inventory** is replacing **hardware_info**.
+Currently, the functionality of **connectivity_check** is also bundled in the agent itself, besides its dedicated container images.
 
 ### Flags
 
@@ -33,9 +32,6 @@ the agent shoud run as root.  If running in a container, the docker or podman sh
 
 ### Dependecies
 * docker
-* iputils (ping, arping)
-* iproute
-* Linux utilities such as lscpu, free (etc.).
 
 ### Building
 introspector uses skipper for building and testing.

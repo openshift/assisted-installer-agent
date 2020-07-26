@@ -6,7 +6,6 @@ containers:
     agent: Dockerfile.agent
     connectivity_check: Dockerfile.connectivity_check
     inventory: Dockerfile.inventory
-    hardware_info: Dockerfile.hardware_info
 volumes:
     - $HOME/.cache/go-build:$HOME/.cache/go-build
     - $HOME/go/pkg:/go/pkg

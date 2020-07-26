@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"os/exec"
-	"strings"
 	"testing"
 	"time"
 
@@ -129,7 +128,7 @@ var _ = Describe("Agent tests", func() {
 		verifyRegisterRequest()
 		verifyGetNextRequest(hostID, true)
 		expectedReply := &EqualReplyVerifier{
-			Error:    fmt.Sprintf("Unexpected step type: %s", stepType),
+			Error:    "Missing command",
 			ExitCode: -1,
 			Output:   "",
 			StepID:   stepID,
@@ -180,62 +179,6 @@ var _ = Describe("Agent tests", func() {
 		err = deleteStub(replyStubID)
 		Expect(err).NotTo(HaveOccurred())
 	})
-	It("Hardware info", func() {
-		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID)
-		Expect(err).NotTo(HaveOccurred())
-		stepID := "hardware-info-step"
-		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds, &models.Step{
-			StepType: models.StepTypeHardwareInfo,
-			StepID:   stepID,
-			Command:  "docker",
-			Args:     strings.Split("run,--rm,--privileged,--net=host,-v,/var/log:/var/log,quay.io/ocpmetal/hardware_info:latest,/usr/bin/hardware_info", ","),
-		})
-		Expect(err).NotTo(HaveOccurred())
-		replyStubID, err := addStepReplyStub(hostID)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(startAgent()).NotTo(HaveOccurred())
-		time.Sleep(1 * time.Second)
-		verifyRegisterRequest()
-		verifyGetNextRequest(hostID, true)
-		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
-		err = deleteStub(registerStubID)
-		Expect(err).NotTo(HaveOccurred())
-		err = deleteStub(nextStepsStubID)
-		Expect(err).NotTo(HaveOccurred())
-		err = deleteStub(replyStubID)
-		Expect(err).NotTo(HaveOccurred())
-	})
-	It("Multiple steps backward compatible", func() {
-		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID)
-		Expect(err).NotTo(HaveOccurred())
-		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds,
-			&models.Step{
-				StepType: models.StepTypeHardwareInfo,
-				StepID:   "hardware-info-step",
-			},
-			&models.Step{
-				StepType: models.StepTypeInventory,
-				StepID:   "inventory-step",
-			},
-		)
-		Expect(err).NotTo(HaveOccurred())
-		replyStubID, err := addStepReplyStub(hostID)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(startAgent()).NotTo(HaveOccurred())
-		time.Sleep(5 * time.Second)
-		verifyRegisterRequest()
-		verifyGetNextRequest(hostID, true)
-		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
-		verifyStepReplyRequest(hostID, &InventoryVerifier{})
-		err = deleteStub(registerStubID)
-		Expect(err).NotTo(HaveOccurred())
-		err = deleteStub(nextStepsStubID)
-		Expect(err).NotTo(HaveOccurred())
-		err = deleteStub(replyStubID)
-		Expect(err).NotTo(HaveOccurred())
-	})
 	It("Multiple steps", func() {
 		hostID := nextHostID()
 		registerStubID, err := addRegisterStub(hostID)
@@ -259,12 +202,6 @@ var _ = Describe("Agent tests", func() {
 					"bye",
 					"world",
 				},
-			},
-			&models.Step{
-				StepType: models.StepTypeHardwareInfo,
-				StepID:   "hardware-info-step",
-				Command:  "docker",
-				Args:     strings.Split("run,--rm,--privileged,--net=host,-v,/var/log:/var/log,quay.io/ocpmetal/hardware_info:latest,/usr/bin/hardware_info", ","),
 			},
 			&models.Step{
 				StepType: models.StepTypeInventory,
@@ -302,7 +239,6 @@ var _ = Describe("Agent tests", func() {
 			StepID:   "echo-step-2",
 			StepType: models.StepTypeExecute,
 		})
-		verifyStepReplyRequest(hostID, &HardwareInfoVerifier{})
 		verifyStepReplyRequest(hostID, &InventoryVerifier{})
 		stepReply := getSpecificStep(hostID, &InventoryVerifier{})
 		inventory := getInventoryFromStepReply(stepReply)
@@ -350,10 +286,6 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
-
-type EqualToJsonDefinition struct {
-	EqualToJson string `json:"equalToJson"`
-}
 
 type RequestDefinition struct {
 	URL          string        `json:"url"`
@@ -451,20 +383,6 @@ type EqualReplyVerifier models.StepReply
 
 func (e *EqualReplyVerifier) verify(actualReply *models.StepReply) bool {
 	return *(*models.StepReply)(e) == *actualReply
-}
-
-type HardwareInfoVerifier struct{}
-
-func (h *HardwareInfoVerifier) verify(actualReply *models.StepReply) bool {
-	if actualReply.ExitCode != 0 {
-		return false
-	}
-	var hardwareInfo models.Introspection
-	err := json.Unmarshal([]byte(actualReply.Output), &hardwareInfo)
-	if err != nil {
-		return false
-	}
-	return len(hardwareInfo.Memory) > 0 && hardwareInfo.CPU != nil && hardwareInfo.CPU.Cpus > 0 && len(hardwareInfo.BlockDevices) > 0 && len(hardwareInfo.Nics) > 0
 }
 
 type InventoryVerifier struct{}

@@ -1,3 +1,3 @@
 FROM alpine:3.7
-RUN apk add docker bash iproute2 util-linux
+RUN apk add bash docker
 ADD build/agent /usr/bin/agent

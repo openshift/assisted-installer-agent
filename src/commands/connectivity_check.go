@@ -2,12 +2,12 @@ package commands
 
 import (
 	"encoding/json"
+	"net"
 	"os/exec"
 	"regexp"
 	"strings"
 
 	"github.com/filanov/bm-inventory/models"
-	"github.com/ori-amizur/introspector/src/scanners"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,9 +18,14 @@ type Any interface{}
 func getOutgoingNics() []string {
 	ret := make([]string, 0)
 	r := regexp.MustCompile("^(?:eth|ens|eno|enp|wlp)\\d")
-	for _, nic := range scanners.ReadNics() {
-		if r.MatchString(nic.Name) {
-			ret = append(ret, nic.Name)
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		log.WithError(err).Warnf("Get outgoing nics")
+		return nil
+	}
+	for _, intf := range interfaces {
+		if r.MatchString(intf.Name) {
+			ret = append(ret, intf.Name)
 		}
 	}
 	return ret

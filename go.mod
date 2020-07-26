@@ -3,8 +3,7 @@ module github.com/ori-amizur/introspector
 go 1.13
 
 require (
-	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
-	github.com/filanov/bm-inventory v1.0.7-0.20200723180205-4831b2adea2f
+	github.com/filanov/bm-inventory v1.0.7-0.20200727091643-3b3e888d1fe8
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/jaypipes/ghw v0.6.0
 	github.com/onsi/ginkgo v1.14.0
@@ -13,7 +12,5 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.6.1
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v9 v9.29.1 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )

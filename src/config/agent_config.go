@@ -36,7 +36,7 @@ func ProcessArgs() {
 	flag.StringVar(&ret.ConnectivityParams, "connectivity", "", "Test connectivity as output string")
 	flag.StringVar(&ret.InventoryImage, "inventory-image", "quay.io/ocpmetal/inventory:latest", "The image of inventory")
 	flag.BoolVar(&ret.JournalLogging, "with-journal-logging", true, "Use journal logging")
-	flag.BoolVar(&ret.TextLogging, "with-text-logging", true, "Output log to file")
+	flag.BoolVar(&ret.TextLogging, "with-text-logging", false, "Output log to file")
 	h := flag.Bool("help", false, "Help message")
 	flag.Parse()
 	if h != nil && *h {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -63,7 +64,7 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(startAgent()).NotTo(HaveOccurred())
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		// validate only register request was called
 		resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
@@ -90,7 +91,7 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(startAgent()).NotTo(HaveOccurred())
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		// validate only register request was called
 		resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
@@ -564,15 +565,33 @@ func addStub(stub *StubDefinition) (string, error) {
 }
 
 func addRegisterStub(hostID string, reply int) (string, error) {
+	var b []byte
+	var err error
 	hostUUID := strfmt.UUID(hostID)
 	hostKind := "host"
-	returnedHost := &models.Host{
-		ID:   &hostUUID,
-		Kind: &hostKind,
-	}
-	b, err := json.Marshal(&returnedHost)
-	if err != nil {
-		return "", err
+
+	switch reply {
+	case http.StatusCreated:
+		returnedHost := &models.Host{
+			ID:   &hostUUID,
+			Kind: &hostKind,
+		}
+		b, err = json.Marshal(&returnedHost)
+		if err != nil {
+			return "", err
+		}
+	default:
+		errorReply := &models.Error{
+			Code:   swag.String(fmt.Sprintf("%d", reply)),
+			Href:   swag.String(""),
+			ID:     swag.Int32(int32(reply)),
+			Kind:   swag.String("Error"),
+			Reason: swag.String(fmt.Sprintf("%d", reply)),
+		}
+		b, err = json.Marshal(errorReply)
+		if err != nil {
+			return "", err
+		}
 	}
 	stub := StubDefinition{
 		Request: &RequestDefinition{

@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/filanov/bm-inventory v1.0.7-0.20200727091643-3b3e888d1fe8
 	github.com/go-openapi/strfmt v0.19.5
+	github.com/go-openapi/swag v0.19.9
 	github.com/jaypipes/ghw v0.6.0
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1

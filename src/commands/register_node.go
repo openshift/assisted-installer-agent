@@ -35,13 +35,10 @@ func RegisterHostWithRetry() {
 		}
 		// stop register in case of forbidden reply.
 		switch err.(type) {
-		case *installer.RegisterHostForbidden:
-		case *installer.RegisterHostNotFound:
+		case *installer.RegisterHostForbidden, *installer.RegisterHostNotFound:
 			s.Logger().Warn("Host will stop trying to register")
 			// wait forever
 			select {}
-		}
-		if _, ok := err.(*installer.RegisterHostForbidden); ok {
 		}
 		s.Logger().Warnf("Error registering host: %s", err.Error())
 		time.Sleep(time.Duration(config.GlobalAgentConfig.IntervalSecs) * time.Second)

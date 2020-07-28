@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/openshift/assisted-service/client"
+	log "github.com/sirupsen/logrus"
 )
 
 var GlobalAgentConfig struct {
@@ -20,6 +21,7 @@ var GlobalAgentConfig struct {
 	JournalLogging     bool
 	TextLogging        bool
 	AgentVersion       string
+	PullSecretToken    string
 }
 
 func printHelpAndExit() {
@@ -48,5 +50,10 @@ func ProcessArgs() {
 
 	if ret.TargetURL == "" {
 		ret.TargetURL = fmt.Sprintf("http://%s:%d", ret.TargetHost, ret.TargetPort)
+	}
+
+	ret.PullSecretToken = os.Getenv("PULL_SECRET_TOKEN")
+	if ret.PullSecretToken == "" {
+		log.Warnf("Missing Pull Secret Token environment variable")
 	}
 }

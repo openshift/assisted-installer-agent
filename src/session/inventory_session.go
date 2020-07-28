@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/openshift/assisted-service/client"
+	"github.com/openshift/assisted-service/pkg/auth"
 	"github.com/openshift/assisted-service/pkg/requestid"
 	"github.com/ori-amizur/introspector/src/config"
 	"github.com/sirupsen/logrus"
@@ -38,6 +39,7 @@ func createBmInventoryClient() *client.AssistedInstall {
 	clientConfig := client.Config{}
 	clientConfig.URL, _ = url.Parse(createUrl())
 	clientConfig.Transport = requestid.Transport(http.DefaultTransport)
+	clientConfig.AuthInfo = auth.AgentAuthHeaderWriter(config.GlobalAgentConfig.PullSecretToken)
 	bmInventory := client.New(clientConfig)
 	return bmInventory
 }

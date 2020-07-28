@@ -11,4 +11,8 @@ volumes:
     - $HOME/go/pkg:/go/pkg
     - $HOME/.docker:$HOME/.docker
 env:
-    SERVICE: $SERVICE
+    AGENT: $AGENT
+    TAG: $TAG
+    CONNECTIVITY_CHECK: $CONNECTIVITY_CHECK
+    INVENTORY: $INVENTORY
+    FREE_ADDRESSES: $FREE_ADDRESSES

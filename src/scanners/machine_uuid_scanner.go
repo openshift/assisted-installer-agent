@@ -3,6 +3,7 @@ package scanners
 import (
 	"crypto/md5"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -15,6 +16,13 @@ const (
 	VmwareDefaultSerial = "None"
 )
 
+func disableGHWWarnings() {
+	err := os.Setenv("GHW_DISABLE_WARNINGS", "1")
+	if err != nil {
+		log.WithError(err).Warn("Disable ghw warnings")
+	}
+}
+
 //go:generate mockery -name SerialDiscovery -inpkg
 type SerialDiscovery interface {
 	Product(opts ...*ghw.WithOption) (*ghw.ProductInfo, error)
@@ -22,6 +30,11 @@ type SerialDiscovery interface {
 }
 
 type GHWSerialDiscovery struct{}
+
+func NewGHWSerialDiscovery() *GHWSerialDiscovery {
+	disableGHWWarnings()
+	return &GHWSerialDiscovery{}
+}
 
 func (g *GHWSerialDiscovery) Product(opts ...*ghw.WithOption) (*ghw.ProductInfo, error) {
 	return ghw.Product(opts...)

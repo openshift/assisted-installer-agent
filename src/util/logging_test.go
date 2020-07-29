@@ -7,9 +7,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/ori-amizur/introspector/pkg/journalLogger"
 	"github.com/sirupsen/logrus"
 	"github.com/ssgreg/journald"
 	"github.com/stretchr/testify/mock"
+
 )
 
 type WriterMock struct {
@@ -24,7 +26,7 @@ func (w *WriterMock) Write(p []byte) (n int, err error) {
 var _ = Describe("Logging test", func() {
 	var (
 		writer        *WriterMock
-		journalWriter *MockIJournalWriter
+		journalWriter *journalLogger.MockIJournalWriter
 		discard       *WriterMock
 		logger        *logrus.Logger
 		fields        = map[string]interface{}{
@@ -33,7 +35,7 @@ var _ = Describe("Logging test", func() {
 	)
 	BeforeEach(func() {
 		writer = new(WriterMock)
-		journalWriter = new(MockIJournalWriter)
+		journalWriter = new(journalLogger.MockIJournalWriter)
 		discard = new(WriterMock)
 		ioutil.Discard = discard
 		getLogFileWriter = func(name string) (io.Writer, error) {

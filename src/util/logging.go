@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ori-amizur/introspector/pkg/journalLogger"
 	"github.com/sirupsen/logrus"
-	"github.com/ssgreg/journald"
 )
 
 var getLogFileWriter = func(name string) (io.Writer, error) {
@@ -52,64 +52,13 @@ func formatFilePath(path string) string {
 	return arr[len(arr)-1]
 }
 
-func setJournalLogging(logger *logrus.Logger, journalWriter IJournalWriter) {
-	logger.AddHook(newJournalHook(journalWriter))
-}
-
-//go:generate mockery -name IJournalWriter -inpkg
-type IJournalWriter interface {
-	Send(msg string, p journald.Priority, fields map[string]interface{}) error
-}
-
-type journalHook struct {
-	writer IJournalWriter
-}
-
-type JournalWriter struct{}
-
-func (*JournalWriter) Send(msg string, p journald.Priority, fields map[string]interface{}) error {
-	return journald.Send(msg, p, fields)
-}
-
-func newJournalHook(writer IJournalWriter) *journalHook {
-	return &journalHook{writer: writer}
-}
-
-func (hook *journalHook) getPriority(entry *logrus.Entry) journald.Priority {
-	switch entry.Level {
-	case logrus.TraceLevel, logrus.DebugLevel:
-		return journald.PriorityDebug
-	case logrus.InfoLevel:
-		return journald.PriorityInfo
-	case logrus.WarnLevel:
-		return journald.PriorityWarning
-	case logrus.ErrorLevel:
-		return journald.PriorityErr
-	case logrus.FatalLevel:
-		return journald.PriorityCrit
-	case logrus.PanicLevel:
-		return journald.PriorityEmerg
-	default:
-		return journald.PriorityInfo
-	}
-}
-
-func (hook *journalHook) Fire(entry *logrus.Entry) error {
-	line, err := entry.String()
-	if err != nil {
-		return err
-	}
-	fields := map[string]interface{}{
+func setJournalLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter) {
+	logger.AddHook(journalLogger.NewJournalHook(journalWriter, map[string]interface{}{
 		"TAG": "agent",
-	}
-	return hook.writer.Send(line, hook.getPriority(entry), fields)
+	}))
 }
 
-func (hook *journalHook) Levels() []logrus.Level {
-	return logrus.AllLevels
-}
-
-func setLogging(logger *logrus.Logger, journalWriter IJournalWriter, name string, textLogging, journalLogging bool) {
+func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter, name string, textLogging, journalLogging bool) {
 	configureLogger(logger)
 	if textLogging {
 		file, err := getLogFileWriter(name)
@@ -125,5 +74,5 @@ func setLogging(logger *logrus.Logger, journalWriter IJournalWriter, name string
 }
 
 func SetLogging(name string, textLogging, journalLogging bool) {
-	setLogging(logrus.StandardLogger(), &JournalWriter{}, name, textLogging, journalLogging)
+	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging)
 }

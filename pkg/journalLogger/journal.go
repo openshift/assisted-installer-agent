@@ -11,7 +11,7 @@ type IJournalWriter interface {
 }
 
 type journalHook struct {
-	fields  map[string]interface{}
+	fields map[string]interface{}
 	writer IJournalWriter
 }
 
@@ -55,4 +55,8 @@ func (hook *journalHook) Fire(entry *logrus.Entry) error {
 
 func (hook *journalHook) Levels() []logrus.Level {
 	return logrus.AllLevels
+}
+
+func SetJournalLogging(logger *logrus.Logger, journalWriter IJournalWriter, fields map[string]interface{}) {
+	logger.AddHook(NewJournalHook(journalWriter, fields))
 }

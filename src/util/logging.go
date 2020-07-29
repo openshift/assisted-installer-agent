@@ -52,12 +52,6 @@ func formatFilePath(path string) string {
 	return arr[len(arr)-1]
 }
 
-func setJournalLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter) {
-	logger.AddHook(journalLogger.NewJournalHook(journalWriter, map[string]interface{}{
-		"TAG": "agent",
-	}))
-}
-
 func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter, name string, textLogging, journalLogging bool) {
 	configureLogger(logger)
 	if textLogging {
@@ -69,7 +63,9 @@ func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWrite
 		setNullWriter(logger)
 	}
 	if journalLogging {
-		setJournalLogging(logger, journalWriter)
+		journalLogger.SetJournalLogging(logger, journalWriter, map[string]interface{}{
+			"TAG": "agent",
+		})
 	}
 }
 

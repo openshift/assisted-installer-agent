@@ -11,7 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/ssgreg/journald"
 	"github.com/stretchr/testify/mock"
-
 )
 
 type WriterMock struct {
@@ -48,23 +47,6 @@ var _ = Describe("Logging test", func() {
 		writer.On("Write", mock.Anything).Return(5, nil)
 		setLogging(logger, journalWriter, "agent", true, false)
 		logger.Infof("Hello")
-	})
-	It("Journal logging", func() {
-		discard.On("Write", mock.Anything).Return(5, nil)
-		journalWriter.On("Send", mock.Anything, journald.PriorityInfo, fields).Return(nil).Times(2)
-		journalWriter.On("Send", mock.Anything, journald.PriorityWarning, fields).Return(nil).Times(3)
-		journalWriter.On("Send", mock.Anything, journald.PriorityErr, fields).Return(nil).Times(4)
-
-		setLogging(logger, journalWriter, "agent", false, true)
-		for i := 0; i != 2; i++ {
-			logger.Infof("Info")
-		}
-		for i := 0; i != 3; i++ {
-			logger.Warn("Warning")
-		}
-		for i := 0; i != 4; i++ {
-			logger.Error("Error")
-		}
 	})
 	It("Both", func() {
 		writer.On("Write", mock.Anything).Return(5, nil)

@@ -13,7 +13,7 @@ import (
 )
 
 func createUrl() string {
-	return fmt.Sprintf("http://%s:%d/%s", config.GlobalAgentConfig.TargetHost, config.GlobalAgentConfig.TargetPort, client.DefaultBasePath)
+	return fmt.Sprintf("%s/%s", config.GlobalAgentConfig.TargetURL, client.DefaultBasePath)
 }
 
 type InventorySession struct {

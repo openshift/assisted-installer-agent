@@ -12,8 +12,8 @@ Currently, the functionality of **connectivity_check** is also bundled in the ag
 
 ### Flags
 
-* *--host*:  The inventory host as dns name or ip address. Default is "api.openshift.com".
-* *--port*: The inventory port number. Default is 80.
+* *--host*:  **Deprecated, use *--url* instead.** The inventory host as dns name or ip address. Default is "api.openshift.com".
+* *--port*: **Deprecated, use *--url* instead.** The inventory port number. Default is 80.
 * *--url*: The inventory URL, including a schema and optionally a port. Overrides the host and port arguments. If not provided, "http://\<host\>:\<port\>" will be used.
 * *--cluster-id*: The cluster id.  Default is "default-cluster".
 * *--interval*: Interval in seconds between consecutive times that the agent accesses the inventory.  Default is 60.

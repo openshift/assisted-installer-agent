@@ -3,7 +3,7 @@ package inventory
 import (
 	"encoding/json"
 
-	"github.com/filanov/bm-inventory/models"
+	"github.com/openshift/assisted-service/models"
 )
 
 func ReadInventory() *models.Inventory {

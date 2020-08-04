@@ -10,7 +10,7 @@ import (
 	"github.com/ori-amizur/introspector/src/util"
 	"github.com/pkg/errors"
 
-	"github.com/filanov/bm-inventory/models"
+	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 )
 

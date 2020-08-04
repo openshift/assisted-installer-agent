@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net"
 
-	"github.com/filanov/bm-inventory/models"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-service/models"
 )
 
 func newInterfaceMock() *MockInterface {

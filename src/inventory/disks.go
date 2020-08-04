@@ -3,8 +3,8 @@ package inventory
 import (
 	"fmt"
 
-	"github.com/filanov/bm-inventory/models"
 	"github.com/jaypipes/ghw"
+	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 )
 

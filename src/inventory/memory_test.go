@@ -3,9 +3,9 @@ package inventory
 import (
 	"fmt"
 
-	"github.com/filanov/bm-inventory/models"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-service/models"
 )
 
 const (

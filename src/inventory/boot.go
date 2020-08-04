@@ -3,7 +3,7 @@ package inventory
 import (
 	"strings"
 
-	"github.com/filanov/bm-inventory/models"
+	"github.com/openshift/assisted-service/models"
 )
 
 type boot struct {

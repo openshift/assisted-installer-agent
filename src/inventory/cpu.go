@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/filanov/bm-inventory/models"
+	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 )
 

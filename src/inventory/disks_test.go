@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/filanov/bm-inventory/models"
 	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-service/models"
 )
 
 var _ = Describe("Disks test", func() {

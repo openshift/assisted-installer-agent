@@ -88,10 +88,6 @@ github.com/evanphx/json-patch v4.2.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLi
 github.com/evanphx/json-patch v4.5.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
-github.com/filanov/bm-inventory v1.0.7-0.20200723180205-4831b2adea2f h1:q1ElUKeHzhK+SLazEHB480inqi57PpvEBU3GUWsLRkA=
-github.com/filanov/bm-inventory v1.0.7-0.20200723180205-4831b2adea2f/go.mod h1:pFX8tUy16emiN7sS6xIXKit8QfVSTp2Z4bTRezo1Kyk=
-github.com/filanov/bm-inventory v1.0.7-0.20200727091643-3b3e888d1fe8 h1:btpNPrKRBx9KH13KBcR+ZiOLQt75bJF8nb23+Sx6CLM=
-github.com/filanov/bm-inventory v1.0.7-0.20200727091643-3b3e888d1fe8/go.mod h1:pFX8tUy16emiN7sS6xIXKit8QfVSTp2Z4bTRezo1Kyk=
 github.com/filanov/stateswitch v0.0.0-20200714113403-51a42a34c604/go.mod h1:GYnXtGE0e/uuFBz4CbjJL0JmP3DWwzGtcpjZYYC9ikc=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
@@ -375,6 +371,8 @@ github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQ
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
 github.com/opencontainers/runc v1.0.0-rc9/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59PVA73FjuZG0U=
+github.com/openshift/assisted-service v0.0.0-20200804102354-9a7ac159dd96 h1:/UBCZCIloYjCwWbS05pxKBGWfdISf/iot1NX4qu8PBY=
+github.com/openshift/assisted-service v0.0.0-20200804102354-9a7ac159dd96/go.mod h1:KL66QY2BwE/4Uycae8ibm86/D4sfWQPxHoerMuyNylM=
 github.com/ory/dockertest/v3 v3.6.0/go.mod h1:4ZOpj8qBUmh8fcBSVzkH2bws2s91JdGvHUqan4GHEuQ=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=

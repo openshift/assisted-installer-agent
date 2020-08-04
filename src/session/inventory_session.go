@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/filanov/bm-inventory/client"
-	"github.com/filanov/bm-inventory/pkg/requestid"
+	"github.com/openshift/assisted-service/client"
+	"github.com/openshift/assisted-service/pkg/requestid"
 	"github.com/ori-amizur/introspector/src/config"
 	"github.com/sirupsen/logrus"
 )

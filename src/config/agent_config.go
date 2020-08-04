@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/filanov/bm-inventory/client"
+	"github.com/openshift/assisted-service/client"
 )
 
 var GlobalAgentConfig struct {

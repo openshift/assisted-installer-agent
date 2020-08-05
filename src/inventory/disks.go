@@ -16,8 +16,13 @@ func newDisks(dependencies IDependencies) *disks {
 	return &disks{dependencies: dependencies}
 }
 
-func (d *disks) getPath(busPath string) string {
-	path := fmt.Sprintf("/dev/disk/by-path/%s", busPath)
+func (d *disks) getPath(busPath string, diskName string) string {
+	path := fmt.Sprintf("/dev/%s", diskName)
+	_, err := d.dependencies.Stat(path)
+	if err == nil {
+		return path
+	}
+	path = fmt.Sprintf("/dev/disk/by-path/%s", busPath)
 	evaledPath, err := d.dependencies.EvalSymlinks(path)
 	if err != nil {
 		logrus.WithError(err).Warn("EvalSymlink")
@@ -31,6 +36,17 @@ func (d *disks) getPath(busPath string) string {
 	return ret
 }
 
+func (d *disks) getByPath(busPath string) string {
+	if busPath != ghw.UNKNOWN {
+		path := fmt.Sprintf("/dev/disk/by-path/%s", busPath)
+		_, err := d.dependencies.Stat(path)
+		if err == nil {
+			return path
+		}
+	}
+	return ""
+}
+
 func (d *disks) getHctl(name string) string {
 	dir := fmt.Sprintf("/sys/block/%s/device/scsi_device", name)
 	files, err := d.dependencies.ReadDir(dir)
@@ -40,11 +56,11 @@ func (d *disks) getHctl(name string) string {
 	return files[0].Name()
 }
 
-func diskVendor(vendor string) string {
-	if vendor == ghw.UNKNOWN {
+func unknownToEmpty(value string) string {
+	if value == ghw.UNKNOWN {
 		return ""
 	}
-	return vendor
+	return value
 }
 
 func (d *disks) getDisks() []*models.Disk {
@@ -55,20 +71,21 @@ func (d *disks) getDisks() []*models.Disk {
 		return ret
 	}
 	for _, disk := range blockInfo.Disks {
-		if disk.IsRemovable || disk.BusPath == ghw.UNKNOWN {
+		if disk.IsRemovable || disk.SizeBytes == 0 ||
+			(disk.BusType == ghw.BUS_TYPE_UNKNOWN && disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN) {
 			continue
 		}
 		rec := models.Disk{
-			ByPath:    fmt.Sprintf("/dev/disk/by-path/%s", disk.BusPath),
+			ByPath:    d.getByPath(disk.BusPath),
 			Hctl:      d.getHctl(disk.Name),
-			Model:     disk.Model,
+			Model:     unknownToEmpty(disk.Model),
 			Name:      disk.Name,
-			Path:      d.getPath(disk.BusPath),
+			Path:      d.getPath(disk.BusPath, disk.Name),
 			DriveType: disk.DriveType.String(),
-			Serial:    disk.SerialNumber,
+			Serial:    unknownToEmpty(disk.SerialNumber),
 			SizeBytes: int64(disk.SizeBytes),
-			Vendor:    diskVendor(disk.Vendor),
-			Wwn:       disk.WWN,
+			Vendor:    unknownToEmpty(disk.Vendor),
+			Wwn:       unknownToEmpty(disk.WWN),
 		}
 		ret = append(ret, &rec)
 	}

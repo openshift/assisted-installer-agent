@@ -343,9 +343,10 @@ var _ = Describe("Agent tests", func() {
 })
 
 type RequestDefinition struct {
-	URL          string        `json:"url"`
-	Method       string        `json:"method"`
-	BodyPatterns []interface{} `json:"bodyPatterns"`
+	URL          string            `json:"url"`
+	Method       string            `json:"method"`
+	BodyPatterns []interface{}     `json:"bodyPatterns"`
+	Headers      map[string]string `json:"headers"`
 }
 
 type ResponseDefinition struct {
@@ -360,9 +361,10 @@ type StubDefinition struct {
 }
 
 type ReceivedRequest struct {
-	URL    string
-	Method string
-	Body   string
+	URL     string
+	Method  string
+	Body    string
+	Headers map[string]string
 }
 
 type ReceivedResponse struct {
@@ -400,6 +402,9 @@ func verifyRegisterRequest() {
 	v, ok := m["host_id"]
 	Expect(ok).Should(BeTrue())
 	Expect(v).Should(MatchRegexp("[0-9a-f]{8}-?(?:[0-9a-f]{4}-?){3}[0-9a-f]{12}"))
+	v, ok = reqs[0].Request.Headers["X-Secret-Key"]
+	Expect(ok).Should(BeTrue())
+	Expect(v).Should(Equal("OpenShiftToken"))
 }
 
 func verifyRegistersSameID() {

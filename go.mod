@@ -8,7 +8,7 @@ require (
 	github.com/jaypipes/ghw v0.6.0
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
-	github.com/openshift/assisted-service v0.0.0-20200804102354-9a7ac159dd96
+	github.com/openshift/assisted-service v0.0.0-20200805103259-9ca9af7cddc0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/ssgreg/journald v1.0.0

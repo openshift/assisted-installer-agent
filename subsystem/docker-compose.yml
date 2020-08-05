@@ -10,6 +10,8 @@ services:
         - /dev/log:/dev/log
       privileged: true
       container_name: agent_container
+      environment:
+        - PULL_SECRET_TOKEN=OpenShiftToken
 
   wiremock:
     image: "rodolpheche/wiremock"

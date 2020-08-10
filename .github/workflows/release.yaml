@@ -33,7 +33,7 @@ jobs:
       - name: Publish assisted-installer-agent to Registry
         uses: elgohr/Publish-Docker-Github-Action@2.15
         with:
-          name: agent
+          name: assisted-installer-agent
           username: ${{ secrets.OCPMETAL_USERNAME }}
           password: ${{ secrets.OCPMETAL_PASSWORD }}
           REGISTRY: 'quay.io/ocpmetal'

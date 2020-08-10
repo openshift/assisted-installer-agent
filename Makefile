@@ -1,8 +1,5 @@
 TAG := $(or $(TAG),latest)
-AGENT := $(or ${AGENT},quay.io/ocpmetal/agent:$(TAG))
-CONNECTIVITY_CHECK := $(or ${CONNECTIVITY_CHECK},quay.io/ocpmetal/connectivity_check:$(TAG))
-INVENTORY := $(or ${INVENTORY},quay.io/ocpmetal/inventory:$(TAG))
-FREE_ADDRESSES := $(or ${FREE_ADDRESSES},quay.io/ocpmetal/free_addresses:$(TAG))
+ASSISTED_INSTALLER_AGENT := $(or ${ASSISTED_INSTALLER_AGENT},quay.io/ocpmetal/assisted-installer-agent:$(TAG))
 
 all: build
 
@@ -29,16 +26,10 @@ clean:
 	rm -rf build subsystem/logs
 
 build-image: unittest build
-	docker build -f Dockerfile.agent . -t $(AGENT)
-	docker build -f Dockerfile.connectivity_check . -t $(CONNECTIVITY_CHECK)
-	docker build -f Dockerfile.inventory . -t $(INVENTORY)
-	docker build -f Dockerfile.free_addresses . -t $(FREE_ADDRESSES)
+	docker build -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
 
 push: build-image subsystem
-	docker push $(AGENT)
-	docker push $(CONNECTIVITY_CHECK)
-	docker push $(INVENTORY)
-	docker push $(FREE_ADDRESSES)
+	docker push $(ASSISTED_INSTALLER_AGENT)
 
 unittest:
 	go test -v $(shell go list ./... | grep -v subsystem) -cover

@@ -3,16 +3,11 @@ build-container-image: introspector-build
 
 containers:
     introspector-build: Dockerfile.introspector-build
-    agent: Dockerfile.agent
-    connectivity_check: Dockerfile.connectivity_check
-    inventory: Dockerfile.inventory
+    assisted_installer_agent: Dockerfile.assisted_installer_agent
 volumes:
     - $HOME/.cache/go-build:$HOME/.cache/go-build
     - $HOME/go/pkg:/go/pkg
     - $HOME/.docker:$HOME/.docker
 env:
-    AGENT: $AGENT
+    ASSISTED_INSTALLER_AGENT: $ASSISTED_INSTALLER_AGENT
     TAG: $TAG
-    CONNECTIVITY_CHECK: $CONNECTIVITY_CHECK
-    INVENTORY: $INVENTORY
-    FREE_ADDRESSES: $FREE_ADDRESSES

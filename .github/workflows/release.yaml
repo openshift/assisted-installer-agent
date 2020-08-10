@@ -30,43 +30,13 @@ jobs:
       - name: Get the tag
         id: get_tag
         run: echo ::set-env name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
-      - name: Publish connectivity_check to Registry
-        uses: elgohr/Publish-Docker-Github-Action@2.15
-        with:
-          name: connectivity_check
-          username: ${{ secrets.OCPMETAL_USERNAME }}
-          password: ${{ secrets.OCPMETAL_PASSWORD }}
-          REGISTRY: 'quay.io/ocpmetal'
-          dockerfile: Dockerfile.connectivity_check
-          buildargs: GIT_REVISION
-          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"
-      - name: Publish agent to Registry
+      - name: Publish assisted-installer-agent to Registry
         uses: elgohr/Publish-Docker-Github-Action@2.15
         with:
           name: agent
           username: ${{ secrets.OCPMETAL_USERNAME }}
           password: ${{ secrets.OCPMETAL_PASSWORD }}
           REGISTRY: 'quay.io/ocpmetal'
-          dockerfile: Dockerfile.agent
-          buildargs: GIT_REVISION
-          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"
-      - name: Publish inventory to Registry
-        uses: elgohr/Publish-Docker-Github-Action@2.15
-        with:
-          name: inventory
-          username: ${{ secrets.OCPMETAL_USERNAME }}
-          password: ${{ secrets.OCPMETAL_PASSWORD }}
-          REGISTRY: 'quay.io/ocpmetal'
-          dockerfile: Dockerfile.inventory
-          buildargs: GIT_REVISION
-          tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"
-      - name: Publish free_addresses to Registry
-        uses: elgohr/Publish-Docker-Github-Action@2.15
-        with:
-          name: free_addresses
-          username: ${{ secrets.OCPMETAL_USERNAME }}
-          password: ${{ secrets.OCPMETAL_PASSWORD }}
-          REGISTRY: 'quay.io/ocpmetal'
-          dockerfile: Dockerfile.free_addresses
+          dockerfile: Dockerfile.assisted_installer_agent
           buildargs: GIT_REVISION
           tags: "${{ env.GIT_TAG }},${{ env.GIT_REVISION }}"

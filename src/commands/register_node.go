@@ -28,12 +28,10 @@ func createRegisterParams() *installer.RegisterHostParams {
 
 func RegisterHostWithRetry() {
 	for {
-
-		s, err := session.New()
+		s, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
 		if err != nil {
 			logrus.Fatalf("Failed to initialize connection: %e", err)
 		}
-
 		registerResult, err := s.Client().Installer.RegisterHost(s.Context(), createRegisterParams())
 		if err == nil {
 			CurrentHost = registerResult.Payload

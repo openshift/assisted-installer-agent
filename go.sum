@@ -89,6 +89,8 @@ github.com/evanphx/json-patch v4.2.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLi
 github.com/evanphx/json-patch v4.5.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
+github.com/filanov/bm-inventory v1.0.7-0.20200727091643-3b3e888d1fe8 h1:btpNPrKRBx9KH13KBcR+ZiOLQt75bJF8nb23+Sx6CLM=
+github.com/filanov/bm-inventory v1.0.7-0.20200727091643-3b3e888d1fe8/go.mod h1:pFX8tUy16emiN7sS6xIXKit8QfVSTp2Z4bTRezo1Kyk=
 github.com/filanov/stateswitch v0.0.0-20200714113403-51a42a34c604/go.mod h1:GYnXtGE0e/uuFBz4CbjJL0JmP3DWwzGtcpjZYYC9ikc=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
@@ -146,6 +148,7 @@ github.com/go-openapi/runtime v0.0.0-20180920151709-4f900dc2ade9/go.mod h1:6v9a6
 github.com/go-openapi/runtime v0.19.0/go.mod h1:OwNfisksmmaZse4+gpV3Ne9AyMOlP1lt4sK4FXt0O64=
 github.com/go-openapi/runtime v0.19.4/go.mod h1:X277bwSUBxVlCYR3r7xgZZGKVvBd/29gLDlFGtJ8NL4=
 github.com/go-openapi/runtime v0.19.15/go.mod h1:dhGWCTKRXlAfGnQG0ONViOZpjfg0m2gUt9nTQPQZuoo=
+github.com/go-openapi/runtime v0.19.19/go.mod h1:Lm9YGCeecBnUUkFTxPC4s1+lwrkJ0pthx8YvyjCfkgk=
 github.com/go-openapi/runtime v0.19.20 h1:J/t+QIjbcoq8WJvjGxRKiFBhqUE8slS9SbmD0Oi/raQ=
 github.com/go-openapi/runtime v0.19.20/go.mod h1:Lm9YGCeecBnUUkFTxPC4s1+lwrkJ0pthx8YvyjCfkgk=
 github.com/go-openapi/spec v0.0.0-20160808142527-6aced65f8501/go.mod h1:J8+jY1nAiCcj+friV/PDoE1/3eeccG9LYBs0tYvLOWc=
@@ -377,6 +380,8 @@ github.com/openshift/assisted-service v0.0.0-20200805103259-9ca9af7cddc0 h1:pd15
 github.com/openshift/assisted-service v0.0.0-20200805103259-9ca9af7cddc0/go.mod h1:Ed7QZvOLTmAZqcMowWlboqxqx5X8wwgYpn0J4MTsAS8=
 github.com/openshift/assisted-service v0.0.0-20200810081827-ad90218e38ed h1:u+OsYYw3DcoS43zfaCF6RbddKpbBdXq6GBeV7LKgK4s=
 github.com/openshift/assisted-service v0.0.0-20200810081827-ad90218e38ed/go.mod h1:H96z5QdPNv7PZ+/p+VafuHyAUqlVcpOFTnfMl8QYzQ4=
+github.com/openshift/assisted-service v0.0.0-20200811075806-62dcbcd62c0b h1:1kM1KxlpCLNQh8iOOi7HVXTJBkEmykQ+OyB6sHEasqE=
+github.com/openshift/assisted-service v0.0.0-20200811075806-62dcbcd62c0b/go.mod h1:H96z5QdPNv7PZ+/p+VafuHyAUqlVcpOFTnfMl8QYzQ4=
 github.com/ory/dockertest/v3 v3.6.0/go.mod h1:4ZOpj8qBUmh8fcBSVzkH2bws2s91JdGvHUqan4GHEuQ=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=

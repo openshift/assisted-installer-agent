@@ -1,6 +1,7 @@
 package commands
 
 import (
+	log "github.com/sirupsen/logrus"
 	"reflect"
 	"time"
 
@@ -21,7 +22,11 @@ type stepSession struct {
 }
 
 func newSession() *stepSession {
-	ret := stepSession{*session.New()}
+	invSession, err := session.New()
+	if err != nil {
+		log.Fatalf("Failed to initialize connection: %e", err)
+	}
+	ret := stepSession{*invSession}
 	return &ret
 }
 

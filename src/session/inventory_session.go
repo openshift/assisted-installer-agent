@@ -2,9 +2,14 @@ package session
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/client"
@@ -35,21 +40,75 @@ func (i *InventorySession) Client() *client.AssistedInstall {
 	return i.client
 }
 
-func createBmInventoryClient() *client.AssistedInstall {
+func createBmInventoryClient() (*client.AssistedInstall, error) {
 	clientConfig := client.Config{}
-	clientConfig.URL, _ = url.Parse(createUrl())
-	clientConfig.Transport = requestid.Transport(http.DefaultTransport)
+	var err error
+	clientConfig.URL, err = url.ParseRequestURI(createUrl())
+	if err != nil {
+		return nil, err
+	}
+
+	var certs *x509.CertPool
+	if config.GlobalAgentConfig.InsecureConnection {
+		logrus.Warn("Certificate verification is turned off. This is not recommended in production environments")
+	} else {
+		certs, err = readCACertificate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	clientConfig.Transport = requestid.Transport(&http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: config.GlobalAgentConfig.InsecureConnection,
+			RootCAs:            certs,
+		},
+	})
+
 	clientConfig.AuthInfo = auth.AgentAuthHeaderWriter(config.GlobalAgentConfig.PullSecretToken)
 	bmInventory := client.New(clientConfig)
-	return bmInventory
+	return bmInventory, nil
 }
 
-func New() *InventorySession {
+func readCACertificate() (*x509.CertPool, error) {
+
+	if config.GlobalAgentConfig.CACertificatePath == "" {
+		return nil, nil
+	}
+
+	caData, err := ioutil.ReadFile(config.GlobalAgentConfig.CACertificatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(caData) {
+		return nil, fmt.Errorf("failed to load certificate: %s", config.GlobalAgentConfig.CACertificatePath)
+	}
+
+	return pool, nil
+}
+
+func New() (*InventorySession, error) {
 	id := requestid.NewID()
+	inventory, err := createBmInventoryClient()
+	if err != nil {
+		return nil, err
+	}
 	ret := InventorySession{
 		ctx:    requestid.ToContext(context.Background(), id),
 		logger: requestid.RequestIDLogger(logrus.StandardLogger(), id),
-		client: createBmInventoryClient(),
+		client: inventory,
 	}
-	return &ret
+	return &ret, nil
 }

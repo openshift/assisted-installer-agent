@@ -114,7 +114,7 @@ func SendLogs(l LogsSender) error {
 
 	defer func() {
 		if config.LogsSenderConfig.CleanWhenDone {
-			_ = os.Remove(logsTmpFilesDir)
+			_ = os.RemoveAll(logsTmpFilesDir)
 			_ = os.Remove(archivePath)
 		}
 	}()

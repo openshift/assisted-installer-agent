@@ -1,8 +1,8 @@
 registry: quay.io
-build-container-image: introspector-build
+build-container-image: assisted_installer_agent-build
 
 containers:
-    introspector-build: Dockerfile.introspector-build
+    assisted_installer_agent-build: Dockerfile.assisted_installer_agent-build
     assisted_installer_agent: Dockerfile.assisted_installer_agent
 volumes:
     - $HOME/.cache/go-build:$HOME/.cache/go-build

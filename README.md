@@ -1,4 +1,4 @@
-# introspector
+# assisted_installer_agent
 ## Contents
 This projects generates couple of products.  Each one packed in a docker image:
 * **agent** - Agent to bm-inventory
@@ -35,7 +35,7 @@ the agent shoud run as root.  If running in a container, the docker or podman sh
 * docker
 
 ### Building
-introspector uses skipper for building and testing.
+assisted_installer_agent uses skipper for building and testing.
 
 To build executables run: `skipper make`
 

@@ -45,7 +45,7 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	flag.StringVar(&LogsSenderConfig.ClusterID, "cluster-id", "", "The value of the cluster-id, required")
 	flag.StringVar(&LogsSenderConfig.HostID, "host-id", "host-id", "The value of the host-id")
 	flag.StringVar(&LogsSenderConfig.PullSecretToken, "pull-secret-token", "", "Pull secret token")
-	flag.BoolVar(&leaveFiles, "don't-clean", false, "Don't delete all created files on finish. Required")
+	flag.BoolVar(&leaveFiles, "dont-clean", false, "Don't delete all created files on finish. Required")
 	h := flag.Bool("help", false, "Help message")
 
 	flag.Parse()

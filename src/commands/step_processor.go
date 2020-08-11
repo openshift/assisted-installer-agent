@@ -4,14 +4,14 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/ori-amizur/introspector/src/util"
+	"github.com/openshift/assisted-installer-agent/src/util"
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/session"
 	"github.com/openshift/assisted-service/client/installer"
 	"github.com/openshift/assisted-service/models"
-	"github.com/ori-amizur/introspector/src/config"
-	"github.com/ori-amizur/introspector/src/session"
 )
 
 type HandlerType func(string, ...string) (stdout string, stderr string, exitCode int)

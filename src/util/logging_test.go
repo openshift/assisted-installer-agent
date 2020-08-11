@@ -7,7 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/ori-amizur/introspector/pkg/journalLogger"
+	"github.com/openshift/assisted-installer-agent/pkg/journalLogger"
 	"github.com/sirupsen/logrus"
 	"github.com/ssgreg/journald"
 	"github.com/stretchr/testify/mock"

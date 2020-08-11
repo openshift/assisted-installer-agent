@@ -1,4 +1,4 @@
-module github.com/ori-amizur/introspector
+module github.com/openshift/assisted-installer-agent
 
 go 1.13
 

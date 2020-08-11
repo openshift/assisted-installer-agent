@@ -7,7 +7,7 @@ import (
 	"net"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/ori-amizur/introspector/src/util"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/pkg/errors"
 
 	"github.com/openshift/assisted-service/models"

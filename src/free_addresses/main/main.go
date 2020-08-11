@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ori-amizur/introspector/src/config"
-	"github.com/ori-amizur/introspector/src/util"
+	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 
-	"github.com/ori-amizur/introspector/src/free_addresses"
+	"github.com/openshift/assisted-installer-agent/src/free_addresses"
 	log "github.com/sirupsen/logrus"
 )
 

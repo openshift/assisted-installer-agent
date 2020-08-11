@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/ori-amizur/introspector/src/config"
-	"github.com/ori-amizur/introspector/src/util"
+	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
 func GetInventory(string, ...string) (stdout string, stderr string, exitCode int) {

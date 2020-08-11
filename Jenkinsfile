@@ -1,7 +1,7 @@
 pipeline {
 
   environment {
-        AGENT_IMAGE = 'quay.io/ocpmetal/assisted-installer-agent '
+        AGENT_IMAGE = 'quay.io/ocpmetal/assisted-installer-agent'
   }
   agent {
     node {

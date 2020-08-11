@@ -22,6 +22,8 @@ var GlobalAgentConfig struct {
 	TextLogging        bool
 	AgentVersion       string
 	PullSecretToken    string
+	InsecureConnection bool
+	CACertificatePath  string
 }
 
 func printHelpAndExit() {
@@ -42,6 +44,8 @@ func ProcessArgs() {
 	flag.StringVar(&ret.InventoryImage, "inventory-image", "quay.io/ocpmetal/inventory:latest", "The image of inventory")
 	flag.BoolVar(&ret.JournalLogging, "with-journal-logging", true, "Use journal logging")
 	flag.BoolVar(&ret.TextLogging, "with-text-logging", false, "Output log to file")
+	flag.StringVar(&ret.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
+	flag.BoolVar(&ret.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
 	h := flag.Bool("help", false, "Help message")
 	flag.Parse()
 	if h != nil && *h {

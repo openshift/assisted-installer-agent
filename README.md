@@ -21,7 +21,9 @@ Currently, the functionality of **connectivity_check** is also bundled in the ag
 * *--text*: Dump the inventory as json to the standard output and exit.
 * *--connectivity*: Perform connectivity check and dump the results as json to the standard output.  The details of the nodes to check the connectivity with are provided as a parameter having json format.
 * *--with-text-logging*: Enable writing the agent logs to /var/log/agent.log. Default is true.
-* *--with-journal-logging*: Enable writing logs to systemd journal. Default is true.   
+* *--with-journal-logging*: Enable writing logs to systemd journal. Default is true.
+* *--insecure*: Skip certificate validation in case of HTTPS transport. Should be used only for testing. Default is false.
+* *--cacert*: Path to a custom CA certificate file in PEM format.
 * *--help*: Provide help message.
 
 ### Packaging

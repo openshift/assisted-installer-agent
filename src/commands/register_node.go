@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -27,7 +28,12 @@ func createRegisterParams() *installer.RegisterHostParams {
 
 func RegisterHostWithRetry() {
 	for {
-		s := session.New()
+
+		s, err := session.New()
+		if err != nil {
+			logrus.Fatalf("Failed to initialize connection: %e", err)
+		}
+
 		registerResult, err := s.Client().Installer.RegisterHost(s.Context(), createRegisterParams())
 		if err == nil {
 			CurrentHost = registerResult.Payload

@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ori-amizur/introspector/pkg/journalLogger"
+	"github.com/openshift/assisted-installer-agent/pkg/journalLogger"
 	"github.com/sirupsen/logrus"
 )
 

@@ -5,11 +5,11 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/scanners"
+	"github.com/openshift/assisted-installer-agent/src/session"
 	"github.com/openshift/assisted-service/client/installer"
 	"github.com/openshift/assisted-service/models"
-	"github.com/ori-amizur/introspector/src/config"
-	"github.com/ori-amizur/introspector/src/scanners"
-	"github.com/ori-amizur/introspector/src/session"
 )
 
 var CurrentHost *models.Host

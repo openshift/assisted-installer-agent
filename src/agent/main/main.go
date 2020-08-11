@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/ori-amizur/introspector/src/commands"
-	"github.com/ori-amizur/introspector/src/config"
-	"github.com/ori-amizur/introspector/src/util"
+	"github.com/openshift/assisted-installer-agent/src/commands"
+	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
 func main() {

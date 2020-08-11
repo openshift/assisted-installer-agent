@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/client"
 	"github.com/openshift/assisted-service/pkg/auth"
 	"github.com/openshift/assisted-service/pkg/requestid"
-	"github.com/ori-amizur/introspector/src/config"
 	"github.com/sirupsen/logrus"
 )
 

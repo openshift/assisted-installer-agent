@@ -5,21 +5,21 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/client"
 	"github.com/openshift/assisted-service/pkg/auth"
 	"github.com/openshift/assisted-service/pkg/requestid"
 	"github.com/sirupsen/logrus"
 )
 
-func createUrl() string {
-	return fmt.Sprintf("%s/%s", config.GlobalAgentConfig.TargetURL, client.DefaultBasePath)
+func createUrl(inventoryUrl string) string {
+	return fmt.Sprintf("%s/%s", inventoryUrl, client.DefaultBasePath)
 }
 
 type InventorySession struct {
@@ -40,10 +40,10 @@ func (i *InventorySession) Client() *client.AssistedInstall {
 	return i.client
 }
 
-func createBmInventoryClient() (*client.AssistedInstall, error) {
+func createBmInventoryClient(inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, error) {
 	clientConfig := client.Config{}
 	var err error
-	clientConfig.URL, err = url.ParseRequestURI(createUrl())
+	clientConfig.URL, err = url.ParseRequestURI(createUrl(inventoryUrl))
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func createBmInventoryClient() (*client.AssistedInstall, error) {
 		},
 	})
 
-	clientConfig.AuthInfo = auth.AgentAuthHeaderWriter(config.GlobalAgentConfig.PullSecretToken)
+	clientConfig.AuthInfo = auth.AgentAuthHeaderWriter(pullSecretToken)
 	bmInventory := client.New(clientConfig)
 	return bmInventory, nil
 }
@@ -99,9 +99,9 @@ func readCACertificate() (*x509.CertPool, error) {
 	return pool, nil
 }
 
-func New() (*InventorySession, error) {
+func New(inventoryUrl string, pullSecretToken string) (*InventorySession, error) {
 	id := requestid.NewID()
-	inventory, err := createBmInventoryClient()
+	inventory, err := createBmInventoryClient(inventoryUrl, pullSecretToken)
 	if err != nil {
 		return nil, err
 	}

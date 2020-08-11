@@ -2,7 +2,10 @@ package util
 
 import (
 	bytes2 "bytes"
+	"os"
 	"os/exec"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func getExitCode(err error) int {
@@ -34,6 +37,22 @@ func Execute(command string, args ...string) (stdout string, stderr string, exit
 	cmd.Stderr = &stderrBytes
 	err := cmd.Run()
 	return string(stdoutBytes.Bytes()), getErrorStr(err, &stderrBytes), getExitCode(err)
+}
+
+func ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {
+	cmd := exec.Command(command, args...)
+	var stderrBytes bytes2.Buffer
+	outfile, err := os.Create(outputFilePath)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to create output file %s", outputFilePath)
+		return err.Error(), -1
+	}
+	defer outfile.Close()
+
+	cmd.Stdout = outfile
+	cmd.Stderr = &stderrBytes
+	err = cmd.Run()
+	return getErrorStr(err, &stderrBytes), getExitCode(err)
 }
 
 func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {

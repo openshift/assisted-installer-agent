@@ -3,8 +3,8 @@ ASSISTED_INSTALLER_AGENT := $(or ${ASSISTED_INSTALLER_AGENT},quay.io/ocpmetal/as
 
 all: build
 
-.PHONY: build clean build-image push subsystem agent-build hardware-info-build connectivity-check-build inventory-build
-build: agent-build hardware-info-build connectivity-check-build inventory-build free-addresses-build
+.PHONY: build clean build-image push subsystem agent-build hardware-info-build connectivity-check-build inventory-build logs-sender-build
+build: agent-build hardware-info-build connectivity-check-build inventory-build free-addresses-build logs-sender-build
 
 agent-build : src/agent/main/main.go
 	mkdir -p build
@@ -21,6 +21,10 @@ inventory-build : src/inventory
 free-addresses-build: src/free_addresses
 	mkdir -p build
 	CGO_ENABLED=0 go build -o build/free_addresses src/free_addresses/main/main.go
+
+logs-sender-build: src/logs_sender
+	mkdir -p build
+	CGO_ENABLED=0 go build -o build/logs_sender src/logs_sender/main/main.go
 
 clean:
 	rm -rf build subsystem/logs
@@ -44,4 +48,3 @@ generate:
 
 go-import:
 	goimports -w -l .
-

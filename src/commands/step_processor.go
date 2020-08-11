@@ -22,7 +22,7 @@ type stepSession struct {
 }
 
 func newSession() *stepSession {
-	invSession, err := session.New()
+	invSession, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}

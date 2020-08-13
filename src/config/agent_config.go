@@ -2,17 +2,13 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
-	"github.com/openshift/assisted-service/client"
 	log "github.com/sirupsen/logrus"
 )
 
 var GlobalAgentConfig struct {
 	IsText             bool
-	TargetHost         string
-	TargetPort         int
 	TargetURL          string
 	ClusterID          string
 	IntervalSecs       int
@@ -34,8 +30,6 @@ func printHelpAndExit() {
 func ProcessArgs() {
 	ret := &GlobalAgentConfig
 	flag.BoolVar(&ret.IsText, "text", false, "Output only as text")
-	flag.StringVar(&ret.TargetHost, "host", client.DefaultHost, "The target host (deprecated)")
-	flag.IntVar(&ret.TargetPort, "port", 80, "The target port (deprecated)")
 	flag.StringVar(&ret.TargetURL, "url", "", "The target URL, including a scheme and optionally a port (overrides the host and port arguments")
 	flag.StringVar(&ret.ClusterID, "cluster-id", "default-cluster", "The value of the cluster-id")
 	flag.StringVar(&ret.AgentVersion, "agent-version", "", "Discovery agent version")
@@ -53,7 +47,7 @@ func ProcessArgs() {
 	}
 
 	if ret.TargetURL == "" {
-		ret.TargetURL = fmt.Sprintf("http://%s:%d", ret.TargetHost, ret.TargetPort)
+		log.Fatalf("Must provide a target URL")
 	}
 
 	ret.PullSecretToken = os.Getenv("PULL_SECRET_TOKEN")

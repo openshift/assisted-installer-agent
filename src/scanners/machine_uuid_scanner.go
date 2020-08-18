@@ -73,12 +73,10 @@ func (ir *idReader) readSystemUUID() *strfmt.UUID {
 func (ir *idReader) readMotherboardSerial() *strfmt.UUID {
 	basedboard, err := ir.serialDiscovery.Baseboard()
 	if err != nil {
-		log.Warnf("Could not find motherboard serial number: %s", err.Error())
 		return nil
 	}
 	value := basedboard.SerialNumber
 	if value == "" || value == ghw.UNKNOWN || value == VmwareDefaultSerial {
-		log.Warn("Could not find motherboard serial number")
 		return nil
 	}
 	return md5GenerateUUID(value)

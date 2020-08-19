@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/pkg/errors"
@@ -68,8 +69,6 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 
 const logsDir = "/var/log"
 
-var logsTmpFilesDir = path.Join(logsDir, "upload")
-
 func getJournalLogsWithTag(l LogsSender, tag string, since string, outputFilePath string) error {
 	log.Infof("Running journalctl with tag %s", tag)
 	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "journalctl", "-D", "/var/log/journal/",
@@ -84,7 +83,7 @@ func getJournalLogsWithTag(l LogsSender, tag string, since string, outputFilePat
 
 func archiveFilesInFolder(l LogsSender, inputPath string, outputFile string) error {
 	log.Infof("Archiving %s and creating %s", inputPath, outputFile)
-	args := []string{"-czvf", outputFile, inputPath}
+	args := []string{"-czvf", outputFile, "-C", filepath.Dir(inputPath), filepath.Base(inputPath)}
 
 	_, err, execCode := l.Execute("tar", args...)
 
@@ -111,6 +110,7 @@ func SendLogs(l LogsSender) error {
 
 	log.Infof("Start gathering journalctl logs with tags %s", tags)
 	archivePath := fmt.Sprintf("%s/logs.tar.gz", logsDir)
+	logsTmpFilesDir := path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
 
 	defer func() {
 		if config.LogsSenderConfig.CleanWhenDone {

@@ -46,6 +46,8 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	flag.StringVar(&LogsSenderConfig.HostID, "host-id", "host-id", "The value of the host-id")
 	flag.StringVar(&LogsSenderConfig.PullSecretToken, "pull-secret-token", "", "Pull secret token")
 	flag.BoolVar(&leaveFiles, "dont-clean", false, "Don't delete all created files on finish. Required")
+	flag.StringVar(&GlobalAgentConfig.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
+	flag.BoolVar(&GlobalAgentConfig.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
 	h := flag.Bool("help", false, "Help message")
 
 	flag.Parse()

@@ -3,6 +3,7 @@ package logs_sender
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/go-openapi/strfmt"
@@ -22,18 +23,18 @@ var _ = Describe("logs sender", func() {
 
 	var logsSenderMock *MockLogsSender
 	var archivePath string
-	//var log logrus.FieldLogger
+	var logsTmpFilesDir string
 
 	BeforeEach(func() {
 		logsSenderMock = &MockLogsSender{}
 		archivePath = fmt.Sprintf("%s/logs.tar.gz", logsDir)
-		//	log = logrus.New()
 		config.LogsSenderConfig.Tags = []string{"agent", "installer"}
 		config.LogsSenderConfig.Since = "5 seconds ago"
 		config.LogsSenderConfig.TargetURL = "http://test.com"
 		config.LogsSenderConfig.PullSecretToken = "test"
 		config.LogsSenderConfig.ClusterID = uuid.New().String()
 		config.LogsSenderConfig.HostID = uuid.New().String()
+		logsTmpFilesDir = path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
 
 	})
 
@@ -52,7 +53,8 @@ var _ = Describe("logs sender", func() {
 	}
 
 	archiveSuccess := func() {
-		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, logsTmpFilesDir).
+		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, "-C", filepath.Dir(logsTmpFilesDir),
+			filepath.Base(logsTmpFilesDir)).
 			Return("Dummy", "", 0)
 	}
 
@@ -82,7 +84,8 @@ var _ = Describe("logs sender", func() {
 	It("Archive failed", func() {
 		folderSuccess()
 		executeOutputToFileSuccess()
-		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, logsTmpFilesDir).
+		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, "-C", filepath.Dir(logsTmpFilesDir),
+			filepath.Base(logsTmpFilesDir)).
 			Return("Dummy", "Dummy", -1)
 		err := SendLogs(logsSenderMock)
 		fmt.Println(err)

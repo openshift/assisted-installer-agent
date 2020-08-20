@@ -19,6 +19,7 @@ var CurrentHost *models.Host
 func createRegisterParams() *installer.RegisterHostParams {
 	ret := &installer.RegisterHostParams{
 		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
+		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 		NewHostParams: &models.HostCreateParams{
 			HostID:                scanners.ReadId(scanners.NewGHWSerialDiscovery()),
 			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,

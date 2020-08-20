@@ -23,7 +23,7 @@ type LogsSender interface {
 	ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int)
 	CreateFolderIfNotExist(folder string) error
 	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
-		inventoryUrl string, pullSecretToken string) error
+		inventoryUrl string, pullSecretToken string, agentVersion string) error
 }
 
 type LogsSenderExecuter struct{}
@@ -44,7 +44,7 @@ func (e *LogsSenderExecuter) CreateFolderIfNotExist(folder string) error {
 }
 
 func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
-	inventoryUrl string, pullSecretToken string) error {
+	inventoryUrl string, pullSecretToken string, agentVersion string) error {
 
 	uploadFile, err := os.Open(filePath)
 	if err != nil {
@@ -60,6 +60,7 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	params := installer.UploadHostLogsParams{
 		Upfile:    uploadFile,
 		ClusterID: clusterID,
+		DiscoveryAgentVersion: &agentVersion,
 		HostID:    hostID,
 	}
 	_, err = invSession.Client().Installer.UploadHostLogs(invSession.Context(), &params)
@@ -96,9 +97,9 @@ func archiveFilesInFolder(l LogsSender, inputPath string, outputFile string) err
 }
 
 func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId strfmt.UUID,
-	inventoryUrl string, pullSecretToken string) error {
+	inventoryUrl string, pullSecretToken string, agentVersion string) error {
 
-	err := l.FileUploader(filepath, clusterID, hostId, inventoryUrl, pullSecretToken)
+	err := l.FileUploader(filepath, clusterID, hostId, inventoryUrl, pullSecretToken, agentVersion)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload file %s to assisted-service", filepath)
 		return err
@@ -147,5 +148,5 @@ func SendLogs(l LogsSender) error {
 
 	return uploadLogs(l, archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 		strfmt.UUID(config.LogsSenderConfig.HostID),
-		config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken)
+		config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion)
 }

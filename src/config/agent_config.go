@@ -3,9 +3,12 @@ package config
 import (
 	"flag"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
+
+const agentVersionTagDelimiter = ":"
 
 var GlobalAgentConfig struct {
 	IsText             bool
@@ -54,4 +57,10 @@ func ProcessArgs() {
 	if ret.PullSecretToken == "" {
 		log.Warnf("Missing Pull Secret Token environment variable")
 	}
+
+	// When given <image_url>:<tag> format, AgentVersion should point to the image tag.
+	// In a case of multiple delimiters, grab the rightmost slice.
+	// Otherwise, we leave the agent-version str intact.
+	agentVersionTag := strings.Split(ret.AgentVersion, agentVersionTagDelimiter)
+	ret.AgentVersion = agentVersionTag[len(agentVersionTag)-1]
 }

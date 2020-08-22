@@ -1,9 +1,10 @@
 package commands
 
 import (
-	log "github.com/sirupsen/logrus"
 	"reflect"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 

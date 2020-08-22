@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/go-openapi/strfmt"
 

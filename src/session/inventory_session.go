@@ -5,12 +5,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/openshift/assisted-installer-agent/src/config"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/openshift/assisted-installer-agent/src/config"
 
 	"github.com/openshift/assisted-service/client"
 	"github.com/openshift/assisted-service/pkg/auth"

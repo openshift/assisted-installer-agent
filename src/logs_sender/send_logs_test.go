@@ -29,6 +29,7 @@ var _ = Describe("logs sender", func() {
 		logsSenderMock = &MockLogsSender{}
 		archivePath = fmt.Sprintf("%s/logs.tar.gz", logsDir)
 		config.LogsSenderConfig.Tags = []string{"agent", "installer"}
+		config.LogsSenderConfig.Services = []string{"test", "test1"}
 		config.LogsSenderConfig.Since = "5 seconds ago"
 		config.LogsSenderConfig.TargetURL = "http://test.com"
 		config.LogsSenderConfig.PullSecretToken = "test"
@@ -47,7 +48,13 @@ var _ = Describe("logs sender", func() {
 		for _, tag := range config.LogsSenderConfig.Tags {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
 			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-				fmt.Sprintf("TAG=%s", tag), "--since", config.LogsSenderConfig.Since, "--all").
+				"--since", config.LogsSenderConfig.Since, "--all", fmt.Sprintf("TAG=%s", tag)).
+				Return("Dummy", 0)
+		}
+		for _, service := range config.LogsSenderConfig.Services {
+			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
+			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
+				"--since", config.LogsSenderConfig.Since, "--all", "-u", service).
 				Return("Dummy", 0)
 		}
 	}
@@ -74,7 +81,7 @@ var _ = Describe("logs sender", func() {
 		folderSuccess()
 		outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", config.LogsSenderConfig.Tags[0]))
 		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-			fmt.Sprintf("TAG=%s", config.LogsSenderConfig.Tags[0]), "--since", config.LogsSenderConfig.Since, "--all").
+			"--since", config.LogsSenderConfig.Since, "--all", fmt.Sprintf("TAG=%s", config.LogsSenderConfig.Tags[0])).
 			Return("Dummy", -1)
 		err := SendLogs(logsSenderMock)
 		fmt.Println(err)

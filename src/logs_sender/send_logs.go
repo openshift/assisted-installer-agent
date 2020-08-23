@@ -69,10 +69,11 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 
 const logsDir = "/var/log"
 
-func getJournalLogsWithTag(l LogsSender, tag string, since string, outputFilePath string) error {
-	log.Infof("Running journalctl with tag %s", tag)
-	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "journalctl", "-D", "/var/log/journal/",
-		fmt.Sprintf("TAG=%s", tag), "--since", since, "--all")
+func getJournalLogsWithFilter(l LogsSender, since string, outputFilePath string, journalFilterParams []string) error {
+	log.Infof("Running journalctl with filters %s", journalFilterParams)
+	args := []string{"-D", "/var/log/journal/", "--since", since, "--all"}
+	args = append(args, journalFilterParams...)
+	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "journalctl", args...)
 	if exitCode != 0 {
 		err := errors.Errorf(stderr)
 		log.WithError(err).Errorf("Failed to run journalctl command")
@@ -106,9 +107,8 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 }
 
 func SendLogs(l LogsSender) error {
-	tags := config.LogsSenderConfig.Tags
-
-	log.Infof("Start gathering journalctl logs with tags %s", tags)
+	log.Infof("Start gathering journalctl logs with tags %s and services %s",
+		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)
 	archivePath := fmt.Sprintf("%s/logs.tar.gz", logsDir)
 	logsTmpFilesDir := path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
 
@@ -123,8 +123,19 @@ func SendLogs(l LogsSender) error {
 		return err
 	}
 
-	for _, tag := range tags {
-		err := getJournalLogsWithTag(l, tag, config.LogsSenderConfig.Since, path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag)))
+	for _, tag := range config.LogsSenderConfig.Tags {
+		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
+		err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
+			[]string{fmt.Sprintf("TAG=%s", tag)})
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, service := range config.LogsSenderConfig.Services {
+		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
+		err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
+			[]string{"-u", service})
 		if err != nil {
 			return err
 		}

@@ -1,34 +1,16 @@
 TAG := $(or $(TAG),latest)
 ASSISTED_INSTALLER_AGENT := $(or ${ASSISTED_INSTALLER_AGENT},quay.io/ocpmetal/assisted-installer-agent:$(TAG))
 
+DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
+
 all: build
 
-.PHONY: build clean build-image push subsystem agent-build hardware-info-build connectivity-check-build inventory-build logs-sender-build dhcp-lease-allocator-build
-build: agent-build hardware-info-build connectivity-check-build inventory-build free-addresses-build logs-sender-build dhcp-lease-allocator-build
+.PHONY: build clean build-image push subsystem
+build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender build-dhcp_lease_allocator
 
-agent-build : src/agent/main/main.go
+build-%: src/$*
 	mkdir -p build
-	CGO_ENABLED=0 go build -o build/agent src/agent/main/main.go
-
-connectivity-check-build : src/connectivity_check/main/main.go
-	mkdir -p build
-	CGO_ENABLED=0 go build -o build/connectivity_check src/connectivity_check/main/main.go
-
-inventory-build : src/inventory
-	mkdir -p build
-	CGO_ENABLED=0 go build -o build/inventory src/inventory/main/main.go
-
-free-addresses-build: src/free_addresses
-	mkdir -p build
-	CGO_ENABLED=0 go build -o build/free_addresses src/free_addresses/main/main.go
-
-logs-sender-build: src/logs_sender
-	mkdir -p build
-	CGO_ENABLED=0 go build -o build/logs_sender src/logs_sender/main/main.go
-
-dhcp-lease-allocator-build: src/dhcp_lease_allocator
-	mkdir -p build
-	CGO_ENABLED=0 go build -o build/dhcp_lease_allocator src/dhcp_lease_allocator/main/main.go
+	CGO_ENABLED=0 go build -o build/$* src/$*/main/main.go
 
 clean:
 	rm -rf build subsystem/logs
@@ -43,9 +25,9 @@ unittest:
 	go test -v $(shell go list ./... | grep -v subsystem) -cover
 
 subsystem: build-image
-	cd subsystem; docker-compose up -d
-	go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v -ginkgo.skip="system-test" || ( cd subsystem; docker-compose down && /bin/false)
-	cd subsystem; docker-compose down
+	$(DOCKER_COMPOSE) build test
+	$(DOCKER_COMPOSE) run --rm test go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v -ginkgo.skip="system-test" || ($(DOCKER_COMPOSE) down && /bin/false)
+	$(DOCKER_COMPOSE) down
 
 generate:
 	go generate $(shell go list ./...)

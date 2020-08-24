@@ -1,22 +1,61 @@
 version: '3'
 services:
+  test:
+    build:
+      context: ..
+      dockerfile: Dockerfile.assisted_installer_agent-build
+    cap_add:
+      - cap_net_admin
+      - cap_net_raw
+    volumes:
+      - ${PWD}:/src
+      - ${HOME}/.cache/go-build:${HOME}/.cache/go-build
+      - ${HOME}/go/pkg:/go/pkg
+      - ${HOME}/.docker:${HOME}/.docker
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /src
+    environment:
+      - GOCACHE=/go/pkg/mod
+    depends_on:
+      - dhcpd
+      - agent
+      - wiremock
+    networks:
+      - agent_network
+
   agent:
-      image: quay.io/ocpmetal/assisted-installer-agent:latest
-      entrypoint: ["/usr/bin/agent","--url","http://127.0.0.1:8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
-      volumes:
-        - ./logs:/var/log
-        - /var/run/docker.sock:/var/run/docker.sock
-        - /run/systemd/journal/socket:/run/systemd/journal/socket
-        - /dev/log:/dev/log
-      privileged: true
-      container_name: agent_container
-      network_mode: host
-      environment:
-        - PULL_SECRET_TOKEN=OpenShiftToken
+    image: quay.io/ocpmetal/assisted-installer-agent:latest
+    entrypoint: ["/usr/bin/agent","--url","http://wiremock:8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
+    volumes:
+      - ./logs:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /run/systemd/journal/socket:/run/systemd/journal/socket
+      - /dev/log:/dev/log
+    privileged: true
+    container_name: agent_container
+    networks:
+      agent_network:
+    environment:
+      - PULL_SECRET_TOKEN=OpenShiftToken
+
+  dhcpd:
+    image: networkboot/dhcpd
+    cap_add:
+      - cap_net_raw
+    volumes:
+      - ${PWD}/test/data:/data
+    networks:
+      agent_network:
+    command: eth0
 
   wiremock:
     image: "rodolpheche/wiremock"
     ports:
       - "8080:8080"
+    networks:
+      agent_network:
     volumes:
       - ./wiremock:/home/wiremock
+
+networks:
+  agent_network:

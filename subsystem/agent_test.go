@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -19,11 +20,14 @@ import (
 )
 
 const (
-	ClusterID = "11111111-1111-1111-1111-111111111111"
+	ClusterID   = "11111111-1111-1111-1111-111111111111"
+	WireMockURL = "http://wiremock:8080"
 )
 
 var (
 	nextHostIndex = 0
+	RequestsURL   = fmt.Sprintf("%s/__admin/requests", WireMockURL)
+	MappingsURL   = fmt.Sprintf("%s/__admin/mappings", WireMockURL)
 )
 
 var _ = Describe("Agent tests", func() {
@@ -67,7 +71,7 @@ var _ = Describe("Agent tests", func() {
 		time.Sleep(10 * time.Second)
 
 		// validate only register request was called
-		resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
+		resp, err := http.Get(RequestsURL)
 		Expect(err).ShouldNot(HaveOccurred())
 		requests := &Requests{}
 		b, err := ioutil.ReadAll(resp.Body)
@@ -94,7 +98,7 @@ var _ = Describe("Agent tests", func() {
 		time.Sleep(10 * time.Second)
 
 		// validate only register request was called
-		resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
+		resp, err := http.Get(RequestsURL)
 		Expect(err).ShouldNot(HaveOccurred())
 		requests := &Requests{}
 		b, err := ioutil.ReadAll(resp.Body)
@@ -552,7 +556,7 @@ func addStub(stub *StubDefinition) (string, error) {
 	}
 	var b bytes.Buffer
 	b.Write(requestBody)
-	resp, err := http.Post("http://127.0.0.1:8080/__admin/mappings", "application/json", &b)
+	resp, err := http.Post(MappingsURL, "application/json", &b)
 	if err != nil {
 		return "", err
 	}
@@ -682,7 +686,7 @@ func addStepReplyStub(hostID string) (string, error) {
 }
 
 func deleteStub(stubID string) error {
-	req, err := http.NewRequest("DELETE", "http://127.0.0.1:8080/__admin/mappings/"+stubID, nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/%s", MappingsURL, stubID), nil)
 	if err != nil {
 		return err
 	}
@@ -692,7 +696,7 @@ func deleteStub(stubID string) error {
 }
 
 func deleteAllStubs() error {
-	req, err := http.NewRequest("DELETE", "http://127.0.0.1:8080/__admin/mappings", nil)
+	req, err := http.NewRequest("DELETE", MappingsURL, nil)
 	if err != nil {
 		return err
 	}
@@ -702,10 +706,11 @@ func deleteAllStubs() error {
 }
 
 func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
-	resp, err := http.Get("http://127.0.0.1:8080/__admin/requests")
+	resp, err := http.Get(RequestsURL)
 	if err != nil {
 		return nil, err
 	}
+
 	requests := &Requests{}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -725,7 +730,7 @@ func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
 }
 
 func resetRequests() error {
-	req, err := http.NewRequest("DELETE", "http://127.0.0.1:8080/__admin/requests", nil)
+	req, err := http.NewRequest("DELETE", RequestsURL, nil)
 	if err != nil {
 		return err
 	}
@@ -735,12 +740,14 @@ func resetRequests() error {
 }
 
 func startAgent() error {
-	cmd := exec.Command("docker", "start", "agent_container")
+	cmd := exec.Command("docker-compose", "-f", "docker-compose.yml", "start", "agent")
+	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func stopAgent() error {
-	cmd := exec.Command("docker", "stop", "agent_container")
+	cmd := exec.Command("docker-compose", "-f", "docker-compose.yml", "stop", "agent")
+	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
@@ -751,7 +758,7 @@ func nextHostID() string {
 }
 
 func waitForWiremock() error {
-	_, err := http.Get("http://127.0.0.1:8080/__admin/requests")
+	_, err := http.Get("http://wiremock:8080/__admin/requests")
 	return err
 }
 

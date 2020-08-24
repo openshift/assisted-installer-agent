@@ -31,7 +31,7 @@ func Lease(log logrus.FieldLogger, cfgPath string, dhcpAllocationRequest models.
 		{Name: "ingress", MacAddress: dhcpAllocationRequest.IngressVipMac.String(), IpAddress: ""},
 	}
 
-	for _, vip := range vips {
+	for idx, vip := range vips {
 		mac, err := net.ParseMAC(vip.MacAddress)
 
 		if err != nil {
@@ -51,9 +51,12 @@ func Lease(log logrus.FieldLogger, cfgPath string, dhcpAllocationRequest models.
 			return "", "", err
 		}
 
-		_, vip.IpAddress, err = monitor.GetLastLeaseFromFile(log, monitor.GetLeaseFile(cfgPath, vip.Name))
+		_, vips[idx].IpAddress, err = monitor.GetLastLeaseFromFile(log, monitor.GetLeaseFile(cfgPath, vip.Name))
 
 		if err != nil {
+			log.WithFields(logrus.Fields{
+				"fileName": monitor.GetLeaseFile(cfgPath, vip.Name),
+			}).WithError(err).Error("Failed to get last lease from file")
 			return "", "", err
 		}
 	}

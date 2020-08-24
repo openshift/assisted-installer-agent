@@ -12,6 +12,7 @@ require (
 	github.com/openshift/assisted-service v0.0.0-20200823063214-39257efe5e72
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/common v0.9.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.6.1

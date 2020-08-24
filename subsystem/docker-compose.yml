@@ -25,25 +25,24 @@ services:
 
   agent:
     image: quay.io/ocpmetal/assisted-installer-agent:latest
-    entrypoint: ["/usr/bin/agent","--url","http://wiremock:8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
     volumes:
       - ./logs:/var/log
       - /var/run/docker.sock:/var/run/docker.sock
       - /run/systemd/journal/socket:/run/systemd/journal/socket
       - /dev/log:/dev/log
     privileged: true
-    container_name: agent_container
     networks:
       agent_network:
     environment:
       - PULL_SECRET_TOKEN=OpenShiftToken
+    command: ["/usr/bin/agent","--url","http://wiremock:8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
 
   dhcpd:
     image: networkboot/dhcpd
     cap_add:
       - cap_net_raw
     volumes:
-      - ${PWD}/test/data:/data
+      - ${PWD}/subsystem/data:/data
     networks:
       agent_network:
     command: eth0
@@ -59,3 +58,7 @@ services:
 
 networks:
   agent_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.100.0.0/16

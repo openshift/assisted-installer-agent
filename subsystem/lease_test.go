@@ -11,7 +11,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/models"
-	"github.com/prometheus/common/log"
+)
+
+const (
+	stepDHCPID = "dhcp-lease-allocate-step"
 )
 
 var _ = Describe("Lease tests", func() {
@@ -35,26 +38,26 @@ var _ = Describe("Lease tests", func() {
 		var dhcpResponse *models.DhcpAllocationResponse
 
 		By("1st time", func() {
-			SetDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 				APIVipMac:     &apiMac,
 				IngressVipMac: &ingressMac,
 				Interface:     &ifaceName,
 			})
 
-			dhcpResponse = GetDHCPResponse(hostID)
+			dhcpResponse = getDHCPResponse(hostID)
 			Expect(dhcpResponse).ShouldNot(BeNil())
 		})
 
 		resetAll()
 
 		By("2nd time", func() {
-			SetDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 				APIVipMac:     &apiMac,
 				IngressVipMac: &ingressMac,
 				Interface:     &ifaceName,
 			})
 
-			Expect(*GetDHCPResponse(hostID)).Should(Equal(*dhcpResponse))
+			Expect(*getDHCPResponse(hostID)).Should(Equal(*dhcpResponse))
 		})
 	})
 
@@ -62,13 +65,13 @@ var _ = Describe("Lease tests", func() {
 		var dhcpResponse *models.DhcpAllocationResponse
 
 		By("1st time", func() {
-			SetDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 				APIVipMac:     &apiMac,
 				IngressVipMac: &ingressMac,
 				Interface:     &ifaceName,
 			})
 
-			dhcpResponse = GetDHCPResponse(hostID)
+			dhcpResponse = getDHCPResponse(hostID)
 			Expect(dhcpResponse).ShouldNot(BeNil())
 		})
 
@@ -78,35 +81,98 @@ var _ = Describe("Lease tests", func() {
 			apiMac = generateMacString()
 			ingressMac = generateMacString()
 
-			SetDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 				APIVipMac:     &apiMac,
 				IngressVipMac: &ingressMac,
 				Interface:     &ifaceName,
 			})
 
-			Expect(*GetDHCPResponse(hostID)).ShouldNot(Equal(*dhcpResponse))
+			Expect(*getDHCPResponse(hostID)).ShouldNot(Equal(*dhcpResponse))
+		})
+	})
+
+	Context("Negative", func() {
+		It("no_dhcp_server", func() {
+			By("stop dhcpd", func() {
+				stopContainer("dhcpd")
+
+				setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+					APIVipMac:     &apiMac,
+					IngressVipMac: &ingressMac,
+					Interface:     &ifaceName,
+				})
+
+				setReplyStartAgent(hostID)
+				Eventually(isReplyFound(hostID, &DHCPLeaseAllocateVerifier{})).Should(BeFalse())
+			})
+
+			By("restart dhcpd", func() {
+				startContainer("dhcpd")
+
+				Eventually(func() bool {
+					return isReplyFound(hostID, &DHCPLeaseAllocateVerifier{})
+				}, 300*time.Second, 5*time.Second).Should(BeTrue())
+			})
+		})
+
+		It("invalid_mac", func() {
+			apiMac = "invalid-mac"
+
+			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+				APIVipMac:     &apiMac,
+				IngressVipMac: &ingressMac,
+				Interface:     &ifaceName,
+			})
+
+			setReplyStartAgent(hostID)
+			Eventually(isReplyFound(hostID, &EqualReplyVerifier{
+				Error:    fmt.Sprintf("address %s: invalid MAC address", apiMac),
+				ExitCode: 255,
+				Output:   "",
+				StepID:   stepDHCPID,
+				StepType: models.StepTypeDhcpLeaseAllocate,
+			})).Should(BeTrue())
+		})
+
+		It("invalid_interface", func() {
+			ifaceName = "invalid-interface"
+
+			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+				APIVipMac:     &apiMac,
+				IngressVipMac: &ingressMac,
+				Interface:     &ifaceName,
+			})
+
+			setReplyStartAgent(hostID)
+			Eventually(isReplyFound(hostID, &EqualReplyVerifier{
+				Error:    "numerical result out of range",
+				ExitCode: 255,
+				Output:   "",
+				StepID:   stepDHCPID,
+				StepType: models.StepTypeDhcpLeaseAllocate,
+			})).Should(BeTrue())
 		})
 	})
 })
 
-func SetDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest) {
+func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest) {
 	_, err := addRegisterStub(hostID, http.StatusCreated)
 	Expect(err).NotTo(HaveOccurred())
 
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	_, err = addNextStepStub(hostID, 100,
+	_, err = addNextStepStub(hostID, 5,
 		&models.Step{
 			StepType: models.StepTypeDhcpLeaseAllocate,
-			StepID:   "dhcp-lease-allocate-step",
+			StepID:   stepDHCPID,
 			Command:  "docker",
 			Args: []string{
 				"run", "--privileged", "--net=subsystem_agent_network", "--rm",
 				"-v", "/var/log:/var/log",
 				"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
 				"quay.io/ocpmetal/assisted-installer-agent:latest",
-				"dhcp_lease_allocator",
+				"dhcp_lease_allocate",
 				string(b),
 			},
 		},
@@ -114,36 +180,40 @@ func SetDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func GetDHCPResponse(hostID string) *models.DhcpAllocationResponse {
+func setReplyStartAgent(hostID string) {
 	_, err := addStepReplyStub(hostID)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(startAgent()).NotTo(HaveOccurred())
 	time.Sleep(5 * time.Second)
 	verifyRegisterRequest()
 	verifyGetNextRequest(hostID, true)
-	Eventually(func() bool {
-		return isReplyFound(hostID, &DHCPLeaseAllocatorVerifier{})
-	}, 300*time.Second, 5*time.Second).Should(BeTrue())
+}
 
-	stepReply := getSpecificStep(hostID, &DHCPLeaseAllocatorVerifier{})
+func getDHCPResponse(hostID string) *models.DhcpAllocationResponse {
+	setReplyStartAgent(hostID)
+	Eventually(func() bool {
+		return isReplyFound(hostID, &DHCPLeaseAllocateVerifier{})
+	}, 30*time.Second, 5*time.Second).Should(BeTrue())
+
+	stepReply := getSpecificStep(hostID, &DHCPLeaseAllocateVerifier{})
 	return getLeaseResponseFromStepReply(stepReply)
 }
 
-type DHCPLeaseAllocatorVerifier struct{}
+type DHCPLeaseAllocateVerifier struct{}
 
-func (i *DHCPLeaseAllocatorVerifier) verify(actualReply *models.StepReply) bool {
+func (i *DHCPLeaseAllocateVerifier) verify(actualReply *models.StepReply) bool {
 	if actualReply.ExitCode != 0 {
-		log.Errorf("DHCPLeaseAllocatorVerifier returned with exit code %d", actualReply.ExitCode)
+		log.Errorf("DHCPLeaseAllocateVerifier returned with exit code %d. error: %s", actualReply.ExitCode, actualReply.Error)
 		return false
 	}
 	if actualReply.StepType != models.StepTypeDhcpLeaseAllocate {
-		log.Errorf("DHCPLeaseAllocatorVerifier invalid step replay %s", actualReply.StepType)
+		log.Errorf("DHCPLeaseAllocateVerifier invalid step replay %s", actualReply.StepType)
 		return false
 	}
 	var response models.DhcpAllocationResponse
 	err := json.Unmarshal([]byte(actualReply.Output), &response)
 	if err != nil {
-		log.Errorf("DHCPLeaseAllocatorVerifier failed to unmarshal")
+		log.Errorf("DHCPLeaseAllocateVerifier failed to unmarshal")
 		return false
 	}
 

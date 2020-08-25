@@ -15,6 +15,16 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
+const (
+	WireMockURL = "http://localhost:8080"
+)
+
+var (
+	nextHostIndex = 0
+	RequestsURL   = fmt.Sprintf("%s/__admin/requests", WireMockURL)
+	MappingsURL   = fmt.Sprintf("%s/__admin/mappings", WireMockURL)
+)
+
 type RequestDefinition struct {
 	URL          string            `json:"url"`
 	Method       string            `json:"method"`
@@ -331,7 +341,15 @@ func resetRequests() error {
 }
 
 func startAgent(args ...string) error {
-	args = append([]string{"-f", "docker-compose.yml", "run", "--name", "agent", "-d", "agent"}, args...)
+	return startContainer("agent")
+}
+
+func stopAgent() error {
+	return stopContainer("agent")
+}
+
+func startContainer(args ...string) error {
+	args = append([]string{"-f", "docker-compose.yml", "run", "-d"}, args...)
 
 	cmd := exec.Command("docker-compose", args...)
 	cmd.Stderr = os.Stderr
@@ -339,8 +357,8 @@ func startAgent(args ...string) error {
 	return cmd.Run()
 }
 
-func stopAgent() error {
-	cmd := exec.Command("docker-compose", "-f", "docker-compose.yml", "rm", "-s", "-f", "agent")
+func stopContainer(name string) error {
+	cmd := exec.Command("docker-compose", "-f", "docker-compose.yml", "rm", "-s", "-f", name)
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
@@ -358,7 +376,7 @@ func nextHostID() string {
 }
 
 func waitForWiremock() error {
-	_, err := http.Get("http://wiremock:8080/__admin/requests")
+	_, err := http.Get(RequestsURL)
 	return err
 }
 

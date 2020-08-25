@@ -2,11 +2,12 @@ TAG := $(or $(TAG),latest)
 ASSISTED_INSTALLER_AGENT := $(or ${ASSISTED_INSTALLER_AGENT},quay.io/ocpmetal/assisted-installer-agent:$(TAG))
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
+export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 all: build
 
 .PHONY: build clean build-image push subsystem
-build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender build-dhcp_lease_allocator
+build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender build-dhcp_lease_allocate
 
 build-%: src/$*
 	mkdir -p build
@@ -25,8 +26,8 @@ unittest:
 	go test -v $(shell go list ./... | grep -v subsystem) -cover
 
 subsystem: build-image
-	$(DOCKER_COMPOSE) build test
-	$(DOCKER_COMPOSE) run --rm test go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v -ginkgo.skip="system-test" || ($(DOCKER_COMPOSE) down && /bin/false)
+	$(DOCKER_COMPOSE) up -d
+	go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v -ginkgo.skip="system-test" || ($(DOCKER_COMPOSE) down && /bin/false)
 	$(DOCKER_COMPOSE) down
 
 generate:

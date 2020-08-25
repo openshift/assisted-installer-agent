@@ -2,7 +2,6 @@ package subsystem
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -12,23 +11,20 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/models"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	ClusterID                     = "11111111-1111-1111-1111-111111111111"
-	WireMockURL                   = "http://wiremock:8080"
 	defaultnextInstructionSeconds = int64(1)
 )
 
-var (
-	nextHostIndex = 0
-	RequestsURL   = fmt.Sprintf("%s/__admin/requests", WireMockURL)
-	MappingsURL   = fmt.Sprintf("%s/__admin/mappings", WireMockURL)
-)
+var log *logrus.Logger
 
 var _ = Describe("Agent tests", func() {
 	BeforeSuite(func() {
 		Eventually(waitForWiremock).ShouldNot(HaveOccurred())
+		log = logrus.New()
 	})
 
 	BeforeEach(func() {
@@ -345,7 +341,12 @@ var _ = Describe("Agent tests", func() {
 type EqualReplyVerifier models.StepReply
 
 func (e *EqualReplyVerifier) verify(actualReply *models.StepReply) bool {
-	return *(*models.StepReply)(e) == *actualReply
+	if *(*models.StepReply)(e) != *actualReply {
+		log.Errorf("expected step: %+v actual step: %+v", *(*models.StepReply)(e), *actualReply)
+		return false
+	}
+
+	return true
 }
 
 type InventoryVerifier struct{}

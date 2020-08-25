@@ -18,6 +18,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2
 	github.com/vishvananda/netlink v1.1.0
+	google.golang.org/appengine v1.5.0
 	gopkg.in/yaml.v2 v2.3.0
 )
 

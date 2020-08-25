@@ -26,7 +26,7 @@ unittest:
 	go test -v $(shell go list ./... | grep -v subsystem) -cover
 
 subsystem: build-image
-	$(DOCKER_COMPOSE) up -d
+	$(DOCKER_COMPOSE) up --build -d
 	go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v -ginkgo.skip="system-test" || ($(DOCKER_COMPOSE) down && /bin/false)
 	$(DOCKER_COMPOSE) down
 

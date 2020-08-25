@@ -2,7 +2,7 @@ FROM registry.fedoraproject.org/fedora-minimal:latest
 RUN microdnf install \
     kmod findutils iputils \
     # inventory
-    dmidecode ipmitool lshw biosdevname docker \
+    dmidecode ipmitool lshw biosdevname \
     # free_addresses
     nmap \
     # dhcp_lease_allocate

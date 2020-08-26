@@ -1,7 +1,9 @@
 version: '3'
 services:
   agent:
-    image: quay.io/ocpmetal/assisted-installer-agent:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.agent_test
     container_name: agent
     volumes:
       - ./logs:/var/log

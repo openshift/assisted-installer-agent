@@ -1,22 +1,45 @@
 version: '3'
 services:
   agent:
-      image: quay.io/ocpmetal/assisted-installer-agent:latest
-      entrypoint: ["/usr/bin/agent","--url","http://127.0.0.1:8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
-      volumes:
-        - ./logs:/var/log
-        - /var/run/docker.sock:/var/run/docker.sock
-        - /run/systemd/journal/socket:/run/systemd/journal/socket
-        - /dev/log:/dev/log
-      privileged: true
-      container_name: agent_container
-      network_mode: host
-      environment:
-        - PULL_SECRET_TOKEN=OpenShiftToken
+    image: quay.io/ocpmetal/assisted-installer-agent:latest
+    container_name: agent
+    volumes:
+      - ./logs:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /run/systemd/journal/socket:/run/systemd/journal/socket
+      - /dev/log:/dev/log
+    privileged: true
+    networks:
+      agent_network:
+    environment:
+      - PULL_SECRET_TOKEN=OpenShiftToken
+    command: ["/usr/bin/agent","--url","http://wiremock:8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
+
+  dhcpd:
+    image: networkboot/dhcpd
+    container_name: dhcpd
+    cap_add:
+      - net_raw
+    volumes:
+      - ${ROOT_DIR}/subsystem/data:/data
+    networks:
+      agent_network:
+    environment:
+      - ROOT_DIR
+    command: eth0
 
   wiremock:
     image: "rodolpheche/wiremock"
     ports:
       - "8080:8080"
+    networks:
+      agent_network:
     volumes:
       - ./wiremock:/home/wiremock
+
+networks:
+  agent_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.100.0.0/16

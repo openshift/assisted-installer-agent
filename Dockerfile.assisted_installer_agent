@@ -1,3 +1,11 @@
 FROM registry.fedoraproject.org/fedora-minimal:latest
-RUN microdnf install dmidecode ipmitool lshw biosdevname kmod findutils docker iputils nmap && microdnf update systemd && microdnf clean all
-ADD build/agent build/connectivity_check build/free_addresses build/inventory build/logs_sender /usr/bin/
+RUN microdnf install \
+    kmod findutils iputils \
+    # inventory
+    dmidecode ipmitool lshw biosdevname docker \
+    # free_addresses
+    nmap \
+    # dhcp_lease_allocate
+    dhclient \
+    && microdnf update systemd && microdnf clean all
+ADD build/agent build/connectivity_check build/free_addresses build/inventory build/logs_sender build/dhcp_lease_allocate /usr/bin/

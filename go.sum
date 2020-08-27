@@ -252,7 +252,6 @@ github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf/go.mod h1:HP5RmnzzSN
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/gofuzz v1.1.0 h1:Hsa8mG0dQ46ij8Sl2AYJDUv1oA9/d6Vk+3LG99Oe02g=
 github.com/google/gofuzz v1.1.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
-github.com/google/martian v2.1.0+incompatible/go.mod h1:9I4somxYTbIHy5NJKHRl3wXiIaQGbYVAs8BPL6v8lEs=
 github.com/google/uuid v1.0.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
@@ -387,8 +386,8 @@ github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zM
 github.com/opencontainers/runc v1.0.0-rc9/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59PVA73FjuZG0U=
 github.com/openshift-online/ocm-sdk-go v0.1.118 h1:CxdUb9FMtmVc36JGkWwLXdeC48XV+efpwd15XkHtr1I=
 github.com/openshift-online/ocm-sdk-go v0.1.118/go.mod h1:BBF7bNkfHkkVwKolft9AsbYXJBsFiSOFQ6bLSedQby0=
-github.com/openshift/assisted-service v0.0.0-20200823063214-39257efe5e72 h1:6DwV/R+FWn326z0/K9dt4yUWK/HgL7g0xWd2Fhj+CqQ=
-github.com/openshift/assisted-service v0.0.0-20200823063214-39257efe5e72/go.mod h1:PpGdnz8FTjomINHA7xkJG7OygRLHmnLO6116Q1Vn5mA=
+github.com/openshift/assisted-service v0.0.0-20200827063648-a90d8af52a61 h1:3j+aKXNpEdmEbQzDR8f8F/A6bXArdS0kOYopjoHRz+w=
+github.com/openshift/assisted-service v0.0.0-20200827063648-a90d8af52a61/go.mod h1:1vnQcoD8Wk+e8gAhgK2VzV4+AuO3ItmBGBzdLMef1bY=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c h1:RAgi0xFIHMpsGmYEXoPyZn3Gjomkj/9aCERcqxJP7mc=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c/go.mod h1:+duukQisb5LU1bMtLalsHZc1wM69D5sH3TuiyvAQhhA=
 github.com/openshift/installer v0.16.1 h1:PmjALN9x1NVNVi3SCqfz0ZwVCgOkQLQWo2nHYXREq/A=

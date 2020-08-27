@@ -9,16 +9,13 @@ require (
 	github.com/jaypipes/ghw v0.6.1
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
-	github.com/openshift/assisted-service v0.0.0-20200823063214-39257efe5e72
+	github.com/openshift/assisted-service v0.0.0-20200827063648-a90d8af52a61
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/common v0.9.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.6.1
-	github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2
 	github.com/vishvananda/netlink v1.1.0
-	google.golang.org/appengine v1.5.0
 	gopkg.in/yaml.v2 v2.3.0
 )
 

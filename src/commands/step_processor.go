@@ -36,6 +36,7 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 	params := installer.PostStepReplyParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
+		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}
 	reply := models.StepReply{
 		StepType: stepType,
@@ -72,6 +73,7 @@ func (s *stepSession) processSingleSession() int64 {
 	params := installer.GetNextStepsParams{
 		HostID:    *CurrentHost.ID,
 		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
+		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}
 	s.Logger().Info("Query for next steps")
 	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)

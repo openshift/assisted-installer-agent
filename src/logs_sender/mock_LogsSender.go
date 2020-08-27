@@ -89,13 +89,13 @@ func (_m *MockLogsSender) ExecuteOutputToFile(outputFilePath string, command str
 	return r0, r1
 }
 
-// FileUploader provides a mock function with given fields: filePath, clusterID, hostID, inventoryUrl, pullSecretToken
-func (_m *MockLogsSender) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string) error {
-	ret := _m.Called(filePath, clusterID, hostID, inventoryUrl, pullSecretToken)
+// FileUploader provides a mock function with given fields: filePath, clusterID, hostID, inventoryUrl, pullSecretToken, agentVersion
+func (_m *MockLogsSender) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, agentVersion string) error {
+	ret := _m.Called(filePath, clusterID, hostID, inventoryUrl, pullSecretToken, agentVersion)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, strfmt.UUID, strfmt.UUID, string, string) error); ok {
-		r0 = rf(filePath, clusterID, hostID, inventoryUrl, pullSecretToken)
+	if rf, ok := ret.Get(0).(func(string, strfmt.UUID, strfmt.UUID, string, string, string) error); ok {
+		r0 = rf(filePath, clusterID, hostID, inventoryUrl, pullSecretToken, agentVersion)
 	} else {
 		r0 = ret.Error(0)
 	}

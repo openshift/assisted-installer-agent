@@ -105,7 +105,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess()
 		archiveSuccess()
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken).
+			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
 			Return(errors.Errorf("Dummy"))
 		err := SendLogs(logsSenderMock)
 		fmt.Println(err)
@@ -118,7 +118,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess()
 		archiveSuccess()
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken).
+			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
 			Return(nil)
 		err := SendLogs(logsSenderMock)
 		fmt.Println(err)

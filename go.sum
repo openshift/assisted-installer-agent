@@ -386,8 +386,8 @@ github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zM
 github.com/opencontainers/runc v1.0.0-rc9/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59PVA73FjuZG0U=
 github.com/openshift-online/ocm-sdk-go v0.1.118 h1:CxdUb9FMtmVc36JGkWwLXdeC48XV+efpwd15XkHtr1I=
 github.com/openshift-online/ocm-sdk-go v0.1.118/go.mod h1:BBF7bNkfHkkVwKolft9AsbYXJBsFiSOFQ6bLSedQby0=
-github.com/openshift/assisted-service v0.0.0-20200827063648-a90d8af52a61 h1:3j+aKXNpEdmEbQzDR8f8F/A6bXArdS0kOYopjoHRz+w=
-github.com/openshift/assisted-service v0.0.0-20200827063648-a90d8af52a61/go.mod h1:1vnQcoD8Wk+e8gAhgK2VzV4+AuO3ItmBGBzdLMef1bY=
+github.com/openshift/assisted-service v0.0.0-20200830102625-2f0da134c290 h1:Q0rMF/Uk9D2kZ95tRtF/zYREQ3fCpxe0806GOq1m4Cg=
+github.com/openshift/assisted-service v0.0.0-20200830102625-2f0da134c290/go.mod h1:2B7eiF34TSZA9XEEgZSpnS6uwowORikRZVWApjMYbMs=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c h1:RAgi0xFIHMpsGmYEXoPyZn3Gjomkj/9aCERcqxJP7mc=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c/go.mod h1:+duukQisb5LU1bMtLalsHZc1wM69D5sH3TuiyvAQhhA=
 github.com/openshift/installer v0.16.1 h1:PmjALN9x1NVNVi3SCqfz0ZwVCgOkQLQWo2nHYXREq/A=

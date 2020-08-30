@@ -189,6 +189,15 @@ func addRegisterStub(hostID string, reply int) (string, error) {
 		if err != nil {
 			return "", err
 		}
+	case http.StatusForbidden:
+		errorReply := &models.InfraError{
+			Code:   swag.Int32(http.StatusForbidden),
+			Message: swag.String(fmt.Sprintf("%d", reply)),
+		}
+		b, err = json.Marshal(errorReply)
+		if err != nil {
+			return "", err
+		}
 	default:
 		errorReply := &models.Error{
 			Code:   swag.String(fmt.Sprintf("%d", reply)),

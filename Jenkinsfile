@@ -1,13 +1,16 @@
+String cron_string = BRANCH_NAME == "master" ? "@daily" : ""
+
 pipeline {
 
   environment {
         AGENT_IMAGE = 'quay.io/ocpmetal/assisted-installer-agent'
   }
-  agent {
-    node {
-      label 'centos_worker'
-    }
+  options {
+    timeout(time: 1, unit: 'HOURS')
   }
+  agent { label 'centos_worker' }
+  triggers { cron(cron_string) }
+
   stages {
     stage('build') {
       steps {
@@ -34,26 +37,23 @@ pipeline {
             sh '''docker push ${AGENT_IMAGE}:latest'''
             sh '''docker push ${AGENT_IMAGE}:${GIT_COMMIT}'''
         }
-
-    post {
+    }
+  }
+  post {
         failure {
             script {
                 if (env.BRANCH_NAME == 'master')
                     stage('notify master branch fail') {
-                        withCredentials([string(credentialsId: 'slack-token', variable: 'TOKEN')]) {
-                           sh '''
-                           echo '{"text":"Attention! assisted-installer-agent master branch test failed, see: ' > data.txt
-                           echo ${BUILD_URL} >> data.txt
-                           echo '"}' >> data.txt
-                           curl -X POST -H 'Content-type: application/json' --data-binary "@data.txt"  https://hooks.slack.com/services/$TOKEN
-                           '''
 
-                        }
+                        withCredentials([string(credentialsId: 'slack-token', variable: 'TOKEN')]) {
+                            script {
+                                def data = [text: "Attention! ssisted-installer-agent branch  test failed, see: ${BUILD_URL}"]
+                                writeJSON(file: 'data.txt', json: data, pretty: 4)
+                            }
+                            sh '''curl -X POST -H 'Content-type: application/json' --data-binary "@data.txt"  https://hooks.slack.com/services/$TOKEN'''
                     }
                 }
             }
         }
     }
-  }
 }
-

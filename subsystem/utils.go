@@ -15,12 +15,9 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-const (
-	WireMockURL = "http://localhost:8080"
-)
-
 var (
 	nextHostIndex = 0
+	WireMockURL   = fmt.Sprintf("http://localhost:%s", os.Getenv("WIREMOCK_PORT"))
 	RequestsURL   = fmt.Sprintf("%s/__admin/requests", WireMockURL)
 	MappingsURL   = fmt.Sprintf("%s/__admin/mappings", WireMockURL)
 )
@@ -191,7 +188,7 @@ func addRegisterStub(hostID string, reply int) (string, error) {
 		}
 	case http.StatusForbidden:
 		errorReply := &models.InfraError{
-			Code:   swag.Int32(http.StatusForbidden),
+			Code:    swag.Int32(http.StatusForbidden),
 			Message: swag.String(fmt.Sprintf("%d", reply)),
 		}
 		b, err = json.Marshal(errorReply)

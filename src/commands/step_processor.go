@@ -34,8 +34,8 @@ func newSession() *stepSession {
 func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, errStr string, exitCode int) {
 	s.Logger().Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
 	params := installer.PostStepReplyParams{
-		HostID:    *CurrentHost.ID,
-		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
+		HostID:                *CurrentHost.ID,
+		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}
 	reply := models.StepReply{
@@ -71,8 +71,8 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 
 func (s *stepSession) processSingleSession() int64 {
 	params := installer.GetNextStepsParams{
-		HostID:    *CurrentHost.ID,
-		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
+		HostID:                *CurrentHost.ID,
+		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}
 	s.Logger().Info("Query for next steps")
@@ -80,7 +80,7 @@ func (s *stepSession) processSingleSession() int64 {
 	if err != nil {
 		s.Logger().Warnf("Could not query next steps: %s", err.Error())
 		if reflect.TypeOf(err) == reflect.TypeOf(installer.NewGetNextStepsNotFound()) {
-			s.Logger().WithError(err).Errorf("Cluster %s was not fount in inventory, going to sleep forever", params.ClusterID)
+			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory, going to sleep forever", params.ClusterID)
 			return -1
 		}
 		return int64(config.GlobalAgentConfig.IntervalSecs)

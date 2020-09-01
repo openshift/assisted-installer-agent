@@ -50,6 +50,8 @@ The subsystem tests uses docker-compose to run the agent and wiremock simulating
 
 To perform the subsystem test run: `skipper make subsystem`
 
+To run system tests with regex: `skipper make subsystem FOCUS=register`
+
 ### Deployment
 To deploy all  container images in the project run `skipper make push`
 

@@ -4,6 +4,8 @@ pipeline {
 
   environment {
         AGENT_IMAGE = 'quay.io/ocpmetal/assisted-installer-agent'
+        SLACK_TOKEN = credentials('slack-token')
+        MASTER_SLACK_TOKEN = credentials('slack_master_token')
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -45,15 +47,13 @@ pipeline {
                 if (env.BRANCH_NAME == 'master')
                     stage('notify master branch fail') {
 
-                        withCredentials([string(credentialsId: 'slack-token', variable: 'TOKEN')]) {
                             script {
                                 def data = [text: "Attention! ssisted-installer-agent branch  test failed, see: ${BUILD_URL}"]
                                 writeJSON(file: 'data.txt', json: data, pretty: 4)
                             }
-                            sh '''curl -X POST -H 'Content-type: application/json' --data-binary "@data.txt"  https://hooks.slack.com/services/$TOKEN'''
+                            sh '''curl -X POST -H 'Content-type: application/json' --data-binary "@data.txt"  https://hooks.slack.com/services/$MASTER_SLACK_TOKEN'''
                     }
-                }
             }
         }
-    }
+  }
 }

@@ -15,7 +15,8 @@ services:
       agent_network:
     environment:
       - PULL_SECRET_TOKEN=OpenShiftToken
-    command: ["/usr/bin/agent","--url","http://wiremock:8080", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
+      - WIREMOCK_PORT
+    command: ["/usr/bin/agent","--url","http://wiremock:${WIREMOCK_PORT}", "--cluster-id", "11111111-1111-1111-1111-111111111111", "--interval", "5"]
 
   dhcpd:
     image: networkboot/dhcpd
@@ -33,11 +34,14 @@ services:
   wiremock:
     image: "rodolpheche/wiremock"
     ports:
-      - "8080:8080"
+      - "${WIREMOCK_PORT}:${WIREMOCK_PORT}"
     networks:
       agent_network:
+    environment: 
+      - WIREMOCK_PORT
     volumes:
       - ./wiremock:/home/wiremock
+    command: --port ${WIREMOCK_PORT}
 
 networks:
   agent_network:

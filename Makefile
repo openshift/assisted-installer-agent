@@ -3,6 +3,7 @@ ASSISTED_INSTALLER_AGENT := $(or ${ASSISTED_INSTALLER_AGENT},quay.io/ocpmetal/as
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
 export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+export WIREMOCK_PORT = 8362
 
 all: build
 

@@ -17,7 +17,7 @@ clean:
 	rm -rf build subsystem/logs
 
 build-image: unittest build
-	docker build -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
+	docker build --network=host -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
 
 push: build-image subsystem
 	docker push $(ASSISTED_INSTALLER_AGENT)

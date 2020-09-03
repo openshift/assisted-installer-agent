@@ -290,7 +290,9 @@ var _ = Describe("Agent tests", func() {
 			StepID:   "echo-step-2",
 			StepType: models.StepTypeExecute,
 		})).Should(BeTrue())
-		Expect(isReplyFound(hostID, &InventoryVerifier{})).Should(BeTrue())
+		Eventually(func() bool {
+			return isReplyFound(hostID, &InventoryVerifier{})
+		}, 10*time.Second, 2*time.Second).Should(BeTrue())
 		stepReply := getSpecificStep(hostID, &InventoryVerifier{})
 		inventory := getInventoryFromStepReply(stepReply)
 		Expect(len(inventory.Interfaces) > 0).To(BeTrue())

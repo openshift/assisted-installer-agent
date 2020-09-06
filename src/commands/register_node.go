@@ -1,7 +1,10 @@
 package commands
 
 import (
+	"net/http"
 	"time"
+
+	"github.com/go-openapi/swag"
 
 	"github.com/sirupsen/logrus"
 
@@ -18,7 +21,7 @@ var CurrentHost *models.Host
 
 func createRegisterParams() *installer.RegisterHostParams {
 	ret := &installer.RegisterHostParams{
-		ClusterID: strfmt.UUID(config.GlobalAgentConfig.ClusterID),
+		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 		NewHostParams: &models.HostCreateParams{
 			HostID:                scanners.ReadId(scanners.NewGHWSerialDiscovery()),
@@ -40,13 +43,22 @@ func RegisterHostWithRetry() {
 			return
 		}
 		// stop register in case of forbidden reply.
-		switch err.(type) {
-		case *installer.RegisterHostForbidden, *installer.RegisterHostNotFound:
-			s.Logger().Warn("Host will stop trying to register")
+		switch errValue := err.(type) {
+		case *installer.RegisterHostForbidden:
+			s.Logger().Warn("Host will stop trying to register; cluster cannot accept new hosts in its current state")
 			// wait forever
 			select {}
+		case *installer.RegisterHostNotFound:
+			s.Logger().Warnf("Host will stop trying to register; cluster id %s does not exist", config.GlobalAgentConfig.ClusterID)
+			// wait forever
+			select {}
+		case *installer.RegisterHostInternalServerError:
+			s.Logger().Warnf("Error registering host: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		case *installer.RegisterHostBadRequest:
+			s.Logger().Warnf("Error registering host: %s, %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
+		default:
+			s.Logger().WithError(err).Warn("Error registering host")
 		}
-		s.Logger().Warnf("Error registering host: %s", err.Error())
 		time.Sleep(time.Duration(config.GlobalAgentConfig.IntervalSecs) * time.Second)
 	}
 }

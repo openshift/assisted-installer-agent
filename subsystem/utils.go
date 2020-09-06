@@ -17,7 +17,7 @@ import (
 
 var (
 	nextHostIndex = 0
-	WireMockURL   = fmt.Sprintf("http://localhost:%s", os.Getenv("WIREMOCK_PORT"))
+	WireMockURL   = fmt.Sprintf("http://127.0.0.1:%s", os.Getenv("WIREMOCK_PORT"))
 	RequestsURL   = fmt.Sprintf("%s/__admin/requests", WireMockURL)
 	MappingsURL   = fmt.Sprintf("%s/__admin/mappings", WireMockURL)
 )

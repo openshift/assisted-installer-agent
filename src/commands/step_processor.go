@@ -52,7 +52,11 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 	if err != nil {
 		switch errValue := err.(type) {
 		case *installer.PostStepReplyInternalServerError:
-			s.Logger().Warnf("Error getting posting step reply: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+			s.Logger().Warnf("Error processing posting step reply: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		case *installer.PostStepReplyUnauthorized:
+			s.Logger().Warn("User is not authenticated to perform the operation")
+		case *installer.PostStepReplyBadRequest:
+			s.Logger().Warnf("Error processing posting step reply: %s, %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
 		default:
 			s.Logger().WithError(err).Warn("Error posting step reply")
 		}
@@ -87,7 +91,10 @@ func (s *stepSession) processSingleSession() int64 {
 	if err != nil {
 		switch errValue := err.(type) {
 		case *installer.GetNextStepsNotFound:
-			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory, going to sleep forever", params.ClusterID)
+			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory or user is not authorized, going to sleep forever", params.ClusterID)
+			return -1
+		case *installer.GetNextStepsUnauthorized:
+			s.Logger().WithError(err).Errorf("User is not authenticated to perform the operation, going to sleep forever")
 			return -1
 		case *installer.GetNextStepsInternalServerError:
 			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))

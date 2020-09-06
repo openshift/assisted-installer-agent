@@ -1,8 +1,10 @@
 package commands
 
 import (
-	"reflect"
+	"net/http"
 	"time"
+
+	"github.com/go-openapi/swag"
 
 	log "github.com/sirupsen/logrus"
 
@@ -48,7 +50,12 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 	params.Reply = &reply
 	_, err := s.Client().Installer.PostStepReply(s.Context(), &params)
 	if err != nil {
-		s.Logger().Warnf("Error posting step reply: %s", err.Error())
+		switch errValue := err.(type) {
+		case *installer.PostStepReplyInternalServerError:
+			s.Logger().Warnf("Error getting posting step reply: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		default:
+			s.Logger().WithError(err).Warn("Error posting step reply")
+		}
 	}
 }
 
@@ -78,10 +85,14 @@ func (s *stepSession) processSingleSession() int64 {
 	s.Logger().Info("Query for next steps")
 	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)
 	if err != nil {
-		s.Logger().Warnf("Could not query next steps: %s", err.Error())
-		if reflect.TypeOf(err) == reflect.TypeOf(installer.NewGetNextStepsNotFound()) {
+		switch errValue := err.(type) {
+		case *installer.GetNextStepsNotFound:
 			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory, going to sleep forever", params.ClusterID)
 			return -1
+		case *installer.GetNextStepsInternalServerError:
+			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		default:
+			s.Logger().WithError(err).Warn("Could not query next steps")
 		}
 		return int64(config.GlobalAgentConfig.IntervalSecs)
 	} else {

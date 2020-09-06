@@ -49,7 +49,11 @@ func RegisterHostWithRetry() {
 			// wait forever
 			select {}
 		case *installer.RegisterHostNotFound:
-			s.Logger().Warnf("Host will stop trying to register; cluster id %s does not exist", config.GlobalAgentConfig.ClusterID)
+			s.Logger().Warnf("Host will stop trying to register; cluster id %s does not exist, or user is not authorized", config.GlobalAgentConfig.ClusterID)
+			// wait forever
+			select {}
+		case *installer.RegisterHostUnauthorized:
+			s.Logger().Warnf("Host will stop trying to register; user is not authenticated to perform host registration")
 			// wait forever
 			select {}
 		case *installer.RegisterHostInternalServerError:

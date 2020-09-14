@@ -23,7 +23,7 @@ var log *logrus.Logger
 
 var _ = Describe("Agent tests", func() {
 	BeforeSuite(func() {
-		Eventually(waitForWiremock).ShouldNot(HaveOccurred())
+		Eventually(waitForWiremock, 10*time.Second, time.Second).ShouldNot(HaveOccurred())
 		log = logrus.New()
 	})
 

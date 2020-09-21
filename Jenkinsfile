@@ -40,9 +40,9 @@ pipeline {
     }
   }
   post {
-        failure {
+        always {
             script {
-                if (env.BRANCH_NAME == 'master')
+                if ((env.BRANCH_NAME == 'master') && (currentBuild.currentResult == "ABORTED" || currentBuild.currentResult == "FAILURE")){
                     stage('notify master branch fail') {
 
                         withCredentials([string(credentialsId: 'slack-token', variable: 'TOKEN')]) {
@@ -51,9 +51,10 @@ pipeline {
                                 writeJSON(file: 'data.txt', json: data, pretty: 4)
                             }
                             sh '''curl -X POST -H 'Content-type: application/json' --data-binary "@data.txt"  https://hooks.slack.com/services/$TOKEN'''
+                        }
                     }
                 }
             }
         }
-    }
+  }
 }

@@ -8,7 +8,7 @@ export WIREMOCK_PORT = 8362
 all: build
 
 .PHONY: build clean build-image push subsystem
-build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender build-dhcp_lease_allocate
+build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender build-dhcp_lease_allocate build-apivip_check
 
 build-%: src/$*
 	mkdir -p build

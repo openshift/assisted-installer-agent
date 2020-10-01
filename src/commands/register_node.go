@@ -17,14 +17,14 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-var CurrentHost *models.Host
+var CurrentHostID *strfmt.UUID
 
 func createRegisterParams() *installer.RegisterHostParams {
 	ret := &installer.RegisterHostParams{
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 		NewHostParams: &models.HostCreateParams{
-			HostID:                scanners.ReadId(scanners.NewGHWSerialDiscovery()),
+			HostID:                CurrentHostID,
 			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
 		},
 	}
@@ -33,13 +33,15 @@ func createRegisterParams() *installer.RegisterHostParams {
 
 func RegisterHostWithRetry() {
 	for {
+		var err error
 		s, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
 		if err != nil {
 			logrus.Fatalf("Failed to initialize connection: %e", err)
 		}
-		registerResult, err := s.Client().Installer.RegisterHost(s.Context(), createRegisterParams())
+
+		CurrentHostID = scanners.ReadId(scanners.NewGHWSerialDiscovery())
+		_, err = s.Client().Installer.RegisterHost(s.Context(), createRegisterParams())
 		if err == nil {
-			CurrentHost = registerResult.Payload
 			return
 		}
 		// stop register in case of forbidden reply.

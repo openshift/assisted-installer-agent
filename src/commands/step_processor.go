@@ -36,7 +36,7 @@ func newSession() *stepSession {
 func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, errStr string, exitCode int) {
 	s.Logger().Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
 	params := installer.PostStepReplyParams{
-		HostID:                *CurrentHost.ID,
+		HostID:                *CurrentHostID,
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}
@@ -82,7 +82,7 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 
 func (s *stepSession) processSingleSession() int64 {
 	params := installer.GetNextStepsParams{
-		HostID:                *CurrentHost.ID,
+		HostID:                *CurrentHostID,
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}

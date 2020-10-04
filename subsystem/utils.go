@@ -18,6 +18,7 @@ import (
 var (
 	nextHostIndex = 0
 	WireMockURL   = fmt.Sprintf("http://127.0.0.1:%s", os.Getenv("WIREMOCK_PORT"))
+	ServiceURL    = fmt.Sprintf("http://wiremock:%s", os.Getenv("WIREMOCK_PORT"))
 	RequestsURL   = fmt.Sprintf("%s/__admin/requests", WireMockURL)
 	MappingsURL   = fmt.Sprintf("%s/__admin/mappings", WireMockURL)
 )
@@ -87,6 +88,12 @@ func verifyRegisterRequest() {
 	Expect(v).Should(Equal("OpenShiftToken"))
 }
 
+func verifyNumberOfRegisterRequest(comaparator string, number int) {
+	reqs, err := findAllMatchingRequests(getRegisterURL(), "POST")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(len(reqs)).Should(BeNumerically(comaparator, number))
+}
+
 func verifyRegistersSameID() {
 	reqs, err := findAllMatchingRequests(getRegisterURL(), "POST")
 	Expect(err).NotTo(HaveOccurred())
@@ -99,6 +106,7 @@ func verifyRegistersSameID() {
 	Expect(ok2).Should(BeTrue())
 	Expect(host1ID).Should(Equal(host2ID))
 }
+
 func verifyGetNextRequest(hostID string, matchExpected bool) {
 	reqs, err := findAllMatchingRequests(getNextStepsURL(hostID), "GET")
 
@@ -170,7 +178,49 @@ func addStub(stub *StubDefinition) (string, error) {
 	return ret.ID, nil
 }
 
-func addRegisterStub(hostID string, reply int) (string, error) {
+func addRegisterStubInvalidCommand(hostID string, reply int, clusterID string, retryDelay int64) (string, error) {
+
+	hostUUID := strfmt.UUID(hostID)
+	hostKind := "host"
+
+	returnedHost := &models.Host{
+		ID:   &hostUUID,
+		Kind: &hostKind,
+	}
+
+	stepRunnerCommand := &models.HostRegistrationResponseAO1NextStepRunnerCommand{
+		Command:      "i_do_not_exist",
+		RetrySeconds: retryDelay,
+	}
+
+	registerResponse := &models.HostRegistrationResponse{
+		Host:                  *returnedHost,
+		NextStepRunnerCommand: stepRunnerCommand,
+	}
+
+	b, err := json.Marshal(&registerResponse)
+	if err != nil {
+		return "", err
+	}
+
+	stub := StubDefinition{
+		Request: &RequestDefinition{
+			URL:    getRegisterURL(),
+			Method: "POST",
+		},
+		Response: &ResponseDefinition{
+			Status: reply,
+			Body:   string(b),
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		},
+	}
+
+	return addStub(&stub)
+}
+
+func addRegisterStub(hostID string, reply int, clusterID string) (string, error) {
 	var b []byte
 	var err error
 	hostUUID := strfmt.UUID(hostID)
@@ -182,7 +232,22 @@ func addRegisterStub(hostID string, reply int) (string, error) {
 			ID:   &hostUUID,
 			Kind: &hostKind,
 		}
-		b, err = json.Marshal(&returnedHost)
+
+		stepRunnerCommand := &models.HostRegistrationResponseAO1NextStepRunnerCommand{
+			Command: "/usr/bin/next_step_runner",
+			Args: []string{
+				"--url", ServiceURL,
+				"--cluster-id", clusterID,
+				"--host-id", hostID,
+			},
+		}
+
+		registerResponse := &models.HostRegistrationResponse{
+			Host:                  *returnedHost,
+			NextStepRunnerCommand: stepRunnerCommand,
+		}
+
+		b, err = json.Marshal(&registerResponse)
 		if err != nil {
 			return "", err
 		}

@@ -1,6 +1,7 @@
 FROM registry.fedoraproject.org/fedora-minimal:31
 RUN microdnf install \
     kmod findutils iputils \
+    podman \
     # inventory
     dmidecode ipmitool lshw biosdevname \
     # free_addresses
@@ -10,4 +11,4 @@ RUN microdnf install \
     # logs_sender
     tar && microdnf update systemd \
     && microdnf clean all
-ADD build/agent build/connectivity_check build/free_addresses build/inventory build/logs_sender build/dhcp_lease_allocate build/apivip_check /usr/bin/
+ADD build/agent build/connectivity_check build/free_addresses build/inventory build/logs_sender build/dhcp_lease_allocate build/apivip_check build/next_step_runner /usr/bin/

@@ -17,8 +17,6 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-var CurrentHost *models.Host
-
 func createRegisterParams() *installer.RegisterHostParams {
 	ret := &installer.RegisterHostParams{
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
@@ -31,7 +29,8 @@ func createRegisterParams() *installer.RegisterHostParams {
 	return ret
 }
 
-func RegisterHostWithRetry() {
+func RegisterHostWithRetry() *models.HostRegistrationResponseAO1NextStepRunnerCommand {
+
 	for {
 		s, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
 		if err != nil {
@@ -39,9 +38,9 @@ func RegisterHostWithRetry() {
 		}
 		registerResult, err := s.Client().Installer.RegisterHost(s.Context(), createRegisterParams())
 		if err == nil {
-			CurrentHost = registerResult.Payload
-			return
+			return registerResult.Payload.NextStepRunnerCommand
 		}
+
 		// stop register in case of forbidden reply.
 		switch errValue := err.(type) {
 		case *installer.RegisterHostForbidden:

@@ -1,5 +1,6 @@
 **/RCS/**
 build
+reports
 .idea
 subsystem/logs
 .project

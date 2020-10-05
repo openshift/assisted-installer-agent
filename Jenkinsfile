@@ -1,7 +1,6 @@
 String cron_string = BRANCH_NAME == "master" ? "@daily" : ""
 
 pipeline {
-
   environment {
         AGENT_IMAGE = 'quay.io/ocpmetal/assisted-installer-agent'
   }
@@ -13,15 +12,21 @@ pipeline {
 
   stages {
     stage('build') {
-      steps {
-        sh 'skipper make build'
-      }
+        steps {
+            sh 'skipper make build'
+        }
     }
 
     stage('test') {
-       steps {
-         sh 'skipper make subsystem'
-       }
+        steps {
+            sh 'skipper make subsystem'
+        }
+        post {
+            always {
+                junit '**/reports/*test.xml'
+                cobertura coberturaReportFile: '**/reports/*coverage.xml', onlyStable: false, enableNewApi: true
+            }
+        }
     }
 
     stage('publish images on push to master') {

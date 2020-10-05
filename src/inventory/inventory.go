@@ -2,8 +2,8 @@ package inventory
 
 import (
 	"encoding/json"
-
 	"github.com/openshift/assisted-service/models"
+	"time"
 )
 
 func ReadInventory() *models.Inventory {
@@ -18,6 +18,7 @@ func ReadInventory() *models.Inventory {
 		Interfaces:   GetInterfaces(d),
 		Memory:       GetMemory(d),
 		SystemVendor: GetVendor(d),
+		Timestamp:    time.Now().Unix(),
 	}
 	return &ret
 }

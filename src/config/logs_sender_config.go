@@ -61,8 +61,4 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	if LogsSenderConfig.PullSecretToken == "" {
 		LogsSenderConfig.PullSecretToken = os.Getenv("PULL_SECRET_TOKEN")
 	}
-	if LogsSenderConfig.PullSecretToken == "" {
-		_, _ = fmt.Fprint(os.Stderr, "missing required -pull-secret-token argument or set PULL_SECRET_TOKEN os env\n")
-		printHelpAndExit()
-	}
 }

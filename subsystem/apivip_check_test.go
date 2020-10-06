@@ -58,7 +58,7 @@ func setWorkerIgnitionStub(hostID string, request *models.APIVipConnectivityRequ
 				"run", "--privileged", "--net=host", "--rm",
 				"-v", "/var/log:/var/log",
 				"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-				"quay.io/derez/assisted-installer-agent:test",
+				"quay.io/ocpmetal/assisted-installer-agent:latest",
 				"apivip_check",
 				string(b),
 			},

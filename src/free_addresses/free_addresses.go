@@ -99,7 +99,7 @@ func newScanner(exe Executer, log logrus.FieldLogger) *scanner {
 func (s *scanner) scanSubNetwork(subNetwork string) ([]strfmt.IPv4, string, int) {
 	ip, cidr, err := net.ParseCIDR(subNetwork)
 	if err != nil {
-		wrapped := errors.Wrapf(err, "Network %s is not a valid CIDR", subNetwork)
+		wrapped := errors.Wrapf(err, "Network %s is not a valid CIDR ", subNetwork)
 		s.log.WithError(wrapped).Warn("ParseCIDR")
 		return nil, wrapped.Error(), -1
 	}

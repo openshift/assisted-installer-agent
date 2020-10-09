@@ -1,2 +1,3 @@
 FROM quay.io/ocpmetal/assisted-installer-agent:latest
-RUN microdnf install docker && microdnf clean all
+RUN curl --output /etc/yum.repos.d/docker-ce.repo https://download.docker.com/linux/centos/docker-ce.repo
+RUN dnf install -y docker-ce docker-ce-cli containerd.io && dnf -y clean all

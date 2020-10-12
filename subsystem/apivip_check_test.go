@@ -49,7 +49,7 @@ func setWorkerIgnitionStub(hostID string, request *models.APIVipConnectivityRequ
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	_, err = addNextStepStub(hostID, 5,
+	_, err = addNextStepStub(hostID, 5, "",
 		&models.Step{
 			StepType: models.StepTypeAPIVipConnectivityCheck,
 			StepID:   stepAPIConnectivityID,

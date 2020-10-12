@@ -69,6 +69,6 @@ func (d *Dependencies) EvalSymlinks(path string) (string, error) {
 	return filepath.EvalSymlinks(path)
 }
 
-func newDepedencies() IDependencies {
+func newDependencies() IDependencies {
 	return &Dependencies{}
 }

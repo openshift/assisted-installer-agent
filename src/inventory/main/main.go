@@ -11,5 +11,5 @@ import (
 func main() {
 	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	util.SetLogging("inventory", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
-	fmt.Print(string(inventory.CreateInveroryInfo()))
+	fmt.Print(string(inventory.CreateInventoryInfo()))
 }

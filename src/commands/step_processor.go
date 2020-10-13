@@ -64,6 +64,7 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 }
 
 func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, command string, args []string, handler HandlerType) {
+	s.Logger().Infof("Executing step: <%s>, command: <%s>, args: <%v>", stepID, command, args)
 	stdout, stderr, exitCode := handler(command, args...)
 	s.sendStepReply(stepType, stepID, stdout, stderr, exitCode)
 }

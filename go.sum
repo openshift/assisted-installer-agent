@@ -303,6 +303,7 @@ github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm
 github.com/gin-gonic/gin v1.6.3/go.mod h1:75u5sXoLsGZoRN5Sgbi1eraJ4GU3++wFwWzhwvtwp4M=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
 github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
+github.com/go-acme/lego v2.7.2+incompatible/go.mod h1:yzMNe9CasVUhkquNvti5nAtPmG94USbYxYrZfTkIn0M=
 github.com/go-bindata/go-bindata v3.1.2+incompatible/go.mod h1:xK8Dsgwmeed+BBsSy2XTopBn/8uK2HWuGSnA11C3Joo=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
@@ -453,6 +454,7 @@ github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d/go.mod h1:SlYgWuQ5
 github.com/gogo/protobuf v1.2.2-0.20190730201129-28a6bbf47e48/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
 github.com/gogo/protobuf v1.3.1 h1:DqDEcV5aeaTmdFBePNpYsp3FlcVH/2ISVVM9Qf8PSls=
 github.com/gogo/protobuf v1.3.1/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
+github.com/golang-collections/go-datastructures v0.0.0-20150211160725-59788d5eb259/go.mod h1:9Qcha0gTWLw//0VNka1Cbnjvg3pNKGFdAm7E9sBabxE=
 github.com/golang-migrate/migrate/v4 v4.6.2/go.mod h1:JYi6reN3+Z734VZ0akNuyOJNcrg45ZL7LDBMW3WGJL0=
 github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe/go.mod h1:8vg3r2VgvsThLBIFL93Qb5yWzgyZWhEmBwUJWevAkK0=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=
@@ -830,6 +832,12 @@ github.com/openshift/assisted-service v1.0.10-0.20201005211755-352fef154311 h1:h
 github.com/openshift/assisted-service v1.0.10-0.20201005211755-352fef154311/go.mod h1:oQPhM+uXeOjnx1JOsw9pLhMBEdLR781LGjSyC5bpWXs=
 github.com/openshift/assisted-service v1.0.10-0.20201011075418-f8bc63cfc5e8 h1:DxJxAIEDS/R2uVPZz6UFJdCnCPb8N5Rav/iiY3uvA14=
 github.com/openshift/assisted-service v1.0.10-0.20201011075418-f8bc63cfc5e8/go.mod h1:CKT0cnC9Kp59V5xSBqyuL8/QJXPXpzcr6CPlvWiHs4I=
+github.com/openshift/assisted-service v1.0.10-0.20201011131615-8c6c7ce63a5e h1:WKdCESKLNfKcCDizluwvQpHPBimJ8P6HmashyaNJSa8=
+github.com/openshift/assisted-service v1.0.10-0.20201011131615-8c6c7ce63a5e/go.mod h1:CKT0cnC9Kp59V5xSBqyuL8/QJXPXpzcr6CPlvWiHs4I=
+github.com/openshift/assisted-service v1.0.10-0.20201015145105-016a1dfbe165 h1:j+fbd9+ENsZ4ZaRBMrKdb1ErkOP+c7+jjmI6XzwGRto=
+github.com/openshift/assisted-service v1.0.10-0.20201015145105-016a1dfbe165/go.mod h1:A05ih18HmCtD0EeC6DBLTRJw+sGbZLGagHzZ3QT6vvg=
+github.com/openshift/assisted-service v1.0.10-0.20201019195533-d6e0afd56a42 h1:YKoZ7X6u73Rcji27LRCw4eCqHk0LjEWP9tow0TQ8IuQ=
+github.com/openshift/assisted-service v1.0.10-0.20201019195533-d6e0afd56a42/go.mod h1:A05ih18HmCtD0EeC6DBLTRJw+sGbZLGagHzZ3QT6vvg=
 github.com/openshift/assisted-service v1.0.10-0.20201014153155-684a8a214bf6 h1:FZkbZ44cBV3lNo57q+kbR5sonR0ikn6ucCx0Z9LKJaQ=
 github.com/openshift/assisted-service v1.0.10-0.20201014153155-684a8a214bf6/go.mod h1:CKT0cnC9Kp59V5xSBqyuL8/QJXPXpzcr6CPlvWiHs4I=
 github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe/go.mod h1:DOgBIuBcXuTD8uub0jL7h6gBdIBt3CFrwz6K2FtfMBA=
@@ -1015,6 +1023,7 @@ github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2 h1:b6uOv7YOFK0TYG7HtkIgExQo+2RdLuwRft63jn2HWj8=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/thanos-io/thanos v0.11.0/go.mod h1:N/Yes7J68KqvmY+xM6J5CJqEvWIvKSR5sqGtmuD6wDc=
+github.com/thoas/go-funk v0.6.0 h1:ryxN0pa9FnI7YHgODdLIZ4T6paCZJt8od6N9oRztMxM=
 github.com/thoas/go-funk v0.6.0/go.mod h1:+IWnUfUmFO1+WVYQWQtIJHeRRdaIyyYglZN7xzUPe4Q=
 github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=

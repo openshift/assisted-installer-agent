@@ -53,7 +53,7 @@ type ReceivedResponse struct {
 	Headers map[string]string
 }
 
-type RequestOccurence struct {
+type RequestOccurrence struct {
 	ID         string
 	Request    *ReceivedRequest
 	Response   *ReceivedResponse
@@ -65,7 +65,7 @@ type Mapping struct {
 }
 
 type Requests struct {
-	Requests []*RequestOccurence
+	Requests []*RequestOccurrence
 }
 
 func jsonToMap(str string) map[string]interface{} {
@@ -311,7 +311,7 @@ func deleteAllStubs() error {
 	return err
 }
 
-func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
+func findAllMatchingRequests(url, method string) ([]*RequestOccurrence, error) {
 	resp, err := http.Get(RequestsURL)
 	if err != nil {
 		return nil, err
@@ -327,7 +327,7 @@ func findAllMatchingRequests(url, method string) ([]*RequestOccurence, error) {
 		return nil, err
 	}
 
-	ret := make([]*RequestOccurence, 0)
+	ret := make([]*RequestOccurrence, 0)
 	for _, r := range requests.Requests {
 		if r.Request.URL == url && r.Request.Method == method {
 			ret = append(ret, r)

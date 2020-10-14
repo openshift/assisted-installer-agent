@@ -25,7 +25,7 @@ push: build-image subsystem
 	docker push $(ASSISTED_INSTALLER_AGENT)
 
 _test:
-	gotestsum $(GOTEST_FLAGS) $(TEST) -ginkgo.focus=$(FOCUS) -ginkgo.v -ginkgo.skip=$(SKIP)
+	gotestsum $(GOTEST_FLAGS) $(TEST) -ginkgo.focus="$(FOCUS)" -ginkgo.v -ginkgo.skip=$(SKIP)
 	gocov convert $(REPORTS)/$(TEST_SCENARIO)_coverage.out | gocov-xml > $(REPORTS)/$(TEST_SCENARIO)_coverage.xml
 
 unit-test: $(REPORTS)

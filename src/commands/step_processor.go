@@ -34,7 +34,11 @@ func newSession() *stepSession {
 }
 
 func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, errStr string, exitCode int) {
-	s.Logger().Infof("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
+	logFunc := s.Logger().Infof
+	if exitCode != 0 {
+		logFunc = s.Logger().Warnf
+	}
+	logFunc("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
 	params := installer.PostStepReplyParams{
 		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
@@ -52,11 +56,11 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 	if err != nil {
 		switch errValue := err.(type) {
 		case *installer.PostStepReplyInternalServerError:
-			s.Logger().Warnf("Error processing posting step reply: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+			s.Logger().Warnf("Assisted service returned status code %s after processing step reply. Reason: %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
 		case *installer.PostStepReplyUnauthorized:
 			s.Logger().Warn("User is not authenticated to perform the operation")
 		case *installer.PostStepReplyBadRequest:
-			s.Logger().Warnf("Error processing posting step reply: %s, %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
+			s.Logger().Warnf("Assisted service returned status code %s after processing step reply.  Reason: %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
 		default:
 			s.Logger().WithError(err).Warn("Error posting step reply")
 		}

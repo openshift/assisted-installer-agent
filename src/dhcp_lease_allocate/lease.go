@@ -2,6 +2,7 @@ package dhcp_lease_allocate
 
 import (
 	"net"
+	"strconv"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/baremetal-runtimecfg/pkg/monitor"
@@ -9,6 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
+
+const DhclientTimeoutSeconds = 5
 
 type VIP struct {
 	Name       string `yaml:"name"`
@@ -32,13 +35,17 @@ func LeaseVIP(log logrus.FieldLogger, cfgPath, masterDevice, name string, mac ne
 
 	// -sf avoiding dhclient from setting the received IP to the interface
 	// --no-pid in order to allow running multiple `dhclient` simultaneously
-	_, stderr, exitCode := util.Execute("timeout", "5", "dhclient", "-v", "-H", name,
+	_, stderr, exitCode := util.Execute("timeout", strconv.FormatInt(DhclientTimeoutSeconds, 10), "dhclient", "-v", "-H", name,
 		"-sf", "/bin/true", "-lf", leaseFile,
 		"--no-pid", "-1", iface.Name)
-	if exitCode != 0 {
-		return errors.Errorf("dhclient existed with non-zero exit code %d: %s", exitCode, stderr)
+	switch exitCode {
+	case 0:
+		return nil
+	case 124:
+		return errors.Errorf("dhclient was timed out after %d seconds", DhclientTimeoutSeconds)
+	default:
+		return errors.Errorf("dhclient exited with non-zero exit code %d: %s", exitCode, stderr)
 	}
-	return nil
 }
 
 func deleteInterface(log logrus.FieldLogger, name string) {

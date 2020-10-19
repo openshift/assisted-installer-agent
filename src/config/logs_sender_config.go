@@ -7,21 +7,22 @@ import (
 )
 
 var LogsSenderConfig struct {
-	TextLogging     bool
-	JournalLogging  bool
-	Tags            []string
-	Services        []string
-	Since           string
-	HostID          string
-	ClusterID       string
-	CleanWhenDone   bool
-	TargetURL       string
-	PullSecretToken string
+	TextLogging            bool
+	JournalLogging         bool
+	Tags                   []string
+	Services               []string
+	Since                  string
+	HostID                 string
+	ClusterID              string
+	CleanWhenDone          bool
+	TargetURL              string
+	PullSecretToken        string
+	IsBootstrap            bool
+	InstallerGatherlogging bool
 }
 
 func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool) {
 	var leaveFiles bool
-	var boostrap bool
 	flag.BoolVar(&LogsSenderConfig.JournalLogging, "with-journal-logging", defaultJournalLogging, "Use journal logging")
 	flag.BoolVar(&LogsSenderConfig.TextLogging, "with-text-logging", defaultTextLogging, "Use text logging")
 	flag.StringVar(&LogsSenderConfig.Since, "since", "5 hours ago", "Journalctl since flag, same format")
@@ -30,7 +31,8 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	flag.StringVar(&LogsSenderConfig.HostID, "host-id", "host-id", "The value of the host-id")
 	flag.StringVar(&LogsSenderConfig.PullSecretToken, "pull-secret-token", "", "Pull secret token")
 	flag.BoolVar(&leaveFiles, "dont-clean", false, "Don't delete all created files on finish. Required")
-	flag.BoolVar(&boostrap, "bootstrap", false, "Gather and send logs on bootstrap node")
+	flag.BoolVar(&LogsSenderConfig.IsBootstrap, "bootstrap", false, "Gather and send logs on bootstrap node")
+	flag.BoolVar(&LogsSenderConfig.InstallerGatherlogging, "with-installer-gather-logging", false, "Use installer-gather logging")
 	flag.StringVar(&GlobalAgentConfig.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
 	flag.BoolVar(&GlobalAgentConfig.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
 	h := flag.Bool("help", false, "Help message")
@@ -54,7 +56,7 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	}
 
 	LogsSenderConfig.Tags = []string{"agent", "installer"}
-	if boostrap {
+	if LogsSenderConfig.IsBootstrap {
 		LogsSenderConfig.Services = []string{"bootkube"}
 	}
 

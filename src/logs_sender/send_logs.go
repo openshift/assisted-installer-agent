@@ -20,6 +20,7 @@ import (
 //go:generate mockery -name LogsSender -inpkg
 type LogsSender interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
+	ExecutePrivilege(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int)
 	CreateFolderIfNotExist(folder string) error
 	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
@@ -30,6 +31,14 @@ type LogsSenderExecuter struct{}
 
 func (e *LogsSenderExecuter) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
 	return util.Execute(command, args...)
+}
+
+// ExecutePrivilege execute a command in the host environment via nsenter
+func (e *LogsSenderExecuter) ExecutePrivilege(command string, args ...string) (stdout string, stderr string, exitCode int) {
+	commandBase := "nsenter"
+	arguments := []string{"-t", "1", "-m", "-i", "--", command}
+	arguments = append(arguments, args...)
+	return e.Execute(commandBase, arguments...)
 }
 
 func (e *LogsSenderExecuter) ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {
@@ -58,10 +67,10 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	}
 
 	params := installer.UploadHostLogsParams{
-		Upfile:    uploadFile,
-		ClusterID: clusterID,
+		Upfile:                uploadFile,
+		ClusterID:             clusterID,
 		DiscoveryAgentVersion: &agentVersion,
-		HostID:    hostID,
+		HostID:                hostID,
 	}
 	_, err = invSession.Client().Installer.UploadHostLogs(invSession.Context(), &params)
 
@@ -138,6 +147,21 @@ func SendLogs(l LogsSender) error {
 		err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
 			[]string{"-u", service})
 		if err != nil {
+			return err
+		}
+	}
+
+	if config.LogsSenderConfig.InstallerGatherlogging && config.LogsSenderConfig.IsBootstrap {
+		log.Info("Running installer-gather.sh")
+		// installer-gather.sh is written in such a way it always return 0.
+		_, stdErr, _ := l.ExecutePrivilege("/usr/local/bin/installer-gather.sh")
+		if stdErr != "" {
+			log.Warn(stdErr)
+		}
+		_, stdErr, exitCode := l.ExecutePrivilege("mv", "/root/log-bundle-.tar.gz", fmt.Sprintf("%s/installer_gather.tar.gz", logsTmpFilesDir))
+		if exitCode != 0 {
+			err := errors.Errorf(stdErr)
+			log.WithError(err).Errorf("Failed to run installer-gather.sh command")
 			return err
 		}
 	}

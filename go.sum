@@ -829,8 +829,8 @@ github.com/openshift/assisted-service v1.0.10-0.20201005211755-352fef154311 h1:h
 github.com/openshift/assisted-service v1.0.10-0.20201005211755-352fef154311/go.mod h1:oQPhM+uXeOjnx1JOsw9pLhMBEdLR781LGjSyC5bpWXs=
 github.com/openshift/assisted-service v1.0.10-0.20201011075418-f8bc63cfc5e8 h1:DxJxAIEDS/R2uVPZz6UFJdCnCPb8N5Rav/iiY3uvA14=
 github.com/openshift/assisted-service v1.0.10-0.20201011075418-f8bc63cfc5e8/go.mod h1:CKT0cnC9Kp59V5xSBqyuL8/QJXPXpzcr6CPlvWiHs4I=
-github.com/openshift/assisted-service v1.0.10-0.20201011131615-8c6c7ce63a5e h1:WKdCESKLNfKcCDizluwvQpHPBimJ8P6HmashyaNJSa8=
-github.com/openshift/assisted-service v1.0.10-0.20201011131615-8c6c7ce63a5e/go.mod h1:CKT0cnC9Kp59V5xSBqyuL8/QJXPXpzcr6CPlvWiHs4I=
+github.com/openshift/assisted-service v1.0.10-0.20201014153155-684a8a214bf6 h1:FZkbZ44cBV3lNo57q+kbR5sonR0ikn6ucCx0Z9LKJaQ=
+github.com/openshift/assisted-service v1.0.10-0.20201014153155-684a8a214bf6/go.mod h1:CKT0cnC9Kp59V5xSBqyuL8/QJXPXpzcr6CPlvWiHs4I=
 github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe/go.mod h1:DOgBIuBcXuTD8uub0jL7h6gBdIBt3CFrwz6K2FtfMBA=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c h1:RAgi0xFIHMpsGmYEXoPyZn3Gjomkj/9aCERcqxJP7mc=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c/go.mod h1:+duukQisb5LU1bMtLalsHZc1wM69D5sH3TuiyvAQhhA=

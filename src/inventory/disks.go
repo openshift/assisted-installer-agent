@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jaypipes/ghw"
 	"github.com/openshift/assisted-service/models"
@@ -56,6 +57,18 @@ func (d *disks) getHctl(name string) string {
 	return files[0].Name()
 }
 
+func (d *disks) getBootable(path string) bool {
+	if path == "" {
+		return false
+	}
+	stdout, stderr, exitCode := d.dependencies.Execute("file", "-s", path)
+	if exitCode != 0 {
+		logrus.Warnf("Could not get bootable information for path %s: %s", path, stderr)
+		return false
+	}
+	return strings.Contains(stdout, "DOS/MBR boot sector")
+}
+
 func unknownToEmpty(value string) string {
 	if value == ghw.UNKNOWN {
 		return ""
@@ -75,17 +88,19 @@ func (d *disks) getDisks() []*models.Disk {
 			(disk.BusType == ghw.BUS_TYPE_UNKNOWN && disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN) {
 			continue
 		}
+		path := d.getPath(disk.BusPath, disk.Name)
 		rec := models.Disk{
 			ByPath:    d.getByPath(disk.BusPath),
 			Hctl:      d.getHctl(disk.Name),
 			Model:     unknownToEmpty(disk.Model),
 			Name:      disk.Name,
-			Path:      d.getPath(disk.BusPath, disk.Name),
+			Path:      path,
 			DriveType: disk.DriveType.String(),
 			Serial:    unknownToEmpty(disk.SerialNumber),
 			SizeBytes: int64(disk.SizeBytes),
 			Vendor:    unknownToEmpty(disk.Vendor),
 			Wwn:       unknownToEmpty(disk.WWN),
+			Bootable:  d.getBootable(path),
 		}
 		ret = append(ret, &rec)
 	}

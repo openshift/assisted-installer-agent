@@ -156,7 +156,7 @@ var _ = Describe("Lease tests", func() {
 })
 
 func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest) {
-	_, err := addRegisterStub(hostID, http.StatusCreated, ClusterID)
+	_, err := addRegisterStub(hostID, http.StatusCreated)
 	Expect(err).NotTo(HaveOccurred())
 
 	b, err := json.Marshal(&request)

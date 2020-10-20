@@ -2,12 +2,12 @@ package subsystem
 
 import (
 	"encoding/json"
-	"net/http"
 	"time"
+	"net/http"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
+	
 	"github.com/openshift/assisted-installer-agent/src/apivip_check"
 	"github.com/openshift/assisted-service/models"
 )
@@ -18,7 +18,7 @@ const (
 
 var _ = Describe("API VIP connectivity check tests", func() {
 	var (
-		hostID string
+		hostID     string
 	)
 
 	BeforeEach(func() {
@@ -40,7 +40,7 @@ var _ = Describe("API VIP connectivity check tests", func() {
 })
 
 func setWorkerIgnitionStub(hostID string, request *models.APIVipConnectivityRequest) {
-	_, err := addRegisterStub(hostID, http.StatusCreated, ClusterID)
+	_, err := addRegisterStub(hostID, http.StatusCreated)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = addWorkerIgnitionStub()

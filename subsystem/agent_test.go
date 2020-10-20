@@ -50,31 +50,43 @@ var _ = Describe("Agent tests", func() {
 		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
 	})
 
-	It("register forbidden", func() {
-		hostID := nextHostID()
-		registerStubID, err := addRegisterStub(hostID, http.StatusForbidden)
-		Expect(err).NotTo(HaveOccurred())
+	Context("register action makes the agent to wait forever", func() {
+		var status int
 
-		nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
-		Expect(err).NotTo(HaveOccurred())
+		It("register conflicted - cluster does not accept hosts", func() {
+			status = http.StatusConflict
+		})
 
-		Expect(startAgent()).NotTo(HaveOccurred())
-		time.Sleep(10 * time.Second)
+		It("register forbidden", func() {
+			status = http.StatusForbidden
+		})
 
-		// validate only register request was called
-		resp, err := http.Get(RequestsURL)
-		Expect(err).ShouldNot(HaveOccurred())
-		requests := &Requests{}
-		b, err := ioutil.ReadAll(resp.Body)
-		Expect(err).ShouldNot(HaveOccurred())
-		Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
-		req := make([]*RequestOccurence, 0, len(requests.Requests))
-		for _, r := range requests.Requests {
-			req = append(req, r)
-		}
-		Expect(len(req)).Should(Equal(1))
-		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
-		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
+		AfterEach(func() {
+			hostID := nextHostID()
+			registerStubID, err := addRegisterStub(hostID, status)
+			Expect(err).NotTo(HaveOccurred())
+
+			nextStepsStubID, err := addNextStepStub(hostID, defaultnextInstructionSeconds)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(startAgent()).NotTo(HaveOccurred())
+			time.Sleep(10 * time.Second)
+
+			By("Validate only register request was called")
+			resp, err := http.Get(RequestsURL)
+			Expect(err).ShouldNot(HaveOccurred())
+			requests := &Requests{}
+			b, err := ioutil.ReadAll(resp.Body)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
+			req := make([]*RequestOccurrence, 0, len(requests.Requests))
+			for _, r := range requests.Requests {
+				req = append(req, r)
+			}
+			Expect(len(req)).Should(Equal(1))
+			Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
+			Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
+		})
 	})
 
 	It("register not found - agent should stop trying to register", func() {
@@ -95,7 +107,7 @@ var _ = Describe("Agent tests", func() {
 		b, err := ioutil.ReadAll(resp.Body)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
-		req := make([]*RequestOccurence, 0, len(requests.Requests))
+		req := make([]*RequestOccurrence, 0, len(requests.Requests))
 		for _, r := range requests.Requests {
 			req = append(req, r)
 		}

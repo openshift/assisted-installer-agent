@@ -45,6 +45,10 @@ func RegisterHostWithRetry() {
 		// stop register in case of forbidden reply.
 		switch errValue := err.(type) {
 		case *installer.RegisterHostForbidden:
+			s.Logger().Warn("Host will stop trying to register; host is not allowed to perform the requested operation")
+			// wait forever
+			select {}
+		case *installer.RegisterHostConflict:
 			s.Logger().Warn("Host will stop trying to register; cluster cannot accept new hosts in its current state")
 			// wait forever
 			select {}

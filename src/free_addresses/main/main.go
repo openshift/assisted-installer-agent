@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+	config.ProcessSubprocessArgs(false, true)
 	util.SetLogging("free_addresses", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
 	if flag.NArg() != 1 {
 		log.Warnf("Expecting exactly single argument to free_addresses. Received %d", len(os.Args)-1)

@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+	config.ProcessSubprocessArgs(false, true)
 	util.SetLogging("dhcp_lease_allocate", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
 	if flag.NArg() != 1 {
 		log.Warnf("Expecting exactly single argument to dhcp_lease_allocate. Received %d", len(os.Args)-1)

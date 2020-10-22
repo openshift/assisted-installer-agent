@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-openapi/strfmt"
+	strfmt "github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -100,13 +100,17 @@ var _ = Describe("logs sender", func() {
 	})
 
 	It("Upload failed", func() {
-
 		folderSuccess()
 		executeOutputToFileSuccess()
 		archiveSuccess()
+		config.LogsSenderConfig.IsBootstrap = true
+		config.LogsSenderConfig.InstallerGatherlogging = true
+		logsSenderMock.On("ExecutePrivilege", "/usr/local/bin/installer-gather.sh").Return("Dummy", "", 0)
+		logsSenderMock.On("ExecutePrivilege", "mv", "/root/log-bundle-.tar.gz", fmt.Sprintf("%s/installer_gather.tar.gz", logsTmpFilesDir)).Return("Dummy", "", 0)
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
 			Return(errors.Errorf("Dummy"))
+
 		err := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
@@ -117,6 +121,10 @@ var _ = Describe("logs sender", func() {
 		folderSuccess()
 		executeOutputToFileSuccess()
 		archiveSuccess()
+		config.LogsSenderConfig.IsBootstrap = true
+		config.LogsSenderConfig.InstallerGatherlogging = true
+		logsSenderMock.On("ExecutePrivilege", "/usr/local/bin/installer-gather.sh").Return("Dummy", "", 0)
+		logsSenderMock.On("ExecutePrivilege", "mv", "/root/log-bundle-.tar.gz", fmt.Sprintf("%s/installer_gather.tar.gz", logsTmpFilesDir)).Return("Dummy", "", 0)
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
 			Return(nil)

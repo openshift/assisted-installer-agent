@@ -38,7 +38,14 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 	if exitCode != 0 {
 		logFunc = s.Logger().Warnf
 	}
-	logFunc("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
+
+	if stepType == models.StepTypeFreeNetworkAddresses {
+		// the free-addresses step's output spams the log too much
+		logFunc("Sending step <%s> reply error <%s> exit-code <%d>", stepID, errStr, exitCode)
+	} else {
+		logFunc("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", stepID, output, errStr, exitCode)
+	}
+
 	params := installer.PostStepReplyParams{
 		HostID:                *CurrentHost.ID,
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),

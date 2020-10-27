@@ -1,13 +1,13 @@
-FROM registry.fedoraproject.org/fedora-minimal:31
-RUN microdnf install \
-    kmod findutils iputils \
-    # inventory
-    dmidecode ipmitool lshw biosdevname file \
-    # free_addresses
-    nmap \
-    # dhcp_lease_allocate
-    dhclient \
-    # logs_sender
-    tar && microdnf update systemd \
-    && microdnf clean all
+FROM quay.io/app-sre/centos:8
+RUN dnf install -y \
+    	kmod findutils iputils \
+    	# inventory
+    	dmidecode ipmitool lshw biosdevname file \
+    	# free_addresses
+    	nmap \
+    	# dhcp_lease_allocate
+    	dhclient \
+    	# logs_sender
+    	tar && dnf update -y systemd \
+    	&& dnf clean all
 ADD build/agent build/connectivity_check build/free_addresses build/inventory build/logs_sender build/dhcp_lease_allocate build/apivip_check /usr/bin/

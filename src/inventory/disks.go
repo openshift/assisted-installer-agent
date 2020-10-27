@@ -76,18 +76,30 @@ func unknownToEmpty(value string) string {
 	return value
 }
 
+// isInstallationMedia returns whether this disk is an ISO media or not
+func isInstallationMedia(d *ghw.Disk) bool {
+	for _, p := range d.Partitions {
+		if p.Type == "iso9660" || strings.HasSuffix(p.MountPoint, "iso") {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (d *disks) getDisks() []*models.Disk {
 	ret := make([]*models.Disk, 0)
-	blockInfo, err := d.dependencies.Block()
+	blockInfo, err := d.dependencies.Block(ghw.WithChroot("/host"))
 	if err != nil {
 		logrus.WithError(err).Warnf("While getting disks info")
 		return ret
 	}
 	for _, disk := range blockInfo.Disks {
-		if disk.IsRemovable || disk.SizeBytes == 0 ||
+		if disk.IsRemovable || disk.SizeBytes == 0 || isInstallationMedia(disk) ||
 			(disk.BusType == ghw.BUS_TYPE_UNKNOWN && disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN) {
 			continue
 		}
+
 		path := d.getPath(disk.BusPath, disk.Name)
 		rec := models.Disk{
 			ByPath:    d.getByPath(disk.BusPath),

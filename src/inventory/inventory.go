@@ -7,7 +7,7 @@ import (
 )
 
 func ReadInventory() *models.Inventory {
-	d := newDepedencies()
+	d := newDependencies()
 	ret := models.Inventory{
 		BmcAddress:   GetBmcAddress(d),
 		BmcV6address: GetBmcV6Address(d),
@@ -23,7 +23,7 @@ func ReadInventory() *models.Inventory {
 	return &ret
 }
 
-func CreateInveroryInfo() []byte {
+func CreateInventoryInfo() []byte {
 	in := ReadInventory()
 	b, _ := json.Marshal(&in)
 	return b

@@ -3,8 +3,8 @@ FROM quay.io/ocpmetal/assisted-installer-agent:latest
 RUN yum install -y yum-utils \
     && yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo \
     && dnf install -y --nobest --allowerasing \
-        docker-ce \
-        docker-ce-cli \
-        containerd.io \
-        tcpdump \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    tcpdump \
     && dnf clean all

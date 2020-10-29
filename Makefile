@@ -2,9 +2,10 @@ TAG := $(or $(TAG),latest)
 ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/ocpmetal/assisted-installer-agent:$(TAG))
 
 export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+BIN = $(ROOT_DIR)/build
 REPORTS = $(ROOT_DIR)/reports
 GOTEST_PUBLISH_FLAGS = --junitfile-testsuite-name=relative --junitfile-testcase-classname=relative --junitfile $(REPORTS)/$(TEST_SCENARIO)_test.xml
-GOTEST_FLAGS = --format=pkgname $(GOTEST_PUBLISH_FLAGS) -- -count=1 -cover -coverprofile=$(REPORTS)/$(TEST_SCENARIO)_coverage.out
+GOTEST_FLAGS = --format=standard-verbose $(GOTEST_PUBLISH_FLAGS) -- -count=1 -cover -coverprofile=$(REPORTS)/$(TEST_SCENARIO)_coverage.out
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
 export WIREMOCK_PORT = 8362
@@ -12,11 +13,11 @@ export WIREMOCK_PORT = 8362
 all: build
 
 .PHONY: build clean build-image push subsystem
-build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender build-dhcp_lease_allocate build-apivip_check build-next_step_runner
+build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender \
+	   build-dhcp_lease_allocate build-apivip_check build-next_step_runner build-ntp_synchronizer
 
-build-%: src/$*
-	mkdir -p build
-	CGO_ENABLED=0 go build -o build/$* src/$*/main/main.go
+build-%: $(BIN) src/$*
+	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
 
 build-image: unit-test build
 	docker build --network=host -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
@@ -45,5 +46,8 @@ go-import:
 $(REPORTS):
 	-mkdir -p $(REPORTS)
 
+$(BIN):
+	-mkdir -p $(BIN)
+
 clean:
-	rm -rf build subsystem/logs $(REPORTS)
+	rm -rf subsystem/logs $(BIN) $(REPORTS)

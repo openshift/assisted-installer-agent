@@ -399,3 +399,11 @@ func isReplyFound(hostID string, verifier StepVerifier) bool {
 	}
 	return false
 }
+
+func createCustomStub(stepType models.StepType, command string, args ...string) *models.Step {
+	return &models.Step{
+		StepType: stepType,
+		Command:  command,
+		Args:     args,
+	}
+}

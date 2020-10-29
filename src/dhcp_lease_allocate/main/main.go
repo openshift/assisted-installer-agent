@@ -18,7 +18,8 @@ func main() {
 		log.Warnf("Expecting exactly single argument to dhcp_lease_allocate. Received %d", len(os.Args)-1)
 		os.Exit(-1)
 	}
-	stdout, stderr, exitCode := dhcp_lease_allocate.LeaseAllocate(flag.Arg(0), &dhcp_lease_allocate.ProcessExecuter{}, log.StandardLogger())
+	leaser := dhcp_lease_allocate.NewLeaser(dhcp_lease_allocate.NewLeaserDependencies())
+	stdout, stderr, exitCode := leaser.LeaseAllocate(flag.Arg(0), log.StandardLogger())
 	fmt.Fprint(os.Stdout, stdout)
 	fmt.Fprint(os.Stderr, stderr)
 	os.Exit(exitCode)

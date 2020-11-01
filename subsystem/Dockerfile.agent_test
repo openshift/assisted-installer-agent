@@ -6,4 +6,5 @@ RUN yum install -y yum-utils \
         docker-ce \
         docker-ce-cli \
         containerd.io \
+        tcpdump \
     && dnf clean all

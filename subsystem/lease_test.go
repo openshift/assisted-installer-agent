@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -56,8 +58,14 @@ var _ = Describe("Lease tests", func() {
 				IngressVipMac: &ingressMac,
 				Interface:     &ifaceName,
 			})
-
-			Expect(*getDHCPResponse(hostID)).Should(Equal(*dhcpResponse))
+			secondResponse := getDHCPResponse(hostID)
+			Expect(secondResponse).ToNot(BeNil())
+			Expect(dhcpResponse.APIVipAddress).To(Equal(secondResponse.APIVipAddress))
+			Expect(dhcpResponse.IngressVipAddress).To(Equal(secondResponse.IngressVipAddress))
+			Expect(secondResponse.APIVipAddress.String()).ToNot(BeEmpty())
+			Expect(secondResponse.IngressVipAddress.String()).ToNot(BeEmpty())
+			Expect(secondResponse.APIVipLease).To(ContainSubstring(secondResponse.APIVipAddress.String()))
+			Expect(secondResponse.IngressVipLease).To(ContainSubstring(secondResponse.IngressVipAddress.String()))
 		})
 	})
 
@@ -87,7 +95,14 @@ var _ = Describe("Lease tests", func() {
 				Interface:     &ifaceName,
 			})
 
-			Expect(*getDHCPResponse(hostID)).ShouldNot(Equal(*dhcpResponse))
+			secondResponse := getDHCPResponse(hostID)
+			Expect(secondResponse).ToNot(BeNil())
+			Expect(dhcpResponse.APIVipAddress).ToNot(Equal(secondResponse.APIVipAddress))
+			Expect(dhcpResponse.IngressVipAddress).ToNot(Equal(secondResponse.IngressVipAddress))
+			Expect(secondResponse.APIVipAddress.String()).ToNot(BeEmpty())
+			Expect(secondResponse.IngressVipAddress.String()).ToNot(BeEmpty())
+			Expect(secondResponse.APIVipLease).To(ContainSubstring(secondResponse.APIVipAddress.String()))
+			Expect(secondResponse.IngressVipLease).To(ContainSubstring(secondResponse.IngressVipAddress.String()))
 		})
 	})
 
@@ -153,7 +168,128 @@ var _ = Describe("Lease tests", func() {
 			})).Should(BeTrue())
 		})
 	})
+	Context("Changing VIPs", func() {
+		It("DHCPREQUEST with provided lease", func() {
+			var dhcpResponse *models.DhcpAllocationResponse
+			resetAll()
+			By("1st time", func() {
+				_, _ = addRegisterStub(hostID, http.StatusCreated)
+				addTcpdumpStub(hostID, ifaceName, 11, 6)
+				Expect(startAgent()).ToNot(HaveOccurred())
+				waitforTcpdumpToStart(hostID)
+				setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+					APIVipMac:     &apiMac,
+					IngressVipMac: &ingressMac,
+					Interface:     &ifaceName,
+				})
+
+				dhcpResponse = getDHCPResponse(hostID)
+				Expect(dhcpResponse).ShouldNot(BeNil())
+				tcpdumpResponse := getTcpdumpReponse(hostID)
+				Expect(countSubstringOccurrences(tcpdumpResponse, "Discover")).To(BeNumerically(">=", 2))
+				Expect(countSubstringOccurrences(tcpdumpResponse, "Request")).To(BeNumerically(">=", 2))
+			})
+
+			resetAll()
+
+			By("2nd time", func() {
+
+				addTcpdumpStub(hostID, ifaceName, 11, 4)
+				_, _ = addRegisterStub(hostID, http.StatusCreated)
+				Expect(startAgent()).ToNot(HaveOccurred())
+				waitforTcpdumpToStart(hostID)
+				setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+					APIVipMac:       &apiMac,
+					IngressVipMac:   &ingressMac,
+					Interface:       &ifaceName,
+					APIVipLease:     formatLease(dhcpResponse.APIVipLease),
+					IngressVipLease: formatLease(dhcpResponse.IngressVipLease),
+				})
+
+				secondResponse := getDHCPResponse(hostID)
+				Expect(secondResponse).ToNot(BeNil())
+				Expect(dhcpResponse.APIVipAddress).To(Equal(secondResponse.APIVipAddress))
+				Expect(dhcpResponse.IngressVipAddress).To(Equal(secondResponse.IngressVipAddress))
+				Expect(secondResponse.APIVipAddress.String()).ToNot(BeEmpty())
+				Expect(secondResponse.IngressVipAddress.String()).ToNot(BeEmpty())
+				Expect(secondResponse.APIVipLease).To(ContainSubstring(secondResponse.APIVipAddress.String()))
+				Expect(secondResponse.IngressVipLease).To(ContainSubstring(secondResponse.IngressVipAddress.String()))
+				tcpdumpResponse := getTcpdumpReponse(hostID)
+				Expect(countSubstringOccurrences(tcpdumpResponse, "Discover")).To(Equal(0))
+				Expect(countSubstringOccurrences(tcpdumpResponse, "Request")).To(BeNumerically(">=", 2))
+			})
+		})
+	})
 })
+
+const TcpdumpStepType = models.StepType("tcpdump")
+
+func formatLease(lease string) string {
+	c := regexp.MustCompile(`(\s)(renew|rebind|expire) [^;]*;`)
+	return c.ReplaceAllString(lease, "${1}${2} never;")
+}
+
+func addTcpdumpStub(hostID, ifaceName string, timeoutSecs, count int) {
+	countStr := ""
+	if count > 0 {
+		countStr = fmt.Sprintf("-c %d", count)
+	}
+	_, err := addNextStepStub(hostID, 5,
+		createCustomStub(TcpdumpStepType, "bash", "-c",
+			fmt.Sprintf("timeout %d tcpdump -l -i %s %s -v 'udp dst port 67' | grep 'DHCP-Message Option 53' | awk '{print $6}'", timeoutSecs, ifaceName, countStr)),
+		&models.Step{
+			StepType: models.StepTypeExecute,
+			Command:  "bash",
+			Args: []string{
+				"-c",
+				"sleep 1; echo tcpdump started",
+			},
+		},
+	)
+	Expect(err).ToNot(HaveOccurred())
+}
+
+func waitforTcpdumpToStart(hostID string) {
+	EventuallyWithOffset(1, func() bool {
+		return isReplyFound(hostID, &EqualReplyVerifier{
+			Output:   "tcpdump started\n",
+			StepType: models.StepTypeExecute,
+		})
+	}, 30*time.Second, 500*time.Millisecond).Should(BeTrue())
+}
+
+type TcpdumVerifier struct{}
+
+func (*TcpdumVerifier) verify(actualReply *models.StepReply) bool {
+	return actualReply.StepType == TcpdumpStepType
+}
+
+func getTcpdumpReponse(hostID string) string {
+	EventuallyWithOffset(1, func() bool {
+		return isReplyFound(hostID, &TcpdumVerifier{})
+	}, 30*time.Second, 5*time.Second).Should(BeTrue())
+
+	stepReply := getSpecificStep(hostID, &TcpdumVerifier{})
+	return stepReply.Output
+}
+
+func countSubstringOccurrences(s, substr string) int {
+	ret := 0
+	for index := 0; ; {
+		i := strings.Index(s[index:], substr)
+		switch i {
+		case -1:
+			return ret
+		default:
+			ret++
+			index = index + i + len(substr) + 1
+		}
+		// For safe side
+		if ret >= 1000 {
+			return ret
+		}
+	}
+}
 
 func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest) {
 	_, err := addRegisterStub(hostID, http.StatusCreated)
@@ -191,7 +327,7 @@ func setReplyStartAgent(hostID string) {
 
 func getDHCPResponse(hostID string) *models.DhcpAllocationResponse {
 	setReplyStartAgent(hostID)
-	Eventually(func() bool {
+	EventuallyWithOffset(1, func() bool {
 		return isReplyFound(hostID, &DHCPLeaseAllocateVerifier{})
 	}, 30*time.Second, 5*time.Second).Should(BeTrue())
 

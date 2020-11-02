@@ -250,9 +250,6 @@ var _ = Describe("bmc", func() {
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()
-		dependencies.On("Execute", "modprobe", "ipmi_msghandler").Return("", "", 0).Once()
-		dependencies.On("Execute", "modprobe", "ipmi_devintf").Return("", "", 0).Once()
-		dependencies.On("Execute", "modprobe", "ipmi_si").Return("", "", 0).Once()
 	})
 
 	AfterEach(func() {

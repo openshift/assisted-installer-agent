@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	config.ProcessSubprocessArgs(false, true)
+	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	util.SetLogging("inventory", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
 	fmt.Print(string(inventory.CreateInveroryInfo()))
 }

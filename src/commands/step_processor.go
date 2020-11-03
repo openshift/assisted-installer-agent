@@ -47,7 +47,7 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 	}
 
 	params := installer.PostStepReplyParams{
-		HostID:                *CurrentHost.ID,
+		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}
@@ -88,13 +88,13 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 			s.sendStepReply(step.StepType, step.StepID, "", errStr, -1)
 			continue
 		}
-		go s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, util.Execute)
+		go s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, util.ExecutePrivileged)
 	}
 }
 
 func (s *stepSession) processSingleSession() int64 {
 	params := installer.GetNextStepsParams{
-		HostID:                *CurrentHost.ID,
+		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 	}

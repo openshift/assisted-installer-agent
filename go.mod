@@ -3,10 +3,9 @@ module github.com/openshift/assisted-installer-agent
 go 1.13
 
 require (
-	github.com/go-acme/lego v2.7.2+incompatible // indirect
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/swag v0.19.9
-	github.com/golang/mock v1.4.4
+	github.com/golang/mock v1.4.4 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/jaypipes/ghw v0.6.1
 	github.com/onsi/ginkgo v1.14.0
@@ -17,10 +16,8 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.6.1
-	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/vishvananda/netlink v1.1.0
 	gopkg.in/yaml.v2 v2.3.0
-	sigs.k8s.io/controller-runtime v0.6.1 // indirect
 )
 
 replace (

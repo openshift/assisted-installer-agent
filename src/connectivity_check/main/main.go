@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	config.ProcessSubprocessArgs(false, true)
+	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	util.SetLogging("connectivity-check", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
 	if flag.NArg() != 1 {
 		log.Warnf("Expecting exactly single argument to connectivity check. Recieved %d", len(os.Args)-1)

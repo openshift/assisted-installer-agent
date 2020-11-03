@@ -173,7 +173,7 @@ var _ = Describe("Lease tests", func() {
 			var dhcpResponse *models.DhcpAllocationResponse
 			resetAll()
 			By("1st time", func() {
-				_, _ = addRegisterStub(hostID, http.StatusCreated)
+				_, _ = addRegisterStub(hostID, http.StatusCreated, ClusterID)
 				addTcpdumpStub(hostID, ifaceName, 11, 6)
 				Expect(startAgent()).ToNot(HaveOccurred())
 				waitforTcpdumpToStart(hostID)
@@ -195,7 +195,7 @@ var _ = Describe("Lease tests", func() {
 			By("2nd time", func() {
 
 				addTcpdumpStub(hostID, ifaceName, 11, 4)
-				_, _ = addRegisterStub(hostID, http.StatusCreated)
+				_, _ = addRegisterStub(hostID, http.StatusCreated, ClusterID)
 				Expect(startAgent()).ToNot(HaveOccurred())
 				waitforTcpdumpToStart(hostID)
 				setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
@@ -292,7 +292,7 @@ func countSubstringOccurrences(s, substr string) int {
 }
 
 func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest) {
-	_, err := addRegisterStub(hostID, http.StatusCreated)
+	_, err := addRegisterStub(hostID, http.StatusCreated, ClusterID)
 	Expect(err).NotTo(HaveOccurred())
 
 	b, err := json.Marshal(&request)

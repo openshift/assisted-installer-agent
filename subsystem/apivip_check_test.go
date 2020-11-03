@@ -2,12 +2,12 @@ package subsystem
 
 import (
 	"encoding/json"
-	"time"
 	"net/http"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	
+
 	"github.com/openshift/assisted-installer-agent/src/apivip_check"
 	"github.com/openshift/assisted-service/models"
 )
@@ -18,7 +18,7 @@ const (
 
 var _ = Describe("API VIP connectivity check tests", func() {
 	var (
-		hostID     string
+		hostID string
 	)
 
 	BeforeEach(func() {
@@ -27,7 +27,7 @@ var _ = Describe("API VIP connectivity check tests", func() {
 	})
 
 	It("verify API connectivity", func() {
-		url := "http://127.0.0.1:8362"
+		url := WireMockURL
 		setWorkerIgnitionStub(hostID, &models.APIVipConnectivityRequest{
 			URL: &url,
 		})
@@ -40,7 +40,7 @@ var _ = Describe("API VIP connectivity check tests", func() {
 })
 
 func setWorkerIgnitionStub(hostID string, request *models.APIVipConnectivityRequest) {
-	_, err := addRegisterStub(hostID, http.StatusCreated)
+	_, err := addRegisterStub(hostID, http.StatusCreated, ClusterID)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = addWorkerIgnitionStub()
@@ -83,7 +83,7 @@ func (i *APIConnectivityCheckVerifier) verify(actualReply *models.StepReply) boo
 }
 
 func addWorkerIgnitionStub() (string, error) {
-	ignitionConfig, err := apivip_check.FormatNodeIgnitionFile(WireMockURL + apivip_check.WorkerIgnitionPath)
+	ignitionConfig, err := apivip_check.FormatNodeIgnitionFile(ServiceURL + apivip_check.WorkerIgnitionPath)
 	if err != nil {
 		return "", err
 	}

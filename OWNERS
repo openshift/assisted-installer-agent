@@ -1,20 +1,7 @@
 # See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
 
 reviewers:
-- avishayt
-- empovit
-- eranco74
-- filanov
-- ori-amizur
-- romfreiman
-- ronniel1
-- tsorya
-- yuvigold
+- code-reviewers
 
 approvers:
-- gamli75
-- ori-amizur
-- romfreiman
-- ronniel1
-- eranco74
-- erezalster
+- code-reviewers

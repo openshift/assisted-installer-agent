@@ -23,12 +23,12 @@ var _ = Describe("Disks test", func() {
 	})
 
 	It("Execute error", func() {
-		dependencies.On("Block").Return(nil, fmt.Errorf("Just an error")).Once()
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(nil, fmt.Errorf("Just an error")).Once()
 		ret := GetDisks(dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
 	It("Empty", func() {
-		dependencies.On("Block").Return(&ghw.BlockInfo{}, nil).Once()
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{}, nil).Once()
 		ret := GetDisks(dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
@@ -42,7 +42,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("Abs", "/dev/disk/by-path/../../foo/disk1").Return("/dev/foo/disk1", nil).Once()
 		dependencies.On("Stat", "/dev/disk/by-path/bus-path").Return(nil, nil).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return(" DOS/MBR boot sector", "", 0).Once()
-		dependencies.On("Block").Return(&ghw.BlockInfo{
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
 					Name:                   "disk1",
@@ -88,7 +88,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("Abs", "/dev/disk/by-path/../../foo/disk1").Return("/dev/foo/disk1", nil).Once()
 		dependencies.On("Stat", "/dev/disk/by-path/bus-path").Return(nil, nil).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return("Linux rev 1.0 ext4 filesystem data", "", 0).Once()
-		dependencies.On("Block").Return(&ghw.BlockInfo{
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
 					Name:                   "disk1",
@@ -124,6 +124,66 @@ var _ = Describe("Disks test", func() {
 			},
 		}))
 	})
+	It("filters ISO disks", func() {
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
+			Disks: []*ghw.Disk{
+				{
+					Name:                   "disk1",
+					SizeBytes:              5555,
+					DriveType:              ghw.DRIVE_TYPE_HDD,
+					BusPath:                "bus-path1",
+					Vendor:                 "disk1-vendor",
+					Model:                  "disk1-model",
+					SerialNumber:           "disk1-serial",
+					WWN:                    "disk1-wwn",
+					BusType:                ghw.BUS_TYPE_SCSI,
+					IsRemovable:            false,
+					NUMANodeID:             0,
+					PhysicalBlockSizeBytes: 512,
+					StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+					Partitions:				[]*ghw.Partition{
+												{
+													Disk: nil,
+													Name: "partition1",
+													Label: "partition1-label",
+													MountPoint: "/media/iso",
+													SizeBytes: 5555,
+													Type: "ext4",
+													IsReadOnly: false,
+												},
+											},
+				},
+				{
+					Name:                   "disk2",
+					SizeBytes:              5555,
+					DriveType:              ghw.DRIVE_TYPE_HDD,
+					BusPath:                "bus-path2",
+					Vendor:                 "disk1-vendor",
+					Model:                  "disk1-model",
+					SerialNumber:           "disk1-serial",
+					WWN:                    "disk1-wwn",
+					BusType:                ghw.BUS_TYPE_SCSI,
+					IsRemovable:            false,
+					NUMANodeID:             0,
+					PhysicalBlockSizeBytes: 512,
+					StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+					Partitions:				[]*ghw.Partition{
+												{
+													Disk: nil,
+													Name: "partition2",
+													Label: "partition2-label",
+													MountPoint: "/some/mount/point",
+													SizeBytes: 5555,
+													Type: "iso9660",
+													IsReadOnly: false,
+												},
+											},
+				},
+			},
+		}, nil).Once()
+		ret := GetDisks(dependencies)
+		Expect(ret).To(Equal([]*models.Disk{}))
+	})
 	It("Multiple disks", func() {
 		fileInfoMock := FileInfoMock{}
 		fileInfoMock.On("Name").Return("scsi").Times(2)
@@ -140,7 +200,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("Stat", "/dev/disk/by-path/bus-path2").Return(nil, nil).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return("Linux rev 1.0 ext4 filesystem data", "", 0).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/foo/disk2").Return(" DOS/MBR boot sector", "", 0).Once()
-		dependencies.On("Block").Return(&ghw.BlockInfo{
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
 					Name:                   "disk1",
@@ -223,7 +283,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("Stat", "/dev/xvda").Return(nil, nil).Once()
 		dependencies.On("ReadDir", "/sys/block/xvda/device/scsi_device").Return(nil, errors.New("error")).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/xvda").Return(" DOS/MBR boot sector", "", 0).Once()
-		dependencies.On("Block").Return(&ghw.BlockInfo{
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
 					Name:                   "xvda",
@@ -293,7 +353,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("ReadDir", "/sys/block/nvme0n1/device/scsi_device").Return(nil, errors.New("error")).Once()
 		dependencies.On("Stat", "/dev/disk/by-path/pci-0000:3d:00.0-nvme-1").Return(nil, nil).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/nvme0n1").Return(" kuku", "", 0).Once()
-		dependencies.On("Block").Return(&ghw.BlockInfo{
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
 					Name:                   "nvme0n1",
@@ -330,7 +390,7 @@ var _ = Describe("Disks test", func() {
 		}))
 	})
 	It("Fedora 32 DM filter", func() {
-		dependencies.On("Block").Return(&ghw.BlockInfo{
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
 					Name:                   "dm-0",

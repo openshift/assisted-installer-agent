@@ -29,18 +29,22 @@ func toAddresses(addrs []string) []net.Addr {
 	return ret
 }
 
-func newFilledInterfaceMock(mtu int, name string, macAddr string, flags net.Flags, addrs []string, isPhysical bool, speedMbps int64) *MockInterface {
+func newFilledInterfaceMock(mtu int, name string, macAddr string, flags net.Flags, addrs []string, isPhysical bool, isBonding bool, speedMbps int64) *MockInterface {
 	hwAddr, _ := net.ParseMAC(macAddr)
 	ret := newInterfaceMock()
 	ret.On("IsPhysical").Return(isPhysical)
-	if isPhysical {
-		ret.On("MTU").Return(mtu)
+	if isPhysical || isBonding {
 		ret.On("Name").Return(name)
+		ret.On("MTU").Return(mtu)
 		ret.On("HardwareAddr").Return(hwAddr)
 		ret.On("Flags").Return(flags)
 		ret.On("Addrs").Return(toAddresses(addrs), nil).Once()
 		ret.On("SpeedMbps").Return(speedMbps)
 	}
+	if !isPhysical {
+		ret.On("IsBonding").Return(isBonding)
+	}
+
 	return ret
 }
 
@@ -68,7 +72,7 @@ var _ = Describe("Interfaces", func() {
 	})
 
 	It("Single result", func() {
-		interfaceMock := newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/64"}, true, 1000)
+		interfaceMock := newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/64"}, true, false, 1000)
 		dependencies.On("Interfaces").Return([]Interface{interfaceMock}, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("1\n"), nil).Once()
@@ -94,9 +98,10 @@ var _ = Describe("Interfaces", func() {
 	})
 	It("Multiple results", func() {
 		rets := []Interface{
-			newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/64"}, true, 100),
-			newFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/64"}, true, 10),
-			newFilledInterfaceMock(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/64"}, false, 5),
+			newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/64"}, true, false, 100),
+			newFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/64"}, true, false, 10),
+			newFilledInterfaceMock(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/64"}, false, false, 5),
+			newFilledInterfaceMock(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/64"}, false, true, -1),
 		}
 		dependencies.On("Interfaces").Return(rets, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
@@ -107,8 +112,12 @@ var _ = Describe("Interfaces", func() {
 		dependencies.On("ReadFile", "/sys/class/net/eth1/carrier").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth1/device/device").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth1/device/vendor").Return([]byte("my-vendor2"), nil).Once()
+		dependencies.On("Execute", "biosdevname", "-i", "bond0").Return("bond0", "", 0).Once()
+		dependencies.On("ReadFile", "/sys/class/net/bond0/carrier").Return(nil, errors.New("Blah")).Once()
+		dependencies.On("ReadFile", "/sys/class/net/bond0/device/device").Return(nil, errors.New("Blah")).Once()
+		dependencies.On("ReadFile", "/sys/class/net/bond0/device/vendor").Return([]byte("my-vendor2"), nil).Once()
 		ret := GetInterfaces(dependencies)
-		Expect(len(ret)).To(Equal(2))
+		Expect(len(ret)).To(Equal(3))
 		Expect(ret).To(Equal([]*models.Interface{
 			{
 				Biosdevname:   "em2",
@@ -137,6 +146,22 @@ var _ = Describe("Interfaces", func() {
 				Product:       "",
 				Vendor:        "my-vendor2",
 				SpeedMbps:     10,
+			},
+			{
+				Biosdevname:   "bond0",
+				ClientID:      "",
+				Flags:         []string{"up", "broadcast"},
+				HasCarrier:    false,
+				IPV4Addresses: []string{"10.0.0.21/24", "192.168.6.10/20"},
+				IPV6Addresses: []string{
+					"fe80::d832:8def:dd51:3529/64",
+				},
+				MacAddress: "f8:75:a4:a4:00:fd",
+				Mtu:        1400,
+				Name:       "bond0",
+				Product:    "",
+				SpeedMbps:  -1,
+				Vendor:     "my-vendor2",
 			},
 		}))
 		for _, i := range rets {

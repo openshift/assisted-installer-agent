@@ -18,6 +18,7 @@ type Interface interface {
 	Flags() net.Flags
 	Addrs() ([]net.Addr, error)
 	IsPhysical() bool
+	IsBonding() bool
 	SpeedMbps() int64
 }
 
@@ -49,10 +50,18 @@ func (n *NetworkInterface) Addrs() ([]net.Addr, error) {
 func (n *NetworkInterface) IsPhysical() bool {
 	evaledPath, err := n.dependencies.EvalSymlinks(fmt.Sprintf("/sys/class/net/%s", n.netInterface.Name))
 	if err != nil {
-		logrus.WithError(err).Warnf("Could not determin if interface %s is physical", n.netInterface.Name)
+		logrus.WithError(err).Warnf("Could not determine if interface %s is physical", n.netInterface.Name)
 		return true
 	}
 	return !strings.Contains(evaledPath, "/virtual/")
+}
+
+func (n *NetworkInterface) IsBonding() bool {
+	link, err := n.dependencies.LinkByName(n.netInterface.Name)
+	if err != nil {
+		return false
+	}
+	return link.Type() == "bond"
 }
 
 func (n *NetworkInterface) SpeedMbps() int64 {
@@ -133,7 +142,7 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 		return ret
 	}
 	for _, in := range ins {
-		if !in.IsPhysical() {
+		if !(in.IsPhysical() || in.IsBonding()) {
 			continue
 		}
 		rec := models.Interface{

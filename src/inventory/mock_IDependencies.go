@@ -6,6 +6,8 @@ import (
 	ghw "github.com/jaypipes/ghw"
 	mock "github.com/stretchr/testify/mock"
 
+	netlink "github.com/vishvananda/netlink"
+
 	os "os"
 )
 
@@ -157,6 +159,29 @@ func (_m *MockIDependencies) Interfaces() ([]Interface, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LinkByName provides a mock function with given fields: name
+func (_m *MockIDependencies) LinkByName(name string) (netlink.Link, error) {
+	ret := _m.Called(name)
+
+	var r0 netlink.Link
+	if rf, ok := ret.Get(0).(func(string) netlink.Link); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(netlink.Link)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
 	} else {
 		r1 = ret.Error(1)
 	}

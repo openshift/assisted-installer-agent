@@ -154,7 +154,8 @@ func SendLogs(l LogsSender) error {
 	if config.LogsSenderConfig.InstallerGatherlogging && config.LogsSenderConfig.IsBootstrap {
 		log.Info("Running installer-gather.sh")
 		// installer-gather.sh is written in such a way it always return 0.
-		_, stdErr, _ := l.ExecutePrivilege("/usr/local/bin/installer-gather.sh")
+		stdOut, stdErr, _ := l.ExecutePrivilege("/usr/local/bin/installer-gather.sh")
+		log.Info(stdOut)
 		if stdErr != "" {
 			log.Warn(stdErr)
 		}

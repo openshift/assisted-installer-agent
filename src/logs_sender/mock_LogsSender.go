@@ -89,8 +89,8 @@ func (_m *MockLogsSender) ExecuteOutputToFile(outputFilePath string, command str
 	return r0, r1
 }
 
-// ExecutePrivilege provides a mock function with given fields: command, args
-func (_m *MockLogsSender) ExecutePrivilege(command string, args ...string) (string, string, int) {
+// ExecutePrivileged provides a mock function with given fields: command, args
+func (_m *MockLogsSender) ExecutePrivileged(command string, args ...string) (string, string, int) {
 	_va := make([]interface{}, len(args))
 	for _i := range args {
 		_va[_i] = args[_i]
@@ -131,6 +131,20 @@ func (_m *MockLogsSender) FileUploader(filePath string, clusterID strfmt.UUID, h
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, strfmt.UUID, strfmt.UUID, string, string, string) error); ok {
 		r0 = rf(filePath, clusterID, hostID, inventoryUrl, pullSecretToken, agentVersion)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GatherInstallerLogs provides a mock function with given fields: targetDir
+func (_m *MockLogsSender) GatherInstallerLogs(targetDir string) error {
+	ret := _m.Called(targetDir)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(targetDir)
 	} else {
 		r0 = ret.Error(0)
 	}

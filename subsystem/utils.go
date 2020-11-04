@@ -291,11 +291,16 @@ func addRegisterStub(hostID string, reply int, clusterID string) (string, error)
 	return addStub(&stub)
 }
 
-func addNextStepStub(hostID string, nextInstructionSeconds int64, instructions ...*models.Step) (string, error) {
+func addNextStepStub(hostID string, nextInstructionSeconds int64, afterStep string, instructions ...*models.Step) (string, error) {
 	if instructions == nil {
 		instructions = make([]*models.Step, 0)
 	}
-	steps := models.Steps{NextInstructionSeconds: nextInstructionSeconds, Instructions: instructions}
+	steps := models.Steps{
+		NextInstructionSeconds: nextInstructionSeconds,
+		Instructions:           instructions,
+		PostStepAction:         swag.String(afterStep),
+	}
+
 	b, err := json.Marshal(steps)
 	if err != nil {
 		return "", err

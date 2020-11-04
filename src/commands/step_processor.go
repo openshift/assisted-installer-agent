@@ -92,7 +92,7 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 	}
 }
 
-func (s *stepSession) processSingleSession() int64 {
+func (s *stepSession) processSingleSession() (int64, string) {
 	params := installer.GetNextStepsParams{
 		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
 		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
@@ -104,27 +104,26 @@ func (s *stepSession) processSingleSession() int64 {
 		switch errValue := err.(type) {
 		case *installer.GetNextStepsNotFound:
 			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory or user is not authorized, going to sleep forever", params.ClusterID)
-			return -1
+			return -1, ""
 		case *installer.GetNextStepsUnauthorized:
 			s.Logger().WithError(err).Errorf("User is not authenticated to perform the operation, going to sleep forever")
-			return -1
+			return -1, ""
 		case *installer.GetNextStepsInternalServerError:
 			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
 		default:
 			s.Logger().WithError(err).Warn("Could not query next steps")
 		}
-		return int64(config.GlobalAgentConfig.IntervalSecs)
-	} else {
-		s.handleSteps(result.Payload)
+		return int64(config.GlobalAgentConfig.IntervalSecs), ""
 	}
-	return result.Payload.NextInstructionSeconds
+	s.handleSteps(result.Payload)
+	return result.Payload.NextInstructionSeconds, *result.Payload.PostStepAction
 }
 
 func ProcessSteps() {
 	var nextRunIn int64
-	for {
+	for afterStep := ""; afterStep != models.StepsPostStepActionExit; {
 		s := newSession()
-		nextRunIn = s.processSingleSession()
+		nextRunIn, afterStep = s.processSingleSession()
 		if nextRunIn == -1 {
 			// sleep forever
 			select {}

@@ -234,7 +234,7 @@ func addTcpdumpStub(hostID, ifaceName string, timeoutSecs, count int) {
 	if count > 0 {
 		countStr = fmt.Sprintf("-c %d", count)
 	}
-	_, err := addNextStepStub(hostID, 5,
+	_, err := addNextStepStub(hostID, 5, "",
 		createCustomStub(TcpdumpStepType, "bash", "-c",
 			fmt.Sprintf("timeout %d tcpdump -l -i %s %s -v 'udp dst port 67' | grep 'DHCP-Message Option 53' | awk '{print $6}'", timeoutSecs, ifaceName, countStr)),
 		&models.Step{
@@ -298,7 +298,7 @@ func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	_, err = addNextStepStub(hostID, 5,
+	_, err = addNextStepStub(hostID, 5, "",
 		&models.Step{
 			StepType: models.StepTypeDhcpLeaseAllocate,
 			StepID:   stepDHCPID,

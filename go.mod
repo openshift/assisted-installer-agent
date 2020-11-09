@@ -8,7 +8,7 @@ require (
 	github.com/golang/mock v1.4.4 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/jaypipes/ghw v0.6.1
-	github.com/onsi/ginkgo v1.14.0
+	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.3
 	github.com/openshift/assisted-service v1.0.10-0.20201029165706-3f7784f45d1f
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c

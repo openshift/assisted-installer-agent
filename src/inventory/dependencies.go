@@ -8,6 +8,7 @@ import (
 
 	"github.com/jaypipes/ghw"
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/vishvananda/netlink"
 )
 
 //go:generate mockery -name IDependencies -inpkg
@@ -21,6 +22,7 @@ type IDependencies interface {
 	ReadDir(dirname string) ([]os.FileInfo, error)
 	Abs(path string) (string, error)
 	EvalSymlinks(path string) (string, error)
+	LinkByName(name string) (netlink.Link, error)
 }
 
 type Dependencies struct{}
@@ -67,6 +69,10 @@ func (d *Dependencies) Abs(path string) (string, error) {
 
 func (d *Dependencies) EvalSymlinks(path string) (string, error) {
 	return filepath.EvalSymlinks(path)
+}
+
+func (*Dependencies) LinkByName(name string) (netlink.Link, error) {
+	return netlink.LinkByName(name)
 }
 
 func newDependencies() IDependencies {

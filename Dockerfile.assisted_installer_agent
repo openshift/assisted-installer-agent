@@ -1,6 +1,6 @@
 FROM quay.io/app-sre/centos:8
 RUN dnf install -y \
-    	kmod findutils iputils \
+    	findutils iputils \
         podman \
     	# inventory
     	dmidecode ipmitool lshw biosdevname file \

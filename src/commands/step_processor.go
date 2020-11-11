@@ -2,6 +2,7 @@ package commands
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/go-openapi/swag"
@@ -81,6 +82,8 @@ func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, 
 }
 
 func (s *stepSession) handleSteps(steps *models.Steps) {
+	var wg sync.WaitGroup
+
 	for _, step := range steps.Instructions {
 		if step.Command == "" {
 			errStr := "Missing command"
@@ -88,8 +91,15 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 			s.sendStepReply(step.StepType, step.StepID, "", errStr, -1)
 			continue
 		}
-		go s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, util.ExecutePrivileged)
+
+		wg.Add(1)
+		go func(step *models.Step) {
+			defer wg.Done()
+			s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, util.ExecutePrivileged)
+		}(step)
 	}
+
+	wg.Wait()
 }
 
 func (s *stepSession) processSingleSession() (int64, string) {

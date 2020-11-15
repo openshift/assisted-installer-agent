@@ -43,3 +43,26 @@ func (_m *MockNtpSynchronizerDependencies) Execute(command string, args ...strin
 
 	return r0, r1, r2
 }
+
+// LookupHost provides a mock function with given fields: host
+func (_m *MockNtpSynchronizerDependencies) LookupHost(host string) ([]string, error) {
+	ret := _m.Called(host)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(host)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(host)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

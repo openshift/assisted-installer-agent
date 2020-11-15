@@ -30,7 +30,7 @@ _test:
 	gocov convert $(REPORTS)/$(TEST_SCENARIO)_coverage.out | gocov-xml > $(REPORTS)/$(TEST_SCENARIO)_coverage.xml
 
 unit-test: $(REPORTS)
-	$(MAKE) _test TEST_SCENARIO=unit TEST="$(or $(TEST),$(TEST),$(shell go list ./... | grep -v subsystem))"
+	$(MAKE) _test TEST_SCENARIO=unit TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))"
 
 subsystem: build-image
 	$(DOCKER_COMPOSE) up --build -d

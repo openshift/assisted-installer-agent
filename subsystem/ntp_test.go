@@ -12,7 +12,7 @@ import (
 
 const (
 	stepNTPID        = "ntp-synchronizer-step"
-	singleRunTimeout = 10 * time.Second
+	timeBetweenSteps = 3
 )
 
 var _ = Describe("NTP tests", func() {
@@ -24,6 +24,7 @@ var _ = Describe("NTP tests", func() {
 	BeforeEach(func() {
 		resetAll()
 		hostID = nextHostID()
+		numberOfSources = 0
 
 		addChronyDaemonStub(hostID)
 		_, _ = addRegisterStub(hostID, http.StatusCreated, ClusterID)
@@ -31,23 +32,58 @@ var _ = Describe("NTP tests", func() {
 		waitforChronyDaemonToStart(hostID)
 	})
 
-	It("get_sources", func() {
-		setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
+	It("add_new_server", func() {
+		By("Get sources", func() {
+			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
 
-		ntpResponse := getNTPResponse(hostID)
-		Expect(ntpResponse).ShouldNot(BeNil())
-		numberOfSources = len(ntpResponse.NtpSources)
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			numberOfSources = len(ntpResponse.NtpSources)
+		})
+
+		Expect(resetRequests()).NotTo(HaveOccurred())
+		Expect(deleteAllStubs()).NotTo(HaveOccurred())
+
+		By("Add server", func() {
+			server := "1.1.1.1"
+			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
+
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+		})
 	})
 
-	It("add_server", func() {
-		server := "1.1.1.1"
+	It("add_existing_server", func() {
+		By("Get sources", func() {
+			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
 
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			numberOfSources = len(ntpResponse.NtpSources)
+		})
+
+		Expect(resetRequests()).NotTo(HaveOccurred())
+		Expect(deleteAllStubs()).NotTo(HaveOccurred())
+
+		server := "2.2.2.2"
 		setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
-		ntpResponse := getNTPResponse(hostID)
-		Expect(ntpResponse).ShouldNot(BeNil())
-		Expect(ntpResponse.NtpSources).Should(HaveLen(numberOfSources + 1))
-		Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+		By("Add server 1st time", func() {
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+		})
+
+		// 2nd time
+		By("Add server 2nd time", func() {
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+		})
 	})
 })
 
@@ -65,7 +101,7 @@ func setNTPSyncRequestStub(hostID string, request models.NtpSynchronizationReque
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	_, err = addNextStepStub(hostID, 100, "",
+	_, err = addNextStepStub(hostID, timeBetweenSteps, "",
 		&models.Step{
 			StepType: models.StepTypeNtpSynchronizer,
 			StepID:   stepNTPID,
@@ -82,7 +118,7 @@ func setNTPSyncRequestStub(hostID string, request models.NtpSynchronizationReque
 func getNTPResponse(hostID string) *models.NtpSynchronizationResponse {
 	Eventually(func() bool {
 		return isReplyFound(hostID, &NTPSynchronizerVerifier{})
-	}, 30*time.Second, 5*time.Second).Should(BeTrue())
+	}, 30*time.Second, timeBetweenSteps*time.Second).Should(BeTrue())
 
 	stepReply := getSpecificStep(hostID, &NTPSynchronizerVerifier{})
 	return getNTPResponseFromStepReply(stepReply)
@@ -102,7 +138,7 @@ func (i *NTPSynchronizerVerifier) verify(actualReply *models.StepReply) bool {
 	var response models.NtpSynchronizationResponse
 	err := json.Unmarshal([]byte(actualReply.Output), &response)
 	if err != nil {
-		log.Errorf("NTPSynchronizerVerifier failed to unmarshal")
+		log.Errorf("NTPSynchronizerVerifier failed to unmarshal %s", actualReply.Output)
 		return false
 	}
 

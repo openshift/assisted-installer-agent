@@ -19,6 +19,7 @@ type IDependencies interface {
 	Hostname() (string, error)
 	Interfaces() ([]Interface, error)
 	Block(opts ...*ghw.WithOption) (*ghw.BlockInfo, error)
+	Product(opts ...*ghw.WithOption) (*ghw.ProductInfo, error)
 	ReadDir(dirname string) ([]os.FileInfo, error)
 	Abs(path string) (string, error)
 	EvalSymlinks(path string) (string, error)
@@ -57,6 +58,10 @@ func (d *Dependencies) Interfaces() ([]Interface, error) {
 
 func (d *Dependencies) Block(opts ...*ghw.WithOption) (*ghw.BlockInfo, error) {
 	return ghw.Block(opts...)
+}
+
+func (d *Dependencies) Product(opts ...*ghw.WithOption) (*ghw.ProductInfo, error) {
+	return ghw.Product(opts...)
 }
 
 func (d *Dependencies) ReadDir(dirname string) ([]os.FileInfo, error) {

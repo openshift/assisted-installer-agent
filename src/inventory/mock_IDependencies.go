@@ -189,6 +189,35 @@ func (_m *MockIDependencies) LinkByName(name string) (netlink.Link, error) {
 	return r0, r1
 }
 
+// Product provides a mock function with given fields: opts
+func (_m *MockIDependencies) Product(opts ...*ghw.WithOption) (*ghw.ProductInfo, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *ghw.ProductInfo
+	if rf, ok := ret.Get(0).(func(...*ghw.WithOption) *ghw.ProductInfo); ok {
+		r0 = rf(opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ghw.ProductInfo)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(...*ghw.WithOption) error); ok {
+		r1 = rf(opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ReadDir provides a mock function with given fields: dirname
 func (_m *MockIDependencies) ReadDir(dirname string) ([]os.FileInfo, error) {
 	ret := _m.Called(dirname)

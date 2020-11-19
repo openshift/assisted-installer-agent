@@ -316,15 +316,6 @@ func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func setReplyStartAgent(hostID string) {
-	_, err := addStepReplyStub(hostID)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(startAgent()).NotTo(HaveOccurred())
-	time.Sleep(5 * time.Second)
-	verifyRegisterRequest()
-	verifyGetNextRequest(hostID, true)
-}
-
 func getDHCPResponse(hostID string) *models.DhcpAllocationResponse {
 	setReplyStartAgent(hostID)
 	EventuallyWithOffset(1, func() bool {
@@ -343,7 +334,7 @@ func (i *DHCPLeaseAllocateVerifier) verify(actualReply *models.StepReply) bool {
 		return false
 	}
 	if actualReply.StepType != models.StepTypeDhcpLeaseAllocate {
-		log.Errorf("DHCPLeaseAllocateVerifier invalid step replay %s", actualReply.StepType)
+		log.Errorf("DHCPLeaseAllocateVerifier invalid step reply %s", actualReply.StepType)
 		return false
 	}
 	var response models.DhcpAllocationResponse

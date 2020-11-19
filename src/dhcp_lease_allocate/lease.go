@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -50,7 +51,7 @@ func LeaseVIP(d Dependencies, log logrus.FieldLogger, leaseFile, masterDevice, n
 	switch exitCode {
 	case 0:
 		return nil
-	case 124:
+	case util.TimeoutExitCode:
 		return errors.Errorf("dhclient was timed out after %d seconds", DhclientTimeoutSeconds)
 	default:
 		return errors.Errorf("dhclient exited with non-zero exit code %d: %s", exitCode, stderr)

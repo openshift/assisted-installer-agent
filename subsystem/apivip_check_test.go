@@ -75,7 +75,7 @@ func (i *APIConnectivityCheckVerifier) verify(actualReply *models.StepReply) boo
 		return false
 	}
 	if actualReply.StepType != models.StepTypeAPIVipConnectivityCheck {
-		log.Errorf("APIConnectivityCheckVerifier invalid step replay %s", actualReply.StepType)
+		log.Errorf("APIConnectivityCheckVerifier invalid step reply %s", actualReply.StepType)
 		return false
 	}
 

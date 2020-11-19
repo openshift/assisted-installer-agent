@@ -8,6 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const TimeoutExitCode = 124
+
 func getExitCode(err error) int {
 	if err == nil {
 		return 0

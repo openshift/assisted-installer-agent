@@ -1,14 +1,18 @@
 FROM quay.io/app-sre/centos:8
 RUN dnf install -y \
-    	findutils iputils \
-        podman \
-    	# inventory
-    	dmidecode ipmitool biosdevname file \
-    	# free_addresses
-    	nmap \
-    	# dhcp_lease_allocate
-    	dhclient \
-    	# logs_sender
-    	tar && dnf update -y systemd \
-    	&& dnf clean all
-ADD build/agent build/connectivity_check build/free_addresses build/inventory build/logs_sender build/dhcp_lease_allocate build/apivip_check build/next_step_runner /usr/bin/
+		findutils iputils \
+		podman \
+		# inventory
+		dmidecode ipmitool biosdevname file \
+		# free_addresses
+		nmap \
+		# dhcp_lease_allocate
+		dhclient \
+		# logs_sender
+		tar \
+		# ntp_synchronizer
+		chrony && \
+		dnf update -y systemd && dnf clean all
+ADD build/agent build/connectivity_check build/free_addresses build/inventory \
+	build/logs_sender build/dhcp_lease_allocate build/apivip_check build/next_step_runner build/ntp_synchronizer \
+	/usr/bin/

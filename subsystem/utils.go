@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -477,4 +478,13 @@ func createCustomStub(stepType models.StepType, command string, args ...string) 
 		Command:  command,
 		Args:     args,
 	}
+}
+
+func setReplyStartAgent(hostID string) {
+	_, err := addStepReplyStub(hostID)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(startAgent()).NotTo(HaveOccurred())
+	time.Sleep(5 * time.Second)
+	verifyRegisterRequest()
+	verifyGetNextRequest(hostID, true)
 }

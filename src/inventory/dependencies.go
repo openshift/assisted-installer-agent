@@ -24,6 +24,7 @@ type IDependencies interface {
 	Abs(path string) (string, error)
 	EvalSymlinks(path string) (string, error)
 	LinkByName(name string) (netlink.Link, error)
+	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
 }
 
 type Dependencies struct{}
@@ -78,6 +79,10 @@ func (d *Dependencies) EvalSymlinks(path string) (string, error) {
 
 func (*Dependencies) LinkByName(name string) (netlink.Link, error) {
 	return netlink.LinkByName(name)
+}
+
+func (*Dependencies) RouteList(link netlink.Link, family int) ([]netlink.Route, error) {
+	return netlink.RouteList(link, family)
 }
 
 func newDependencies() IDependencies {

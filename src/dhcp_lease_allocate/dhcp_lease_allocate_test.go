@@ -21,8 +21,8 @@ var _ = Describe("Lease allocate", func() {
 	var (
 		dependencies *MockDependencies
 		leaser       *Leaser
-		mac1         = "80:32:53:4f:cf:d6"
-		mac2         = "52:54:00:09:de:93"
+		macApi       = "80:32:53:4f:cf:d6"
+		macIngress   = "52:54:00:09:de:93"
 		apiLease     = `lease { api }`
 		ingressLease = `lease { ingress }`
 		leases       = []string{
@@ -69,13 +69,13 @@ var _ = Describe("Lease allocate", func() {
 
 	Context("Lease allocate", func() {
 		It("Success - first time", func() {
-			r := createLeaseRequest("eth0", mac1, mac2, "", "")
-			for i, vipName := range []string{"api", "ingress"} {
-				leaseFile := fmt.Sprintf("/etc/keepalived/lease-%s", vipName)
-				dependencies.On("LinkByName", vipName).Return(&netlink.Macvlan{}, nil)
-				dependencies.On("LeaseInterface", mock.Anything, "eth0", vipName, mock.Anything).Return(&net.Interface{Name: vipName}, nil)
-				dependencies.On("Execute", "timeout", "28", "dhclient", "-v", "-H", vipName, "-sf", "/bin/true", "-lf", leaseFile, "--no-pid", "-1", vipName).Return("", "", 0)
-				dependencies.On("GetLastLeaseFromFile", mock.Anything, leaseFile).Return(vipName, fmt.Sprintf("1.2.3.%d", i), nil)
+			r := createLeaseRequest("eth0", macApi, macIngress, "", "")
+			for i, vip := range []VIP{{Name: "api", MacAddress: macApi}, {Name: "ingress", MacAddress: macIngress}} {
+				leaseFile := fmt.Sprintf("/etc/keepalived/lease-%s", vip.Name)
+				dependencies.On("LinkByName", vip.Name).Return(&netlink.Macvlan{}, nil)
+				dependencies.On("LeaseInterface", mock.Anything, "eth0", vip.Name, mock.Anything).Return(&net.Interface{Name: vip.Name}, nil)
+				dependencies.On("Execute", "timeout", "28", "dhclient", "-v", "-H", formatHostname(vip.MacAddress, vip.Name), "-sf", "/bin/true", "-lf", leaseFile, "--no-pid", "-1", vip.Name).Return("", "", 0)
+				dependencies.On("GetLastLeaseFromFile", mock.Anything, leaseFile).Return(vip.Name, fmt.Sprintf("1.2.3.%d", i), nil)
 				dependencies.On("ReadFile", leaseFile).Return([]byte(leases[i]), nil)
 			}
 			dependencies.On("LinkDel", mock.Anything).Return(nil).Times(2)
@@ -90,13 +90,13 @@ var _ = Describe("Lease allocate", func() {
 			Expect(response.IngressVipLease).To(Equal(ingressLease))
 		})
 		It("Success - second time", func() {
-			r := createLeaseRequest("eth0", mac1, mac2, apiLease, ingressLease)
-			for i, vipName := range []string{"api", "ingress"} {
-				leaseFile := fmt.Sprintf("/etc/keepalived/lease-%s", vipName)
-				dependencies.On("LinkByName", vipName).Return(&netlink.Macvlan{}, nil)
-				dependencies.On("LeaseInterface", mock.Anything, "eth0", vipName, mock.Anything).Return(&net.Interface{Name: vipName}, nil)
-				dependencies.On("Execute", "timeout", "28", "dhclient", "-v", "-H", vipName, "-sf", "/bin/true", "-lf", leaseFile, "--no-pid", "-1", vipName).Return("", "", 0)
-				dependencies.On("GetLastLeaseFromFile", mock.Anything, leaseFile).Return(vipName, fmt.Sprintf("1.2.3.%d", i), nil)
+			r := createLeaseRequest("eth0", macApi, macIngress, apiLease, ingressLease)
+			for i, vip := range []VIP{{Name: "api", MacAddress: macApi}, {Name: "ingress", MacAddress: macIngress}} {
+				leaseFile := fmt.Sprintf("/etc/keepalived/lease-%s", vip.Name)
+				dependencies.On("LinkByName", vip.Name).Return(&netlink.Macvlan{}, nil)
+				dependencies.On("LeaseInterface", mock.Anything, "eth0", vip.Name, mock.Anything).Return(&net.Interface{Name: vip.Name}, nil)
+				dependencies.On("Execute", "timeout", "28", "dhclient", "-v", "-H", formatHostname(vip.MacAddress, vip.Name), "-sf", "/bin/true", "-lf", leaseFile, "--no-pid", "-1", vip.Name).Return("", "", 0)
+				dependencies.On("GetLastLeaseFromFile", mock.Anything, leaseFile).Return(vip.Name, fmt.Sprintf("1.2.3.%d", i), nil)
 				dependencies.On("ReadFile", leaseFile).Return([]byte(leases[i]), nil)
 				dependencies.On("WriteFile", leaseFile, []byte(leases[i]), os.FileMode(0o644)).Return(nil)
 			}
@@ -112,13 +112,13 @@ var _ = Describe("Lease allocate", func() {
 			Expect(response.IngressVipLease).To(Equal(ingressLease))
 		})
 		It("Error reading lease file", func() {
-			r := createLeaseRequest("eth0", mac1, mac2, apiLease, ingressLease)
-			vipName := "api"
-			leaseFile := fmt.Sprintf("/etc/keepalived/lease-%s", vipName)
-			dependencies.On("LinkByName", vipName).Return(&netlink.Macvlan{}, nil)
-			dependencies.On("LeaseInterface", mock.Anything, "eth0", vipName, mock.Anything).Return(&net.Interface{Name: vipName}, nil)
-			dependencies.On("Execute", "timeout", "28", "dhclient", "-v", "-H", vipName, "-sf", "/bin/true", "-lf", leaseFile, "--no-pid", "-1", vipName).Return("", "", 0)
-			dependencies.On("GetLastLeaseFromFile", mock.Anything, leaseFile).Return(vipName, "1.2.3.0", nil)
+			r := createLeaseRequest("eth0", macApi, macIngress, apiLease, ingressLease)
+			vip := VIP{Name: "api", MacAddress: macApi}
+			leaseFile := fmt.Sprintf("/etc/keepalived/lease-%s", vip.Name)
+			dependencies.On("LinkByName", vip.Name).Return(&netlink.Macvlan{}, nil)
+			dependencies.On("LeaseInterface", mock.Anything, "eth0", vip.Name, mock.Anything).Return(&net.Interface{Name: vip.Name}, nil)
+			dependencies.On("Execute", "timeout", "28", "dhclient", "-v", "-H", formatHostname(vip.MacAddress, vip.Name), "-sf", "/bin/true", "-lf", leaseFile, "--no-pid", "-1", vip.Name).Return("", "", 0)
+			dependencies.On("GetLastLeaseFromFile", mock.Anything, leaseFile).Return(vip.Name, "1.2.3.0", nil)
 			dependencies.On("ReadFile", leaseFile).Return(nil, errors.New("Blah"))
 			dependencies.On("WriteFile", leaseFile, []byte(apiLease), os.FileMode(0o644)).Return(nil)
 			dependencies.On("LinkDel", mock.Anything).Return(nil)
@@ -128,7 +128,7 @@ var _ = Describe("Lease allocate", func() {
 			Expect(stderr).ToNot(BeEmpty())
 		})
 		It("Error writing lease file", func() {
-			r := createLeaseRequest("eth0", mac1, mac2, apiLease, ingressLease)
+			r := createLeaseRequest("eth0", macApi, macIngress, apiLease, ingressLease)
 			vipName := "api"
 			leaseFile := fmt.Sprintf("/etc/keepalived/lease-%s", vipName)
 			dependencies.On("LinkByName", vipName).Return(&netlink.Macvlan{}, nil)

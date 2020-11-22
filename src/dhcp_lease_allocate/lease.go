@@ -5,6 +5,7 @@ import (
 	"net"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/pkg/errors"
@@ -45,7 +46,8 @@ func LeaseVIP(d Dependencies, log logrus.FieldLogger, leaseFile, masterDevice, n
 
 	// -sf avoiding dhclient from setting the received IP to the interface
 	// --no-pid in order to allow running multiple `dhclient` simultaneously
-	_, stderr, exitCode := d.Execute("timeout", strconv.FormatInt(DhclientTimeoutSeconds, 10), "dhclient", "-v", "-H", name,
+	_, stderr, exitCode := d.Execute("timeout", strconv.FormatInt(DhclientTimeoutSeconds, 10), "dhclient", "-v",
+		"-H", formatHostname(mac.String(), name),
 		"-sf", "/bin/true", "-lf", leaseFile,
 		"--no-pid", "-1", iface.Name)
 	switch exitCode {
@@ -56,6 +58,10 @@ func LeaseVIP(d Dependencies, log logrus.FieldLogger, leaseFile, masterDevice, n
 	default:
 		return errors.Errorf("dhclient exited with non-zero exit code %d: %s", exitCode, stderr)
 	}
+}
+
+func formatHostname(mac string, suffix string) string {
+	return fmt.Sprintf("%s-%s", strings.ReplaceAll(mac, ":", "-"), suffix)
 }
 
 func deleteInterface(d Dependencies, log logrus.FieldLogger, name string) {

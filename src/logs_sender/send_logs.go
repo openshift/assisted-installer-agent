@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/pkg/errors"
@@ -17,14 +19,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	logsDir                      = "/var/log"
+	installerGatherBin           = "/usr/local/bin/installer-gather.sh"
+	installerGatherArchivePreifx = "/root/log-bundle-"
+)
+
 //go:generate mockery -name LogsSender -inpkg
 type LogsSender interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
-	ExecutePrivilege(command string, args ...string) (stdout string, stderr string, exitCode int)
+	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int)
 	CreateFolderIfNotExist(folder string) error
 	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
 		inventoryUrl string, pullSecretToken string, agentVersion string) error
+	GatherInstallerLogs(targetDir string) error
 }
 
 type LogsSenderExecuter struct{}
@@ -33,12 +42,9 @@ func (e *LogsSenderExecuter) Execute(command string, args ...string) (stdout str
 	return util.Execute(command, args...)
 }
 
-// ExecutePrivilege execute a command in the host environment via nsenter
-func (e *LogsSenderExecuter) ExecutePrivilege(command string, args ...string) (stdout string, stderr string, exitCode int) {
-	commandBase := "nsenter"
-	arguments := []string{"-t", "1", "-m", "-i", "-n", "--", command}
-	arguments = append(arguments, args...)
-	return e.Execute(commandBase, arguments...)
+// ExecutePrivileged execute a command in the host environment via nsenter
+func (e *LogsSenderExecuter) ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
+	return util.ExecutePrivileged(command, args...)
 }
 
 func (e *LogsSenderExecuter) ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {
@@ -77,7 +83,27 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	return err
 }
 
-const logsDir = "/var/log"
+func (e *LogsSenderExecuter) GatherInstallerLogs(targetDir string) error {
+	gatherID := time.Now().Format("20060102150405")
+	mastersIPs := strings.Split(config.LogsSenderConfig.MastersIPs, ",")
+	installerGatherArgs := append([]string{"--id", gatherID}, mastersIPs...)
+	log.Infof("Running %s %v", installerGatherBin, installerGatherArgs)
+	// installer-gather.sh is written in such a way it always return 0.
+	stdOut, stdErr, _ := e.ExecutePrivileged(installerGatherBin, installerGatherArgs...)
+	for _, so := range strings.Split(stdOut, "\n") {
+		log.Infof("installer-gather log: %s", so)
+	}
+	if stdErr != "" {
+		log.WithError(errors.New(stdErr)).Warnf("Failed to run %s %v", installerGatherBin, installerGatherArgs)
+	}
+	_, stdErr, exitCode := e.ExecutePrivileged("mv", fmt.Sprintf("%s%s.tar.gz", installerGatherArchivePreifx, gatherID), targetDir)
+	if exitCode != 0 {
+		err := errors.New(stdErr)
+		log.WithError(err).Errorf("Failed to: mv %s %s", fmt.Sprintf("%s%s.tar.gz", installerGatherArchivePreifx, gatherID), targetDir)
+		return err
+	}
+	return nil
+}
 
 func getJournalLogsWithFilter(l LogsSender, since string, outputFilePath string, journalFilterParams []string) error {
 	log.Infof("Running journalctl with filters %s", journalFilterParams)
@@ -152,17 +178,8 @@ func SendLogs(l LogsSender) error {
 	}
 
 	if config.LogsSenderConfig.InstallerGatherlogging && config.LogsSenderConfig.IsBootstrap {
-		log.Info("Running installer-gather.sh")
-		// installer-gather.sh is written in such a way it always return 0.
-		stdOut, stdErr, _ := l.ExecutePrivilege("/usr/local/bin/installer-gather.sh")
-		log.Info(stdOut)
-		if stdErr != "" {
-			log.Warn(stdErr)
-		}
-		_, stdErr, exitCode := l.ExecutePrivilege("mv", "/root/log-bundle-.tar.gz", fmt.Sprintf("%s/installer_gather.tar.gz", logsTmpFilesDir))
-		if exitCode != 0 {
-			err := errors.Errorf(stdErr)
-			log.WithError(err).Errorf("Failed to run installer-gather.sh command")
+		if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
+			log.WithError(err).Error("Failed to gather installer logs")
 			return err
 		}
 	}
@@ -172,6 +189,6 @@ func SendLogs(l LogsSender) error {
 	}
 
 	return uploadLogs(l, archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-		strfmt.UUID(config.LogsSenderConfig.HostID),
-		config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion)
+		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
+		config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion)
 }

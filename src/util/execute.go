@@ -63,7 +63,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
 
 func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
 	commandBase := "nsenter"
-	arguments := []string{"-t", "1", "-m", "-i", "--", command}
+	arguments := []string{"-t", "1", "-m", "-i", "-n", "--", command}
 	arguments = append(arguments, args...)
 	return Execute(commandBase, arguments...)
 }

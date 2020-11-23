@@ -3,7 +3,7 @@ RUN dnf install -y \
 		findutils iputils \
 		podman \
 		# inventory
-		dmidecode ipmitool biosdevname file \
+		smartmontools dmidecode ipmitool biosdevname file \
 		# free_addresses
 		nmap \
 		# dhcp_lease_allocate

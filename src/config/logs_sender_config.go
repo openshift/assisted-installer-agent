@@ -19,6 +19,7 @@ var LogsSenderConfig struct {
 	PullSecretToken        string
 	IsBootstrap            bool
 	InstallerGatherlogging bool
+	MastersIPs             string
 }
 
 func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool) {
@@ -35,6 +36,7 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	flag.BoolVar(&LogsSenderConfig.InstallerGatherlogging, "with-installer-gather-logging", false, "Use installer-gather logging")
 	flag.StringVar(&GlobalAgentConfig.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
 	flag.BoolVar(&GlobalAgentConfig.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
+	flag.StringVar(&LogsSenderConfig.MastersIPs, "masters-ips", "", "list of ',' separated IPs of all masters nodes in the cluster for SSH use")
 	h := flag.Bool("help", false, "Help message")
 
 	flag.Parse()

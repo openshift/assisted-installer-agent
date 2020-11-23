@@ -16,7 +16,7 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.6.1
-	github.com/thoas/go-funk v0.6.0
+	github.com/thoas/go-funk v0.7.0
 	github.com/vishvananda/netlink v1.1.0
 	gopkg.in/yaml.v2 v2.3.0
 )

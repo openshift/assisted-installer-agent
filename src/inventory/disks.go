@@ -69,6 +69,22 @@ func (d *disks) getBootable(path string) bool {
 	return strings.Contains(stdout, "DOS/MBR boot sector")
 }
 
+func (d *disks) getSMART(path string) string {
+	if path == "" {
+		return ""
+	}
+
+	stdout, stderr, exitCode := d.dependencies.Execute("smartctl", "--xall", "--json=c", path)
+
+	if exitCode != 0 {
+		logrus.Warnf("Could not get S.M.A.R.T. information for path %s: (smartctl exit code %d) %s",
+			path, exitCode, stderr)
+		return ""
+	}
+
+	return stdout
+}
+
 func unknownToEmpty(value string) string {
 	if value == ghw.UNKNOWN {
 		return ""
@@ -113,6 +129,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Vendor:    unknownToEmpty(disk.Vendor),
 			Wwn:       unknownToEmpty(disk.WWN),
 			Bootable:  d.getBootable(path),
+			Smart:     d.getSMART(path),
 		}
 		ret = append(ret, &rec)
 	}

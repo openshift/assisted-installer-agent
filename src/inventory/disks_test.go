@@ -27,103 +27,92 @@ var _ = Describe("Disks test", func() {
 		ret := GetDisks(dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
+
 	It("Empty", func() {
 		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{}, nil).Once()
 		ret := GetDisks(dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
-	It("Single bootable disk", func() {
-		fileInfoMock := FileInfoMock{}
-		fileInfoMock.On("Name").Return("scsi").Once()
-		// Don't find it under /dev/disk1 to test the fallback of searching /dev/disk/by-path
-		dependencies.On("Stat", "/dev/disk1").Return(nil, errors.New("error")).Once()
-		dependencies.On("ReadDir", "/sys/block/disk1/device/scsi_device").Return([]os.FileInfo{&fileInfoMock}, nil).Once()
-		dependencies.On("EvalSymlinks", "/dev/disk/by-path/bus-path").Return("/dev/disk/by-path/../../foo/disk1", nil).Once()
-		dependencies.On("Abs", "/dev/disk/by-path/../../foo/disk1").Return("/dev/foo/disk1", nil).Once()
-		dependencies.On("Stat", "/dev/disk/by-path/bus-path").Return(nil, nil).Once()
-		dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return(" DOS/MBR boot sector", "", 0).Once()
-		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
-			Disks: []*ghw.Disk{
-				{
-					Name:                   "disk1",
-					SizeBytes:              5555,
-					DriveType:              ghw.DRIVE_TYPE_HDD,
-					BusPath:                "bus-path",
-					Vendor:                 "disk1-vendor",
-					Model:                  "disk1-model",
-					SerialNumber:           "disk1-serial",
-					WWN:                    "disk1-wwn",
-					BusType:                ghw.BUS_TYPE_SCSI,
-					IsRemovable:            false,
-					NUMANodeID:             0,
-					PhysicalBlockSizeBytes: 512,
-					StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+
+	Describe("Single disk", func() {
+		var fileInfoMock FileInfoMock
+		var expectation []*models.Disk
+
+		BeforeEach(func() {
+			fileInfoMock = FileInfoMock{}
+			fileInfoMock.On("Name").Return("scsi").Once()
+			// Don't find it under /dev/disk1 to test the fallback of searching /dev/disk/by-path
+			dependencies.On("Stat", "/dev/disk1").Return(nil, errors.New("error")).Once()
+			dependencies.On("ReadDir", "/sys/block/disk1/device/scsi_device").Return([]os.FileInfo{&fileInfoMock}, nil).Once()
+			dependencies.On("EvalSymlinks", "/dev/disk/by-path/bus-path").Return("/dev/disk/by-path/../../foo/disk1", nil).Once()
+			dependencies.On("Abs", "/dev/disk/by-path/../../foo/disk1").Return("/dev/foo/disk1", nil).Once()
+			dependencies.On("Stat", "/dev/disk/by-path/bus-path").Return(nil, nil).Once()
+			dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
+				Disks: []*ghw.Disk{
+					{
+						Name:                   "disk1",
+						SizeBytes:              5555,
+						DriveType:              ghw.DRIVE_TYPE_HDD,
+						BusPath:                "bus-path",
+						Vendor:                 "disk1-vendor",
+						Model:                  "disk1-model",
+						SerialNumber:           "disk1-serial",
+						WWN:                    "disk1-wwn",
+						BusType:                ghw.BUS_TYPE_SCSI,
+						IsRemovable:            false,
+						NUMANodeID:             0,
+						PhysicalBlockSizeBytes: 512,
+						StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+					},
 				},
-			},
-		}, nil).Once()
-		ret := GetDisks(dependencies)
-		Expect(ret).To(Equal([]*models.Disk{
-			{
-				ByPath:    "/dev/disk/by-path/bus-path",
-				DriveType: "HDD",
-				Hctl:      "scsi",
-				Model:     "disk1-model",
-				Name:      "disk1",
-				Path:      "/dev/foo/disk1",
-				Serial:    "disk1-serial",
-				SizeBytes: 5555,
-				Vendor:    "disk1-vendor",
-				Wwn:       "disk1-wwn",
-				Bootable:  true,
-			},
-		}))
-	})
-	It("Single non bootable disk", func() {
-		fileInfoMock := FileInfoMock{}
-		fileInfoMock.On("Name").Return("scsi").Once()
-		// Don't find it under /dev/disk1 to test the fallback of searching /dev/disk/by-path
-		dependencies.On("Stat", "/dev/disk1").Return(nil, errors.New("error")).Once()
-		dependencies.On("ReadDir", "/sys/block/disk1/device/scsi_device").Return([]os.FileInfo{&fileInfoMock}, nil).Once()
-		dependencies.On("EvalSymlinks", "/dev/disk/by-path/bus-path").Return("/dev/disk/by-path/../../foo/disk1", nil).Once()
-		dependencies.On("Abs", "/dev/disk/by-path/../../foo/disk1").Return("/dev/foo/disk1", nil).Once()
-		dependencies.On("Stat", "/dev/disk/by-path/bus-path").Return(nil, nil).Once()
-		dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return("Linux rev 1.0 ext4 filesystem data", "", 0).Once()
-		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
-			Disks: []*ghw.Disk{
+			}, nil).Once()
+
+			expectation = []*models.Disk{
 				{
-					Name:                   "disk1",
-					SizeBytes:              5555,
-					DriveType:              ghw.DRIVE_TYPE_HDD,
-					BusPath:                "bus-path",
-					Vendor:                 "disk1-vendor",
-					Model:                  "disk1-model",
-					SerialNumber:           "disk1-serial",
-					WWN:                    "disk1-wwn",
-					BusType:                ghw.BUS_TYPE_SCSI,
-					IsRemovable:            false,
-					NUMANodeID:             0,
-					PhysicalBlockSizeBytes: 512,
-					StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+					ByPath:    "/dev/disk/by-path/bus-path",
+					DriveType: "HDD",
+					Hctl:      "scsi",
+					Model:     "disk1-model",
+					Name:      "disk1",
+					Path:      "/dev/foo/disk1",
+					Serial:    "disk1-serial",
+					SizeBytes: 5555,
+					Vendor:    "disk1-vendor",
+					Wwn:       "disk1-wwn",
+					Bootable:  true,
+					Smart:     `{"some": "json"}`,
 				},
-			},
-		}, nil).Once()
-		ret := GetDisks(dependencies)
-		Expect(ret).To(Equal([]*models.Disk{
-			{
-				ByPath:    "/dev/disk/by-path/bus-path",
-				DriveType: "HDD",
-				Hctl:      "scsi",
-				Model:     "disk1-model",
-				Name:      "disk1",
-				Path:      "/dev/foo/disk1",
-				Serial:    "disk1-serial",
-				SizeBytes: 5555,
-				Vendor:    "disk1-vendor",
-				Wwn:       "disk1-wwn",
-				Bootable:  false,
-			},
-		}))
+			}
+		})
+
+		It("Bootable", func() {
+			dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return(" DOS/MBR boot sector", "", 0).Once()
+			dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 0).Once()
+		})
+
+		It("Non-bootable", func() {
+			dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return("Linux rev 1.0 ext4 filesystem data", "", 0).Once()
+			dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 0).Once()
+			expectation[0].Bootable = false
+		})
+
+		It("Without a smartctl error", func() {
+			dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return(" DOS/MBR boot sector", "", 0).Once()
+			dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 0).Once()
+		})
+
+		It("With a smartctl error", func() {
+			dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return(" DOS/MBR boot sector", "", 0).Once()
+			dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "error"}`, "", 2).Once()
+			expectation[0].Smart = ""
+		})
+
+		AfterEach(func() {
+			ret := GetDisks(dependencies)
+			Expect(ret).To(Equal(expectation))
+		})
 	})
+
 	It("filters ISO disks", func() {
 		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
@@ -141,17 +130,17 @@ var _ = Describe("Disks test", func() {
 					NUMANodeID:             0,
 					PhysicalBlockSizeBytes: 512,
 					StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
-					Partitions:				[]*ghw.Partition{
-												{
-													Disk: nil,
-													Name: "partition1",
-													Label: "partition1-label",
-													MountPoint: "/media/iso",
-													SizeBytes: 5555,
-													Type: "ext4",
-													IsReadOnly: false,
-												},
-											},
+					Partitions: []*ghw.Partition{
+						{
+							Disk:       nil,
+							Name:       "partition1",
+							Label:      "partition1-label",
+							MountPoint: "/media/iso",
+							SizeBytes:  5555,
+							Type:       "ext4",
+							IsReadOnly: false,
+						},
+					},
 				},
 				{
 					Name:                   "disk2",
@@ -167,17 +156,17 @@ var _ = Describe("Disks test", func() {
 					NUMANodeID:             0,
 					PhysicalBlockSizeBytes: 512,
 					StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
-					Partitions:				[]*ghw.Partition{
-												{
-													Disk: nil,
-													Name: "partition2",
-													Label: "partition2-label",
-													MountPoint: "/some/mount/point",
-													SizeBytes: 5555,
-													Type: "iso9660",
-													IsReadOnly: false,
-												},
-											},
+					Partitions: []*ghw.Partition{
+						{
+							Disk:       nil,
+							Name:       "partition2",
+							Label:      "partition2-label",
+							MountPoint: "/some/mount/point",
+							SizeBytes:  5555,
+							Type:       "iso9660",
+							IsReadOnly: false,
+						},
+					},
 				},
 			},
 		}, nil).Once()
@@ -189,7 +178,7 @@ var _ = Describe("Disks test", func() {
 		fileInfoMock.On("Name").Return("scsi").Times(2)
 		// Don't find it under /dev/disk1 to test the fallback of searching /dev/disk/by-path
 		dependencies.On("Stat", "/dev/disk1").Return(nil, errors.New("error")).Once()
-		dependencies.On("Stat", "/dev/disk2").Return(nil, errors.New("error")).Once()	
+		dependencies.On("Stat", "/dev/disk2").Return(nil, errors.New("error")).Once()
 		dependencies.On("ReadDir", "/sys/block/disk1/device/scsi_device").Return([]os.FileInfo{&fileInfoMock}, nil).Once()
 		dependencies.On("ReadDir", "/sys/block/disk2/device/scsi_device").Return([]os.FileInfo{&fileInfoMock}, nil).Once()
 		dependencies.On("EvalSymlinks", "/dev/disk/by-path/bus-path1").Return("/dev/disk/by-path/../../foo/disk1", nil).Once()
@@ -200,6 +189,8 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("Stat", "/dev/disk/by-path/bus-path2").Return(nil, nil).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return("Linux rev 1.0 ext4 filesystem data", "", 0).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/foo/disk2").Return(" DOS/MBR boot sector", "", 0).Once()
+		dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 0).Once()
+		dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk2").Return(`{"some": "json"}`, "", 0).Once()
 		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
@@ -248,6 +239,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "disk1-vendor",
 				Wwn:       "disk1-wwn",
 				Bootable:  false,
+				Smart:     `{"some": "json"}`,
 			},
 			{
 				ByPath:    "/dev/disk/by-path/bus-path2",
@@ -261,6 +253,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "disk1-vendor",
 				Wwn:       "disk1-wwn",
 				Bootable:  true,
+				Smart:     `{"some": "json"}`,
 			},
 		}))
 	})
@@ -283,6 +276,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("Stat", "/dev/xvda").Return(nil, nil).Once()
 		dependencies.On("ReadDir", "/sys/block/xvda/device/scsi_device").Return(nil, errors.New("error")).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/xvda").Return(" DOS/MBR boot sector", "", 0).Once()
+		dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/xvda").Return(`{"some": "json"}`, "", 0).Once()
 		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
@@ -316,6 +310,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "",
 				Wwn:       "",
 				Bootable:  true,
+				Smart:     `{"some": "json"}`,
 			},
 		}))
 	})
@@ -353,6 +348,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("ReadDir", "/sys/block/nvme0n1/device/scsi_device").Return(nil, errors.New("error")).Once()
 		dependencies.On("Stat", "/dev/disk/by-path/pci-0000:3d:00.0-nvme-1").Return(nil, nil).Once()
 		dependencies.On("Execute", "file", "-s", "/dev/nvme0n1").Return(" kuku", "", 0).Once()
+		dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/nvme0n1").Return(`{"some": "json"}`, "", 0).Once()
 		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
 			Disks: []*ghw.Disk{
 				{
@@ -386,6 +382,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "",
 				Wwn:       "eui.5cd2e42a91419c24",
 				Bootable:  false,
+				Smart:     `{"some": "json"}`,
 			},
 		}))
 	})

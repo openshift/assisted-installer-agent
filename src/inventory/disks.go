@@ -2,11 +2,11 @@ package inventory
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/jaypipes/ghw"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	"github.com/thoas/go-funk"
+	"strings"
 )
 
 type disks struct {
@@ -92,15 +92,37 @@ func unknownToEmpty(value string) string {
 	return value
 }
 
-// isInstallationMedia returns whether this disk is an ISO media or not
-func isInstallationMedia(d *ghw.Disk) bool {
-	for _, p := range d.Partitions {
-		if p.Type == "iso9660" || strings.HasSuffix(p.MountPoint, "iso") {
-			return true
-		}
+// diskIsRelevant checks if a disk is relevant for installation by testing
+// it against a list of predicates. Also returns all the reasons the disk
+// was found to be irrelevant
+func diskIsRelevant(disk *ghw.Disk) (relevant bool, skipReasons []string) {
+	if disk.IsRemovable {
+		skipReasons = append(skipReasons, "Disk is removable")
 	}
 
-	return false
+	if disk.SizeBytes == 0 {
+		skipReasons = append(skipReasons, "Disk has size 0")
+	}
+
+	if disk.BusType == ghw.BUS_TYPE_UNKNOWN && disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN {
+		skipReasons = append(skipReasons, "Disk has unknown bus type and storage controller")
+	}
+
+	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
+		return p.Type == "iso9660"
+	}), true) {
+		skipReasons = append(skipReasons, "Disk appears to be an ISO installation media (has partition with type iso9660)")
+	}
+
+	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
+		return strings.HasSuffix(p.MountPoint, "iso")
+	}), true) {
+		skipReasons = append(skipReasons, "Disk appears to be an ISO installation media (has partition with mountpoint suffix iso)")
+	}
+
+	relevant = len(skipReasons) == 0
+
+	return
 }
 
 func (d *disks) getDisks() []*models.Disk {
@@ -111,8 +133,12 @@ func (d *disks) getDisks() []*models.Disk {
 		return ret
 	}
 	for _, disk := range blockInfo.Disks {
-		if disk.IsRemovable || disk.SizeBytes == 0 || isInstallationMedia(disk) ||
-			(disk.BusType == ghw.BUS_TYPE_UNKNOWN && disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN) {
+		isRelevant, reasons := diskIsRelevant(disk)
+		if !isRelevant {
+			reasonsLines := strings.Join(reasons, "\n")
+			logrus.Infof(
+				"Disk (name %s bus path %s vendor %s model %s partitions %s) was found to be irrelevant for the following reasons:\n %s",
+				disk.Name, disk.BusPath, disk.Vendor, disk.Model, disk.Partitions, reasonsLines)
 			continue
 		}
 

@@ -143,7 +143,7 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 }
 
 func SendLogs(l LogsSender) error {
-	log.Infof("Start gathering journalctl logs with tags %s and services %s",
+	log.Infof("Start gathering journalctl logs with tags %s, services %s and installer-gather",
 		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)
 	archivePath := fmt.Sprintf("%s/logs.tar.gz", logsDir)
 	logsTmpFilesDir := path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
@@ -157,6 +157,13 @@ func SendLogs(l LogsSender) error {
 	if err := l.CreateFolderIfNotExist(logsTmpFilesDir); err != nil {
 		log.WithError(err).Errorf("Failed to create directory %s", logsTmpFilesDir)
 		return err
+	}
+
+	if config.LogsSenderConfig.InstallerGatherlogging && config.LogsSenderConfig.IsBootstrap {
+		if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
+			log.WithError(err).Error("Failed to gather installer logs")
+			return err
+		}
 	}
 
 	for _, tag := range config.LogsSenderConfig.Tags {
@@ -173,13 +180,6 @@ func SendLogs(l LogsSender) error {
 		err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
 			[]string{"-u", service})
 		if err != nil {
-			return err
-		}
-	}
-
-	if config.LogsSenderConfig.InstallerGatherlogging && config.LogsSenderConfig.IsBootstrap {
-		if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
-			log.WithError(err).Error("Failed to gather installer logs")
 			return err
 		}
 	}

@@ -83,8 +83,17 @@ var _ = Describe("logs sender", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("GatherInstallerLogs failed", func() {
+		folderSuccess()
+		logsSenderMock.On("GatherInstallerLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
+		err := SendLogs(logsSenderMock)
+		fmt.Println(err)
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("ExecuteOutputToFile failed", func() {
 		folderSuccess()
+		gatherInstallerLogsSuccess()
 		outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", config.LogsSenderConfig.Tags[0]))
 		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
 			"--since", config.LogsSenderConfig.Since, "--all", fmt.Sprintf("TAG=%s", config.LogsSenderConfig.Tags[0])).
@@ -94,19 +103,10 @@ var _ = Describe("logs sender", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("GatherInstallerLogs failed", func() {
-		folderSuccess()
-		executeOutputToFileSuccess()
-		logsSenderMock.On("GatherInstallerLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
-		err := SendLogs(logsSenderMock)
-		fmt.Println(err)
-		Expect(err).To(HaveOccurred())
-	})
-
 	It("Archive failed", func() {
 		folderSuccess()
-		executeOutputToFileSuccess()
 		gatherInstallerLogsSuccess()
+		executeOutputToFileSuccess()
 		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, "-C", filepath.Dir(logsTmpFilesDir),
 			filepath.Base(logsTmpFilesDir)).
 			Return("Dummy", "Dummy", -1)
@@ -117,8 +117,8 @@ var _ = Describe("logs sender", func() {
 
 	It("Upload failed", func() {
 		folderSuccess()
-		executeOutputToFileSuccess()
 		gatherInstallerLogsSuccess()
+		executeOutputToFileSuccess()
 		archiveSuccess()
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
@@ -130,8 +130,8 @@ var _ = Describe("logs sender", func() {
 
 	It("Happy flow", func() {
 		folderSuccess()
-		executeOutputToFileSuccess()
 		gatherInstallerLogsSuccess()
+		executeOutputToFileSuccess()
 		archiveSuccess()
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).

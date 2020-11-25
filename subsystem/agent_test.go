@@ -17,13 +17,14 @@ import (
 const (
 	ClusterID                     = "11111111-1111-1111-1111-111111111111"
 	defaultnextInstructionSeconds = int64(1)
+	waitForWiremockTimeout        = 60 * time.Second
 )
 
 var log *logrus.Logger
 
 var _ = Describe("Agent tests", func() {
 	BeforeSuite(func() {
-		Eventually(waitForWiremock, 10*time.Second, time.Second).ShouldNot(HaveOccurred())
+		Eventually(waitForWiremock, waitForWiremockTimeout, time.Second).ShouldNot(HaveOccurred())
 		log = logrus.New()
 	})
 

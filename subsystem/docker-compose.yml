@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile.agent_test
     container_name: agent
+    depends_on:
+      - wiremock
     volumes:
       - ./logs:/var/log
       - /var/run/docker.sock:/var/run/docker.sock

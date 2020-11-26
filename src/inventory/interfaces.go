@@ -177,6 +177,7 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 		}
 		ret = append(ret, &rec)
 	}
+	setV6PrefixesForAddresses(ret, i.dependencies)
 	return ret
 }
 

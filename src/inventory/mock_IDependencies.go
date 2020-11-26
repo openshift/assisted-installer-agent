@@ -264,6 +264,29 @@ func (_m *MockIDependencies) ReadFile(fname string) ([]byte, error) {
 	return r0, r1
 }
 
+// RouteList provides a mock function with given fields: link, family
+func (_m *MockIDependencies) RouteList(link netlink.Link, family int) ([]netlink.Route, error) {
+	ret := _m.Called(link, family)
+
+	var r0 []netlink.Route
+	if rf, ok := ret.Get(0).(func(netlink.Link, int) []netlink.Route); ok {
+		r0 = rf(link, family)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]netlink.Route)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(netlink.Link, int) error); ok {
+		r1 = rf(link, family)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Stat provides a mock function with given fields: fname
 func (_m *MockIDependencies) Stat(fname string) (os.FileInfo, error) {
 	ret := _m.Called(fname)

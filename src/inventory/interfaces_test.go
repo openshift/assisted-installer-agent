@@ -4,6 +4,11 @@ import (
 	"errors"
 	"net"
 
+	"golang.org/x/sys/unix"
+
+	"github.com/stretchr/testify/mock"
+	"github.com/vishvananda/netlink"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/models"
@@ -72,12 +77,19 @@ var _ = Describe("Interfaces", func() {
 	})
 
 	It("Single result", func() {
-		interfaceMock := newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/64"}, true, false, 1000)
+		interfaceMock := newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/128"}, true, false, 1000)
 		dependencies.On("Interfaces").Return([]Interface{interfaceMock}, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("1\n"), nil).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/device/device").Return([]byte("my-device"), nil).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/device/vendor").Return([]byte("my-vendor"), nil).Once()
+		dependencies.On("LinkByName", "eth0").Return(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: "eth0"}}, nil).Once()
+		dependencies.On("RouteList", mock.Anything, mock.Anything).Return([]netlink.Route{
+			{
+				Dst:      &net.IPNet{IP: net.ParseIP("fe80::"), Mask: net.CIDRMask(64, 128)},
+				Protocol: unix.RTPROT_RA,
+			},
+		}, nil)
 		ret := GetInterfaces(dependencies)
 		Expect(len(ret)).To(Equal(1))
 		Expect(ret).To(Equal([]*models.Interface{
@@ -98,10 +110,10 @@ var _ = Describe("Interfaces", func() {
 	})
 	It("Multiple results", func() {
 		rets := []Interface{
-			newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/64"}, true, false, 100),
-			newFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/64"}, true, false, 10),
-			newFilledInterfaceMock(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/64"}, false, false, 5),
-			newFilledInterfaceMock(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/64"}, false, true, -1),
+			newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128"}, true, false, 100),
+			newFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127"}, true, false, 10),
+			newFilledInterfaceMock(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/126"}, false, false, 5),
+			newFilledInterfaceMock(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125"}, false, true, -1),
 		}
 		dependencies.On("Interfaces").Return(rets, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
@@ -116,6 +128,13 @@ var _ = Describe("Interfaces", func() {
 		dependencies.On("ReadFile", "/sys/class/net/bond0/carrier").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/bond0/device/device").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/bond0/device/vendor").Return([]byte("my-vendor2"), nil).Once()
+		dependencies.On("LinkByName", mock.Anything).Return(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: "eth0"}}, nil)
+		dependencies.On("RouteList", mock.Anything, mock.Anything).Return([]netlink.Route{
+			{
+				Dst:      &net.IPNet{IP: net.ParseIP("fe80::"), Mask: net.CIDRMask(62, 128)},
+				Protocol: unix.RTPROT_RA,
+			},
+		}, nil)
 		ret := GetInterfaces(dependencies)
 		Expect(len(ret)).To(Equal(3))
 		Expect(ret).To(Equal([]*models.Interface{
@@ -125,7 +144,7 @@ var _ = Describe("Interfaces", func() {
 				Flags:         []string{"up", "broadcast"},
 				HasCarrier:    false,
 				IPV4Addresses: []string{"10.0.0.18/24", "192.168.6.7/20"},
-				IPV6Addresses: []string{"fe80::d832:8def:dd51:3527/64"},
+				IPV6Addresses: []string{"fe80::d832:8def:dd51:3527/62"},
 				MacAddress:    "f8:75:a4:a4:00:fe",
 				Mtu:           1500,
 				Name:          "eth0",
@@ -139,7 +158,7 @@ var _ = Describe("Interfaces", func() {
 				Flags:         []string{"broadcast", "loopback"},
 				HasCarrier:    false,
 				IPV4Addresses: []string{"10.0.0.19/24", "192.168.6.8/20"},
-				IPV6Addresses: []string{"fe80::d832:8def:dd51:3528/64"},
+				IPV6Addresses: []string{"fe80::d832:8def:dd51:3528/62"},
 				MacAddress:    "f8:75:a4:a4:00:ff",
 				Mtu:           1400,
 				Name:          "eth1",
@@ -154,7 +173,7 @@ var _ = Describe("Interfaces", func() {
 				HasCarrier:    false,
 				IPV4Addresses: []string{"10.0.0.21/24", "192.168.6.10/20"},
 				IPV6Addresses: []string{
-					"fe80::d832:8def:dd51:3529/64",
+					"fe80::d832:8def:dd51:3529/62",
 				},
 				MacAddress: "f8:75:a4:a4:00:fd",
 				Mtu:        1400,

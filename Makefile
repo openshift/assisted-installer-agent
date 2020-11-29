@@ -7,6 +7,9 @@ REPORTS = $(ROOT_DIR)/reports
 GOTEST_PUBLISH_FLAGS = --junitfile-testsuite-name=relative --junitfile-testcase-classname=relative --junitfile $(REPORTS)/$(TEST_SCENARIO)_test.xml
 GOTEST_FLAGS = --format=standard-verbose $(GOTEST_PUBLISH_FLAGS) -- -count=1 -cover -coverprofile=$(REPORTS)/$(TEST_SCENARIO)_coverage.out
 
+GIT_REVISION := $(shell git rev-parse HEAD)
+PUBLISH_TAG := $(or ${GIT_REVISION})
+
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
 export WIREMOCK_PORT = 8362
 
@@ -48,6 +51,14 @@ $(REPORTS):
 
 $(BIN):
 	-mkdir -p $(BIN)
+
+define publish_image
+        docker tag ${1} ${2}
+        docker push ${2}
+endef # publish_image
+
+publish:
+	$(call publish_image,${ASSISTED_INSTALLER_AGENT},quay.io/ocpmetal/assisted-installer-agent:${PUBLISH_TAG})
 
 clean:
 	rm -rf subsystem/logs $(BIN) $(REPORTS)

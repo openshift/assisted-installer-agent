@@ -15,7 +15,10 @@ RUN dnf install -y \
 		# logs_sender
 		tar \
 		# ntp_synchronizer
-		chrony && \
+		chrony \
+		# connectivity_check
+		# ndisc6 for IPv6 is not included in the repo https://bugzilla.redhat.com/show_bug.cgi?id=1779134
+		https://cbs.centos.org/kojifiles/packages/ndisc6/1.0.3/9.el8/x86_64/ndisc6-1.0.3-9.el8.x86_64.rpm && \
 		dnf update -y systemd && dnf clean all
 ADD build/agent build/connectivity_check build/free_addresses build/inventory \
 	build/logs_sender build/dhcp_lease_allocate build/apivip_check build/next_step_runner build/ntp_synchronizer \

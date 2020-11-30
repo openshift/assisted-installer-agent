@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -118,6 +119,15 @@ func macInDstMacs(mac string, allDstMacs []string) bool {
 
 func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs []string, srcNic string, l2chan chan Any) {
 	defer sendDone(l2chan)
+	if util.IsIPv4Addr(dstAddr) {
+		runArping(dstAddr, dstMac, allDstMacs, srcNic, l2chan)
+	} else {
+		runNetdisc6(dstAddr, dstMac, allDstMacs, srcNic, l2chan)
+	}
+}
+
+func runArping(dstAddr string, dstMac string, allDstMacs []string, srcNic string, l2chan chan Any) {
+
 	ret := &models.L2Connectivity{
 		OutgoingNic:     srcNic,
 		RemoteIPAddress: dstAddr,
@@ -132,6 +142,7 @@ func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs []string, src
 		l2chan <- ret
 		return
 	}
+
 	hRgegex := regexp.MustCompile("^ARPING ([^ ]+) from ([^ ]+) ([^ ]+)$")
 	parts := hRgegex.FindStringSubmatch(lines[0])
 	if len(parts) != 4 {
@@ -157,6 +168,43 @@ func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs []string, src
 		}
 		l2chan <- ret
 	}
+}
+
+func runNetdisc6(dstAddr string, dstMac string, allDstMacs []string, srcNic string, l2chan chan Any) {
+
+	ret := &models.L2Connectivity{
+		OutgoingNic:       srcNic,
+		OutgoingIPAddress: "",
+		RemoteIPAddress:   dstAddr,
+		RemoteMac:         "",
+		Successful:        false,
+	}
+
+	cmd := exec.Command("ndisc6", "-q", "-n", "-1", "-r", "1", "-w", "2000", dstAddr, srcNic)
+	bytes, _ := cmd.CombinedOutput()
+	lines := strings.Split(string(bytes), "\n")
+	if len(lines) == 0 {
+		log.Warnf("Missing output for ndisc6")
+		l2chan <- ret
+		return
+	}
+
+	if _, err := net.ParseMAC(lines[0]); err != nil {
+		log.WithError(err).Warnf("Unexpected output of ndisc6: %s", lines[0])
+		l2chan <- ret
+		return
+	}
+
+	remoteMac := strings.ToLower(lines[0])
+	ret.RemoteMac = remoteMac
+	ret.Successful = macInDstMacs(remoteMac, allDstMacs)
+	if !ret.Successful {
+		log.Warnf("Unexpected mac address for ndisc6 %s on nic %s: %s", dstAddr, srcNic, remoteMac)
+	} else if strings.ToLower(dstMac) != remoteMac {
+		log.Infof("Received remote mac %s different then expected mac %s", remoteMac, dstMac)
+	}
+
+	l2chan <- ret
 }
 
 func l2CheckAddress(dstAddr string, dstMac string, allDstMacs, sourceNics []string, l2chan chan Any, l2DoneChan chan Any) {

@@ -6,7 +6,7 @@ require (
 	github.com/go-openapi/strfmt v0.19.11
 	github.com/go-openapi/swag v0.19.9
 	github.com/golang/mock v1.4.4 // indirect
-	github.com/google/uuid v1.1.1
+	github.com/google/uuid v1.1.2
 	github.com/jaypipes/ghw v0.6.1
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.3

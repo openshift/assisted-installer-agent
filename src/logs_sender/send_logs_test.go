@@ -67,8 +67,18 @@ var _ = Describe("logs sender", func() {
 			Return("Dummy", "", 0)
 	}
 
+	fileUploaderSuccess := func() {
+		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
+			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
+			Return(nil)
+	}
+
 	gatherInstallerLogsSuccess := func() {
 		logsSenderMock.On("GatherInstallerLogs", mock.Anything).Return(nil)
+	}
+
+	gatherErrorLogsSuccess := func() {
+		logsSenderMock.On("GatherErrorLogs", mock.Anything).Return(nil)
 	}
 
 	AfterEach(func() {
@@ -91,9 +101,21 @@ var _ = Describe("logs sender", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("ExecuteOutputToFile failed", func() {
+	It("GatherErrorLogs failed", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
+		executeOutputToFileSuccess()
+		archiveSuccess()
+		fileUploaderSuccess()
+		logsSenderMock.On("GatherErrorLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
+		err := SendLogs(logsSenderMock)
+		fmt.Println(err)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("ExecuteOutputToFile failed", func() {
+		folderSuccess()
+		config.LogsSenderConfig.InstallerGatherlogging = false
 		outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", config.LogsSenderConfig.Tags[0]))
 		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
 			"--since", config.LogsSenderConfig.Since, "--all", fmt.Sprintf("TAG=%s", config.LogsSenderConfig.Tags[0])).
@@ -106,6 +128,7 @@ var _ = Describe("logs sender", func() {
 	It("Archive failed", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
+		gatherErrorLogsSuccess()
 		executeOutputToFileSuccess()
 		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, "-C", filepath.Dir(logsTmpFilesDir),
 			filepath.Base(logsTmpFilesDir)).
@@ -118,6 +141,7 @@ var _ = Describe("logs sender", func() {
 	It("Upload failed", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
+		gatherErrorLogsSuccess()
 		executeOutputToFileSuccess()
 		archiveSuccess()
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
@@ -131,11 +155,10 @@ var _ = Describe("logs sender", func() {
 	It("Happy flow", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
+		gatherErrorLogsSuccess()
 		executeOutputToFileSuccess()
 		archiveSuccess()
-		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
-			Return(nil)
+		fileUploaderSuccess()
 		err := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).NotTo(HaveOccurred())

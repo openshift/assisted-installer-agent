@@ -34,6 +34,7 @@ type LogsSender interface {
 	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
 		inventoryUrl string, pullSecretToken string, agentVersion string) error
 	GatherInstallerLogs(targetDir string) error
+	GatherErrorLogs(targetDir string) error
 }
 
 type LogsSenderExecuter struct{}
@@ -105,6 +106,58 @@ func (e *LogsSenderExecuter) GatherInstallerLogs(targetDir string) error {
 	return nil
 }
 
+func (e *LogsSenderExecuter) GatherErrorLogs(targetDir string) error {
+	// Write the entire output of dmesg
+	outputFile := path.Join(targetDir, "dmesg.logs")
+	err := getDmesgLogs(e, outputFile)
+	if err != nil {
+		return err
+	}
+
+	// Write coredump files
+	err = getCoreDumps(e, targetDir)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getDmesgLogs(l LogsSender, outputFilePath string) error {
+	log.Infof("Running dmesg")
+	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "dmesg")
+	if exitCode != 0 {
+		err := errors.Errorf(stderr)
+		log.WithError(err).Errorf("Failed to run dmesg command")
+		return err
+	}
+	return nil
+}
+
+func getCoreDumps(l LogsSender, targetDir string) error {
+	log.Infof("Get coredump files")
+	coredumpPath := "/var/lib/systemd/coredump/"
+	stdout, stderr, exitCode := l.Execute("ls", coredumpPath)
+	if exitCode != 0 {
+		err := errors.Errorf(stderr)
+		log.WithError(err).Errorf("Failed to list coredump files")
+		return err
+	}
+
+	files := strings.Split(strings.TrimSuffix(stdout, "\n"), "\n")
+	for _, file := range files {
+		outputFile := path.Join(targetDir, fmt.Sprintf("coredump_%s", file))
+		stderr, exitCode := l.ExecuteOutputToFile(outputFile, "cat", coredumpPath + file)
+		if exitCode != 0 {
+			err := errors.Errorf(stderr)
+			log.WithError(err).Errorf("Failed to read coredump file: %s", file)
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getJournalLogsWithFilter(l LogsSender, since string, outputFilePath string, journalFilterParams []string) error {
 	log.Infof("Running journalctl with filters %s", journalFilterParams)
 	args := []string{"-D", "/var/log/journal/", "--since", since, "--all"}
@@ -159,10 +212,16 @@ func SendLogs(l LogsSender) error {
 		return err
 	}
 
-	if config.LogsSenderConfig.InstallerGatherlogging && config.LogsSenderConfig.IsBootstrap {
-		if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
-			log.WithError(err).Error("Failed to gather installer logs")
-			return err
+	if config.LogsSenderConfig.InstallerGatherlogging {
+		if config.LogsSenderConfig.IsBootstrap {
+			if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
+				log.WithError(err).Error("Failed to gather installer logs")
+				return err
+			}
+		}
+
+		if err := l.GatherErrorLogs(logsTmpFilesDir); err != nil {
+			log.WithError(err).Error("Failed to gather coredumps and dmesg (ignoring for getting other logs)")
 		}
 	}
 

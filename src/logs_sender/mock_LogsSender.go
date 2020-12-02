@@ -138,6 +138,20 @@ func (_m *MockLogsSender) FileUploader(filePath string, clusterID strfmt.UUID, h
 	return r0
 }
 
+// GatherErrorLogs provides a mock function with given fields: targetDir
+func (_m *MockLogsSender) GatherErrorLogs(targetDir string) error {
+	ret := _m.Called(targetDir)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(targetDir)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GatherInstallerLogs provides a mock function with given fields: targetDir
 func (_m *MockLogsSender) GatherInstallerLogs(targetDir string) error {
 	ret := _m.Called(targetDir)

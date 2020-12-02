@@ -136,21 +136,22 @@ func getDmesgLogs(l LogsSender, outputFilePath string) error {
 
 func getCoreDumps(l LogsSender, targetDir string) error {
 	log.Infof("Get coredump files")
-	coredumpPath := "/var/lib/systemd/coredump/"
-	stdout, stderr, exitCode := l.Execute("ls", coredumpPath)
+	stdout, stderr, exitCode := l.Execute("coredumpctl", "list", "--no-legend")
 	if exitCode != 0 {
-		err := errors.Errorf(stderr)
-		log.WithError(err).Errorf("Failed to list coredump files")
-		return err
+		log.Infof("Couldn't fetch coredump list: %s", stderr)
+		return nil
 	}
 
-	files := strings.Split(strings.TrimSuffix(stdout, "\n"), "\n")
-	for _, file := range files {
-		outputFile := path.Join(targetDir, fmt.Sprintf("coredump_%s", file))
-		stderr, exitCode := l.ExecuteOutputToFile(outputFile, "cat", coredumpPath + file)
+	dumps := strings.Split(strings.TrimSuffix(stdout, "\n"), "\n")
+	for _, dump := range dumps {
+		fields := strings.Fields(dump)
+		pid := fields[4]
+		exe := filepath.Base(fields[9])
+		outputFile := path.Join(targetDir, fmt.Sprintf("coredump_exe_%s_pid_%s", exe, pid))
+		_, stderr, exitCode := l.Execute("coredumpctl", "dump", pid, "--output", outputFile)
 		if exitCode != 0 {
 			err := errors.Errorf(stderr)
-			log.WithError(err).Errorf("Failed to read coredump file: %s", file)
+			log.WithError(err).Errorf("Failed to read coredump for PID: %s", pid)
 			return err
 		}
 	}

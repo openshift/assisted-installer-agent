@@ -15,7 +15,7 @@ func main() {
 	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	util.SetLogging("connectivity-check", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
 	if flag.NArg() != 1 {
-		log.Warnf("Expecting exactly single argument to connectivity check. Recieved %d", len(os.Args)-1)
+		log.Warnf("Expecting exactly single argument to connectivity check. Received %d", len(os.Args)-1)
 		os.Exit(-1)
 	}
 	stdout, stderr, exitCode := commands.ConnectivityCheck("", flag.Arg(0))

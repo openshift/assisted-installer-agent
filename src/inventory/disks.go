@@ -74,13 +74,10 @@ func (d *disks) getSMART(path string) string {
 		return ""
 	}
 
-	stdout, stderr, exitCode := d.dependencies.Execute("smartctl", "--xall", "--json=c", path)
-
-	if exitCode != 0 {
-		logrus.Warnf("Could not get S.M.A.R.T. information for path %s: (smartctl exit code %d) %s",
-			path, exitCode, stderr)
-		return ""
-	}
+	// We ignore the exit code and stderr because stderr is empty and
+	// stdout contains the exit code in `--json=c` mode. Whatever the exit
+	// code is, we want to relay the information to the service
+	stdout, _, _ := d.dependencies.Execute("smartctl", "--xall", "--json=c", path)
 
 	return stdout
 }

@@ -99,12 +99,13 @@ var _ = Describe("Disks test", func() {
 		It("Without a smartctl error", func() {
 			dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return(" DOS/MBR boot sector", "", 0).Once()
 			dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 0).Once()
+			expectation[0].Smart = `{"some": "json"}`
 		})
 
-		It("With a smartctl error", func() {
+		It("With a smartctl error - make sure JSON is still transmitted", func() {
 			dependencies.On("Execute", "file", "-s", "/dev/foo/disk1").Return(" DOS/MBR boot sector", "", 0).Once()
-			dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "error"}`, "", 2).Once()
-			expectation[0].Smart = ""
+			dependencies.On("Execute", "smartctl", "--xall", "--json=c", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 1).Once()
+			expectation[0].Smart = `{"some": "json"}`
 		})
 
 		AfterEach(func() {

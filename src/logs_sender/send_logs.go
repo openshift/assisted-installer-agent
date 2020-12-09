@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/pkg/errors"
 
@@ -23,6 +24,10 @@ const (
 	logsDir                      = "/var/log"
 	installerGatherBin           = "/usr/local/bin/installer-gather.sh"
 	installerGatherArchivePreifx = "/root/log-bundle-"
+	findmnt                      = "/usr/bin/findmnt"
+	pvdisplay                    = "/usr/sbin/pvdisplay"
+	vgdisplay                    = "/usr/sbin/vgdisplay"
+	lvdisplay                    = "/usr/sbin/lvdisplay"
 )
 
 //go:generate mockery -name LogsSender -inpkg
@@ -90,14 +95,14 @@ func (e *LogsSenderExecuter) GatherInstallerLogs(targetDir string) error {
 	installerGatherArgs := append([]string{"--id", gatherID}, mastersIPs...)
 	log.Infof("Running %s %v", installerGatherBin, installerGatherArgs)
 	// installer-gather.sh is written in such a way it always return 0.
-	stdOut, stdErr, _ := e.ExecutePrivileged(installerGatherBin, installerGatherArgs...)
+	stdOut, stdErr, exitCode := e.ExecutePrivileged(installerGatherBin, installerGatherArgs...)
 	for _, so := range strings.Split(stdOut, "\n") {
 		log.Infof("installer-gather log: %s", so)
 	}
-	if stdErr != "" {
+	if stdErr != "" || exitCode != 0 {
 		log.WithError(errors.New(stdErr)).Warnf("Failed to run %s %v", installerGatherBin, installerGatherArgs)
 	}
-	_, stdErr, exitCode := e.ExecutePrivileged("mv", fmt.Sprintf("%s%s.tar.gz", installerGatherArchivePreifx, gatherID), targetDir)
+	_, stdErr, exitCode = e.ExecutePrivileged("mv", fmt.Sprintf("%s%s.tar.gz", installerGatherArchivePreifx, gatherID), targetDir)
 	if exitCode != 0 {
 		err := errors.New(stdErr)
 		log.WithError(err).Errorf("Failed to: mv %s %s", fmt.Sprintf("%s%s.tar.gz", installerGatherArchivePreifx, gatherID), targetDir)
@@ -107,20 +112,52 @@ func (e *LogsSenderExecuter) GatherInstallerLogs(targetDir string) error {
 }
 
 func (e *LogsSenderExecuter) GatherErrorLogs(targetDir string) error {
+	var result error
+
 	// Write the entire output of dmesg
 	outputFile := path.Join(targetDir, "dmesg.logs")
-	err := getDmesgLogs(e, outputFile)
-	if err != nil {
-		return err
+	if err := getDmesgLogs(e, outputFile); err != nil {
+		result = multierror.Append(result, err)
 	}
 
 	// Write coredump files
-	err = getCoreDumps(e, targetDir)
+	if err := getCoreDumps(e, targetDir); err != nil {
+		result = multierror.Append(result, err)
+	}
+
+	return result
+}
+
+func getMountLogs(l LogsSender, outputFilePath string) error {
+	var result error
+
+	logfile, err := os.Create(outputFilePath)
 	if err != nil {
 		return err
 	}
+	defer logfile.Close()
+	
+	log.Infof("Running findmnt")
+	if err = util.ExecutePrivilegedToFile(logfile, findmnt, "--df"); err != nil {
+		result = multierror.Append(result, err)
+	}
+	
+	log.Infof("Running pvdisplay")
+	if err = util.ExecutePrivilegedToFile(logfile, pvdisplay, "-v"); err != nil {
+		result = multierror.Append(result, err)
+	}
 
-	return nil
+	log.Infof("Running vgdisplay")
+	if err = util.ExecutePrivilegedToFile(logfile, vgdisplay, "-v"); err != nil {
+		result = multierror.Append(result, err)
+	}
+
+	log.Infof("Running lvdisplay")
+	if err = util.ExecutePrivilegedToFile(logfile, lvdisplay, "-v"); err != nil {
+		result = multierror.Append(result, err)
+	}
+
+	return result
 }
 
 func getDmesgLogs(l LogsSender, outputFilePath string) error {
@@ -196,9 +233,10 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 	return nil
 }
 
-func SendLogs(l LogsSender) error {
+func SendLogs(l LogsSender) (error, string) {
+	var result error
 	log.Infof("Start gathering journalctl logs with tags %s, services %s and installer-gather",
-		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)
+		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)	
 	archivePath := fmt.Sprintf("%s/logs.tar.gz", logsDir)
 	logsTmpFilesDir := path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
 
@@ -210,45 +248,54 @@ func SendLogs(l LogsSender) error {
 	}()
 	if err := l.CreateFolderIfNotExist(logsTmpFilesDir); err != nil {
 		log.WithError(err).Errorf("Failed to create directory %s", logsTmpFilesDir)
-		return err
+		return err, ""
 	}
 
 	if config.LogsSenderConfig.InstallerGatherlogging {
 		if config.LogsSenderConfig.IsBootstrap {
 			if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
 				log.WithError(err).Error("Failed to gather installer logs")
-				return err
+				result = multierror.Append(result, err)
 			}
 		}
 
 		if err := l.GatherErrorLogs(logsTmpFilesDir); err != nil {
 			log.WithError(err).Error("Failed to gather coredumps and dmesg (ignoring for getting other logs)")
+			result = multierror.Append(result, err)
 		}
+	}
+
+	outputFile := path.Join(logsTmpFilesDir, "mount.logs")
+	if err := getMountLogs(l, outputFile); err != nil {
+		result = multierror.Append(result, err)
 	}
 
 	for _, tag := range config.LogsSenderConfig.Tags {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
-		err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
-			[]string{fmt.Sprintf("TAG=%s", tag)})
-		if err != nil {
-			return err
-		}
+		if err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
+			[]string{fmt.Sprintf("TAG=%s", tag)}); err != nil {
+				result = multierror.Append(result, err)
+			}
 	}
 
 	for _, service := range config.LogsSenderConfig.Services {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
-		err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
-			[]string{"-u", service})
-		if err != nil {
-			return err
-		}
+		if err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
+			[]string{"-u", service}); err != nil {
+				result = multierror.Append(result, err)
+			}
 	}
 
+	var report = ""
+	if result != nil {
+		report = result.Error() 
+	} 
+
 	if err := archiveFilesInFolder(l, logsTmpFilesDir, archivePath); err != nil {
-		return err
+		return err, report
 	}
 
 	return uploadLogs(l, archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
-		config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion)
+		config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion), report
 }

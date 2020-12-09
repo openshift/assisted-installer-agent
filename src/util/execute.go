@@ -2,6 +2,7 @@ package util
 
 import (
 	bytes2 "bytes"
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -38,7 +39,18 @@ func Execute(command string, args ...string) (stdout string, stderr string, exit
 	cmd.Stdout = &stdoutBytes
 	cmd.Stderr = &stderrBytes
 	err := cmd.Run()
-	return string(stdoutBytes.Bytes()), getErrorStr(err, &stderrBytes), getExitCode(err)
+	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
+}
+
+func ExecutePrivilegedToFile(logfile *os.File, command string, args ...string) (error) {
+	_, _ = logfile.WriteString(fmt.Sprintf("%s\n", command))
+	stdout, stderr, exitcode := ExecutePrivileged(command, args...)
+	if (stderr != "" || exitcode != 0) {
+		_, _ = logfile.WriteString(fmt.Sprintf("%s\n", stderr))
+		return fmt.Errorf("%s failed: %d %s\n", command, exitcode, stderr)
+	}
+	_, err := logfile.WriteString(fmt.Sprintf("%s\n", stdout))
+	return err
 }
 
 func ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {

@@ -13,10 +13,11 @@ import (
 func main() {
 	config.ProcessLogsSenderConfigArgs(true, true)
 	util.SetLogging("logs-sender", config.LogsSenderConfig.TextLogging, config.LogsSenderConfig.JournalLogging)
-	err := logs_sender.SendLogs(&logs_sender.LogsSenderExecuter{})
+	err, report := logs_sender.SendLogs(&logs_sender.LogsSenderExecuter{})
 	if err != nil {
 		fmt.Println("Failed to run send logs ", err.Error())
 		os.Exit(-1)
 	}
 	fmt.Println("Logs were sent")
+	fmt.Println(report)
 }

@@ -46,18 +46,18 @@ var _ = Describe("logs sender", func() {
 			Return(nil)
 	}
 
-	executeOutputToFileSuccess := func() {
+	executeOutputToFileSuccess := func(retVal int) {
 		for _, tag := range config.LogsSenderConfig.Tags {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
 			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
 				"--since", config.LogsSenderConfig.Since, "--all", fmt.Sprintf("TAG=%s", tag)).
-				Return("Dummy", 0)
+				Return("Dummy", retVal)
 		}
 		for _, service := range config.LogsSenderConfig.Services {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
 			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
 				"--since", config.LogsSenderConfig.Since, "--all", "-u", service).
-				Return("Dummy", 0)
+				Return("Dummy", retVal)
 		}
 	}
 
@@ -88,53 +88,56 @@ var _ = Describe("logs sender", func() {
 	It("CreateFolderIfNotExist failed", func() {
 		logsSenderMock.On("CreateFolderIfNotExist", logsTmpFilesDir).
 			Return(errors.Errorf("Dummy"))
-		err := SendLogs(logsSenderMock)
+		err, report := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
+		Expect(report).To(Equal(""))
 	})
 
 	It("GatherInstallerLogs failed", func() {
 		folderSuccess()
+		gatherErrorLogsSuccess()
+		executeOutputToFileSuccess(0)
+		archiveSuccess()
+		fileUploaderSuccess()
 		logsSenderMock.On("GatherInstallerLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
-		err := SendLogs(logsSenderMock)
-		fmt.Println(err)
-		Expect(err).To(HaveOccurred())
+		err, report := SendLogs(logsSenderMock)
+		Expect(err).To(Not(HaveOccurred()))
+		Expect(report).To(ContainSubstring("Dummy"))
 	})
 
 	It("GatherErrorLogs failed", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
-		executeOutputToFileSuccess()
+		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
 		logsSenderMock.On("GatherErrorLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
-		err := SendLogs(logsSenderMock)
-		fmt.Println(err)
+		err, report := SendLogs(logsSenderMock)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(report).To(ContainSubstring("Dummy"))
 	})
 
 	It("ExecuteOutputToFile failed", func() {
-		folderSuccess()
 		config.LogsSenderConfig.InstallerGatherlogging = false
-		outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", config.LogsSenderConfig.Tags[0]))
-		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-			"--since", config.LogsSenderConfig.Since, "--all", fmt.Sprintf("TAG=%s", config.LogsSenderConfig.Tags[0])).
-			Return("Dummy", -1)
-		err := SendLogs(logsSenderMock)
-		fmt.Println(err)
-		Expect(err).To(HaveOccurred())
+		folderSuccess()
+		archiveSuccess()
+		fileUploaderSuccess()
+		executeOutputToFileSuccess(-1)
+		err, report := SendLogs(logsSenderMock)
+		Expect(err).To(Not(HaveOccurred()))
+		Expect(report).To(ContainSubstring("Dummy"))
 	})
 
 	It("Archive failed", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
 		gatherErrorLogsSuccess()
-		executeOutputToFileSuccess()
+		executeOutputToFileSuccess(0)
 		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, "-C", filepath.Dir(logsTmpFilesDir),
 			filepath.Base(logsTmpFilesDir)).
 			Return("Dummy", "Dummy", -1)
-		err := SendLogs(logsSenderMock)
-		fmt.Println(err)
+		err, _ := SendLogs(logsSenderMock)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -142,12 +145,12 @@ var _ = Describe("logs sender", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
 		gatherErrorLogsSuccess()
-		executeOutputToFileSuccess()
+		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
 			Return(errors.Errorf("Dummy"))
-		err := SendLogs(logsSenderMock)
+		err, _ := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
 	})
@@ -156,10 +159,10 @@ var _ = Describe("logs sender", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
 		gatherErrorLogsSuccess()
-		executeOutputToFileSuccess()
+		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
-		err := SendLogs(logsSenderMock)
+		err, _ := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).NotTo(HaveOccurred())
 	})

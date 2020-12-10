@@ -35,13 +35,13 @@ var _ = Describe("API connectivity check test", func() {
 		It("Invalid ignition file format", func() {
 			srv = serverMock(ignitionMockInvalid)
 			_, _, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false), log)
-			Expect(exitCode).Should(Equal(-1))
+			Expect(exitCode).Should(Equal(0))
 		})
 
 		It("Empty ignition", func() {
 			srv = serverMock(ignitionMockEmpty)
 			_, _, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false), log)
-			Expect(exitCode).Should(Equal(-1))
+			Expect(exitCode).Should(Equal(0))
 		})
 	})
 
@@ -49,7 +49,7 @@ var _ = Describe("API connectivity check test", func() {
 		It("Invalid API URL", func() {
 			url := "http://127.0.0.1:2345"
 			_, _, exitCode := CheckAPIConnectivity(getRequestStr(&url, false), log)
-			Expect(exitCode).Should(Equal(-1))
+			Expect(exitCode).Should(Equal(0))
 		})
 
 		It("Missing API URL", func() {

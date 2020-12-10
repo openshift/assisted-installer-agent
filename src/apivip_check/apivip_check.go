@@ -22,33 +22,33 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 	if err := json.Unmarshal([]byte(checkAPIRequestStr), &checkAPIRequest); err != nil {
 		wrapped := errors.Wrap(err, "Error unmarshaling APIVipConnectivityRequest")
 		log.WithError(err).Error(wrapped.Error())
-		return createRepsonse(false), wrapped.Error(), -1
+		return createResponse(false), wrapped.Error(), -1
 	}
 
 	if checkAPIRequest.URL == nil {
 		err := errors.New("Missing URL in checkAPIRequest")
 		log.WithError(err).Error(err.Error())
-		return createRepsonse(false), err.Error(), -1
+		return createResponse(false), err.Error(), -1
 	}
 	
 	if err := httpDownload(*checkAPIRequest.URL + WorkerIgnitionPath); err != nil {
 		wrapped := errors.Wrap(err, "Failed to download worker.ign file")
 		log.WithError(err).Error(wrapped.Error())
-		return createRepsonse(false), wrapped.Error(), -1
+		return createResponse(false), wrapped.Error(), 0
 	}
 
 	if checkAPIRequest.VerifyCidr {
 		if err := verifyCIDR(*checkAPIRequest.URL); err != nil {
 			wrapped := errors.Wrap(err, "CheckAPIConnectivity: failure verifying CIDR of API VIP")
 			log.WithError(err).Error(wrapped.Error())
-			return createRepsonse(false), wrapped.Error(), -1
+			return createResponse(false), wrapped.Error(), 0
 		}
 	}
 
-	return createRepsonse(true), "", 0
+	return createResponse(true), "", 0
 }
 
-func createRepsonse(success bool) string {
+func createResponse(success bool) string {
 	checkAPIResponse := models.APIVipConnectivityResponse{
 		IsSuccess: success,
 	}

@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/jaypipes/ghw"
-	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/vishvananda/netlink"
+
+	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
 //go:generate mockery -name IDependencies -inpkg

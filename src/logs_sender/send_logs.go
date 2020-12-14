@@ -173,7 +173,7 @@ func getDmesgLogs(l LogsSender, outputFilePath string) error {
 
 func getCoreDumps(l LogsSender, targetDir string) error {
 	log.Infof("Get coredump files")
-	stdout, stderr, exitCode := l.Execute("coredumpctl", "list", "--no-legend")
+	stdout, stderr, exitCode := l.ExecutePrivileged("coredumpctl", "list", "--no-legend")
 	if exitCode != 0 {
 		log.Infof("Couldn't fetch coredump list: %s", stderr)
 		return nil
@@ -185,7 +185,7 @@ func getCoreDumps(l LogsSender, targetDir string) error {
 		pid := fields[4]
 		exe := filepath.Base(fields[9])
 		outputFile := path.Join(targetDir, fmt.Sprintf("coredump_exe_%s_pid_%s", exe, pid))
-		_, stderr, exitCode := l.Execute("coredumpctl", "dump", pid, "--output", outputFile)
+		_, stderr, exitCode := l.ExecutePrivileged("coredumpctl", "dump", pid, "--output", outputFile)
 		if exitCode != 0 {
 			err := errors.Errorf(stderr)
 			log.WithError(err).Errorf("Failed to read coredump for PID: %s", pid)

@@ -2,11 +2,13 @@ package inventory
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/jaypipes/ghw"
-	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
-	"strings"
+
+	"github.com/openshift/assisted-service/models"
 )
 
 type disks struct {
@@ -105,6 +107,10 @@ func diskIsRelevant(disk *ghw.Disk) (relevant bool, skipReasons []string) {
 		skipReasons = append(skipReasons, "Disk has unknown bus type and storage controller")
 	}
 
+	if disk.DriveType == ghw.DRIVE_TYPE_ODD {
+		skipReasons = append(skipReasons, "Disk is an optical disk drive")
+	}
+
 	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
 		return p.Type == "iso9660"
 	}), true) {
@@ -129,13 +135,14 @@ func (d *disks) getDisks() []*models.Disk {
 		logrus.WithError(err).Warnf("While getting disks info")
 		return ret
 	}
+
 	for _, disk := range blockInfo.Disks {
 		isRelevant, reasons := diskIsRelevant(disk)
 		if !isRelevant {
-			reasonsLines := strings.Join(reasons, "\n")
+			reasonsLines := strings.Join(reasons, ", ")
 			logrus.Infof(
-				"Disk (name %s bus path %s vendor %s model %s partitions %s) was found to be irrelevant for the following reasons:\n %s",
-				disk.Name, disk.BusPath, disk.Vendor, disk.Model, disk.Partitions, reasonsLines)
+				"Disk (name %s drive type %v bus path %s vendor %s model %s partitions %s) was found to be irrelevant for the following reasons: %s",
+				disk.Name, disk.DriveType.String(), disk.BusPath, disk.Vendor, disk.Model, disk.Partitions, reasonsLines)
 			continue
 		}
 

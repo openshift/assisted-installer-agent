@@ -7,8 +7,9 @@ import (
 	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
+
+	"github.com/openshift/assisted-service/models"
 )
 
 var _ = Describe("Disks test", func() {
@@ -168,6 +169,31 @@ var _ = Describe("Disks test", func() {
 							IsReadOnly: false,
 						},
 					},
+				},
+			},
+		}, nil).Once()
+		ret := GetDisks(dependencies)
+		Expect(ret).To(Equal([]*models.Disk{}))
+	})
+
+	It("filters optical disks", func() {
+		dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{
+			Disks: []*ghw.Disk{
+				{
+					Name:                   "disk",
+					SizeBytes:              5555,
+					DriveType:              ghw.DRIVE_TYPE_ODD,
+					BusPath:                "bus-path",
+					Vendor:                 "disk1-vendor",
+					Model:                  "disk1-model",
+					SerialNumber:           "disk1-serial",
+					WWN:                    "disk1-wwn",
+					BusType:                ghw.BUS_TYPE_SCSI,
+					IsRemovable:            false,
+					NUMANodeID:             0,
+					PhysicalBlockSizeBytes: 512,
+					StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+					Partitions: []*ghw.Partition{},
 				},
 			},
 		}, nil).Once()

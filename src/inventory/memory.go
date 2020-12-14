@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+
+	"github.com/openshift/assisted-service/models"
 )
 
 const (

@@ -8,8 +8,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/openshift/assisted-installer-agent/pkg/journalLogger"
 	"github.com/sirupsen/logrus"
+
+	"github.com/openshift/assisted-installer-agent/pkg/journalLogger"
 )
 
 var getLogFileWriter = func(name string) (io.Writer, error) {

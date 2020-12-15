@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -159,9 +160,52 @@ var _ = Describe("NTP synchronizer", func() {
 			var response models.NtpSynchronizationResponse
 
 			Expect(json.Unmarshal([]byte(stdout), &response)).ShouldNot(HaveOccurred())
-			Expect(response.NtpSources).ShouldNot(BeEmpty())
+			Expect(response.NtpSources).Should(HaveLen(1))
 			Expect(response.NtpSources[0].SourceName).Should(Equal(name))
 			Expect(response.NtpSources[0].SourceState).Should(Equal(convertSourceState(state)))
+		})
+
+		It("add_multiple_servers", func() {
+			names := []string{"162.159.200.1", "162.159.200.2", "162.159.200.3"}
+			name := strings.Join(names, ",")
+			state := "+"
+			output := fmt.Sprintf(`
+			210 Number of sources = %d
+			MS Name/IP address         Stratum Poll Reach LastRx Last sample
+			===============================================================================
+			^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns
+			^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns
+			^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns
+		`, len(names), state, names[0], state, names[1], state, names[2])
+
+			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return("", "", 0).Times(len(names))
+
+			for _, currName := range names {
+				ntpDependencies.On("LookupHost", currName).Return([]string{}, nil).Times(1)
+				ntpDependencies.On("Execute", "chronyc", "add", "server", currName, "iburst").Return("", "", 0).Times(1)
+			}
+
+			// Last call
+			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return(output, "", 0).Once()
+
+			request := &models.NtpSynchronizationRequest{NtpSource: &name}
+			b, err := json.Marshal(request)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			stdout, stderr, exitCode := Run(string(b), ntpDependencies, log)
+
+			Expect(exitCode).Should(BeZero())
+			Expect(stderr).Should(BeEmpty())
+
+			var response models.NtpSynchronizationResponse
+
+			Expect(json.Unmarshal([]byte(stdout), &response)).ShouldNot(HaveOccurred())
+			Expect(response.NtpSources).Should(HaveLen(len(names)))
+
+			for _, currentNtpSource := range response.NtpSources {
+				Expect(names).Should(ContainElement(currentNtpSource.SourceName))
+				Expect(currentNtpSource.SourceState).Should(Equal(convertSourceState(state)))
+			}
 		})
 
 		It("add_existing_server", func() {
@@ -183,7 +227,7 @@ var _ = Describe("NTP synchronizer", func() {
 			var response models.NtpSynchronizationResponse
 
 			Expect(json.Unmarshal([]byte(stdout), &response)).ShouldNot(HaveOccurred())
-			Expect(response.NtpSources).ShouldNot(BeEmpty())
+			Expect(response.NtpSources).Should(HaveLen(1))
 			Expect(response.NtpSources[0].SourceName).Should(Equal(name))
 			Expect(response.NtpSources[0].SourceState).Should(Equal(convertSourceState(state)))
 		})

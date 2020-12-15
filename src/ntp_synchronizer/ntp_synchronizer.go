@@ -127,17 +127,8 @@ func isServerConfigured(executer NtpSynchronizerDependencies, server string) (bo
 	return false, nil
 }
 
-func Run(requestStr string, executer NtpSynchronizerDependencies, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
-	var request models.NtpSynchronizationRequest
-
-	err := json.Unmarshal([]byte(requestStr), &request)
-	if err != nil {
-		log.WithError(err).Errorf("Failed to unmarshal ntp request string %s", requestStr)
-		return "", err.Error(), -1
-	}
-
-	if request.NtpSource != nil && swag.StringValue(request.NtpSource) != "" {
-		ntpSource := swag.StringValue(request.NtpSource)
+func handleNewNtpSources(executer NtpSynchronizerDependencies, log logrus.FieldLogger, commaSeparatedNTPSources string) {
+	for _, ntpSource := range strings.Split(commaSeparatedNTPSources, ",") {
 		configured, err := isServerConfigured(executer, ntpSource)
 
 		if err != nil {
@@ -151,6 +142,20 @@ func Run(requestStr string, executer NtpSynchronizerDependencies, log logrus.Fie
 				log.WithError(err).Errorf("Failed to add NTP server %s", ntpSource)
 			}
 		}
+	}
+}
+
+func Run(requestStr string, executer NtpSynchronizerDependencies, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
+	var request models.NtpSynchronizationRequest
+
+	err := json.Unmarshal([]byte(requestStr), &request)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to unmarshal ntp request string %s", requestStr)
+		return "", err.Error(), -1
+	}
+
+	if request.NtpSource != nil && swag.StringValue(request.NtpSource) != "" {
+		handleNewNtpSources(executer, log, swag.StringValue(request.NtpSource))
 	}
 
 	sources, err := getNTPSources(executer)

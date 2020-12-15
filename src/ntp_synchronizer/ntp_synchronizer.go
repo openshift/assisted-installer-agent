@@ -138,13 +138,17 @@ func Run(requestStr string, executer NtpSynchronizerDependencies, log logrus.Fie
 
 	if request.NtpSource != nil && swag.StringValue(request.NtpSource) != "" {
 		ntpSource := swag.StringValue(request.NtpSource)
-		if configured, err := isServerConfigured(executer, ntpSource); err != nil {
-			log.WithError(err).Errorf("Failed to check if NTP source %s is configured", ntpSource)
-			return "", err.Error(), -1
-		} else if !configured {
+		configured, err := isServerConfigured(executer, ntpSource)
+
+		if err != nil {
+			/* In case of a failure, just log. */
+			log.WithError(err).Warnf("Failed to check if NTP source %s is configured", ntpSource)
+		}
+
+		if !configured {
 			if err = addServer(executer, ntpSource); err != nil {
+				/* In case of a failure, just log. We always want to receive the current sources from the agent */
 				log.WithError(err).Errorf("Failed to add NTP server %s", ntpSource)
-				return "", err.Error(), -1
 			}
 		}
 	}

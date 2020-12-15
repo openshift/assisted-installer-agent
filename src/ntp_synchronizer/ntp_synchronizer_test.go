@@ -213,6 +213,33 @@ var _ = Describe("NTP synchronizer", func() {
 			Expect(response.NtpSources[0].SourceName).Should(Equal(serverName))
 			Expect(response.NtpSources[0].SourceState).Should(Equal(convertSourceState(state)))
 		})
+
+		It("no_dns_resolvement", func() {
+			name := "162.159.200.1"
+			state := "+"
+			output := fmt.Sprintf("^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns", state, name)
+
+			ntpDependencies.On("Execute", "chronyc", "add", "server", name, "iburst").Return("", "", 0)
+			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return("", "", 0).Once()
+			ntpDependencies.On("LookupHost", name).Return([]string{}, errors.New("error"))
+			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return(output, "", 0).Once()
+
+			request := &models.NtpSynchronizationRequest{NtpSource: &name}
+			b, err := json.Marshal(request)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			stdout, stderr, exitCode := Run(string(b), ntpDependencies, log)
+
+			Expect(exitCode).Should(BeZero())
+			Expect(stderr).Should(BeEmpty())
+
+			var response models.NtpSynchronizationResponse
+
+			Expect(json.Unmarshal([]byte(stdout), &response)).ShouldNot(HaveOccurred())
+			Expect(response.NtpSources).ShouldNot(BeEmpty())
+			Expect(response.NtpSources[0].SourceName).Should(Equal(name))
+			Expect(response.NtpSources[0].SourceState).Should(Equal(convertSourceState(state)))
+		})
 	})
 })
 

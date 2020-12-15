@@ -3,6 +3,7 @@ package subsystem
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -83,6 +84,33 @@ var _ = Describe("NTP tests", func() {
 			Expect(ntpResponse).ShouldNot(BeNil())
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
 			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+		})
+	})
+
+	It("add_multiple_servers", func() {
+		By("Get sources", func() {
+			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
+
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			numberOfSources = len(ntpResponse.NtpSources)
+		})
+
+		Expect(resetRequests()).NotTo(HaveOccurred())
+		Expect(deleteAllStubs()).NotTo(HaveOccurred())
+
+		By("Add servers", func() {
+			servers := []string{"3.3.3.3", "4.4.4.4", "5.5.5.5"}
+			serversAsString := strings.Join(servers, ",")
+			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
+
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+
+			for _, server := range servers {
+				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+			}
 		})
 	})
 })

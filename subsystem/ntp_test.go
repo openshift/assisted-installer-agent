@@ -33,26 +33,51 @@ var _ = Describe("NTP tests", func() {
 		waitforChronyDaemonToStart(hostID)
 	})
 
-	It("add_new_server", func() {
-		By("Get sources", func() {
-			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
+	Context("add_new_server", func() {
+		It("IP", func() {
+			By("Get sources", func() {
+				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
 
-			ntpResponse := getNTPResponse(hostID)
-			Expect(ntpResponse).ShouldNot(BeNil())
-			numberOfSources = len(ntpResponse.NtpSources)
+				ntpResponse := getNTPResponse(hostID)
+				Expect(ntpResponse).ShouldNot(BeNil())
+				numberOfSources = len(ntpResponse.NtpSources)
+			})
+
+			Expect(resetRequests()).NotTo(HaveOccurred())
+			Expect(deleteAllStubs()).NotTo(HaveOccurred())
+
+			By("Add server", func() {
+				server := "1.2.3.4"
+				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
+
+				ntpResponse := getNTPResponse(hostID)
+				Expect(ntpResponse).ShouldNot(BeNil())
+				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+				Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+			})
 		})
 
-		Expect(resetRequests()).NotTo(HaveOccurred())
-		Expect(deleteAllStubs()).NotTo(HaveOccurred())
+		It("Hostname", func() {
+			By("Get sources", func() {
+				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
 
-		By("Add server", func() {
-			server := "1.1.1.1"
-			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
+				ntpResponse := getNTPResponse(hostID)
+				Expect(ntpResponse).ShouldNot(BeNil())
+				numberOfSources = len(ntpResponse.NtpSources)
+			})
 
-			ntpResponse := getNTPResponse(hostID)
-			Expect(ntpResponse).ShouldNot(BeNil())
-			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+			Expect(resetRequests()).NotTo(HaveOccurred())
+			Expect(deleteAllStubs()).NotTo(HaveOccurred())
+
+			By("Add server", func() {
+				server := "dns.google"
+				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
+
+				ntpResponse := getNTPResponse(hostID)
+				Expect(ntpResponse).ShouldNot(BeNil())
+				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+				Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
+			})
 		})
 	})
 
@@ -100,7 +125,7 @@ var _ = Describe("NTP tests", func() {
 		Expect(deleteAllStubs()).NotTo(HaveOccurred())
 
 		By("Add servers", func() {
-			servers := []string{"3.3.3.3", "4.4.4.4", "5.5.5.5"}
+			servers := []string{"1.1.1.3", "1.1.1.4", "1.1.1.5"}
 			serversAsString := strings.Join(servers, ",")
 			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
 

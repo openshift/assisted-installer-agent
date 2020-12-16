@@ -15,12 +15,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const ChronyTimeoutSeconds = 10
+const ChronyTimeoutSeconds = 30
 
 //go:generate mockery -name NtpSynchronizerDependencies -inpkg
 type NtpSynchronizerDependencies interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 	LookupHost(host string) (addrs []string, err error)
+	LookupAddr(addr string) (names []string, err error)
 }
 
 type ProcessExecuter struct{}
@@ -31,6 +32,10 @@ func (e *ProcessExecuter) Execute(command string, args ...string) (stdout string
 
 func (e *ProcessExecuter) LookupHost(host string) (addrs []string, err error) {
 	return net.LookupHost(host)
+}
+
+func (e *ProcessExecuter) LookupAddr(addr string) (names []string, err error) {
+	return net.LookupAddr(addr)
 }
 
 func convertSourceState(val string) models.SourceState {
@@ -85,7 +90,8 @@ func formatChronySourcesOutput(output string) []*models.NtpSource {
 }
 
 func getNTPSources(e NtpSynchronizerDependencies) ([]*models.NtpSource, error) {
-	stdout, stderr, exitCode := e.Execute("timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources")
+	/* If available we would like to resolve ntp sources hostnames */
+	stdout, stderr, exitCode := e.Execute("timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources")
 
 	switch exitCode {
 	case 0:
@@ -163,6 +169,24 @@ func Run(requestStr string, executer NtpSynchronizerDependencies, log logrus.Fie
 	if err != nil {
 		log.WithError(err).Errorf("Failed to get NTP sources")
 		return "", err.Error(), -1
+	}
+
+	for index, source := range sources {
+		// performs a reverse lookup for the given address
+		names, err := executer.LookupAddr(source.SourceName)
+
+		if err != nil {
+			log.WithError(err).Warnf("Failed to reverse lookup server %s", source.SourceName)
+			continue
+		}
+
+		// Sanity check
+		if len(names) == 0 {
+			log.WithError(err).Warnf("No returned hostnames nor an error was returned on reverse lookup for server %s", source.SourceName)
+			continue
+		}
+
+		sources[index].SourceName = strings.Trim(names[0], ".")
 	}
 
 	var response models.NtpSynchronizationResponse = models.NtpSynchronizationResponse{

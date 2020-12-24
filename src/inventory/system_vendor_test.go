@@ -48,6 +48,7 @@ var _ = Describe("System vendor test", func() {
 			{"VMware Virtual Platform ()", true},
 			{"Virtual Machine", true},
 			{"AHV", true},
+			{"HVM domU", true},
 			{"20T1S39D3N (LENOVO_MT_20T1_BU_Think_FM_ThinkPad T14s Gen 1)", false},
 		} {
 			Expect(isVirtual(test.Product)).Should(Equal(test.IsVm))

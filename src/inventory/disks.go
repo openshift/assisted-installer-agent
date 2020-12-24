@@ -91,41 +91,34 @@ func unknownToEmpty(value string) string {
 	return value
 }
 
-// diskIsRelevant checks if a disk is relevant for installation by testing
-// it against a list of predicates. Also returns all the reasons the disk
-// was found to be irrelevant
-func diskIsRelevant(disk *ghw.Disk) (relevant bool, skipReasons []string) {
-	if disk.IsRemovable {
-		skipReasons = append(skipReasons, "Disk is removable")
-	}
+// checkEligibility checks if a disk is eligible for installation by testing
+// it against a list of predicates. Returns all the reasons the disk
+// was found to be not eligible, or an empty slice if it was found to
+// be eligible
+func checkEligibility(disk *ghw.Disk) []string {
+	var notEligibleReasons []string
 
-	if disk.SizeBytes == 0 {
-		skipReasons = append(skipReasons, "Disk has size 0")
+	if disk.IsRemovable {
+		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
 	}
 
 	if disk.BusType == ghw.BUS_TYPE_UNKNOWN && disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN {
-		skipReasons = append(skipReasons, "Disk has unknown bus type and storage controller")
-	}
-
-	if disk.DriveType == ghw.DRIVE_TYPE_ODD {
-		skipReasons = append(skipReasons, "Disk is an optical disk drive")
+		notEligibleReasons = append(notEligibleReasons, "Disk has unknown bus type and storage controller")
 	}
 
 	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
 		return p.Type == "iso9660"
 	}), true) {
-		skipReasons = append(skipReasons, "Disk appears to be an ISO installation media (has partition with type iso9660)")
+		notEligibleReasons = append(notEligibleReasons, "Disk appears to be an ISO installation media (has partition with type iso9660)")
 	}
 
 	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
 		return strings.HasSuffix(p.MountPoint, "iso")
 	}), true) {
-		skipReasons = append(skipReasons, "Disk appears to be an ISO installation media (has partition with mountpoint suffix iso)")
+		notEligibleReasons = append(notEligibleReasons, "Disk appears to be an ISO installation media (has partition with mountpoint suffix iso)")
 	}
 
-	relevant = len(skipReasons) == 0
-
-	return
+	return notEligibleReasons
 }
 
 func (d *disks) getDisks() []*models.Disk {
@@ -137,29 +130,32 @@ func (d *disks) getDisks() []*models.Disk {
 	}
 
 	for _, disk := range blockInfo.Disks {
-		isRelevant, reasons := diskIsRelevant(disk)
-		if !isRelevant {
-			reasonsLines := strings.Join(reasons, ", ")
+		var eligibility models.DiskInstallationEligibility
+		eligibility.NotEligibleReasons = checkEligibility(disk)
+		eligibility.Eligible = len(eligibility.NotEligibleReasons) == 0
+
+		if !eligibility.Eligible {
+			reasons := strings.Join(eligibility.NotEligibleReasons, ", ")
 			logrus.Infof(
-				"Disk (name %s drive type %v bus path %s vendor %s model %s partitions %s) was found to be irrelevant for the following reasons: %s",
-				disk.Name, disk.DriveType.String(), disk.BusPath, disk.Vendor, disk.Model, disk.Partitions, reasonsLines)
-			continue
+				"Disk (name %s drive type %v bus path %s vendor %s model %s partitions %s) was found to be ineligible for installation for the following reasons: %s",
+				disk.Name, disk.DriveType.String(), disk.BusPath, disk.Vendor, disk.Model, disk.Partitions, reasons)
 		}
 
 		path := d.getPath(disk.BusPath, disk.Name)
 		rec := models.Disk{
-			ByPath:    d.getByPath(disk.BusPath),
-			Hctl:      d.getHctl(disk.Name),
-			Model:     unknownToEmpty(disk.Model),
-			Name:      disk.Name,
-			Path:      path,
-			DriveType: disk.DriveType.String(),
-			Serial:    unknownToEmpty(disk.SerialNumber),
-			SizeBytes: int64(disk.SizeBytes),
-			Vendor:    unknownToEmpty(disk.Vendor),
-			Wwn:       unknownToEmpty(disk.WWN),
-			Bootable:  d.getBootable(path),
-			Smart:     d.getSMART(path),
+			ByPath:                  d.getByPath(disk.BusPath),
+			Hctl:                    d.getHctl(disk.Name),
+			Model:                   unknownToEmpty(disk.Model),
+			Name:                    disk.Name,
+			Path:                    path,
+			DriveType:               disk.DriveType.String(),
+			Serial:                  unknownToEmpty(disk.SerialNumber),
+			SizeBytes:               int64(disk.SizeBytes),
+			Vendor:                  unknownToEmpty(disk.Vendor),
+			Wwn:                     unknownToEmpty(disk.WWN),
+			Bootable:                d.getBootable(path),
+			Smart:                   d.getSMART(path),
+			InstallationEligibility: eligibility,
 		}
 		ret = append(ret, &rec)
 	}

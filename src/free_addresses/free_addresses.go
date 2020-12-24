@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/openshift/assisted-installer-agent/src/util/nmap"
 	"github.com/pkg/errors"
 
 	"github.com/openshift/assisted-service/models"
@@ -28,26 +29,6 @@ type ProcessExecuter struct{}
 
 func (e *ProcessExecuter) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
 	return util.Execute(command, args...)
-}
-
-type status struct {
-	State  string `xml:"state,attr"`
-	Reason string `xml:"reason,attr"`
-}
-
-type address struct {
-	Addr     string `xml:"addr,attr"`
-	AddrType string `xml:"addrtype,attr"`
-}
-
-type host struct {
-	Status    status     `xml:"status"`
-	Addresses []*address `xml:"address"`
-}
-
-type nmaprun struct {
-	XMLName xml.Name `xml:"nmaprun"`
-	Hosts   []*host  `xml:"host"`
 }
 
 //  http://play.golang.org/p/m8TNTtygK0
@@ -113,7 +94,7 @@ func (s *scanner) scanSubNetwork(subNetwork string) ([]strfmt.IPv4, string, int)
 		s.log.Warnf("nmap failed with exit-code %d: %s", exitCode, e)
 		return nil, e, exitCode
 	}
-	var nmaprun nmaprun
+	var nmaprun nmap.Nmaprun
 	err = xml.Unmarshal([]byte(o), &nmaprun)
 	if err != nil {
 		s.log.WithError(err).Warn("XML Unmarshal")

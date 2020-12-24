@@ -2,12 +2,14 @@ package commands
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"net"
 	"os/exec"
 	"regexp"
 	"strings"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/openshift/assisted-installer-agent/src/util/nmap"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -122,7 +124,8 @@ func l2CheckAddressOnNic(dstAddr string, dstMac string, allDstMacs []string, src
 	if util.IsIPv4Addr(dstAddr) {
 		runArping(dstAddr, dstMac, allDstMacs, srcNic, l2chan)
 	} else {
-		runNetdisc6(dstAddr, dstMac, allDstMacs, srcNic, l2chan)
+		cmd := exec.Command("nmap", "-6", "-sn", "-n", "-oX", "-", "-e", srcNic, dstAddr)
+		analyzeNmap(dstAddr, dstMac, allDstMacs, srcNic, l2chan, cmd.Output)
 	}
 }
 
@@ -170,7 +173,7 @@ func runArping(dstAddr string, dstMac string, allDstMacs []string, srcNic string
 	}
 }
 
-func runNetdisc6(dstAddr string, dstMac string, allDstMacs []string, srcNic string, l2chan chan Any) {
+func analyzeNmap(dstAddr string, dstMac string, allDstMacs []string, srcNic string, l2chan chan Any, output func() ([]byte, error)) {
 
 	ret := &models.L2Connectivity{
 		OutgoingNic:       srcNic,
@@ -180,28 +183,44 @@ func runNetdisc6(dstAddr string, dstMac string, allDstMacs []string, srcNic stri
 		Successful:        false,
 	}
 
-	cmd := exec.Command("ndisc6", "-q", "-n", "-1", "-r", "1", "-w", "2000", dstAddr, srcNic)
-	bytes, _ := cmd.CombinedOutput()
-	lines := strings.Split(string(bytes), "\n")
-	if len(lines) == 0 {
-		log.Warnf("Missing output for ndisc6")
+	out, err := output()
+	if err != nil {
+		log.WithError(err).Warn("nmap command failed")
 		l2chan <- ret
 		return
 	}
 
-	if _, err := net.ParseMAC(lines[0]); err != nil {
-		log.WithError(err).Warnf("Unexpected output of ndisc6: %s", lines[0])
+	var nmaprun nmap.Nmaprun
+	if err := xml.Unmarshal([]byte(out), &nmaprun); err != nil {
+		log.WithError(err).Warn("Failed to un-marshal nmap XML")
 		l2chan <- ret
 		return
 	}
 
-	remoteMac := strings.ToLower(lines[0])
-	ret.RemoteMac = remoteMac
-	ret.Successful = macInDstMacs(remoteMac, allDstMacs)
-	if !ret.Successful {
-		log.Warnf("Unexpected mac address for ndisc6 %s on nic %s: %s", dstAddr, srcNic, remoteMac)
-	} else if strings.ToLower(dstMac) != remoteMac {
-		log.Infof("Received remote mac %s different then expected mac %s", remoteMac, dstMac)
+	for _, h := range nmaprun.Hosts {
+
+		if h.Status.State != "up" {
+			continue
+		}
+
+		for _, a := range h.Addresses {
+
+			if a.AddrType != "mac" {
+				continue
+			}
+
+			remoteMac := strings.ToLower(a.Addr)
+			ret.RemoteMac = remoteMac
+			ret.Successful = macInDstMacs(remoteMac, allDstMacs)
+			if !ret.Successful {
+				log.Warnf("Unexpected MAC address for nmap %s on NIC %s: %s", dstAddr, srcNic, remoteMac)
+			} else if strings.ToLower(dstMac) != remoteMac {
+				log.Infof("Received remote MAC %s different then expected MAC %s", remoteMac, dstMac)
+			}
+
+			l2chan <- ret
+			return
+		}
 	}
 
 	l2chan <- ret

@@ -5,6 +5,7 @@ pipeline {
         // Credentials
         SLACK_TOKEN = credentials('slack-token')
         QUAY_IO_CREDS = credentials('ocpmetal_cred')
+        DOCKER_IO_CREDS = credentials('dockerio_cred')
   }
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -19,6 +20,8 @@ pipeline {
             // Login to quay.io
             sh "docker login quay.io -u ${QUAY_IO_CREDS_USR} -p ${QUAY_IO_CREDS_PSW}"
             sh "podman login quay.io -u ${QUAY_IO_CREDS_USR} -p ${QUAY_IO_CREDS_PSW}"
+            sh "docker login docker.io -u ${DOCKER_IO_CREDS_USR} -p ${DOCKER_IO_CREDS_PSW}"
+            sh "podman login docker.io -u ${DOCKER_IO_CREDS_USR} -p ${DOCKER_IO_CREDS_PSW}"
         }
     }
 

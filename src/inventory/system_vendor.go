@@ -14,6 +14,7 @@ func isVirtual(product string) bool {
 		"VirtualBox",
 		"VMware",
 		"Virtual Machine",
+		"AHV",
 	} {
 		if strings.Contains(product, vmTech) {
 			return true

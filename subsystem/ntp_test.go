@@ -2,6 +2,7 @@ package subsystem
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -40,6 +41,7 @@ var _ = Describe("NTP tests", func() {
 
 				ntpResponse := getNTPResponse(hostID)
 				Expect(ntpResponse).ShouldNot(BeNil())
+				printNtpSources(ntpResponse)
 				numberOfSources = len(ntpResponse.NtpSources)
 			})
 
@@ -52,6 +54,7 @@ var _ = Describe("NTP tests", func() {
 
 				ntpResponse := getNTPResponse(hostID)
 				Expect(ntpResponse).ShouldNot(BeNil())
+				printNtpSources(ntpResponse)
 				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
 				Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 			})
@@ -63,6 +66,7 @@ var _ = Describe("NTP tests", func() {
 
 				ntpResponse := getNTPResponse(hostID)
 				Expect(ntpResponse).ShouldNot(BeNil())
+				printNtpSources(ntpResponse)
 				numberOfSources = len(ntpResponse.NtpSources)
 			})
 
@@ -75,6 +79,7 @@ var _ = Describe("NTP tests", func() {
 
 				ntpResponse := getNTPResponse(hostID)
 				Expect(ntpResponse).ShouldNot(BeNil())
+				printNtpSources(ntpResponse)
 				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
 				Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 			})
@@ -87,6 +92,7 @@ var _ = Describe("NTP tests", func() {
 
 			ntpResponse := getNTPResponse(hostID)
 			Expect(ntpResponse).ShouldNot(BeNil())
+			printNtpSources(ntpResponse)
 			numberOfSources = len(ntpResponse.NtpSources)
 		})
 
@@ -99,6 +105,7 @@ var _ = Describe("NTP tests", func() {
 		By("Add server 1st time", func() {
 			ntpResponse := getNTPResponse(hostID)
 			Expect(ntpResponse).ShouldNot(BeNil())
+			printNtpSources(ntpResponse)
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
 			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
@@ -107,6 +114,7 @@ var _ = Describe("NTP tests", func() {
 		By("Add server 2nd time", func() {
 			ntpResponse := getNTPResponse(hostID)
 			Expect(ntpResponse).ShouldNot(BeNil())
+			printNtpSources(ntpResponse)
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
 			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
@@ -118,6 +126,7 @@ var _ = Describe("NTP tests", func() {
 
 			ntpResponse := getNTPResponse(hostID)
 			Expect(ntpResponse).ShouldNot(BeNil())
+			printNtpSources(ntpResponse)
 			numberOfSources = len(ntpResponse.NtpSources)
 		})
 
@@ -131,6 +140,7 @@ var _ = Describe("NTP tests", func() {
 
 			ntpResponse := getNTPResponse(hostID)
 			Expect(ntpResponse).ShouldNot(BeNil())
+			printNtpSources(ntpResponse)
 			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 
 			for _, server := range servers {
@@ -139,6 +149,12 @@ var _ = Describe("NTP tests", func() {
 		})
 	})
 })
+
+func printNtpSources(ntpResponse *models.NtpSynchronizationResponse) {
+	for _, source := range ntpResponse.NtpSources {
+		fmt.Println(source.SourceName, source.SourceState)
+	}
+}
 
 func isSourceInList(sourceName string, ls []*models.NtpSource) bool {
 	for _, source := range ls {

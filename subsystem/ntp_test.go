@@ -18,8 +18,9 @@ const (
 
 var _ = Describe("NTP tests", func() {
 	var (
-		hostID          string
-		numberOfSources int
+		hostID           string
+		numberOfSources  int
+		originalResponse *models.NtpSynchronizationResponse
 	)
 
 	BeforeEach(func() {
@@ -27,74 +28,41 @@ var _ = Describe("NTP tests", func() {
 		hostID = nextHostID()
 		numberOfSources = 0
 
-		addChronyDaemonStub(hostID)
-		_, _ = addRegisterStub(hostID, http.StatusCreated, ClusterID)
-		setReplyStartAgent(hostID)
-		waitforChronyDaemonToStart(hostID)
+		// Get sources
+		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{})
+
+		originalResponse = getNTPResponse(hostID)
+		Expect(originalResponse).ShouldNot(BeNil())
+		numberOfSources = len(originalResponse.NtpSources)
+
+		resetAll()
 	})
 
 	Context("add_new_server", func() {
 		It("IP", func() {
-			By("Get sources", func() {
-				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
+			server := "1.2.3.4"
+			startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
-				ntpResponse := getNTPResponse(hostID)
-				Expect(ntpResponse).ShouldNot(BeNil())
-				numberOfSources = len(ntpResponse.NtpSources)
-			})
-
-			Expect(resetRequests()).NotTo(HaveOccurred())
-			Expect(deleteAllStubs()).NotTo(HaveOccurred())
-
-			By("Add server", func() {
-				server := "1.2.3.4"
-				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
-
-				ntpResponse := getNTPResponse(hostID)
-				Expect(ntpResponse).ShouldNot(BeNil())
-				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-				Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
-			})
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
 
 		It("Hostname", func() {
-			By("Get sources", func() {
-				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
+			server := "dns.google"
+			startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
-				ntpResponse := getNTPResponse(hostID)
-				Expect(ntpResponse).ShouldNot(BeNil())
-				numberOfSources = len(ntpResponse.NtpSources)
-			})
-
-			Expect(resetRequests()).NotTo(HaveOccurred())
-			Expect(deleteAllStubs()).NotTo(HaveOccurred())
-
-			By("Add server", func() {
-				server := "dns.google"
-				setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
-
-				ntpResponse := getNTPResponse(hostID)
-				Expect(ntpResponse).ShouldNot(BeNil())
-				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-				Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
-			})
+			ntpResponse := getNTPResponse(hostID)
+			Expect(ntpResponse).ShouldNot(BeNil())
+			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
 	})
 
 	It("add_existing_server", func() {
-		By("Get sources", func() {
-			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
-
-			ntpResponse := getNTPResponse(hostID)
-			Expect(ntpResponse).ShouldNot(BeNil())
-			numberOfSources = len(ntpResponse.NtpSources)
-		})
-
-		Expect(resetRequests()).NotTo(HaveOccurred())
-		Expect(deleteAllStubs()).NotTo(HaveOccurred())
-
 		server := "2.2.2.2"
-		setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
+		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
 		By("Add server 1st time", func() {
 			ntpResponse := getNTPResponse(hostID)
@@ -113,32 +81,28 @@ var _ = Describe("NTP tests", func() {
 	})
 
 	It("add_multiple_servers", func() {
-		By("Get sources", func() {
-			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{})
+		servers := []string{"1.1.1.3", "1.1.1.4", "1.1.1.5"}
+		serversAsString := strings.Join(servers, ",")
+		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
 
-			ntpResponse := getNTPResponse(hostID)
-			Expect(ntpResponse).ShouldNot(BeNil())
-			numberOfSources = len(ntpResponse.NtpSources)
-		})
+		ntpResponse := getNTPResponse(hostID)
+		Expect(ntpResponse).ShouldNot(BeNil())
+		Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 
-		Expect(resetRequests()).NotTo(HaveOccurred())
-		Expect(deleteAllStubs()).NotTo(HaveOccurred())
-
-		By("Add servers", func() {
-			servers := []string{"1.1.1.3", "1.1.1.4", "1.1.1.5"}
-			serversAsString := strings.Join(servers, ",")
-			setNTPSyncRequestStub(hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
-
-			ntpResponse := getNTPResponse(hostID)
-			Expect(ntpResponse).ShouldNot(BeNil())
-			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
-
-			for _, server := range servers {
-				Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-			}
-		})
+		for _, server := range servers {
+			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
+		}
 	})
 })
+
+func startNTPSynchronizer(hostId string, request models.NtpSynchronizationRequest) {
+	addChronyDaemonStub(hostId)
+	_, _ = addRegisterStub(hostId, http.StatusCreated, ClusterID)
+	setReplyStartAgent(hostId)
+	waitforChronyDaemonToStart(hostId)
+
+	setNTPSyncRequestStub(hostId, request)
+}
 
 func isSourceInList(sourceName string, ls []*models.NtpSource) bool {
 	for _, source := range ls {

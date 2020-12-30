@@ -442,9 +442,9 @@ func stopContainer(name string) error {
 }
 
 func resetAll() {
+	Expect(stopAgent()).NotTo(HaveOccurred())
 	Expect(resetRequests()).NotTo(HaveOccurred())
 	Expect(deleteAllStubs()).NotTo(HaveOccurred())
-	Expect(stopAgent()).NotTo(HaveOccurred())
 }
 
 func nextHostID() string {

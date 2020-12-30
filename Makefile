@@ -38,6 +38,8 @@ unit-test: $(REPORTS)
 
 subsystem: build-image
 	$(DOCKER_COMPOSE) up --build -d
+	-rm -rf $(ROOT_DIR)/subsystem/data/dhcpd.leases*
+	touch $(ROOT_DIR)/subsystem/data/dhcpd.leases
 	$(MAKE) _test TEST_SCENARIO=subsystem TEST="./subsystem/..." SKIP="system-test" || ($(DOCKER_COMPOSE) down && /bin/false)
 	$(DOCKER_COMPOSE) down
 

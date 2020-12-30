@@ -30,20 +30,20 @@ services:
       ]
 
   dhcpd:
-    image: networkboot/dhcpd
+    image: quay.io/cloudctl/dhcp:ubi
     container_name: dhcpd
     cap_add:
-      - net_raw
+      - NET_ADMIN
     volumes:
-      - ${ROOT_DIR}/subsystem/data:/data
+      - ${ROOT_DIR}/subsystem/data:/etc/dhcp:z
+      - ${ROOT_DIR}/subsystem/data:/tmp/leases:z
     networks:
       agent_network:
     environment:
       - ROOT_DIR
-    command: eth0
 
   wiremock:
-    image: "rodolpheche/wiremock"
+    image: quay.io/ocpmetal/wiremock
     ports:
       - "${WIREMOCK_PORT}:${WIREMOCK_PORT}"
     networks:

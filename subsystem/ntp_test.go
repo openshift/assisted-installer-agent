@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/models"
+	"github.com/thoas/go-funk"
 )
 
 const (
@@ -19,25 +20,12 @@ const (
 
 var _ = Describe("NTP tests", func() {
 	var (
-		hostID           string
-		numberOfSources  int
-		originalResponse *models.NtpSynchronizationResponse
+		hostID string
 	)
 
 	BeforeEach(func() {
 		resetAll()
 		hostID = nextHostID()
-		numberOfSources = 0
-
-		// Get sources
-		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{})
-
-		originalResponse = getNTPResponse(hostID)
-		printNtpSources(originalResponse)
-		Expect(originalResponse).ShouldNot(BeNil())
-		numberOfSources = len(originalResponse.NtpSources)
-
-		resetAll()
 	})
 
 	Context("add_new_server", func() {
@@ -45,22 +33,20 @@ var _ = Describe("NTP tests", func() {
 			server := "1.2.3.4"
 			startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
-			ntpResponse := getNTPResponse(hostID)
+			ntpResponse := getNTPResponse(hostID, []string{server})
 			Expect(ntpResponse).ShouldNot(BeNil())
 			printNtpSources(ntpResponse)
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
 
 		It("Hostname", func() {
 			server := "dns.google"
 			startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
-			ntpResponse := getNTPResponse(hostID)
+			ntpResponse := getNTPResponse(hostID, []string{server})
 			Expect(ntpResponse).ShouldNot(BeNil())
 			printNtpSources(ntpResponse)
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
 	})
 
@@ -69,20 +55,18 @@ var _ = Describe("NTP tests", func() {
 		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
 		By("Add server 1st time", func() {
-			ntpResponse := getNTPResponse(hostID)
+			ntpResponse := getNTPResponse(hostID, []string{server})
 			Expect(ntpResponse).ShouldNot(BeNil())
 			printNtpSources(ntpResponse)
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
 
 		// 2nd time
 		By("Add server 2nd time", func() {
-			ntpResponse := getNTPResponse(hostID)
+			ntpResponse := getNTPResponse(hostID, []string{server})
 			Expect(ntpResponse).ShouldNot(BeNil())
 			printNtpSources(ntpResponse)
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
-			Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 		})
 	})
 
@@ -91,10 +75,9 @@ var _ = Describe("NTP tests", func() {
 		serversAsString := strings.Join(servers, ",")
 		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
 
-		ntpResponse := getNTPResponse(hostID)
+		ntpResponse := getNTPResponse(hostID, servers)
 		Expect(ntpResponse).ShouldNot(BeNil())
 		printNtpSources(ntpResponse)
-		Expect(len(ntpResponse.NtpSources)).Should(BeNumerically(">", numberOfSources))
 
 		for _, server := range servers {
 			Expect(isSourceInList(server, ntpResponse.NtpSources)).Should(BeTrue())
@@ -104,7 +87,7 @@ var _ = Describe("NTP tests", func() {
 
 func printNtpSources(ntpResponse *models.NtpSynchronizationResponse) {
 	for _, source := range ntpResponse.NtpSources {
-		fmt.Printf("NTP source %s - %s", source.SourceName, source.SourceState)
+		fmt.Printf("NTP source %s - %s\n", source.SourceName, source.SourceState)
 	}
 }
 
@@ -145,16 +128,18 @@ func setNTPSyncRequestStub(hostID string, request models.NtpSynchronizationReque
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func getNTPResponse(hostID string) *models.NtpSynchronizationResponse {
+func getNTPResponse(hostID string, expectedNtpSources []string) *models.NtpSynchronizationResponse {
 	Eventually(func() bool {
-		return isReplyFound(hostID, &NTPSynchronizerVerifier{})
+		return isReplyFound(hostID, &NTPSynchronizerVerifier{expectedNtpSources})
 	}, 30*time.Second, timeBetweenSteps*time.Second).Should(BeTrue())
 
-	stepReply := getSpecificStep(hostID, &NTPSynchronizerVerifier{})
+	stepReply := getSpecificStep(hostID, &NTPSynchronizerVerifier{expectedNtpSources})
 	return getNTPResponseFromStepReply(stepReply)
 }
 
-type NTPSynchronizerVerifier struct{}
+type NTPSynchronizerVerifier struct {
+	expectedNtpSources []string
+}
 
 func (i *NTPSynchronizerVerifier) verify(actualReply *models.StepReply) bool {
 	if actualReply.ExitCode != 0 {
@@ -170,6 +155,19 @@ func (i *NTPSynchronizerVerifier) verify(actualReply *models.StepReply) bool {
 	if err != nil {
 		log.Errorf("NTPSynchronizerVerifier failed to unmarshal %s", actualReply.Output)
 		return false
+	}
+
+	// Verify the response have all the verifier expectedNtpSources
+	names := make([]string, len(response.NtpSources))
+
+	for index, source := range response.NtpSources {
+		names[index] = source.SourceName
+	}
+
+	for _, source := range i.expectedNtpSources {
+		if !funk.Contains(names, source) {
+			return false
+		}
 	}
 
 	return true

@@ -37,7 +37,11 @@ func (p *PerfCheck) FioPerfCheck(fioPerfCheckRequestStr string, log logrus.Field
 	if err != nil {
 		log.WithError(err).Warnf("Failed to get disk's I/O performance: %s", *fioPerfCheckRequest.Path)
 		return createResponse(-1), err.Error(), -1
-	} else if diskPerf > *fioPerfCheckRequest.DurationThreshold {
+	}
+
+	log.Infof("FIO result on disk %s :fdatasync duration %d ms , threshold: %d ms", *fioPerfCheckRequest.Path, diskPerf, *fioPerfCheckRequest.DurationThreshold)
+
+	if diskPerf > *fioPerfCheckRequest.DurationThreshold {
 		// If the 99th percentile of fdatasync durations is more than 10ms, it's not fast enough for etcd.
 		// See: https://www.ibm.com/cloud/blog/using-fio-to-tell-whether-your-storage-is-fast-enough-for-etcd
 		log.WithError(err).Errorf("Disk %s is not fast enough for installation (fdatasync duration: %d)", 

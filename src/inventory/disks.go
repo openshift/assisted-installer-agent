@@ -94,10 +94,9 @@ func unknownToEmpty(value string) string {
 // checkEligibility checks if a disk is eligible for installation by testing
 // it against a list of predicates. Returns all the reasons the disk
 // was found to be not eligible, or an empty slice if it was found to
-// be eligible
-func checkEligibility(disk *ghw.Disk) []string {
-	var notEligibleReasons []string
-
+// be eligible. Also returns whether the disk appears to be an installation
+// media or not.
+func checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallationMedia bool) {
 	if disk.IsRemovable {
 		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
 	}
@@ -110,15 +109,17 @@ func checkEligibility(disk *ghw.Disk) []string {
 		return p.Type == "iso9660"
 	}), true) {
 		notEligibleReasons = append(notEligibleReasons, "Disk appears to be an ISO installation media (has partition with type iso9660)")
+		isInstallationMedia = true
 	}
 
 	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
 		return strings.HasSuffix(p.MountPoint, "iso")
 	}), true) {
 		notEligibleReasons = append(notEligibleReasons, "Disk appears to be an ISO installation media (has partition with mountpoint suffix iso)")
+		isInstallationMedia = true
 	}
 
-	return notEligibleReasons
+	return notEligibleReasons, isInstallationMedia
 }
 
 func (d *disks) getDisks() []*models.Disk {
@@ -131,8 +132,13 @@ func (d *disks) getDisks() []*models.Disk {
 
 	for _, disk := range blockInfo.Disks {
 		var eligibility models.DiskInstallationEligibility
-		eligibility.NotEligibleReasons = checkEligibility(disk)
+		var isInstallationMedia bool
+
+		eligibility.NotEligibleReasons, isInstallationMedia = checkEligibility(disk)
 		eligibility.Eligible = len(eligibility.NotEligibleReasons) == 0
+
+		// Optical disks should also be considered installation media
+		isInstallationMedia = isInstallationMedia || (disk.DriveType == ghw.DRIVE_TYPE_ODD)
 
 		if !eligibility.Eligible {
 			reasons := strings.Join(eligibility.NotEligibleReasons, ", ")
@@ -155,6 +161,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Wwn:                     unknownToEmpty(disk.WWN),
 			Bootable:                d.getBootable(path),
 			Smart:                   d.getSMART(path),
+			IsInstallationMedia:     isInstallationMedia,
 			InstallationEligibility: eligibility,
 		}
 		ret = append(ret, &rec)

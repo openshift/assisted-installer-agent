@@ -628,6 +628,7 @@ github.com/hashicorp/go-syslog v1.0.0/go.mod h1:qPfqrKkXGihmCqbJM2mZgkZGvKG1dFdv
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.1/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-version v1.1.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
+github.com/hashicorp/go-version v1.2.1 h1:zEfKbn2+PDgroKdiOzqiE8rsmLqU2uwi5PB5pBJ3TkI=
 github.com/hashicorp/go-version v1.2.1/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/hashicorp/go.net v0.0.1/go.mod h1:hjKkEWcCURg++eb33jQU7oqQcI9XDCnUzHA0oac0k90=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
@@ -897,6 +898,8 @@ github.com/openshift/assisted-service v1.0.10-0.20210104124153-37c09c489646 h1:Y
 github.com/openshift/assisted-service v1.0.10-0.20210104124153-37c09c489646/go.mod h1:31t21fUglmhxtwQaQ2eTr1VdRCz+klVGmXawGwyomUg=
 github.com/openshift/assisted-service v1.0.10-0.20210104135653-b59b8e02ffac h1:ACR94P8i0pHsjOT0xnl5MI7eyvsHMwb3AXQRgP2t0gI=
 github.com/openshift/assisted-service v1.0.10-0.20210104135653-b59b8e02ffac/go.mod h1:31t21fUglmhxtwQaQ2eTr1VdRCz+klVGmXawGwyomUg=
+github.com/openshift/assisted-service v1.0.10-0.20210106081741-56fcb64109c9 h1:44ShuTV6x9KDqn4+hqPnfJrXh/Zmy3XQBLOS5enMQU8=
+github.com/openshift/assisted-service v1.0.10-0.20210106081741-56fcb64109c9/go.mod h1:AJwXG5NrzAd+99QVMt2W1FATwPctAVd06pki+IMxaik=
 github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe/go.mod h1:DOgBIuBcXuTD8uub0jL7h6gBdIBt3CFrwz6K2FtfMBA=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c h1:RAgi0xFIHMpsGmYEXoPyZn3Gjomkj/9aCERcqxJP7mc=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c/go.mod h1:+duukQisb5LU1bMtLalsHZc1wM69D5sH3TuiyvAQhhA=

@@ -18,13 +18,14 @@ func main() {
 	config.ProcessArgs()
 	util.SetLogging("fio-perf-check", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging)
 
+	requestStr := flag.Arg(flag.NArg()-1)
 	var fioPerfCheckRequest models.FioPerfCheckRequest
-    if err := json.Unmarshal([]byte(flag.Arg(flag.NArg()-1)), &fioPerfCheckRequest); err != nil {
-        log.Warnf("Expecting a valid request in json format as the last argument")
-        os.Exit(-1)
-    }
+	if err := json.Unmarshal([]byte(requestStr), &fioPerfCheckRequest); err != nil {
+		log.Warnf("Expecting a valid request in json format as the last argument")
+		os.Exit(-1)
+	}
 	perfCheck := fio_perf_check.NewPerfCheck(fio_perf_check.NewDependencies())
-	stdout, stderr, exitCode := perfCheck.FioPerfCheck(flag.Arg(len(flag.Args())-1), log.StandardLogger())
+	stdout, stderr, exitCode := perfCheck.FioPerfCheck(requestStr, log.StandardLogger())
 	fmt.Fprint(os.Stdout, stdout)
 	fmt.Fprint(os.Stderr, stderr)
 	os.Exit(exitCode)

@@ -32,24 +32,24 @@ func (p *PerfCheck) FioPerfCheck(fioPerfCheckRequestStr string, log logrus.Field
 	if err := json.Unmarshal([]byte(fioPerfCheckRequestStr), &fioPerfCheckRequest); err != nil {
 		wrapped := errors.Wrap(err, "Error unmarshaling FioPerfCheckRequest")
 		log.WithError(err).Error(wrapped.Error())
-		return createResponse(-1), wrapped.Error(), -1
+		return createResponse(-1, ""), wrapped.Error(), -1
 	}
 
 	if fioPerfCheckRequest.Path == nil {
 		err := errors.New("Missing Filename in FioPerfCheckRequest")
 		log.WithError(err).Error(err.Error())
-		return createResponse(-1), err.Error(), -1
+		return createResponse(-1, ""), err.Error(), -1
 	}
 
 	diskPerf, err := p.getDiskPerf(*fioPerfCheckRequest.Path)
 	if err != nil {
 		log.WithError(err).Warnf("Failed to get disk's I/O performance: %s", *fioPerfCheckRequest.Path)
-		return createResponse(-1), err.Error(), -1
+		return createResponse(-1, ""), err.Error(), -1
 	}
 
 	log.Infof("FIO result on disk %s :fdatasync duration %d ms , threshold: %d ms", *fioPerfCheckRequest.Path, diskPerf, *fioPerfCheckRequest.DurationThreshold)
 
-	response := createResponse(diskPerf)
+	response := createResponse(diskPerf, *fioPerfCheckRequest.Path)
 
 	invSession, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
 	if err != nil {
@@ -131,9 +131,10 @@ func (p *PerfCheck) getDiskPerf(path string) (int64, error) {
 	return time.Duration(syncDurationInNS).Milliseconds(), nil
 }
 
-func createResponse(ioSyncDuration int64) string {
+func createResponse(ioSyncDuration int64, path string) string {
 	fioPerfCheckResponse := models.FioPerfCheckResponse{
 		IoSyncDuration: ioSyncDuration,
+		Path: path,
 	}
 	bytes, err := json.Marshal(fioPerfCheckResponse)
 	if err != nil {

@@ -36,11 +36,11 @@ services:
       - NET_ADMIN
     volumes:
       - ${ROOT_DIR}/subsystem/data:/etc/dhcp:z
-      - ${ROOT_DIR}/subsystem/data:/tmp/leases:z
     networks:
       agent_network:
     environment:
       - ROOT_DIR
+    command: ["-f", "-cf", "/etc/dhcp/dhcpd.conf", "-user", "root", "-group", "root", "--no-pid"]
 
   wiremock:
     image: quay.io/ocpmetal/wiremock

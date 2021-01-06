@@ -72,7 +72,7 @@ var _ = Describe("FIO performance check test", func() {
 func getRequestStr(path *string, threshold *int64, exitCode *int64) string {
 	request := models.FioPerfCheckRequest{
 		Path: path,
-		DurationThreshold: threshold,
+		DurationThresholdMs: threshold,
 		ExitCode: exitCode,
 	}
 

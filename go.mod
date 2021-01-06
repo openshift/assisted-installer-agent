@@ -3,6 +3,7 @@ module github.com/openshift/assisted-installer-agent
 go 1.13
 
 require (
+	github.com/fsouza/go-dockerclient v1.6.6 // indirect
 	github.com/go-openapi/strfmt v0.19.11
 	github.com/go-openapi/swag v0.19.12
 	github.com/google/uuid v1.1.3
@@ -10,7 +11,7 @@ require (
 	github.com/jaypipes/ghw v0.6.1
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.4
-	github.com/openshift/assisted-service v1.0.10-0.20210104135653-b59b8e02ffac
+	github.com/openshift/assisted-service v1.0.10-0.20210106081741-56fcb64109c9
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0

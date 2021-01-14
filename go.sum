@@ -544,6 +544,7 @@ github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf/go.mod h1:HP5RmnzzSN
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/gofuzz v1.1.0 h1:Hsa8mG0dQ46ij8Sl2AYJDUv1oA9/d6Vk+3LG99Oe02g=
 github.com/google/gofuzz v1.1.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
+github.com/google/martian v2.1.0+incompatible h1:/CP5g8u/VJHijgedC/Legn3BAbAaWPgecwXBIDzw5no=
 github.com/google/martian v2.1.0+incompatible/go.mod h1:9I4somxYTbIHy5NJKHRl3wXiIaQGbYVAs8BPL6v8lEs=
 github.com/google/pprof v0.0.0-20181206194817-3ea8567a2e57/go.mod h1:zfwlbNMJ+OItoe0UupaVj+oy1omPYYDuagoSzA8v9mc=
 github.com/google/pprof v0.0.0-20190515194954-54271f7e092f/go.mod h1:zfwlbNMJ+OItoe0UupaVj+oy1omPYYDuagoSzA8v9mc=
@@ -661,6 +662,7 @@ github.com/jaypipes/pcidb v0.5.0 h1:4W5gZ+G7QxydevI8/MmmKdnIPJpURqJ2JNXTzfLxF5c=
 github.com/jaypipes/pcidb v0.5.0/go.mod h1:L2RGk04sfRhp5wvHO0gfRAMoLY/F3PKv/nwJeVoho0o=
 github.com/jessevdk/go-flags v0.0.0-20180331124232-1c38ed7ad0cc/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
+github.com/jinzhu/copier v0.2.0/go.mod h1:24xnZezI2Yqac9J61UC6/dG/k76ttpq0DdJI3QmUvro=
 github.com/jinzhu/gorm v1.9.2/go.mod h1:Vla75njaFJ8clLU1W44h34PjIkijhjHIYnZxMqCdxqo=
 github.com/jinzhu/gorm v1.9.12 h1:Drgk1clyWT9t9ERbzHza6Mj/8FY/CqMyVzOiHviMo6Q=
 github.com/jinzhu/gorm v1.9.12/go.mod h1:vhTjlKSJUTWNtcbQtrMBFCxy7eXTzeCAzfL5fBZT/Qs=
@@ -886,8 +888,8 @@ github.com/openshift-online/ocm-sdk-go v0.1.130 h1:2hnPXJSgkt0LSSNzO2lvJuFBq3rqZ
 github.com/openshift-online/ocm-sdk-go v0.1.130/go.mod h1:3i3a/LEYtC7DMor3N94PTPn1+0qq+Fk+iLjt1Z0WVCs=
 github.com/openshift/api v0.0.0-20200205133042-34f0ec8dab87/go.mod h1:fT6U/JfG8uZzemTRwZA2kBDJP5nWz7v05UHnty/D+pk=
 github.com/openshift/api v0.0.0-20200326152221-912866ddb162/go.mod h1:RKMJ5CBnljLfnej+BJ/xnOWc3kZDvJUaIAEq2oKSPtE=
-github.com/openshift/assisted-service v1.0.10-0.20210106081741-56fcb64109c9 h1:44ShuTV6x9KDqn4+hqPnfJrXh/Zmy3XQBLOS5enMQU8=
-github.com/openshift/assisted-service v1.0.10-0.20210106081741-56fcb64109c9/go.mod h1:AJwXG5NrzAd+99QVMt2W1FATwPctAVd06pki+IMxaik=
+github.com/openshift/assisted-service v1.0.10-0.20210126071357-c31a1b85255d h1:cjgBwKWR4zOu4THtLzWjXWHLCpsFQFtyfMw2OjXdSsA=
+github.com/openshift/assisted-service v1.0.10-0.20210126071357-c31a1b85255d/go.mod h1:OwPWDyc+CLd1jWALho29PLN+HzhNn/W38rKjIh9uDgM=
 github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe/go.mod h1:DOgBIuBcXuTD8uub0jL7h6gBdIBt3CFrwz6K2FtfMBA=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c h1:RAgi0xFIHMpsGmYEXoPyZn3Gjomkj/9aCERcqxJP7mc=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20200820213150-b2b74d7c6a5c/go.mod h1:+duukQisb5LU1bMtLalsHZc1wM69D5sH3TuiyvAQhhA=

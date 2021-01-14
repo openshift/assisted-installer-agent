@@ -155,6 +155,30 @@ var _ = Describe("logs sender", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("dmseg logs", func() {
+		outputPath := path.Join(logsTmpFilesDir, "dmesg.logs")
+		logsSenderMock.On("ExecuteOutputToFile", outputPath, "dmesg").Return("Dummy", 0)
+		err := getDmesgLogs(logsSenderMock, outputPath)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("core dump logs", func() {
+		outputPath := path.Join(logsTmpFilesDir, "coredump_exe_bc_pid_5459")
+		logsSenderMock.On("ExecutePrivileged","coredumpctl", "list", "--no-legend").
+		Return("Thu 2019-11-07 15:14:46 CET    5459  1000  1000   6 present   /usr/bin/bc\n", "", 0)
+		logsSenderMock.On("ExecutePrivileged", "coredumpctl", "dump", "5459", "--output", outputPath).Return("","",0)
+		err := getCoreDumps(logsSenderMock, logsTmpFilesDir)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("full journal logs", func() {
+		outputPath := path.Join(logsTmpFilesDir, "journal.logs")
+		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
+		"--since", config.LogsSenderConfig.Since, "--all").Return("Dummy", 0)
+		err := getJournalLogs(logsSenderMock, config.LogsSenderConfig.Since, outputPath, []string{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("Happy flow", func() {
 		folderSuccess()
 		gatherInstallerLogsSuccess()
@@ -166,5 +190,4 @@ var _ = Describe("logs sender", func() {
 		fmt.Println(err)
 		Expect(err).NotTo(HaveOccurred())
 	})
-
 })

@@ -125,6 +125,12 @@ func (e *LogsSenderExecuter) GatherErrorLogs(targetDir string) error {
 		result = multierror.Append(result, err)
 	}
 
+	// Write the entire output of journal
+	outputFile = path.Join(targetDir, "journal.logs")
+	if err := getJournalLogs(e, config.LogsSenderConfig.Since, outputFile, []string{}); err != nil {
+		result = multierror.Append(result, err)
+	}
+
 	return result
 }
 
@@ -196,8 +202,8 @@ func getCoreDumps(l LogsSender, targetDir string) error {
 	return nil
 }
 
-func getJournalLogsWithFilter(l LogsSender, since string, outputFilePath string, journalFilterParams []string) error {
-	log.Infof("Running journalctl with filters %s", journalFilterParams)
+func getJournalLogs(l LogsSender, since string, outputFilePath string, journalFilterParams []string) error {
+	log.Infof("Running journalctl %s", journalFilterParams)
 	args := []string{"-D", "/var/log/journal/", "--since", since, "--all"}
 	args = append(args, journalFilterParams...)
 	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "journalctl", args...)
@@ -272,7 +278,7 @@ func SendLogs(l LogsSender) (error, string) {
 
 	for _, tag := range config.LogsSenderConfig.Tags {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
-		if err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
+		if err := getJournalLogs(l, config.LogsSenderConfig.Since, outputFile,
 			[]string{fmt.Sprintf("TAG=%s", tag)}); err != nil {
 				result = multierror.Append(result, err)
 			}
@@ -280,7 +286,7 @@ func SendLogs(l LogsSender) (error, string) {
 
 	for _, service := range config.LogsSenderConfig.Services {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
-		if err := getJournalLogsWithFilter(l, config.LogsSenderConfig.Since, outputFile,
+		if err := getJournalLogs(l, config.LogsSenderConfig.Since, outputFile,
 			[]string{"-u", service}); err != nil {
 				result = multierror.Append(result, err)
 			}

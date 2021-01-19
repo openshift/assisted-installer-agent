@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	stepNTPID        = "ntp-synchronizer-step"
 	timeBetweenSteps = 3
 )
 
@@ -114,17 +113,8 @@ func setNTPSyncRequestStub(hostID string, request models.NtpSynchronizationReque
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	_, err = addNextStepStub(hostID, timeBetweenSteps, "",
-		&models.Step{
-			StepType: models.StepTypeNtpSynchronizer,
-			StepID:   stepNTPID,
-			Command:  "nsenter",
-			Args: []string{"-t", "1", "-m", "-i", "--",
-				"/usr/bin/ntp_synchronizer",
-				string(b),
-			},
-		},
-	)
+	step := generateNsenterStep(models.StepTypeNtpSynchronizer, []string{"/usr/bin/ntp_synchronizer", string(b)})
+	_, err = addNextStepStub(hostID, timeBetweenSteps, "", step)
 	Expect(err).NotTo(HaveOccurred())
 }
 

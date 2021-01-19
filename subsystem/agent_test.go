@@ -362,31 +362,28 @@ var _ = Describe("Agent tests", func() {
 					"world",
 				},
 			},
-			&models.Step{
-				StepType: models.StepTypeInventory,
-				StepID:   "inventory-step",
-				Command:  "docker",
-				Args: []string{
-					"run", "--privileged", "--net=host", "--rm",
-					"-v", "/var/log:/var/log",
+			generateContainerStep(models.StepTypeInventory,
+				[]string{
+					"--net=host",
+					"-v", "/sys/block:/host/sys/block:ro", // discover disks by inventory
+					"-v", "/sys/class/net:/sys/class/net:ro", // discover network interfaces by inventory
+
+					// Asked by ghw - https://github.com/jaypipes/ghw/blob/master/pkg/linuxpath/path_linux.go
+					// Currently, we don't use all of ghw capabilities. But let's keep them for now as it's harmless.
 					"-v", "/run/udev:/run/udev",
 					"-v", "/dev/disk:/dev/disk",
-					"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
 					"-v", "/var/log:/host/var/log:ro",
 					"-v", "/proc/meminfo:/host/proc/meminfo:ro",
 					"-v", "/sys/kernel/mm/hugepages:/host/sys/kernel/mm/hugepages:ro",
 					"-v", "/proc/cpuinfo:/host/proc/cpuinfo:ro",
 					"-v", "/etc/mtab:/host/etc/mtab:ro",
-					"-v", "/sys/block:/host/sys/block:ro",
 					"-v", "/sys/devices:/host/sys/devices:ro",
 					"-v", "/sys/bus:/host/sys/bus:ro",
 					"-v", "/sys/class:/host/sys/class:ro",
 					"-v", "/run/udev:/host/run/udev:ro",
 					"-v", "/dev/disk:/host/dev/disk:ro",
-					"quay.io/ocpmetal/assisted-installer-agent:latest",
-					"inventory",
 				},
-			},
+				[]string{"/usr/bin/inventory"}),
 		)
 		Expect(err).NotTo(HaveOccurred())
 		replyStubID, err := addStepReplyStub(hostID)
@@ -434,27 +431,17 @@ var _ = Describe("Agent tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = deleteStub(nextStepsStubID)
 			Expect(err).NotTo(HaveOccurred())
-			nextStepsStubID, err = addNextStepStub(hostID, defaultnextInstructionSeconds, "",
-				&models.Step{
-					StepType: models.StepTypeFreeNetworkAddresses,
-					StepID:   "free-addresses",
-					Command:  "docker",
-					Args: []string{"run", "--privileged", "--net=host", "--rm",
-						"-v", "/var/log:/var/log",
-						"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-						"quay.io/ocpmetal/assisted-installer-agent:latest",
-						"free_addresses",
-						string(b),
-					},
-				},
-			)
+
+			step := generateContainerStep(models.StepTypeFreeNetworkAddresses,
+				[]string{"--net=host"},
+				[]string{"/usr/bin/free_addresses", string(b)})
+			_, err = addNextStepStub(hostID, defaultnextInstructionSeconds, "", step)
+			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() bool {
 				return isReplyFound(hostID, &FreeAddressesVerifier{})
-			}, 300*time.Second, 5*time.Second).Should(BeTrue())
+			}, maxTimeout, 5*time.Second).Should(BeTrue())
 		}
 		err = deleteStub(registerStubID)
-		Expect(err).NotTo(HaveOccurred())
-		err = deleteStub(nextStepsStubID)
 		Expect(err).NotTo(HaveOccurred())
 		err = deleteStub(replyStubID)
 		Expect(err).NotTo(HaveOccurred())

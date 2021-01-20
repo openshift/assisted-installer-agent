@@ -12,16 +12,23 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/models"
 )
 
 var (
-	nextHostIndex = 0
-	WireMockURL   = fmt.Sprintf("http://127.0.0.1:%s", os.Getenv("WIREMOCK_PORT"))
-	ServiceURL    = fmt.Sprintf("http://wiremock:%s", os.Getenv("WIREMOCK_PORT"))
-	RequestsURL   = fmt.Sprintf("%s/__admin/requests", WireMockURL)
-	MappingsURL   = fmt.Sprintf("%s/__admin/mappings", WireMockURL)
+	nextHostIndex                = 0
+	WireMockURLFromSubsystemHost = fmt.Sprintf("http://127.0.0.1:%s", os.Getenv("WIREMOCK_PORT"))
+	AssistedServiceURLFromAgent  = fmt.Sprintf("http://wiremock:%s", os.Getenv("WIREMOCK_PORT"))
+	RequestsURL                  = fmt.Sprintf("%s/__admin/requests", WireMockURLFromSubsystemHost)
+	MappingsURL                  = fmt.Sprintf("%s/__admin/mappings", WireMockURLFromSubsystemHost)
+	agentImage                   = os.Getenv("ASSISTED_INSTALLER_AGENT")
+)
+
+const (
+	maxTimeout       = 300 * time.Second
+	agentServiceName = "agent"
 )
 
 type RequestDefinition struct {
@@ -110,8 +117,8 @@ func verifyRegistersSameID() {
 
 func verifyGetNextRequest(hostID string, matchExpected bool) {
 	reqs, err := findAllMatchingRequests(getNextStepsURL(hostID), "GET")
-
 	Expect(err).NotTo(HaveOccurred())
+
 	if !matchExpected {
 		Expect(reqs).To(BeEmpty())
 	} else {
@@ -235,10 +242,9 @@ func addRegisterStub(hostID string, reply int, clusterID string) (string, error)
 		}
 
 		stepRunnerCommand := &models.HostRegistrationResponseAO1NextStepRunnerCommand{
-			Command: "nsenter",
-			Args: []string{"-t", "1", "-m", "-i", "--",
-				"/usr/bin/next_step_runner",
-				"--url", ServiceURL,
+			Command: "/usr/bin/next_step_runner",
+			Args: []string{
+				"--url", AssistedServiceURLFromAgent,
 				"--cluster-id", clusterID,
 				"--host-id", hostID,
 			},
@@ -419,15 +425,15 @@ func resetRequests() error {
 }
 
 func startAgent(args ...string) error {
-	return startContainer("agent")
+	return startContainer(agentServiceName)
 }
 
 func stopAgent() error {
-	return stopContainer("agent")
+	return stopContainer(agentServiceName)
 }
 
 func startContainer(args ...string) error {
-	args = append([]string{"-f", "docker-compose.yml", "run", "-d"}, args...)
+	args = append([]string{"-f", "docker-compose.yml", "run", "-d", "--no-deps"}, args...)
 
 	cmd := exec.Command("docker-compose", args...)
 	cmd.Stderr = os.Stderr
@@ -487,4 +493,39 @@ func setReplyStartAgent(hostID string) {
 	time.Sleep(5 * time.Second)
 	verifyRegisterRequest()
 	verifyGetNextRequest(hostID, true)
+}
+
+func generateNsenterStep(stepType models.StepType, args []string) *models.Step {
+	commands_args := []string{"-t", "1", "-m", "-i", "--"}
+	commands_args = append(commands_args, args...)
+	stepID := uuid.New().String()
+
+	return &models.Step{
+		StepType: stepType,
+		StepID:   stepID,
+		Command:  "nsenter",
+		Args:     commands_args,
+	}
+}
+
+func generateContainerStep(stepType models.StepType, containerAdditionalArgs []string, commandArgs []string) *models.Step {
+	containerArgs := []string{
+		"run", "--privileged", "--rm",
+		"-v", "/var/log:/var/log",
+		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
+	}
+	containerArgs = append(containerArgs, containerAdditionalArgs...)
+	stepID := uuid.New().String()
+
+	args := make([]string, 0)
+	args = append(args, containerArgs...)
+	args = append(args, agentImage)
+	args = append(args, commandArgs...)
+
+	return &models.Step{
+		StepType: stepType,
+		StepID:   stepID,
+		Command:  "docker",
+		Args:     args,
+	}
 }

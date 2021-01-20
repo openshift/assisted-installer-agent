@@ -15,10 +15,6 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-const (
-	stepDHCPID = "dhcp-lease-allocate-step"
-)
-
 var _ = Describe("Lease tests", func() {
 	var (
 		hostID     string
@@ -109,7 +105,7 @@ var _ = Describe("Lease tests", func() {
 	Context("Negative", func() {
 		It("no_dhcp_server", func() {
 			By("stop dhcpd", func() {
-				stopContainer("dhcpd")
+				Expect(stopContainer("dhcpd")).ShouldNot(HaveOccurred())
 
 				setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 					APIVipMac:     &apiMac,
@@ -122,18 +118,18 @@ var _ = Describe("Lease tests", func() {
 			})
 
 			By("restart dhcpd", func() {
-				startContainer("dhcpd")
+				Expect(startContainer("dhcpd")).ShouldNot(HaveOccurred())
 
 				Eventually(func() bool {
 					return isReplyFound(hostID, &DHCPLeaseAllocateVerifier{})
-				}, 300*time.Second, 5*time.Second).Should(BeTrue())
+				}, maxTimeout, 5*time.Second).Should(BeTrue())
 			})
 		})
 
 		It("invalid_mac", func() {
 			apiMac = "invalid-mac"
 
-			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+			stepID := setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 				APIVipMac:     &apiMac,
 				IngressVipMac: &ingressMac,
 				Interface:     &ifaceName,
@@ -144,7 +140,7 @@ var _ = Describe("Lease tests", func() {
 				Error:    fmt.Sprintf("address %s: invalid MAC address", apiMac),
 				ExitCode: 255,
 				Output:   "",
-				StepID:   stepDHCPID,
+				StepID:   stepID,
 				StepType: models.StepTypeDhcpLeaseAllocate,
 			})).Should(BeTrue())
 		})
@@ -152,7 +148,7 @@ var _ = Describe("Lease tests", func() {
 		It("invalid_interface", func() {
 			ifaceName = "invalid-interface"
 
-			setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
+			stepID := setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 				APIVipMac:     &apiMac,
 				IngressVipMac: &ingressMac,
 				Interface:     &ifaceName,
@@ -163,7 +159,7 @@ var _ = Describe("Lease tests", func() {
 				Error:    "numerical result out of range",
 				ExitCode: 255,
 				Output:   "",
-				StepID:   stepDHCPID,
+				StepID:   stepID,
 				StepType: models.StepTypeDhcpLeaseAllocate,
 			})).Should(BeTrue())
 		})
@@ -291,29 +287,20 @@ func countSubstringOccurrences(s, substr string) int {
 	}
 }
 
-func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest) {
+func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest) string {
 	_, err := addRegisterStub(hostID, http.StatusCreated, ClusterID)
 	Expect(err).NotTo(HaveOccurred())
 
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	_, err = addNextStepStub(hostID, 5, "",
-		&models.Step{
-			StepType: models.StepTypeDhcpLeaseAllocate,
-			StepID:   stepDHCPID,
-			Command:  "docker",
-			Args: []string{
-				"run", "--privileged", "--net=subsystem_agent_network", "--rm",
-				"-v", "/var/log:/var/log",
-				"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-				"quay.io/ocpmetal/assisted-installer-agent:latest",
-				"dhcp_lease_allocate",
-				string(b),
-			},
-		},
-	)
+	step := generateContainerStep(models.StepTypeDhcpLeaseAllocate,
+		[]string{"--net=subsystem_agent_network"},
+		[]string{"/usr/bin/dhcp_lease_allocate", string(b)})
+	_, err = addNextStepStub(hostID, 5, "", step)
 	Expect(err).NotTo(HaveOccurred())
+
+	return step.StepID
 }
 
 func getDHCPResponse(hostID string) *models.DhcpAllocationResponse {

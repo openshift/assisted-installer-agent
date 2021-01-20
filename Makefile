@@ -1,3 +1,6 @@
+include .env
+export
+
 TAG := $(or $(TAG),latest)
 ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/ocpmetal/assisted-installer-agent:$(TAG))
 
@@ -11,7 +14,6 @@ GIT_REVISION := $(shell git rev-parse HEAD)
 PUBLISH_TAG := $(or ${GIT_REVISION})
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
-export WIREMOCK_PORT = 8362
 
 all: build
 
@@ -37,7 +39,7 @@ unit-test: $(REPORTS)
 	$(MAKE) _test TEST_SCENARIO=unit TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))"
 
 subsystem: build-image
-	$(DOCKER_COMPOSE) up --build -d
+	$(DOCKER_COMPOSE) up --build -d dhcpd wiremock
 	$(MAKE) _test TEST_SCENARIO=subsystem TEST="./subsystem/..." SKIP="system-test" || ($(DOCKER_COMPOSE) down && /bin/false)
 	$(DOCKER_COMPOSE) down
 

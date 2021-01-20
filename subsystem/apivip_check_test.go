@@ -12,10 +12,6 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-const (
-	stepAPIConnectivityID = "apivip-connectivity-check-step"
-)
-
 var _ = Describe("API VIP connectivity check tests", func() {
 	var (
 		hostID string
@@ -27,7 +23,7 @@ var _ = Describe("API VIP connectivity check tests", func() {
 	})
 
 	It("verify API connectivity", func() {
-		url := WireMockURL
+		url := WireMockURLFromSubsystemHost
 		setWorkerIgnitionStub(hostID, &models.APIVipConnectivityRequest{
 			URL: &url,
 		})
@@ -35,7 +31,7 @@ var _ = Describe("API VIP connectivity check tests", func() {
 
 		Eventually(func() bool {
 			return isReplyFound(hostID, &APIConnectivityCheckVerifier{})
-		}, 300*time.Second, 5*time.Second).Should(BeTrue())
+		}, maxTimeout, 5*time.Second).Should(BeTrue())
 	})
 })
 
@@ -49,22 +45,11 @@ func setWorkerIgnitionStub(hostID string, request *models.APIVipConnectivityRequ
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	_, err = addNextStepStub(hostID, 5, "",
-		&models.Step{
-			StepType: models.StepTypeAPIVipConnectivityCheck,
-			StepID:   stepAPIConnectivityID,
-			Command:  "docker",
-			Args: []string{
-				"run", "--privileged", "--net=host", "--rm",
-				"-v", "/var/log:/var/log",
-				"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-				"quay.io/ocpmetal/assisted-installer-agent:latest",
-				"apivip_check",
-				string(b),
-			},
-		},
-	)
-	Expect(err).NotTo(HaveOccurred())
+	step := generateContainerStep(models.StepTypeAPIVipConnectivityCheck,
+		[]string{"--net=host"},
+		[]string{"/usr/bin/apivip_check", string(b)})
+	_, err = addNextStepStub(hostID, 5, "", step)
+	Expect(err).ShouldNot(HaveOccurred())
 }
 
 type APIConnectivityCheckVerifier struct{}
@@ -83,7 +68,7 @@ func (i *APIConnectivityCheckVerifier) verify(actualReply *models.StepReply) boo
 }
 
 func addWorkerIgnitionStub() (string, error) {
-	ignitionConfig, err := apivip_check.FormatNodeIgnitionFile(ServiceURL + apivip_check.WorkerIgnitionPath)
+	ignitionConfig, err := apivip_check.FormatNodeIgnitionFile(AssistedServiceURLFromAgent + apivip_check.WorkerIgnitionPath)
 	if err != nil {
 		return "", err
 	}

@@ -30,7 +30,7 @@ services:
       ]
 
   dhcpd:
-    image: quay.io/cloudctl/dhcp:ubi
+    image: quay.io/cloudctl/dhcp:latest
     container_name: dhcpd
     cap_add:
       - NET_ADMIN

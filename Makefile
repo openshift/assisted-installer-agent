@@ -25,7 +25,7 @@ build: build-agent build-connectivity_check build-inventory build-free_addresses
 build-%: $(BIN) src/$*
 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
 
-build-image: unit-test build
+build-image: unit-test
 	docker build --network=host -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
 
 push: build-image subsystem

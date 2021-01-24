@@ -25,7 +25,7 @@ build: build-agent build-connectivity_check build-inventory build-free_addresses
 	   build-dhcp_lease_allocate build-apivip_check build-next_step_runner build-ntp_synchronizer \
 	   build-fio_perf_check
 
-build-%: $(BIN) src/$* lint
+build-%: $(BIN) src/$* #lint
 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
 
 build-image: unit-test build

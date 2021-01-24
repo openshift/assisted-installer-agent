@@ -108,7 +108,7 @@ func ignitionMock(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	_, _ = w.Write([]byte(ignitionConfig))
+	_, _ = w.Write(ignitionConfig)
 }
 
 func ignitionMockInvalid(w http.ResponseWriter, r *http.Request) {

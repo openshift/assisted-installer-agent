@@ -197,9 +197,3 @@ func waitforChronyDaemonToStart(hostID string) {
 		})
 	}, 30*time.Second, 500*time.Millisecond).Should(BeTrue())
 }
-
-type ChronyDaemonVerifier struct{}
-
-func (*ChronyDaemonVerifier) verify(actualReply *models.StepReply) bool {
-	return actualReply.StepType == chronyDaemonStepType
-}

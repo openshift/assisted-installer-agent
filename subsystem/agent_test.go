@@ -176,9 +176,7 @@ var _ = Describe("Agent tests", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
 			req := make([]*RequestOccurrence, 0, len(requests.Requests))
-			for _, r := range requests.Requests {
-				req = append(req, r)
-			}
+			req = append(req, requests.Requests...)
 			Expect(len(req)).Should(Equal(1))
 			Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
 			Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
@@ -204,9 +202,7 @@ var _ = Describe("Agent tests", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
 		req := make([]*RequestOccurrence, 0, len(requests.Requests))
-		for _, r := range requests.Requests {
-			req = append(req, r)
-		}
+		req = append(req, requests.Requests...)
 		Expect(len(req)).Should(Equal(1))
 		Expect(deleteStub(registerStubID)).NotTo(HaveOccurred())
 		Expect(deleteStub(nextStepsStubID)).NotTo(HaveOccurred())
@@ -415,7 +411,9 @@ var _ = Describe("Agent tests", func() {
 		freeAddressesRequest := models.FreeAddressesRequest{}
 		for _, intf := range inventory.Interfaces {
 			for _, ipAddr := range intf.IPV4Addresses {
-				ip, cidr, err := net.ParseCIDR(ipAddr)
+				var ip net.IP
+				var cidr *net.IPNet
+				ip, cidr, err = net.ParseCIDR(ipAddr)
 				Expect(err).ToNot(HaveOccurred())
 				ones, _ := cidr.Mask.Size()
 				if ones < 24 {
@@ -427,7 +425,8 @@ var _ = Describe("Agent tests", func() {
 		}
 		if len(freeAddressesRequest) > 0 {
 			// TODO:: Need to support this part for all hosts.  Currently, we so a case that only virtual nics have ip addresses
-			b, err := json.Marshal(&freeAddressesRequest)
+			var b []byte
+			b, err = json.Marshal(&freeAddressesRequest)
 			Expect(err).ToNot(HaveOccurred())
 			err = deleteStub(nextStepsStubID)
 			Expect(err).NotTo(HaveOccurred())

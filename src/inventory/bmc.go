@@ -68,7 +68,7 @@ func (b *bmc) getV6Address(ch int, addressType string) string {
 	if err := yaml.Unmarshal([]byte(o), &m); err != nil {
 		return ""
 	}
-	nullAddressRE := regexp.MustCompile("^::(/\\d{1,3})*$")
+	nullAddressRE := regexp.MustCompile(`^::(/\d{1,3})*$`)
 	for _, v := range m {
 		addressMap, ok := v.(map[interface{}]interface{})
 		if !ok {

@@ -2,8 +2,9 @@ package inventory
 
 import (
 	"fmt"
-	"github.com/thoas/go-funk"
 	"os"
+
+	"github.com/thoas/go-funk"
 
 	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"

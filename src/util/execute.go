@@ -42,10 +42,10 @@ func Execute(command string, args ...string) (stdout string, stderr string, exit
 	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
 }
 
-func ExecutePrivilegedToFile(logfile *os.File, command string, args ...string) (error) {
+func ExecutePrivilegedToFile(logfile *os.File, command string, args ...string) error {
 	_, _ = logfile.WriteString(fmt.Sprintf("%s\n", command))
 	stdout, stderr, exitcode := ExecutePrivileged(command, args...)
-	if (stderr != "" || exitcode != 0) {
+	if stderr != "" || exitcode != 0 {
 		_, _ = logfile.WriteString(fmt.Sprintf("%s\n", stderr))
 		return fmt.Errorf("%s failed: %d %s\n", command, exitcode, stderr)
 	}

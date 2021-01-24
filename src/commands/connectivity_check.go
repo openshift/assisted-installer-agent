@@ -20,7 +20,7 @@ type Any interface{}
 
 func getOutgoingNics() []string {
 	ret := make([]string, 0)
-	r := regexp.MustCompile("^(?:eth|ens|eno|enp|wlp)\\d")
+	r := regexp.MustCompile(`^(?:eth|ens|eno|enp|wlp)\d`)
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		log.WithError(err).Warnf("Get outgoing nics")
@@ -112,7 +112,7 @@ func l3CheckConnectivity(addresses []string, outgoingNics []string, l3chan chan 
 
 func macInDstMacs(mac string, allDstMacs []string) bool {
 	for _, dstMac := range allDstMacs {
-		if strings.ToLower(mac) == strings.ToLower(dstMac) {
+		if strings.EqualFold(mac, dstMac) {
 			return true
 		}
 	}
@@ -155,7 +155,7 @@ func runArping(dstAddr string, dstMac string, allDstMacs []string, srcNic string
 	}
 
 	ret.OutgoingIPAddress = parts[2]
-	rRegexp := regexp.MustCompile("^Unicast reply from ([^ ]+) \\[([^]]+)\\]  [^ ]+$")
+	rRegexp := regexp.MustCompile(`^Unicast reply from ([^ ]+) \[([^]]+)\]  [^ ]+$`)
 	for _, line := range lines[1:] {
 		parts = rRegexp.FindStringSubmatch(line)
 		if len(parts) != 3 {
@@ -191,7 +191,7 @@ func analyzeNmap(dstAddr string, dstMac string, allDstMacs []string, srcNic stri
 	}
 
 	var nmaprun nmap.Nmaprun
-	if err := xml.Unmarshal([]byte(out), &nmaprun); err != nil {
+	if err := xml.Unmarshal(out, &nmaprun); err != nil {
 		log.WithError(err).Warn("Failed to un-marshal nmap XML")
 		l2chan <- ret
 		return
@@ -280,7 +280,7 @@ func checkHost(outgoingNics []string, host *models.ConnectivityCheckHost, hostCh
 		L2Connectivity: make([]*models.L2Connectivity, 0),
 		L3Connectivity: make([]*models.L3Connectivity, 0),
 	}
-	r := regexp.MustCompile("^(?:eth|ens|eno|enp)\\d")
+	r := regexp.MustCompile(`^(?:eth|ens|eno|enp)\d`)
 	checkedNics := make([]*models.ConnectivityCheckNic, 0)
 	for _, nic := range host.Nics {
 		if r.MatchString(nic.Name) {
@@ -316,7 +316,7 @@ func ConnectivityCheck(_ string, args ...string) (stdout string, stderr string, 
 		return "", err.Error(), -1
 	}
 	nics := getOutgoingNics()
-	hostChan := make(chan *models.ConnectivityRemoteHost, 0)
+	hostChan := make(chan *models.ConnectivityRemoteHost)
 	for _, host := range params {
 		go checkHost(nics, host, hostChan)
 	}

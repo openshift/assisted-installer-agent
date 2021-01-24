@@ -29,6 +29,7 @@ var (
 const (
 	maxTimeout       = 300 * time.Second
 	agentServiceName = "agent"
+	clusterID        = "11111111-1111-1111-1111-111111111111" // This is redeclared here (with lowercase) to solve a lint error
 )
 
 type RequestDefinition struct {
@@ -151,15 +152,15 @@ func getSpecificStep(hostID string, verifier StepVerifier) *models.StepReply {
 }
 
 func getRegisterURL() string {
-	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts", ClusterID)
+	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts", clusterID)
 }
 
 func getNextStepsURL(hostID string) string {
-	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", ClusterID, hostID)
+	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", clusterID, hostID)
 }
 
 func getStepReplyURL(hostID string) string {
-	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", ClusterID, hostID)
+	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", clusterID, hostID)
 }
 
 func addStub(stub *StubDefinition) (string, error) {

@@ -20,7 +20,7 @@ func FormatNodeIgnitionFile(source string) ([]byte, error) {
 	var ignitionParams = map[string]string{
 		"SOURCE": source,
 	}
-	
+
 	tmpl, err := template.New("nodeIgnition").Parse(nodeIgnitionFormat)
 	if err != nil {
 		return nil, err

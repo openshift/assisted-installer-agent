@@ -173,7 +173,8 @@ func Run(requestStr string, executer NtpSynchronizerDependencies, log logrus.Fie
 
 	for index, source := range sources {
 		// performs a reverse lookup for the given address
-		names, err := executer.LookupAddr(source.SourceName)
+		var names []string
+		names, err = executer.LookupAddr(source.SourceName)
 
 		if err != nil {
 			log.WithError(err).Warnf("Failed to reverse lookup server %s", source.SourceName)

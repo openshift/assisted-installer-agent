@@ -15,9 +15,8 @@ type routeFinder struct {
 }
 
 func newRouteFinder(dependencies IDependencies) *routeFinder {
-	return &routeFinder{dependencies:dependencies}
+	return &routeFinder{dependencies: dependencies}
 }
-
 
 // usableIPv6Route returns true if the passed route is acceptable for AddressesRouting
 func usableIPv6Route(route netlink.Route) bool {

@@ -89,7 +89,7 @@ func (l *Leaser) leaseByMac(log logrus.FieldLogger, cfgPath, masterDevice, name,
 
 	leaseFile := monitor.GetLeaseFile(filepath.Join(cfgPath, name), name)
 
-	if err := LeaseVIP(l.dependecies, log, leaseFile, masterDevice, name, mac, leaseFileContents); err != nil {
+	if err = LeaseVIP(l.dependecies, log, leaseFile, masterDevice, name, mac, leaseFileContents); err != nil {
 		log.WithFields(logrus.Fields{
 			"masterDevice": masterDevice,
 			"name":         name,

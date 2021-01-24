@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultRetryDelay = time.Duration(1 * time.Hour)
+const defaultRetryDelay = 1 * time.Hour
 
 func main() {
 	config.ProcessArgs()

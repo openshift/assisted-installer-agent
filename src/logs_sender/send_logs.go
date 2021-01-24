@@ -142,12 +142,12 @@ func getMountLogs(l LogsSender, outputFilePath string) error {
 		return err
 	}
 	defer logfile.Close()
-	
+
 	log.Infof("Running findmnt")
 	if err = util.ExecutePrivilegedToFile(logfile, findmnt, "--df"); err != nil {
 		result = multierror.Append(result, err)
 	}
-	
+
 	log.Infof("Running pvdisplay")
 	if err = util.ExecutePrivilegedToFile(logfile, pvdisplay, "-v"); err != nil {
 		result = multierror.Append(result, err)
@@ -242,7 +242,7 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 func SendLogs(l LogsSender) (error, string) {
 	var result error
 	log.Infof("Start gathering journalctl logs with tags %s, services %s and installer-gather",
-		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)	
+		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)
 	archivePath := fmt.Sprintf("%s/logs.tar.gz", logsDir)
 	logsTmpFilesDir := path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
 
@@ -280,22 +280,22 @@ func SendLogs(l LogsSender) (error, string) {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
 		if err := getJournalLogs(l, config.LogsSenderConfig.Since, outputFile,
 			[]string{fmt.Sprintf("TAG=%s", tag)}); err != nil {
-				result = multierror.Append(result, err)
-			}
+			result = multierror.Append(result, err)
+		}
 	}
 
 	for _, service := range config.LogsSenderConfig.Services {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
 		if err := getJournalLogs(l, config.LogsSenderConfig.Since, outputFile,
 			[]string{"-u", service}); err != nil {
-				result = multierror.Append(result, err)
-			}
+			result = multierror.Append(result, err)
+		}
 	}
 
 	var report = ""
 	if result != nil {
-		report = result.Error() 
-	} 
+		report = result.Error()
+	}
 
 	if err := archiveFilesInFolder(l, logsTmpFilesDir, archivePath); err != nil {
 		return err, report

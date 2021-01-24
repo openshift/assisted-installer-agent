@@ -30,7 +30,7 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 		log.WithError(err).Error(err.Error())
 		return createResponse(false), err.Error(), -1
 	}
-	
+
 	if err := httpDownload(*checkAPIRequest.URL + WorkerIgnitionPath); err != nil {
 		wrapped := errors.Wrap(err, "Failed to download worker.ign file")
 		log.WithError(err).Error(wrapped.Error())
@@ -60,14 +60,14 @@ func createResponse(success bool) string {
 }
 
 func httpDownload(uri string) error {
-    res, err := http.Get(uri)
-    if err != nil {
+	res, err := http.Get(uri)
+	if err != nil {
 		return errors.Wrap(err, "HTTP download failure")
 	}
-	
-    defer res.Body.Close()
-    bytes, err := ioutil.ReadAll(res.Body)
-    if err != nil {
+
+	defer res.Body.Close()
+	bytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
 		return errors.Wrap(err, "File read failure")
 	}
 
@@ -75,12 +75,12 @@ func httpDownload(uri string) error {
 		return errors.New("Empty Ignition file")
 	}
 
-    var js json.RawMessage
-    if err = json.Unmarshal(bytes, &js); err != nil {
+	var js json.RawMessage
+	if err = json.Unmarshal(bytes, &js); err != nil {
 		return errors.Wrap(err, "Error unmarshaling Ignition string")
 	}
 
-    return err
+	return err
 }
 
 func verifyCIDR(uri string) error {
@@ -99,10 +99,10 @@ func verifyCIDR(uri string) error {
 
 func getIPByURI(uri string) (net.IP, error) {
 	u, err := url.Parse(uri)
-    if err != nil {
+	if err != nil {
 		return nil, errors.Wrap(err, "Failed parsing specified URL")
 	}
-	
+
 	host, _, _ := net.SplitHostPort(u.Host)
 	if ip := net.ParseIP(host); ip != nil {
 		return ip, nil
@@ -110,7 +110,7 @@ func getIPByURI(uri string) (net.IP, error) {
 
 	addr, err := net.LookupIP(host)
 	if err != nil {
-	   return nil, errors.Wrap(err, "Unknown host for specified API VIP")
+		return nil, errors.Wrap(err, "Unknown host for specified API VIP")
 	}
 	return addr[0], nil
 }

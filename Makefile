@@ -17,19 +17,15 @@ DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
 
 all: build
 
-lint: format
-	golangci-lint run -v
-
-format:
-	goimports -w -l src/ subsystem/ || /bin/true
-
+lint:
+	golangci-lint run -v --fix
 
 .PHONY: build clean build-image push subsystem
 build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender \
 	   build-dhcp_lease_allocate build-apivip_check build-next_step_runner build-ntp_synchronizer \
 	   build-fio_perf_check
 
-build-%: $(BIN) src/$* lint format
+build-%: $(BIN) src/$* lint
 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
 
 build-image: unit-test build

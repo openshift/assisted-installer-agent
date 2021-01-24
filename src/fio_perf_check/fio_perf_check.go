@@ -134,7 +134,7 @@ func (p *PerfCheck) getDiskPerf(path string) (int64, error) {
 func createResponse(ioSyncDuration int64, path string) string {
 	fioPerfCheckResponse := models.FioPerfCheckResponse{
 		IoSyncDuration: ioSyncDuration,
-		Path: path,
+		Path:           path,
 	}
 	bytes, err := json.Marshal(fioPerfCheckResponse)
 	if err != nil {

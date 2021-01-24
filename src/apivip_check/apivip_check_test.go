@@ -85,7 +85,7 @@ var _ = Describe("API connectivity check test", func() {
 
 func getRequestStr(url *string, verifyCidr bool) string {
 	request := models.APIVipConnectivityRequest{
-		URL: url,
+		URL:        url,
 		VerifyCidr: verifyCidr,
 	}
 

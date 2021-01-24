@@ -42,7 +42,7 @@ var _ = Describe("FIO performance check test", func() {
 		dependencies.On("Execute", "fio", "--filename", file,
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything,
 			mock.Anything, mock.Anything, mock.Anything).Return(fmt.Sprintf(
-				`{ "jobs": 
+			`{ "jobs": 
 					[{
 						"sync":
 						{ "lat_ns":
@@ -71,9 +71,9 @@ var _ = Describe("FIO performance check test", func() {
 
 func getRequestStr(path *string, threshold *int64, exitCode *int64) string {
 	request := models.FioPerfCheckRequest{
-		Path: path,
+		Path:                path,
 		DurationThresholdMs: threshold,
-		ExitCode: exitCode,
+		ExitCode:            exitCode,
 	}
 
 	requestBytes, err := json.Marshal(request)

@@ -9,7 +9,7 @@ import (
 )
 
 func isVirtual(product string) bool {
-	for _, vmTech := range []string {
+	for _, vmTech := range []string{
 		"KVM",
 		"VirtualBox",
 		"VMware",

@@ -7,7 +7,7 @@ require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200505174321-1655290016ac+incompatible // indirect
 	github.com/go-openapi/strfmt v0.20.0
 	github.com/go-openapi/swag v0.19.13
-	github.com/google/uuid v1.1.5
+	github.com/google/uuid v1.2.0
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jaypipes/ghw v0.6.1
 	github.com/onsi/ginkgo v1.14.2

@@ -168,7 +168,7 @@ func getMountLogs(l LogsSender, outputFilePath string) error {
 
 func getDmesgLogs(l LogsSender, outputFilePath string) error {
 	log.Infof("Running dmesg")
-	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "dmesg")
+	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "dmesg", "-T")
 	if exitCode != 0 {
 		err := errors.Errorf(stderr)
 		log.WithError(err).Errorf("Failed to run dmesg command")

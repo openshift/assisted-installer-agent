@@ -157,7 +157,7 @@ var _ = Describe("logs sender", func() {
 
 	It("dmseg logs", func() {
 		outputPath := path.Join(logsTmpFilesDir, "dmesg.logs")
-		logsSenderMock.On("ExecuteOutputToFile", outputPath, "dmesg").Return("Dummy", 0)
+		logsSenderMock.On("ExecuteOutputToFile", outputPath, "dmesg", "-T").Return("Dummy", 0)
 		err := getDmesgLogs(logsSenderMock, outputPath)
 		Expect(err).NotTo(HaveOccurred())
 	})

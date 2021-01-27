@@ -14,3 +14,4 @@ env:
     TAG: $TAG
     FOCUS: $FOCUS
     GOCACHE: "/go/pkg/mod"
+    LINT_THREADS: $LINT_THREADS

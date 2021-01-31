@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 )
@@ -183,4 +184,16 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 
 func GetInterfaces(depenndecies IDependencies) []*models.Interface {
 	return newInterfaces(depenndecies).getInterfaces()
+}
+
+func setV6PrefixesForAddresses(interfaces []*models.Interface, dependencies IDependencies) {
+
+	for _, intf := range interfaces {
+
+		if len(intf.IPV6Addresses) == 0 {
+			continue
+		}
+
+		util.SetV6PrefixesForAddress(intf.Name, dependencies, logrus.StandardLogger(), intf.IPV6Addresses)
+	}
 }

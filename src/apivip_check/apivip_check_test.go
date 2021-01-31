@@ -61,23 +61,23 @@ var _ = Describe("API connectivity check test", func() {
 	Context("Verify CIDR", func() {
 		It("Verification success - hostname", func() {
 			srv = serverMock(ignitionMock)
-			err := verifyCIDR("http://localhost:1234")
+			err := verifyCIDR("http://localhost:1234", log)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Verification success - IP address", func() {
 			srv = serverMock(ignitionMock)
-			err := verifyCIDR("http://127.0.0.1:1234")
+			err := verifyCIDR("http://127.0.0.1:1234", log)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Invalid URL", func() {
-			err := verifyCIDR("http://invalid:1234")
+			err := verifyCIDR("http://invalid:1234", log)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("CIDR not suitable", func() {
-			err := verifyCIDR("http://example.com:1234")
+			err := verifyCIDR("http://example.com:1234", log)
 			Expect(err).To(HaveOccurred())
 		})
 	})

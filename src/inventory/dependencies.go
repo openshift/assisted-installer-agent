@@ -28,7 +28,9 @@ type IDependencies interface {
 	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
 }
 
-type Dependencies struct{}
+type Dependencies struct {
+	util.NetlinkRouteFinder
+}
 
 func (d *Dependencies) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
 	return util.Execute(command, args...)
@@ -76,14 +78,6 @@ func (d *Dependencies) Abs(path string) (string, error) {
 
 func (d *Dependencies) EvalSymlinks(path string) (string, error) {
 	return filepath.EvalSymlinks(path)
-}
-
-func (*Dependencies) LinkByName(name string) (netlink.Link, error) {
-	return netlink.LinkByName(name)
-}
-
-func (*Dependencies) RouteList(link netlink.Link, family int) ([]netlink.Route, error) {
-	return netlink.RouteList(link, family)
 }
 
 func newDependencies() IDependencies {

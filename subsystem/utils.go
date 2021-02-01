@@ -24,6 +24,7 @@ var (
 	RequestsURL                  = fmt.Sprintf("%s/__admin/requests", WireMockURLFromSubsystemHost)
 	MappingsURL                  = fmt.Sprintf("%s/__admin/mappings", WireMockURLFromSubsystemHost)
 	agentImage                   = os.Getenv("ASSISTED_INSTALLER_AGENT")
+	defaultContainerTool         = "docker"
 )
 
 const (
@@ -526,7 +527,7 @@ func generateContainerStep(stepType models.StepType, containerAdditionalArgs []s
 	return &models.Step{
 		StepType: stepType,
 		StepID:   stepID,
-		Command:  "docker",
+		Command:  defaultContainerTool,
 		Args:     args,
 	}
 }

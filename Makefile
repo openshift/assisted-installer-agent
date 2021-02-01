@@ -24,7 +24,7 @@ lint:
 .PHONY: build clean build-image push subsystem
 build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender \
 	   build-dhcp_lease_allocate build-apivip_check build-next_step_runner build-ntp_synchronizer \
-	   build-fio_perf_check
+	   build-fio_perf_check build-container_image_availability
 
 build-%: $(BIN) src/$* lint
 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go

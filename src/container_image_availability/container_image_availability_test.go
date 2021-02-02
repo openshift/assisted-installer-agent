@@ -6,17 +6,19 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	mock "github.com/stretchr/testify/mock"
 )
 
 const (
 	defaultTestImage              = "image"
-	defaultTestPullTimeoutSeconds = 300
+	defaultTestPullTimeoutSeconds = 3
 	defaultTestImageSizeInBytes   = int64(333000000)
 )
 
@@ -156,9 +158,28 @@ var _ = Describe("Image availability", func() {
 			checkImageAvailability(output, true, false)
 		})
 
-		It("failed_to_pull", func() {
+		It("failed_to_pull_before_timeout_and_keep_trying", func() {
 			imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(defaultTestImage)...).Return("", "", 0).Once()
-			imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(defaultTestImage)...).Return("", "", 1).Once()
+
+			for remainingSeconds := defaultTestPullTimeoutSeconds; remainingSeconds > 0; remainingSeconds-- {
+				cmd := fmt.Sprintf(templatePull, defaultTestImage)
+				cmd = fmt.Sprintf(templateTimeout, strconv.FormatInt(int64(remainingSeconds), 10), cmd)
+				args := convertStringArryToInterfaceArray(strings.Split(cmd, " "))
+				imageAvailabilityDependencies.On("ExecutePrivileged", args...).Return("", "", 1).Once()
+			}
+
+			output := handleImageAvailability(imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
+
+			Expect(output.Name).Should(Equal(defaultTestImage))
+			checkImageAvailability(output, false, true)
+		})
+
+		It("failed_to_pull_timeout", func() {
+			imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(defaultTestImage)...).Return("", "", 0).Once()
+			imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(defaultTestImage)...).Return("", "", util.TimeoutExitCode).Run(func(args mock.Arguments) {
+				time.Sleep(defaultTestPullTimeoutSeconds * time.Second)
+			}).Once()
+
 			output := handleImageAvailability(imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
 
 			Expect(output.Name).Should(Equal(defaultTestImage))

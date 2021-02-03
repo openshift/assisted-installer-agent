@@ -58,12 +58,12 @@ func getImageSizeInBytes(executer ImageAvailabilityDependencies, image string) (
 	return size, nil
 }
 
-func calcMBps(bytes, nanosecond float64) float64 {
-	if nanosecond == 0 {
+func calcMBps(bytes, seconds float64) float64 {
+	if seconds == 0 {
 		return 0
 	}
 
-	return (bytes / Megabyte) / (nanosecond / float64(time.Second))
+	return (bytes / Megabyte) / seconds
 }
 
 func isImageAvailable(executer ImageAvailabilityDependencies, image string) bool {
@@ -90,7 +90,7 @@ func pullImage(executer ImageAvailabilityDependencies, pullTimeoutSeconds int, i
 func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.FieldLogger, pullTimeoutSeconds int, image string) *models.ContainerImageAvailability {
 	imageExistLocallyBeforePull := isImageAvailable(executer, image)
 
-	log.Infof("Image exists locally before pull: %s", strconv.FormatBool(imageExistLocallyBeforePull))
+	log.Infof("Image %s exists locally before pull: %s", image, strconv.FormatBool(imageExistLocallyBeforePull))
 
 	response := &models.ContainerImageAvailability{
 		Name:   image,
@@ -99,7 +99,7 @@ func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.
 
 	start := time.Now()
 	err := pullImage(executer, pullTimeoutSeconds, image)
-	diff := float64(time.Since(start))
+	pullTimeInSeconds := float64(time.Since(start)) / float64(time.Second)
 
 	if err != nil {
 		log.WithError(err).Warnf("Pulling image %s wasn't available", image)
@@ -107,7 +107,7 @@ func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.
 	}
 
 	if !imageExistLocallyBeforePull {
-		log.Infof("Pulling image %s is available. Took %f seconds", image, diff/float64(time.Second))
+		log.Infof("Pulling image %s is available. Took %f seconds", image, pullTimeInSeconds)
 
 		sizeInBytes, err := getImageSizeInBytes(executer, image)
 		if err != nil {
@@ -116,8 +116,8 @@ func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.
 		}
 
 		response.SizeBytes = sizeInBytes
-		response.Time = diff / float64(time.Second)
-		response.DownloadRate = calcMBps(response.SizeBytes, diff)
+		response.Time = pullTimeInSeconds
+		response.DownloadRate = calcMBps(response.SizeBytes, pullTimeInSeconds)
 	}
 
 	response.Result = models.ContainerImageAvailabilityResultSuccess

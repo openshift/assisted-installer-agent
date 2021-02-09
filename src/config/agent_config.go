@@ -45,7 +45,7 @@ func ProcessArgs() {
 
 	ret.PullSecretToken = os.Getenv("PULL_SECRET_TOKEN")
 	if ret.PullSecretToken == "" {
-		log.Warnf("Missing Pull Secret Token environment variable")
+		log.Warnf("Agent Authentication Token not set")
 	}
 
 	// When given <image_url>:<tag> format, AgentVersion should point to the image tag.

@@ -70,6 +70,8 @@ pipeline {
                       }
                       sh '''curl -X POST -H 'Content-type: application/json' --data-binary "@data.txt" https://hooks.slack.com/services/${SLACK_TOKEN}'''
                 }
+                sh 'sudo journalctl TAG=agent --since="1 hour ago" > agent_journalctl.log  || true'
+                archiveArtifacts artifacts: '*.log', fingerprint: true
             }
         }
   }

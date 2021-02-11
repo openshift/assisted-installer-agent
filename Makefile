@@ -44,7 +44,9 @@ unit-test: $(REPORTS)
 
 subsystem: build-image
 	$(DOCKER_COMPOSE) up --build -d dhcpd wiremock
-	$(MAKE) _test TEST_SCENARIO=subsystem TEST="./subsystem/..." SKIP="system-test" || ($(DOCKER_COMPOSE) down && /bin/false)
+	-$(MAKE) _test TEST_SCENARIO=subsystem TEST="./subsystem/..." SKIP="system-test"
+	$(DOCKER_COMPOSE) logs dhcpd > dhcpd.log
+	$(DOCKER_COMPOSE) logs wiremock > wiremock.log
 	$(DOCKER_COMPOSE) down
 
 generate:

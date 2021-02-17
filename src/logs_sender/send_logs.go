@@ -25,6 +25,7 @@ const (
 	installerGatherBin           = "/usr/local/bin/installer-gather.sh"
 	installerGatherArchivePreifx = "/root/log-bundle-"
 	findmnt                      = "/usr/bin/findmnt"
+	ls                           = "/bin/ls"
 	pvdisplay                    = "/usr/sbin/pvdisplay"
 	vgdisplay                    = "/usr/sbin/vgdisplay"
 	lvdisplay                    = "/usr/sbin/lvdisplay"
@@ -143,27 +144,20 @@ func getMountLogs(l LogsSender, outputFilePath string) error {
 	}
 	defer logfile.Close()
 
-	log.Infof("Running findmnt")
-	if err = util.ExecutePrivilegedToFile(logfile, findmnt, "--df"); err != nil {
-		result = multierror.Append(result, err)
-	}
-
-	log.Infof("Running pvdisplay")
-	if err = util.ExecutePrivilegedToFile(logfile, pvdisplay, "-v"); err != nil {
-		result = multierror.Append(result, err)
-	}
-
-	log.Infof("Running vgdisplay")
-	if err = util.ExecutePrivilegedToFile(logfile, vgdisplay, "-v"); err != nil {
-		result = multierror.Append(result, err)
-	}
-
-	log.Infof("Running lvdisplay")
-	if err = util.ExecutePrivilegedToFile(logfile, lvdisplay, "-v"); err != nil {
-		result = multierror.Append(result, err)
-	}
+	result = util.LogPrivilegedCommandOutput(logfile, result, "List mounts", findmnt, "--df")
+	result = logDisksByCategory("id", logfile, result)
+	result = logDisksByCategory("path", logfile, result)
+	result = util.LogPrivilegedCommandOutput(logfile, result, "Running pvdisplay", pvdisplay, "-v")
+	result = util.LogPrivilegedCommandOutput(logfile, result, "Running vgdisplay", vgdisplay, "-v")
+	result = util.LogPrivilegedCommandOutput(logfile, result, "Running lvdisplay", lvdisplay, "-v")
 
 	return result
+}
+
+func logDisksByCategory(category string, logfile *os.File, result error) error {
+	path := fmt.Sprintf("/dev/disk/by-%s", category)
+	description := fmt.Sprintf("Disk mapping by %s", category)
+	return util.LogPrivilegedCommandOutput(logfile, result, description, ls, "-l", path)
 }
 
 func getDmesgLogs(l LogsSender, outputFilePath string) error {

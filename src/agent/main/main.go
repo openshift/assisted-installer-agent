@@ -32,7 +32,7 @@ func main() {
 				reRegistrerDelay = defaultRetryDelay
 			}
 
-			log.WithError(err).Errorf("Failed to start next step runner, going to retry in %s", reRegistrerDelay)
+			log.WithError(err).Errorf("Next step runner has crashed and will be restarted in %s", reRegistrerDelay)
 			time.Sleep(reRegistrerDelay)
 			continue
 		}

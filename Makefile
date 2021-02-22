@@ -12,6 +12,7 @@ GOTEST_FLAGS = --format=standard-verbose $(GOTEST_PUBLISH_FLAGS) -- -count=1 -co
 
 GIT_REVISION := $(shell git rev-parse HEAD)
 PUBLISH_TAG := $(or ${GIT_REVISION})
+CONTAINER_BUILD_PARAMS = --network=host --label git_revision=${GIT_REVISION} ${CONTAINER_BUILD_EXTRA_PARAMS}
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
 
@@ -29,7 +30,7 @@ build-%: $(BIN) src/$* #lint
 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
 
 build-image: unit-test
-	docker build --network=host -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
+	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
 
 push: build-image subsystem
 	docker push $(ASSISTED_INSTALLER_AGENT)

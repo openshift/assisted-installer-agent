@@ -27,7 +27,7 @@ pipeline {
 
     stage('build') {
         steps {
-            sh 'skipper make build'
+            sh 'LINT_THREADS=2 skipper make build'
         }
     }
 

@@ -15,18 +15,19 @@ PUBLISH_TAG := $(or ${GIT_REVISION})
 CONTAINER_BUILD_PARAMS = --network=host --label git_revision=${GIT_REVISION} ${CONTAINER_BUILD_EXTRA_PARAMS}
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
+LINT_THREADS := $(or $(LINT_THREADS), $(shell expr $(shell nproc) / 2))
 
 all: build
 
 lint:
-	golangci-lint run -v --fix
+	golangci-lint run -v --fix --concurrency $(LINT_THREADS)
 
 .PHONY: build clean build-image push subsystem
 build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender \
 	   build-dhcp_lease_allocate build-apivip_check build-next_step_runner build-ntp_synchronizer \
 	   build-fio_perf_check build-container_image_availability
 
-build-%: $(BIN) src/$* #lint
+build-%: $(BIN) src/$* lint
 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
 
 build-image: unit-test

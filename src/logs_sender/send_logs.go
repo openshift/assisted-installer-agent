@@ -1,6 +1,7 @@
 package logs_sender
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -15,7 +16,9 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-installer-agent/src/session"
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/openshift/assisted-service/client"
 	"github.com/openshift/assisted-service/client/installer"
+	"github.com/openshift/assisted-service/models"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -39,11 +42,25 @@ type LogsSender interface {
 	CreateFolderIfNotExist(folder string) error
 	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
 		inventoryUrl string, pullSecretToken string, agentVersion string) error
+	LogProgressReport(clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error
 	GatherInstallerLogs(targetDir string) error
 	GatherErrorLogs(targetDir string) error
 }
 
-type LogsSenderExecuter struct{}
+type LogsSenderExecuter struct {
+	client       *client.AssistedInstall
+	ctx          context.Context
+	agentVersion string
+}
+
+func NewLogsSenderExecuter(inventoryUrl string, pullSecretToken string, agentVersion string) *LogsSenderExecuter {
+	client, ctx := getClient(inventoryUrl, pullSecretToken)
+	return &LogsSenderExecuter{
+		client:       client,
+		ctx:          ctx,
+		agentVersion: agentVersion,
+	}
+}
 
 func (e *LogsSenderExecuter) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
 	return util.Execute(command, args...)
@@ -65,6 +82,14 @@ func (e *LogsSenderExecuter) CreateFolderIfNotExist(folder string) error {
 	return nil
 }
 
+func getClient(inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, context.Context) {
+	invSession, err := session.New(inventoryUrl, pullSecretToken)
+	if err != nil {
+		log.Fatalf("Failed to initialize connection: %e", err)
+	}
+	return invSession.Client(), invSession.Context()
+}
+
 func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
 	inventoryUrl string, pullSecretToken string, agentVersion string) error {
 
@@ -74,19 +99,26 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	}
 	defer uploadFile.Close()
 
-	invSession, err := session.New(inventoryUrl, pullSecretToken)
-	if err != nil {
-		log.Fatalf("Failed to initialize connection: %e", err)
-	}
-
 	params := installer.UploadHostLogsParams{
 		Upfile:                uploadFile,
 		ClusterID:             clusterID,
 		DiscoveryAgentVersion: &agentVersion,
 		HostID:                hostID,
 	}
-	_, err = invSession.Client().Installer.UploadHostLogs(invSession.Context(), &params)
+	_, err = e.client.Installer.UploadHostLogs(e.ctx, &params)
+	return err
+}
 
+func (e *LogsSenderExecuter) LogProgressReport(clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error {
+	params := installer.UpdateHostLogsProgressParams{
+		ClusterID: clusterID,
+		HostID:    hostID,
+		LogsProgressParams: &models.LogsProgressParams{
+			LogsState: progress,
+		},
+	}
+
+	_, err := e.client.Installer.UpdateHostLogsProgress(e.ctx, &params)
 	return err
 }
 
@@ -235,6 +267,13 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 
 func SendLogs(l LogsSender) (error, string) {
 	var result error
+
+	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.ClusterID),
+		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
+		config.LogsSenderConfig.PullSecretToken, models.LogsStateRequested); lerr != nil {
+		log.WithError(lerr).Error("failed to send log progress requested to service")
+	}
+
 	log.Infof("Start gathering journalctl logs with tags %s, services %s and installer-gather",
 		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)
 	archivePath := fmt.Sprintf("%s/logs.tar.gz", logsDir)
@@ -295,7 +334,15 @@ func SendLogs(l LogsSender) (error, string) {
 		return err, report
 	}
 
-	return uploadLogs(l, archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
+	err := uploadLogs(l, archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
-		config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion), report
+		config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion)
+
+	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.ClusterID),
+		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
+		config.LogsSenderConfig.PullSecretToken, models.LogsStateCompleted); lerr != nil {
+		log.WithError(lerr).Error("failed to send log progress completed to service")
+	}
+
+	return err, report
 }

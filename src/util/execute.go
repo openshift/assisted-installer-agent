@@ -3,11 +3,12 @@ package util
 import (
 	bytes2 "bytes"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/hashicorp/go-multierror"
+	log "github.com/sirupsen/logrus"
 )
 
 const TimeoutExitCode = 124
@@ -94,11 +95,11 @@ func ExecutePrivileged(command string, args ...string) (stdout string, stderr st
 	return Execute(commandBase, arguments...)
 }
 
-func loglnToFile(logfile *os.File, message string){
+func loglnToFile(logfile *os.File, message string) {
 	logToFile(logfile, fmt.Sprintf("%s\n", message))
 }
 
-func logToFile(logfile *os.File, message string){
+func logToFile(logfile *os.File, message string) {
 	_, err := logfile.WriteString(message)
 	if err != nil {
 		log.WithError(err).Errorf("Failed logging '%s' to log file", message)

@@ -118,10 +118,6 @@ func createAWSXenEBSDisk() *ghw.Disk {
 	}
 }
 
-func mockFetchDisks(dependencies *MockIDependencies, error error, disks ...*ghw.Disk) {
-	dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{Disks: disks}, error).Once()
-}
-
 func mockExecuteDependencyCall(dependencies *MockIDependencies, command string, output string, err string, args ...string) *mock.Call {
 	exitCode := 0
 
@@ -150,17 +146,18 @@ func mockStatDependencyCall(dependencies *MockIDependencies, path string, err er
 	}
 }
 
-/**
-Mock the dependency call that try to locate the disk at /dev/diskName
-*/
+func mockFetchDisks(dependencies *MockIDependencies, error error, disks ...*ghw.Disk) {
+	dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{Disks: disks}, error).Once()
+}
+
+// mockGetPathFromDev Mocks the dependency call that try to locate the disk at /dev/diskName used by disks.getPath.
 func mockGetPathFromDev(dependencies *MockIDependencies, diskName string, err error) *mock.Call {
 	return mockStatDependencyCall(dependencies, fmt.Sprintf("/dev/%s", diskName), err)
 }
 
-/**
-Mock the dependency call that try to find the by-path disk name
-This name is the shortest physical path to the device
-*/
+// mockGetByPath Mocks the dependency call that try to find the by-path disk name used by disks.getPath.
+// The by-path name is the shortest physical path to the device.
+// Read this article for more details. https://wiki.archlinux.org/index.php/persistent_block_device_naming
 func mockGetByPath(dependencies *MockIDependencies, busPath string, err error) *mock.Call {
 	return mockStatDependencyCall(dependencies, fmt.Sprintf("/dev/disk/by-path/%s", busPath), err)
 }

@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/thoas/go-funk"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
@@ -22,27 +23,6 @@ var _ = Describe("Image availability tests", func() {
 	deleteImage := func(image string) {
 		_ = removeImage(defaultContainerTool, image)
 		Expect(isImageAvailable(defaultContainerTool, image)).Should(BeFalse())
-	}
-
-	checkImageStatus := func(image *models.ContainerImageAvailability, expectedResult bool, isRemoteImage bool) {
-		Expect(images).Should(ContainElement(image.Name))
-		Expect(isImageAvailable(defaultContainerTool, image.Name)).Should(Equal(expectedResult))
-
-		if expectedResult {
-			Expect(image.Result).Should(Equal(models.ContainerImageAvailabilityResultSuccess))
-		} else {
-			Expect(image.Result).Should(Equal(models.ContainerImageAvailabilityResultFailure))
-		}
-
-		if expectedResult && isRemoteImage {
-			Expect(image.Time).Should(BeNumerically(">", 0))
-			Expect(image.DownloadRate).Should(BeNumerically(">", 0))
-			Expect(image.SizeBytes).Should(BeNumerically(">", 0))
-		} else { // failure or local image
-			Expect(image.DownloadRate).Should(BeZero())
-			Expect(image.Time).Should(BeZero())
-			Expect(image.SizeBytes).Should(BeZero())
-		}
 	}
 
 	BeforeEach(func() {
@@ -66,14 +46,7 @@ var _ = Describe("Image availability tests", func() {
 		}
 
 		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})
-
-		response := getImageAvailabilityResponse(hostID)
-		Expect(response).ShouldNot(BeNil())
-		Expect(response.Images).Should(HaveLen(len(images)))
-		for _, image := range response.Images {
-			checkImageStatus(image, true, true)
-			Expect(image.Time).Should(BeNumerically("<", pullTimeoutInSeconds))
-		}
+		checkImageAvailabilityResponse(hostID, images, true, true, pullTimeoutInSeconds)
 	})
 
 	It("Already downloaded image", func() {
@@ -86,14 +59,7 @@ var _ = Describe("Image availability tests", func() {
 		}
 
 		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})
-
-		response := getImageAvailabilityResponse(hostID)
-		Expect(response).ShouldNot(BeNil())
-		Expect(response.Images).Should(HaveLen(len(images)))
-		for _, image := range response.Images {
-			checkImageStatus(image, true, false)
-			Expect(image.Time).Should(BeNumerically("<", pullTimeoutInSeconds))
-		}
+		checkImageAvailabilityResponse(hostID, images, true, false, pullTimeoutInSeconds)
 	})
 
 	It("Small timeout", func() {
@@ -105,26 +71,13 @@ var _ = Describe("Image availability tests", func() {
 		}
 
 		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})
-
-		response := getImageAvailabilityResponse(hostID)
-		Expect(response).ShouldNot(BeNil())
-		Expect(response.Images).Should(HaveLen(len(images)))
-		for _, image := range response.Images {
-			checkImageStatus(image, false, true)
-		}
+		checkImageAvailabilityResponse(hostID, images, false, true, pullTimeoutInSeconds)
 	})
 
 	It("Invalid image", func() {
 		images = []string{"invalid-registry/invalid-repository/image:tag"}
 		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})
-
-		response := getImageAvailabilityResponse(hostID)
-		Expect(response).ShouldNot(BeNil())
-		Expect(response.Images).Should(HaveLen(len(images)))
-		for _, image := range response.Images {
-			checkImageStatus(image, false, true)
-			Expect(image.Time).Should(BeNumerically("<=", 5))
-		}
+		checkImageAvailabilityResponse(hostID, images, false, true, pullTimeoutInSeconds)
 	})
 })
 
@@ -149,13 +102,11 @@ func setImageAvailabilityStub(hostID string, request models.ContainerImageAvaila
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func getImageAvailabilityResponse(hostID string) *models.ContainerImageAvailabilityResponse {
+func checkImageAvailabilityResponse(hostID string, expectedImages []string,
+	expectedResult bool, isRemoteImage bool, pullTimeout int64) {
 	Eventually(func() bool {
-		return isReplyFound(hostID, &ImageAVailabilityVerifier{})
+		return isReplyFound(hostID, &ImageAVailabilityVerifier{expectedImages, expectedResult, isRemoteImage, pullTimeout})
 	}, maxTimeout, 5*time.Second).Should(BeTrue())
-
-	stepReply := getSpecificStep(hostID, &ImageAVailabilityVerifier{})
-	return getImageAvailabilityResponseFromStepReply(stepReply)
 }
 
 func getImageAvailabilityResponseFromStepReply(actualReply *models.StepReply) *models.ContainerImageAvailabilityResponse {
@@ -165,7 +116,12 @@ func getImageAvailabilityResponseFromStepReply(actualReply *models.StepReply) *m
 	return &response
 }
 
-type ImageAVailabilityVerifier struct{}
+type ImageAVailabilityVerifier struct {
+	expectedImages []string
+	expectedResult bool
+	isRemoteImage  bool
+	pullTimeout    int64
+}
 
 func (i *ImageAVailabilityVerifier) verify(actualReply *models.StepReply) bool {
 	if actualReply.ExitCode != 0 {
@@ -177,7 +133,48 @@ func (i *ImageAVailabilityVerifier) verify(actualReply *models.StepReply) bool {
 		return false
 	}
 
+	response := getImageAvailabilityResponseFromStepReply(actualReply)
+
+	if response == nil {
+		log.Errorf("ImageAVailabilityVerifier response is nil")
+		return false
+	}
+
+	for _, image := range response.Images {
+		if !funk.Contains(i.expectedImages, image.Name) {
+			log.Errorf("ImageAVailabilityVerifier image %s wasn't expected in list %s", image.Name, i.expectedImages)
+			return false
+		}
+
+		if !checkImageStatus(image, i.expectedResult, i.isRemoteImage, i.pullTimeout) {
+			log.Errorf("ImageAVailabilityVerifier image %+v wasn't expected to result %v %v", image, i.expectedResult, i.isRemoteImage)
+			return false
+		}
+	}
+
 	return true
+}
+
+func checkImageStatus(image *models.ContainerImageAvailability, expectedResult bool, isRemoteImage bool, pullTimeout int64) bool {
+	if isImageAvailable(defaultContainerTool, image.Name) != expectedResult {
+		return false
+	}
+
+	if expectedResult {
+		if image.Result != models.ContainerImageAvailabilityResultSuccess {
+			return false
+		}
+	} else {
+		if image.Result != models.ContainerImageAvailabilityResultFailure {
+			return false
+		}
+	}
+
+	if expectedResult && isRemoteImage {
+		return image.Time > 0 && int64(image.Time) <= pullTimeout && image.DownloadRate > 0 && image.SizeBytes > 0
+	} else { // failure or local image
+		return image.Time == 0 && image.DownloadRate == 0 && image.SizeBytes == 0
+	}
 }
 
 func pullImage(containerTool, image string) bool {

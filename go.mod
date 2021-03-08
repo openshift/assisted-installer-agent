@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/Microsoft/go-winio v0.4.15-0.20200113171025-3fe6c5262873 // indirect
-	github.com/ajeddeloh/go-json v0.0.0-20170920214419-6a2fe990e083 // indirect
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200505174321-1655290016ac+incompatible // indirect
 	github.com/go-openapi/strfmt v0.20.0
 	github.com/go-openapi/swag v0.19.14
@@ -13,7 +12,7 @@ require (
 	github.com/jaypipes/ghw v0.6.1
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
-	github.com/openshift/assisted-service v1.0.10-0.20210224170346-94c666f95a65
+	github.com/openshift/assisted-service v1.0.10-0.20210304073520-b307df44fbfe
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20210210163937-34f98e0f48fd
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0

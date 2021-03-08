@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/config"
+	models "github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -73,6 +74,17 @@ var _ = Describe("logs sender", func() {
 			Return(nil)
 	}
 
+	reportLogProgressSuccess := func(completed bool) {
+		logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.ClusterID),
+			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken,
+			models.LogsStateRequested).Return(nil)
+		if completed {
+			logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.ClusterID),
+				strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken,
+				models.LogsStateCompleted).Return(nil)
+		}
+	}
+
 	gatherInstallerLogsSuccess := func() {
 		logsSenderMock.On("GatherInstallerLogs", mock.Anything).Return(nil)
 	}
@@ -88,6 +100,7 @@ var _ = Describe("logs sender", func() {
 	It("CreateFolderIfNotExist failed", func() {
 		logsSenderMock.On("CreateFolderIfNotExist", logsTmpFilesDir).
 			Return(errors.Errorf("Dummy"))
+		reportLogProgressSuccess(false)
 		err, report := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
@@ -100,6 +113,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
+		reportLogProgressSuccess(true)
 		logsSenderMock.On("GatherInstallerLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
 		err, report := SendLogs(logsSenderMock)
 		Expect(err).To(Not(HaveOccurred()))
@@ -112,6 +126,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
+		reportLogProgressSuccess(true)
 		logsSenderMock.On("GatherErrorLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
 		err, report := SendLogs(logsSenderMock)
 		Expect(err).NotTo(HaveOccurred())
@@ -123,6 +138,7 @@ var _ = Describe("logs sender", func() {
 		folderSuccess()
 		archiveSuccess()
 		fileUploaderSuccess()
+		reportLogProgressSuccess(true)
 		executeOutputToFileSuccess(-1)
 		err, report := SendLogs(logsSenderMock)
 		Expect(err).To(Not(HaveOccurred()))
@@ -137,6 +153,7 @@ var _ = Describe("logs sender", func() {
 		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, "-C", filepath.Dir(logsTmpFilesDir),
 			filepath.Base(logsTmpFilesDir)).
 			Return("Dummy", "Dummy", -1)
+		reportLogProgressSuccess(false)
 		err, _ := SendLogs(logsSenderMock)
 		Expect(err).To(HaveOccurred())
 	})
@@ -150,6 +167,7 @@ var _ = Describe("logs sender", func() {
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
 			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
 			Return(errors.Errorf("Dummy"))
+		reportLogProgressSuccess(true)
 		err, _ := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
@@ -186,6 +204,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
+		reportLogProgressSuccess(true)
 		err, _ := SendLogs(logsSenderMock)
 		fmt.Println(err)
 		Expect(err).NotTo(HaveOccurred())

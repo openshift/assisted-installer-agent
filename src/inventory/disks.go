@@ -2,6 +2,8 @@ package inventory
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jaypipes/ghw"
@@ -17,6 +19,47 @@ type disks struct {
 
 func newDisks(dependencies IDependencies) *disks {
 	return &disks{dependencies: dependencies}
+}
+
+func (d *disks) getDisksWWNs() map[string]string {
+	filesInfo, err := d.dependencies.ReadDir("/dev/disk/by-id")
+
+	if err != nil {
+		logrus.Warnf("Cannot get disk/by-id information: %s", err)
+		return make(map[string]string)
+	}
+
+	matchingFiles := funk.Filter(filesInfo, func(fileInfo os.FileInfo) bool {
+		basename := filepath.Base(fileInfo.Name())
+
+		if !strings.HasPrefix(basename, "wwn-") && !strings.HasPrefix(basename, "nvme-eui") {
+			return false
+		}
+
+		return fileInfo.Mode() & os.ModeSymlink != 0
+	})
+
+	// Finding the disk path (/dev/sda) from the by-id symlink.
+	// For example: wwn-0x6141877064533b0020adf3bc0325d664	-> /dev/sdb
+	// "wwn-0x6141877064533b0020adf3bc0325d664" is the disk id and the path is: /dev/sdb
+	return funk.Map(matchingFiles, func(fileInfo os.FileInfo) (string, string) {
+		diskId := fileInfo.Name()
+		diskPath, err := d.dependencies.EvalSymlinks(filepath.Join("/dev/disk/by-id", diskId))
+
+		if err != nil {
+			logrus.Warnf("Cannot resolve disk path from the disk by-id information (disk id is [%s]) - skipping: %s", diskId, err)
+			return "", ""
+		}
+
+		diskPath, err = d.dependencies.Abs(diskPath)
+
+		if err != nil {
+			logrus.Warnf("Cannot resolve disk path from the disk by-id information (disk id is [%s]) - skipping: %s", diskId, err)
+			return "", ""
+		}
+
+		return diskPath, diskId
+	}).(map[string]string)
 }
 
 func (d *disks) getPath(busPath string, diskName string) string {
@@ -130,6 +173,12 @@ func (d *disks) getDisks() []*models.Disk {
 		return ret
 	}
 
+	if len(blockInfo.Disks) == 0 {
+		return ret
+	}
+
+	diskPath2diskWWN := d.getDisksWWNs()
+
 	for _, disk := range blockInfo.Disks {
 		var eligibility models.DiskInstallationEligibility
 		var isInstallationMedia bool
@@ -148,7 +197,9 @@ func (d *disks) getDisks() []*models.Disk {
 		}
 
 		path := d.getPath(disk.BusPath, disk.Name)
+
 		rec := models.Disk{
+			ByID: 					 diskPath2diskWWN[path],
 			ByPath:                  d.getByPath(disk.BusPath),
 			Hctl:                    d.getHctl(disk.Name),
 			Model:                   unknownToEmpty(disk.Model),
@@ -164,6 +215,15 @@ func (d *disks) getDisks() []*models.Disk {
 			IsInstallationMedia:     isInstallationMedia,
 			InstallationEligibility: eligibility,
 		}
+
+		rec.ID = rec.Path
+
+		if rec.ByID != "" {
+			rec.ID = rec.ByID
+		} else if rec.ByPath != "" {
+			rec.ID = rec.ByPath
+		}
+
 		ret = append(ret, &rec)
 	}
 	return ret

@@ -22,7 +22,8 @@ func newDisks(dependencies IDependencies) *disks {
 }
 
 func (d *disks) getDisksWWNs() map[string]string {
-	filesInfo, err := d.dependencies.ReadDir("/dev/disk/by-id")
+	const ByIdLocation = "/dev/disk/by-id"
+	filesInfo, err := d.dependencies.ReadDir(ByIdLocation)
 
 	if err != nil {
 		logrus.Warnf("Cannot get disk/by-id information: %s", err)
@@ -43,18 +44,18 @@ func (d *disks) getDisksWWNs() map[string]string {
 	// For example: wwn-0x6141877064533b0020adf3bc0325d664	-> /dev/sdb
 	// "wwn-0x6141877064533b0020adf3bc0325d664" is the disk id and the path is: /dev/sdb
 	return funk.Map(matchingFiles, func(fileInfo os.FileInfo) (string, string) {
-		diskId := fileInfo.Name()
-		diskPath, err := d.dependencies.EvalSymlinks(filepath.Join("/dev/disk/by-id", diskId))
+		diskId := filepath.Join(ByIdLocation, fileInfo.Name())
+		diskPath, err := d.dependencies.EvalSymlinks(diskId)
 
 		if err != nil {
-			logrus.Warnf("Cannot resolve disk path from the disk by-id information (disk id is [%s]) - skipping: %s", diskId, err)
+			logrus.WithError(err).Warnf("Cannot resolve disk path from the disk by-id information (disk id is [%s]) - skipping:", diskId)
 			return "", ""
 		}
 
 		diskPath, err = d.dependencies.Abs(diskPath)
 
 		if err != nil {
-			logrus.Warnf("Cannot resolve disk path from the disk by-id information (disk id is [%s]) - skipping: %s", diskId, err)
+			logrus.WithError(err).Warnf("Cannot resolve disk path from the disk by-id information (disk id is [%s]) - skipping:", diskId)
 			return "", ""
 		}
 
@@ -63,12 +64,12 @@ func (d *disks) getDisksWWNs() map[string]string {
 }
 
 func (d *disks) getPath(busPath string, diskName string) string {
-	path := fmt.Sprintf("/dev/%s", diskName)
+	path := filepath.Join("/dev", diskName)
 	_, err := d.dependencies.Stat(path)
 	if err == nil {
 		return path
 	}
-	path = fmt.Sprintf("/dev/disk/by-path/%s", busPath)
+	path = filepath.Join("/dev/disk/by-path", busPath)
 	evaledPath, err := d.dependencies.EvalSymlinks(path)
 	if err != nil {
 		logrus.WithError(err).Warn("EvalSymlink")
@@ -84,7 +85,7 @@ func (d *disks) getPath(busPath string, diskName string) string {
 
 func (d *disks) getByPath(busPath string) string {
 	if busPath != ghw.UNKNOWN {
-		path := fmt.Sprintf("/dev/disk/by-path/%s", busPath)
+		path := filepath.Join("/dev/disk/by-path", busPath)
 		_, err := d.dependencies.Stat(path)
 		if err == nil {
 			return path

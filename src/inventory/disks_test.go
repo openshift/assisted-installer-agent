@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/thoas/go-funk"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jaypipes/ghw"
@@ -90,17 +91,20 @@ func createAWSXenEBSDisk() *ghw.Disk {
 	}
 }
 
+const devDiskByIdLocation = "/dev/disk/by-id"
 const sdaWwn = "wwn-0x6141877064533b0020adf3bb03167694"
 const sdaPath = "/dev/sda"
 const sdbWwn = "wwn-0x6141877064533b0020adf3bc0325d664"
 const sdbPath = "/dev/sdb"
+const sdaIdFullPath = devDiskByIdLocation + "/" + sdaWwn
+const sdbIdFullPath = devDiskByIdLocation + "/" + sdbWwn
 
 func createExpectedSDAModelDisk() *models.Disk {
 
 	return &models.Disk{
-		ID:        sdaWwn,
+		ID:        sdaIdFullPath,
 		Bootable:  true,
-		ByID:      sdaWwn,
+		ByID:      sdaIdFullPath,
 		ByPath:    "/dev/disk/by-path/pci-0000:02:00.0-scsi-0:2:0:0",
 		DriveType: "HDD",
 		Hctl:      "0.2.0.0",
@@ -123,9 +127,9 @@ func createExpectedSDAModelDisk() *models.Disk {
 
 func createExpectedSDBModelDisk() *models.Disk {
 	return &models.Disk{
-		ID:        sdbWwn,
+		ID:        sdbIdFullPath,
 		Bootable:  true,
-		ByID:      sdbWwn,
+		ByID:      sdbIdFullPath,
 		ByPath:    "/dev/disk/by-path/pci-0000:02:00.0-scsi-0:2:1:0",
 		DriveType: "HDD",
 		Hctl:      "0.2.0.0",
@@ -725,7 +729,7 @@ var _ = Describe("Disks test", func() {
 			ret := GetDisks(dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
-			Ω(disk.ByID).Should(Equal(sdaWwn))
+			Ω(disk.ByID).Should(Equal(sdaIdFullPath))
 		})
 
 		It("Should have the by-id information only for one disk", func() {
@@ -740,7 +744,7 @@ var _ = Describe("Disks test", func() {
 				if disk.Name == createSDBDisk().Name {
 					Ω(disk.ByID).Should(BeEmpty())
 				} else {
-					Ω(disk.ByID).Should(Equal(sdaWwn))
+					Ω(disk.ByID).Should(Equal(sdaIdFullPath))
 				}
 			}
 		})
@@ -753,22 +757,23 @@ var _ = Describe("Disks test", func() {
 
 			for _, disk := range ret {
 				if disk.Name == createSDBDisk().Name {
-					Ω(disk.ByID).Should(Equal(sdbWwn))
+					Ω(disk.ByID).Should(Equal(sdbIdFullPath))
 				} else {
-					Ω(disk.ByID).Should(Equal(sdaWwn))
+					Ω(disk.ByID).Should(Equal(sdaIdFullPath))
 				}
 			}
 		})
 
 		It("Should have the by-id information for nvme disk", func() {
 			byidmapping := make(map[string]string)
-			byidmapping["/dev/nvme0n1"] = "nvme-eui-0x6141877064533b0020adf3bc0325d664"
+			const nvmeById = "nvme-eui-0x6141877064533b0020adf3bc0325d664"
+			byidmapping["/dev/nvme0n1"] = nvmeById
 			mockGetWWNCallForSuccess(dependencies, byidmapping)
 			mockAllForSuccess(dependencies, createNVMEDisk())
 			ret := GetDisks(dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
-			Ω(disk.ByID).Should(Equal("nvme-eui-0x6141877064533b0020adf3bc0325d664"))
+			Ω(disk.ByID).Should(Equal(filepath.Join(devDiskByIdLocation, nvmeById)))
 		})
 
 		It("All the other fields are the same", func() {

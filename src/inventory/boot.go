@@ -3,14 +3,15 @@ package inventory
 import (
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
 type boot struct {
-	dependencies IDependencies
+	dependencies util.IDependencies
 }
 
-func newBoot(dependencies IDependencies) *boot {
+func newBoot(dependencies util.IDependencies) *boot {
 	return &boot{dependencies: dependencies}
 }
 
@@ -48,6 +49,6 @@ func (b *boot) getBoot() *models.Boot {
 	return &ret
 }
 
-func GetBoot(dependencies IDependencies) *models.Boot {
+func GetBoot(dependencies util.IDependencies) *models.Boot {
 	return newBoot(dependencies).getBoot()
 }

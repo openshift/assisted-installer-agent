@@ -4,6 +4,8 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
 const (
@@ -13,7 +15,7 @@ const (
 
 var _ = Describe("boot", func() {
 
-	var dependencies *MockIDependencies
+	var dependencies *util.MockIDependencies
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()

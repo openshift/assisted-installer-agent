@@ -5,6 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
 const (
@@ -246,7 +248,7 @@ IPv6 ND/SLAAC Timing Configuration Support: not supported
 )
 
 var _ = Describe("bmc", func() {
-	var dependencies *MockIDependencies
+	var dependencies *util.MockIDependencies
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()

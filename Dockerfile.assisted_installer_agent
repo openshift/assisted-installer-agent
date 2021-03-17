@@ -26,7 +26,7 @@ RUN dnf install -y \
 		# dhcp_lease_allocate
 		dhclient \
 		# logs_sender
-		tar \
+		tar openssh-clients\
 		# ntp_synchronizer
 		chrony && \
 		dnf update -y systemd && dnf clean all
@@ -43,3 +43,5 @@ COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/ntp_synchronizer /usr/bin/ntp_synchronizer
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/container_image_availability /usr/bin/container_image_availability
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/domain_resolution /usr/bin/domain_resolution
+
+COPY scripts/installer/* /usr/local/bin/

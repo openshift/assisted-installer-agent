@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
 func ReadInventory() *models.Inventory {
-	d := newDependencies()
+	d := util.NewDependencies()
 	ret := models.Inventory{
 		BmcAddress:   GetBmcAddress(d),
 		BmcV6address: GetBmcV6Address(d),

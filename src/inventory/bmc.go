@@ -6,16 +6,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"gopkg.in/yaml.v2"
 )
 
 const MaxIpmiChannel = 12
 
 type bmc struct {
-	dependicies IDependencies
+	dependicies util.IDependencies
 }
 
-func newBMC(dependencies IDependencies) *bmc {
+func newBMC(dependencies util.IDependencies) *bmc {
 	return &bmc{dependicies: dependencies}
 }
 
@@ -55,7 +56,7 @@ func (b *bmc) getBmcAddress() string {
 	return "0.0.0.0"
 }
 
-func GetBmcAddress(dependencies IDependencies) string {
+func GetBmcAddress(dependencies util.IDependencies) string {
 	return newBMC(dependencies).getBmcAddress()
 }
 
@@ -140,6 +141,6 @@ func (b *bmc) getBmcV6Address() string {
 	return "::/0"
 }
 
-func GetBmcV6Address(dependencies IDependencies) string {
+func GetBmcV6Address(dependencies util.IDependencies) string {
 	return newBMC(dependencies).getBmcV6Address()
 }

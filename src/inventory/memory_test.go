@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -80,7 +81,7 @@ Cached:         12556080 kB
 )
 
 var _ = Describe("Memory test", func() {
-	var dependencies *MockIDependencies
+	var dependencies *util.MockIDependencies
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()

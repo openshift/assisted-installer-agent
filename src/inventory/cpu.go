@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 )
@@ -25,7 +26,7 @@ type lscpu struct {
 	Lscpu []*field
 }
 
-func GetCPU(dependencies IDependencies) *models.CPU {
+func GetCPU(dependencies util.IDependencies) *models.CPU {
 	ret := &models.CPU{}
 	o, e, exitCode := dependencies.Execute("lscpu", "-J")
 	if exitCode != 0 {

@@ -3,7 +3,6 @@ package commands
 import (
 	"encoding/json"
 	"encoding/xml"
-	"net"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -20,16 +19,17 @@ type Any interface{}
 
 func getOutgoingNics() []string {
 	ret := make([]string, 0)
-	r := regexp.MustCompile(`^(?:eth|ens|eno|enp|wlp)\d`)
-	interfaces, err := net.Interfaces()
+	d := util.NewDependencies()
+	interfaces, err := d.Interfaces()
 	if err != nil {
 		log.WithError(err).Warnf("Get outgoing nics")
 		return nil
 	}
 	for _, intf := range interfaces {
-		if r.MatchString(intf.Name) {
-			ret = append(ret, intf.Name)
+		if !(intf.IsPhysical() || intf.IsBonding() || intf.IsVlan()) {
+			continue
 		}
+		ret = append(ret, intf.Name())
 	}
 	return ret
 }
@@ -280,17 +280,10 @@ func checkHost(outgoingNics []string, host *models.ConnectivityCheckHost, hostCh
 		L2Connectivity: make([]*models.L2Connectivity, 0),
 		L3Connectivity: make([]*models.L3Connectivity, 0),
 	}
-	r := regexp.MustCompile(`^(?:eth|ens|eno|enp)\d`)
-	checkedNics := make([]*models.ConnectivityCheckNic, 0)
-	for _, nic := range host.Nics {
-		if r.MatchString(nic.Name) {
-			checkedNics = append(checkedNics, nic)
-		}
-	}
-	addresses := getOutgoingAddresses(checkedNics)
+	addresses := getOutgoingAddresses(host.Nics)
 	ch := make(chan Any, 1000)
 	go l3CheckConnectivity(addresses, outgoingNics, ch)
-	go l2CheckConnectivity(checkedNics, outgoingNics, ch)
+	go l2CheckConnectivity(host.Nics, outgoingNics, ch)
 	for numDone := 0; numDone != 2; {
 		iret := <-ch
 		switch value := iret.(type) {

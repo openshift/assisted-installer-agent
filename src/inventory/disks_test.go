@@ -203,7 +203,7 @@ func createWWNResults() map[string]string {
 	return byidmapping
 }
 
-func mockReadDir(dependencies *MockIDependencies, dir string, errMessage string, files ...os.FileInfo) *mock.Call {
+func mockReadDir(dependencies *util.MockIDependencies, dir string, errMessage string, files ...os.FileInfo) *mock.Call {
 	if errMessage != "" {
 		return dependencies.On("ReadDir", dir).Return(nil, errors.New(errMessage)).Once()
 	}
@@ -211,7 +211,7 @@ func mockReadDir(dependencies *MockIDependencies, dir string, errMessage string,
 	return dependencies.On("ReadDir", dir).Return(files, nil).Once()
 }
 
-func mockExecuteDependencyCall(dependencies *MockIDependencies, command string, output string, err string, args ...string) *mock.Call {
+func mockExecuteDependencyCall(dependencies *util.MockIDependencies, command string, output string, err string, args ...string) *mock.Call {
 	exitCode := 0
 
 	if err != "" {
@@ -228,7 +228,7 @@ func mockExecuteDependencyCall(dependencies *MockIDependencies, command string, 
 	return dependencies.On("Execute", interfacesArgs...).Return(output, err, exitCode).Once()
 }
 
-func mockStatDependencyCall(dependencies *MockIDependencies, path string, errMessage string) *mock.Call {
+func mockStatDependencyCall(dependencies *util.MockIDependencies, path string, errMessage string) *mock.Call {
 	if errMessage != "" {
 		return dependencies.On("Stat", path).Return(nil, errors.New(errMessage)).Once()
 	} else {
@@ -239,7 +239,7 @@ func mockStatDependencyCall(dependencies *MockIDependencies, path string, errMes
 	}
 }
 
-func mockGetWWNReadDirForSuccess(dependencies *MockIDependencies, results map[string]string) *mock.Call {
+func mockGetWWNReadDirForSuccess(dependencies *util.MockIDependencies, results map[string]string) *mock.Call {
 	fileInfos := funk.Map(results, func(path string, id string) os.FileInfo {
 		fileInfoMock := MockFileInfo{}
 		fileInfoMock.On("Name").Return(id).Once()
@@ -250,7 +250,7 @@ func mockGetWWNReadDirForSuccess(dependencies *MockIDependencies, results map[st
 	return mockReadDir(dependencies, "/dev/disk/by-id", "", fileInfos.([]os.FileInfo)...)
 }
 
-func mockGetWWNCallForSuccess(dependencies *MockIDependencies, results map[string]string) {
+func mockGetWWNCallForSuccess(dependencies *util.MockIDependencies, results map[string]string) {
 	mockGetWWNReadDirForSuccess(dependencies, results)
 
 	funk.ForEach(results, func(path string, id string) {
@@ -264,7 +264,7 @@ func mockGetWWNCallForSuccess(dependencies *MockIDependencies, results map[strin
 	})
 }
 
-func incrementFileInfoNameCall(dependencies *MockIDependencies, id string) {
+func incrementFileInfoNameCall(dependencies *util.MockIDependencies, id string) {
 	_, call := util.GetExpectedCall(&dependencies.Mock, "ReadDir", "/dev/disk/by-id")
 	fileInfos := call.ReturnArguments.Get(0)
 
@@ -278,36 +278,36 @@ func incrementFileInfoNameCall(dependencies *MockIDependencies, id string) {
 	}
 }
 
-func mockFetchDisks(dependencies *MockIDependencies, error error, disks ...*ghw.Disk) {
+func mockFetchDisks(dependencies *util.MockIDependencies, error error, disks ...*ghw.Disk) {
 	dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{Disks: disks}, error).Once()
 }
 
 // mockGetPathFromDev Mocks the dependency call that try to locate the disk at /dev/diskName used by disks.getPath.
-func mockGetPathFromDev(dependencies *MockIDependencies, diskName string, errMessage string) *mock.Call {
+func mockGetPathFromDev(dependencies *util.MockIDependencies, diskName string, errMessage string) *mock.Call {
 	return mockStatDependencyCall(dependencies, fmt.Sprintf("/dev/%s", diskName), errMessage)
 }
 
 // mockGetByPath Mocks the dependency call that try to find the by-path disk name used by disks.getPath.
 // The by-path name is the shortest physical path to the device.
 // Read this article for more details. https://wiki.archlinux.org/index.php/persistent_block_device_naming
-func mockGetByPath(dependencies *MockIDependencies, busPath string, errMessage string) *mock.Call {
+func mockGetByPath(dependencies *util.MockIDependencies, busPath string, errMessage string) *mock.Call {
 	return mockStatDependencyCall(dependencies, fmt.Sprintf("/dev/disk/by-path/%s", busPath), errMessage)
 }
 
-func remockGetByPath(dependencies *MockIDependencies, busPath string, errMessage string) *mock.Call {
+func remockGetByPath(dependencies *util.MockIDependencies, busPath string, errMessage string) *mock.Call {
 	path := fmt.Sprintf("/dev/disk/by-path/%s", busPath)
 	util.DeleteExpectedMethod(&dependencies.Mock, "Stat", path)
 	return mockStatDependencyCall(dependencies, path, errMessage)
 }
 
-func mockGetHctl(dependencies *MockIDependencies, name string, err string) *mock.Call {
+func mockGetHctl(dependencies *util.MockIDependencies, name string, err string) *mock.Call {
 	fileInfoMock := MockFileInfo{}
 	fileInfoMock.On("Name").Return("0.2.0.0").Once()
 	var fileInfo os.FileInfo = &fileInfoMock
 	return mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/device/scsi_device", name), err, fileInfo)
 }
 
-func mockGetBootable(dependencies *MockIDependencies, path string, bootable bool, err string) *mock.Call {
+func mockGetBootable(dependencies *util.MockIDependencies, path string, bootable bool, err string) *mock.Call {
 	result := "DOS/MBR boot sector"
 
 	if !bootable {
@@ -317,11 +317,11 @@ func mockGetBootable(dependencies *MockIDependencies, path string, bootable bool
 	return mockExecuteDependencyCall(dependencies, "file", result, err, "-s", path)
 }
 
-func mockGetSMART(dependencies *MockIDependencies, path string, err string) *mock.Call {
+func mockGetSMART(dependencies *util.MockIDependencies, path string, err string) *mock.Call {
 	return mockExecuteDependencyCall(dependencies, "smartctl", `{"some": "json"}`, err, "--xall", "--json=c", path)
 }
 
-func mockAllForSuccess(dependencies *MockIDependencies, disks ...*ghw.Disk) {
+func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk) {
 	mockFetchDisks(dependencies, nil, disks...)
 
 	for _, disk := range disks {
@@ -336,7 +336,7 @@ func mockAllForSuccess(dependencies *MockIDependencies, disks ...*ghw.Disk) {
 	}
 }
 
-func prepareDiskObjects(dependencies *MockIDependencies, diskNum int) {
+func prepareDiskObjects(dependencies *util.MockIDependencies, diskNum int) {
 	// Don't find it under /dev/disk1 to test the fallback of searching /dev/disk/by-path
 	disk := createFakeGHWDisk(diskNum)
 	name := disk.Name
@@ -352,7 +352,7 @@ func prepareDiskObjects(dependencies *MockIDependencies, diskNum int) {
 	dependencies.On("Abs", fmt.Sprintf("/dev/disk/by-path/../../foo/disk%d", diskNum)).Return(path, nil).Once()
 }
 
-func prepareDisksTest(dependencies *MockIDependencies, numDisks int) (*ghw.BlockInfo, []*models.Disk) {
+func prepareDisksTest(dependencies *util.MockIDependencies, numDisks int) (*ghw.BlockInfo, []*models.Disk) {
 	blockInfo := &ghw.BlockInfo{}
 	var expectedDisks []*models.Disk
 	mockGetWWNCallForSuccess(dependencies, make(map[string]string))
@@ -367,7 +367,7 @@ func prepareDisksTest(dependencies *MockIDependencies, numDisks int) (*ghw.Block
 }
 
 var _ = Describe("Disks test", func() {
-	var dependencies *MockIDependencies
+	var dependencies *util.MockIDependencies
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()

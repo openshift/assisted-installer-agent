@@ -10,14 +10,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
 type disks struct {
-	dependencies IDependencies
+	dependencies util.IDependencies
 }
 
-func newDisks(dependencies IDependencies) *disks {
+func newDisks(dependencies util.IDependencies) *disks {
 	return &disks{dependencies: dependencies}
 }
 
@@ -200,7 +201,7 @@ func (d *disks) getDisks() []*models.Disk {
 		path := d.getPath(disk.BusPath, disk.Name)
 
 		rec := models.Disk{
-			ByID: 					 diskPath2diskWWN[path],
+			ByID:			 diskPath2diskWWN[path],
 			ByPath:                  d.getByPath(disk.BusPath),
 			Hctl:                    d.getHctl(disk.Name),
 			Model:                   unknownToEmpty(disk.Model),
@@ -230,6 +231,6 @@ func (d *disks) getDisks() []*models.Disk {
 	return ret
 }
 
-func GetDisks(dependencies IDependencies) []*models.Disk {
+func GetDisks(dependencies util.IDependencies) []*models.Disk {
 	return newDisks(dependencies).getDisks()
 }

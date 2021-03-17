@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-service/models"
@@ -31,10 +32,10 @@ var multiplierMap = map[string]int64{
 }
 
 type memory struct {
-	dependencies IDependencies
+	dependencies util.IDependencies
 }
 
-func newMemory(dependencies IDependencies) *memory {
+func newMemory(dependencies util.IDependencies) *memory {
 	return &memory{dependencies: dependencies}
 }
 
@@ -101,6 +102,6 @@ func (m *memory) getMemory() *models.Memory {
 	return &ret
 }
 
-func GetMemory(dependencies IDependencies) *models.Memory {
+func GetMemory(dependencies util.IDependencies) *models.Memory {
 	return newMemory(dependencies).getMemory()
 }

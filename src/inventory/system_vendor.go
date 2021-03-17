@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"github.com/jaypipes/ghw"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 
@@ -25,7 +26,7 @@ func isVirtual(product string) bool {
 	return false
 }
 
-func GetVendor(dependencies IDependencies) *models.SystemVendor {
+func GetVendor(dependencies util.IDependencies) *models.SystemVendor {
 	var ret models.SystemVendor
 
 	product, err := dependencies.Product(ghw.WithChroot("/host"))

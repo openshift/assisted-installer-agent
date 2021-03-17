@@ -6,11 +6,12 @@ import (
 	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
 var _ = Describe("System vendor test", func() {
-	var dependencies *MockIDependencies
+	var dependencies *util.MockIDependencies
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()

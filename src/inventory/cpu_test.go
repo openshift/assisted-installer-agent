@@ -3,6 +3,7 @@ package inventory
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -88,7 +89,7 @@ const (
 
 var _ = Describe("CPU test", func() {
 
-	var dependencies *MockIDependencies
+	var dependencies *util.MockIDependencies
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()

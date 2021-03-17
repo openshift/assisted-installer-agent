@@ -1,4 +1,4 @@
-package inventory
+package util
 
 import (
 	"io/ioutil"
@@ -8,8 +8,6 @@ import (
 
 	"github.com/jaypipes/ghw"
 	"github.com/vishvananda/netlink"
-
-	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
 //go:generate mockery -name IDependencies -inpkg
@@ -29,11 +27,11 @@ type IDependencies interface {
 }
 
 type Dependencies struct {
-	util.NetlinkRouteFinder
+	NetlinkRouteFinder
 }
 
 func (d *Dependencies) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
-	return util.Execute(command, args...)
+	return Execute(command, args...)
 }
 
 func (d *Dependencies) ReadFile(fname string) ([]byte, error) {
@@ -80,6 +78,6 @@ func (d *Dependencies) EvalSymlinks(path string) (string, error) {
 	return filepath.EvalSymlinks(path)
 }
 
-func newDependencies() IDependencies {
+func NewDependencies() IDependencies {
 	return &Dependencies{}
 }

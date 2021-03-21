@@ -26,6 +26,7 @@ import (
 const (
 	logsDir                      = "/var/log"
 	installerGatherBin           = "/usr/local/bin/installer-gather.sh"
+	ovsGatherBin                 = "/usr/local/bin/ovs-installer-gather.sh"
 	installerGatherArchivePreifx = "/root/log-bundle-"
 	findmnt                      = "/usr/bin/findmnt"
 	ls                           = "/bin/ls"
@@ -123,25 +124,46 @@ func (e *LogsSenderExecuter) LogProgressReport(clusterID strfmt.UUID, hostID str
 }
 
 func (e *LogsSenderExecuter) GatherInstallerLogs(targetDir string) error {
+	var result, err error
+
 	gatherID := time.Now().Format("20060102150405")
 	mastersIPs := strings.Split(config.LogsSenderConfig.MastersIPs, ",")
+	//Create ovs logs where installer-gather expects to find its input.
+	//Then, installer-gather.sh runa as overlay and finally bundles
+	//all logs together. Unlike installer-gather.sh, ovs-installer-gather.sh
+	//runs locally in the container rather on the host
+	ovsGatherArgs := append([]string{"--id", gatherID}, mastersIPs...)
+	log.Infof("Running %s %v", ovsGatherBin, ovsGatherArgs)
+	stdOut, stdErr, exitCode := e.Execute(ovsGatherBin, ovsGatherArgs...)
+	for _, so := range strings.Split(stdOut, "\n") {
+		log.Infof("ovs-gather log: %s", so)
+	}
+	if stdErr != "" || exitCode != 0 {
+		err = errors.New(stdErr)
+		log.WithError(err).Warnf("Failed to run %s %v", ovsGatherBin, ovsGatherArgs)
+		result = multierror.Append(result, err)
+	}
+
 	installerGatherArgs := append([]string{"--id", gatherID}, mastersIPs...)
 	log.Infof("Running %s %v", installerGatherBin, installerGatherArgs)
 	// installer-gather.sh is written in such a way it always return 0.
-	stdOut, stdErr, exitCode := e.ExecutePrivileged(installerGatherBin, installerGatherArgs...)
+	stdOut, stdErr, exitCode = e.ExecutePrivileged(installerGatherBin, installerGatherArgs...)
 	for _, so := range strings.Split(stdOut, "\n") {
 		log.Infof("installer-gather log: %s", so)
 	}
 	if stdErr != "" || exitCode != 0 {
+		err = errors.New(stdErr)
 		log.WithError(errors.New(stdErr)).Warnf("Failed to run %s %v", installerGatherBin, installerGatherArgs)
+		result = multierror.Append(result, err)
 	}
+
 	_, stdErr, exitCode = e.ExecutePrivileged("mv", fmt.Sprintf("%s%s.tar.gz", installerGatherArchivePreifx, gatherID), targetDir)
 	if exitCode != 0 {
-		err := errors.New(stdErr)
+		err = errors.New(stdErr)
 		log.WithError(err).Errorf("Failed to: mv %s %s", fmt.Sprintf("%s%s.tar.gz", installerGatherArchivePreifx, gatherID), targetDir)
-		return err
+		result = multierror.Append(result, err)
 	}
-	return nil
+	return result
 }
 
 func (e *LogsSenderExecuter) GatherErrorLogs(targetDir string) error {

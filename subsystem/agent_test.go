@@ -476,6 +476,7 @@ func (i *InventoryVerifier) verify(actualReply *models.StepReply) bool {
 		inventory.CPU != nil && inventory.CPU.Count > 0 &&
 		len(inventory.Disks) > 0 &&
 		len(inventory.Interfaces) > 0 &&
+		inventory.Gpus != nil &&
 		inventory.Hostname != ""
 }
 

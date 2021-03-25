@@ -16,6 +16,7 @@ func ReadInventory() *models.Inventory {
 		Boot:         GetBoot(d),
 		CPU:          GetCPU(d),
 		Disks:        GetDisks(d),
+		Gpus:         GetGPUs(d),
 		Hostname:     GetHostname(d),
 		Interfaces:   GetInterfaces(d),
 		Memory:       GetMemory(d),

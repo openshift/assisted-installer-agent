@@ -12,7 +12,7 @@ require (
 	github.com/jaypipes/ghw v0.6.1
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
-	github.com/openshift/assisted-service v1.0.10-0.20210308171519-dfc03a6c155b
+	github.com/openshift/assisted-service v1.0.10-0.20210330171458-790c68adcee8
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20210210163937-34f98e0f48fd
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0

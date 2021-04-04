@@ -78,7 +78,7 @@ func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, 
 	s.Logger().Infof("Executing step: <%s>, command: <%s>, args: <%v>", stepID, command, args)
 	stdout, stderr, exitCode := handler(command, args...)
 	if exitCode != 0 {
-		s.Logger().Infof(`Step execution failed (exit code %v): <%s>, command: <%s>, args: <%v>. Output:
+		s.Logger().Errorf(`Step execution failed (exit code %v): <%s>, command: <%s>, args: <%v>. Output:
 stdout:
 %v
 

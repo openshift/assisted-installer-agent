@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/jaypipes/ghw"
-	"github.com/sirupsen/logrus"
-	"github.com/thoas/go-funk"
-
+	ghwutil "github.com/jaypipes/ghw/pkg/util"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
+	"github.com/sirupsen/logrus"
+	"github.com/thoas/go-funk"
 )
 
 type disks struct {
@@ -38,7 +38,7 @@ func (d *disks) getDisksWWNs() map[string]string {
 			return false
 		}
 
-		return fileInfo.Mode() & os.ModeSymlink != 0
+		return fileInfo.Mode()&os.ModeSymlink != 0
 	})
 
 	// Finding the disk path (/dev/sda) from the by-id symlink.
@@ -85,7 +85,7 @@ func (d *disks) getPath(busPath string, diskName string) string {
 }
 
 func (d *disks) getByPath(busPath string) string {
-	if busPath != ghw.UNKNOWN {
+	if busPath != ghwutil.UNKNOWN {
 		path := filepath.Join("/dev/disk/by-path", busPath)
 		_, err := d.dependencies.Stat(path)
 		if err == nil {
@@ -130,7 +130,7 @@ func (d *disks) getSMART(path string) string {
 }
 
 func unknownToEmpty(value string) string {
-	if value == ghw.UNKNOWN {
+	if value == ghwutil.UNKNOWN {
 		return ""
 	}
 	return value
@@ -146,8 +146,8 @@ func checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallati
 		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
 	}
 
-	if disk.BusType == ghw.BUS_TYPE_UNKNOWN && disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN {
-		notEligibleReasons = append(notEligibleReasons, "Disk has unknown bus type and storage controller")
+	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN {
+		notEligibleReasons = append(notEligibleReasons, "Disk has unknown storage controller")
 	}
 
 	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
@@ -201,7 +201,7 @@ func (d *disks) getDisks() []*models.Disk {
 		path := d.getPath(disk.BusPath, disk.Name)
 
 		rec := models.Disk{
-			ByID:			 diskPath2diskWWN[path],
+			ByID:                    diskPath2diskWWN[path],
 			ByPath:                  d.getByPath(disk.BusPath),
 			Hctl:                    d.getHctl(disk.Name),
 			Model:                   unknownToEmpty(disk.Model),

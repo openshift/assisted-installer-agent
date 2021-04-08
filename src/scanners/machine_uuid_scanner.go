@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/jaypipes/ghw"
+	"github.com/jaypipes/ghw/pkg/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,7 +63,7 @@ func (ir *idReader) readSystemUUID() *strfmt.UUID {
 	} else {
 		value = product.UUID
 	}
-	if value == "" || value == ghw.UNKNOWN {
+	if value == "" || value == util.UNKNOWN {
 		log.Warnf("Could not get system UUID.  Using default UUID %s", DefaultUUID)
 		value = DefaultUUID
 	}
@@ -76,7 +77,7 @@ func (ir *idReader) readMotherboardSerial() *strfmt.UUID {
 		return nil
 	}
 	value := basedboard.SerialNumber
-	if value == "" || value == ghw.UNKNOWN || value == VmwareDefaultSerial {
+	if value == "" || value == util.UNKNOWN || value == VmwareDefaultSerial {
 		return nil
 	}
 	return md5GenerateUUID(value)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/jaypipes/ghw"
-
+	"github.com/jaypipes/ghw/pkg/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -37,7 +37,7 @@ var _ = Describe("Machine uuid test", func() {
 		Expect(id).To(Equal(toUUID(TestUuid)))
 	})
 	It("Unknown serial", func() {
-		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: ghw.UNKNOWN}, nil).Once()
+		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: util.UNKNOWN}, nil).Once()
 		serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: TestUuid}, nil)
 		id := ReadId(serialDiscovery)
 		Expect(id).To(Equal(toUUID(TestUuid)))

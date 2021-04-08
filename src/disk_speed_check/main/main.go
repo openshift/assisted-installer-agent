@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	config.ProcessArgs()
+	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	util.SetLogging("disk-speed-check", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging)
 
 	req := flag.Arg(flag.NArg() - 1)

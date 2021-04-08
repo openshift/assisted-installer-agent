@@ -2,10 +2,6 @@ package inventory
 
 import (
 	"fmt"
-	"github.com/openshift/assisted-installer-agent/src/util"
-	"github.com/openshift/assisted-service/models"
-	"github.com/stretchr/testify/mock"
-	"github.com/thoas/go-funk"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +9,11 @@ import (
 	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
+	"github.com/thoas/go-funk"
 )
 
 func createFakeModelDisk(num int) *models.Disk {
@@ -47,7 +47,6 @@ func createFakeGHWDisk(num int) *ghw.Disk {
 		Model:                  fmt.Sprintf("disk%d-model", num),
 		SerialNumber:           fmt.Sprintf("disk%d-serial", num),
 		WWN:                    fmt.Sprintf("disk%d-wwn", num),
-		BusType:                ghw.BUS_TYPE_SCSI,
 		IsRemovable:            false,
 		NUMANodeID:             0,
 		PhysicalBlockSizeBytes: 512,
@@ -65,7 +64,6 @@ func createNVMEDisk() *ghw.Disk {
 		Model:                  "INTEL SSDPEKKF256G8L",
 		SerialNumber:           "PHHP942200RN256B",
 		WWN:                    "eui.5cd2e42a91419c24",
-		BusType:                ghw.BUS_TYPE_NVME,
 		IsRemovable:            false,
 		NUMANodeID:             0,
 		PhysicalBlockSizeBytes: 512,
@@ -83,7 +81,6 @@ func createAWSXenEBSDisk() *ghw.Disk {
 		Model:                  "unknown",
 		SerialNumber:           "unknown",
 		WWN:                    "unknown",
-		BusType:                ghw.BUS_TYPE_SCSI,
 		IsRemovable:            false,
 		NUMANodeID:             0,
 		PhysicalBlockSizeBytes: 512,
@@ -164,7 +161,6 @@ func createSDADisk() *ghw.Disk {
 		Model:                  "PERC_H330_Mini",
 		SerialNumber:           "6141877064533b0020adf3bb03167694",
 		WWN:                    "0x6141877064533b0020adf3bb03167694",
-		BusType:                ghw.BUS_TYPE_SCSI,
 		IsRemovable:            false,
 		NUMANodeID:             0,
 		PhysicalBlockSizeBytes: 512,
@@ -185,7 +181,6 @@ func createSDBDisk() *ghw.Disk {
 		Model:                  "PERC_H330_Mini",
 		SerialNumber:           "6141877064533b0020adf3bc0325d664",
 		WWN:                    "0x6141877064533b0020adf3bc0325d664",
-		BusType:                ghw.BUS_TYPE_SCSI,
 		IsRemovable:            false,
 		NUMANodeID:             0,
 		PhysicalBlockSizeBytes: 512,
@@ -622,11 +617,10 @@ var _ = Describe("Disks test", func() {
 		blockInfo, expectation := prepareDisksTest(dependencies, 1)
 
 		blockInfo.Disks[0].StorageController = ghw.STORAGE_CONTROLLER_UNKNOWN
-		blockInfo.Disks[0].BusType = ghw.BUS_TYPE_UNKNOWN
 
 		expectation[0].InstallationEligibility.Eligible = false
 		expectation[0].InstallationEligibility.NotEligibleReasons = []string{
-			"Disk has unknown bus type and storage controller",
+			"Disk has unknown storage controller",
 		}
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)

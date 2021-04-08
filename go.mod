@@ -10,9 +10,11 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jaypipes/ghw v0.7.0
+	github.com/jaypipes/pcidb v0.6.0
+	github.com/metal3-io/baremetal-operator v0.0.0 // indirect
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
-	github.com/openshift/assisted-service v1.0.10-0.20210330171458-790c68adcee8
+	github.com/openshift/assisted-service v1.0.10-0.20210412070223-659b5dab9f67
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20210210163937-34f98e0f48fd
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0
@@ -23,6 +25,7 @@ require (
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
 	gopkg.in/yaml.v2 v2.4.0
+	honnef.co/go/tools v0.0.1-2020.1.6 // indirect
 )
 
 replace (

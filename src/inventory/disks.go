@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jaypipes/ghw"
+	"github.com/jaypipes/ghw/pkg/block"
 	ghwutil "github.com/jaypipes/ghw/pkg/util"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
@@ -181,7 +182,7 @@ func (d *disks) getDisks() []*models.Disk {
 
 	diskPath2diskWWN := d.getDisksWWNs()
 
-	for _, disk := range blockInfo.Disks {
+	for diskIndex, disk := range blockInfo.Disks {
 		var eligibility models.DiskInstallationEligibility
 		var isInstallationMedia bool
 
@@ -202,7 +203,7 @@ func (d *disks) getDisks() []*models.Disk {
 
 		rec := models.Disk{
 			ByID:                    diskPath2diskWWN[path],
-			ByPath:                  d.getByPath(disk.BusPath),
+			ByPath:                  d.getBusPath(blockInfo.Disks, diskIndex, disk.BusPath),
 			Hctl:                    d.getHctl(disk.Name),
 			Model:                   unknownToEmpty(disk.Model),
 			Name:                    disk.Name,
@@ -229,6 +230,27 @@ func (d *disks) getDisks() []*models.Disk {
 		ret = append(ret, &rec)
 	}
 	return ret
+}
+
+// getBusPath - Support special case where two disk have the same busType.
+// We reproduce this case by creating a machine using virt-install with the following command which creates a machine
+// with two IDE disks HDD and CDROM and both have the same busType.
+// virt-install --name=master-1 --cdrom=$PATH/cluster-discovery.iso --vcpus=2 --ram=16384 --disk=size="$DISKGIB",pool="$POOL" --os-variant=rhel-unknown --network=bridge=virbr0,model=virtio --graphics=none --noautoconsole
+func (d *disks) getBusPath(disks []*block.Disk, index int, busPath string) string {
+	if busPath == ghwutil.UNKNOWN {
+		return ""
+	}
+
+	for i, disk := range disks {
+		if i == index || disk.BusPath != busPath {
+			continue
+		}
+
+		// when two disks share the same bus path, we prefer to pretend they have no bus path at all, to avoid confusing between them
+		return ""
+	}
+
+	return d.getByPath(busPath)
 }
 
 func GetDisks(dependencies util.IDependencies) []*models.Disk {

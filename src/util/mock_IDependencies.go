@@ -122,6 +122,35 @@ func (_m *MockIDependencies) Execute(command string, args ...string) (string, st
 	return r0, r1, r2
 }
 
+// GPU provides a mock function with given fields: opts
+func (_m *MockIDependencies) GPU(opts ...*ghw.WithOption) (*ghw.GPUInfo, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *ghw.GPUInfo
+	if rf, ok := ret.Get(0).(func(...*ghw.WithOption) *ghw.GPUInfo); ok {
+		r0 = rf(opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ghw.GPUInfo)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(...*ghw.WithOption) error); ok {
+		r1 = rf(opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Hostname provides a mock function with given fields:
 func (_m *MockIDependencies) Hostname() (string, error) {
 	ret := _m.Called()

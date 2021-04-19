@@ -10,6 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const ipv6LocalLinkCIDR = "fe80::/10"
+
 type interfaces struct {
 	dependencies util.IDependencies
 }
@@ -37,6 +39,18 @@ func (i *interfaces) getDeviceField(name, field string) string {
 	}
 	return strings.TrimSpace(string(b))
 
+}
+
+func ipWithCidrInCidr(ipWithCidrStr, cidrStr string) bool {
+	ip, _, err := net.ParseCIDR(ipWithCidrStr)
+	if ip == nil {
+		return false
+	}
+	_, ipnet, err := net.ParseCIDR(cidrStr)
+	if err != nil {
+		return false
+	}
+	return ipnet.Contains(ip)
 }
 
 func analyzeAddress(addr net.Addr) (isIpv4 bool, addrStr string, err error) {
@@ -104,7 +118,7 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 			}
 			if isIPv4 {
 				rec.IPV4Addresses = append(rec.IPV4Addresses, addrStr)
-			} else {
+			} else if !ipWithCidrInCidr(addrStr, ipv6LocalLinkCIDR) {
 				rec.IPV6Addresses = append(rec.IPV6Addresses, addrStr)
 			}
 		}

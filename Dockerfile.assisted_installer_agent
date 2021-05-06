@@ -35,7 +35,6 @@ COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/connectivity_check /usr/bin/connectivity_check
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/free_addresses /usr/bin/free_addresses
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/inventory /usr/bin/inventory
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/fio_perf_check /usr/bin/fio_perf_check
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/logs_sender /usr/bin/logs_sender
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/dhcp_lease_allocate /usr/bin/dhcp_lease_allocate
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/apivip_check /usr/bin/apivip_check

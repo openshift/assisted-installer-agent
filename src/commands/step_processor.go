@@ -34,6 +34,10 @@ func newSession() *stepSession {
 }
 
 func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, errStr string, exitCode int) {
+	if exitCode == 0 && alreadyExistsInService(stepType, output) {
+		s.Logger().Infof("Result for %s already exists in assisted service", string(stepType))
+		return
+	}
 	logFunc := s.Logger().Infof
 	if exitCode != 0 {
 		logFunc = s.Logger().Warnf
@@ -71,6 +75,8 @@ func (s *stepSession) sendStepReply(stepType models.StepType, stepID, output, er
 		default:
 			s.Logger().WithError(err).Warn("Error posting step reply")
 		}
+	} else if exitCode == 0 {
+		storeInCache(stepType, output)
 	}
 }
 

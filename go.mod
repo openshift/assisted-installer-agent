@@ -15,6 +15,7 @@ require (
 	github.com/onsi/gomega v1.10.5
 	github.com/openshift/assisted-service v1.0.10-0.20210412070223-659b5dab9f67
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20210210163937-34f98e0f48fd
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/ssgreg/journald v1.0.0

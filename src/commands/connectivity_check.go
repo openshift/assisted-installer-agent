@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -328,6 +329,29 @@ func checkHost(conCheck connectivityCmd, outCh chan *models.ConnectivityRemoteHo
 	}
 	outCh <- ret
 }
+
+func canonizeResult(connectivityReport *models.ConnectivityReport) {
+	for _, h := range connectivityReport.RemoteHosts {
+		l3 := h.L3Connectivity
+		sort.Slice(l3, func(i, j int) bool {
+			if l3[i].RemoteIPAddress != l3[j].RemoteIPAddress {
+				return l3[i].RemoteIPAddress < l3[j].RemoteIPAddress
+			}
+			return l3[i].OutgoingNic < l3[j].OutgoingNic
+		})
+		l2 := h.L2Connectivity
+		sort.Slice(l2, func(i, j int) bool {
+			if l2[i].RemoteIPAddress != l2[j].RemoteIPAddress {
+				return l2[i].RemoteIPAddress < l2[j].RemoteIPAddress
+			}
+			return l2[i].OutgoingNic < l2[j].OutgoingNic
+		})
+	}
+	sort.Slice(connectivityReport.RemoteHosts, func(i, j int) bool {
+		return connectivityReport.RemoteHosts[i].HostID.String() < connectivityReport.RemoteHosts[j].HostID.String()
+	})
+}
+
 func ConnectivityCheck(_ string, args ...string) (stdout string, stderr string, exitCode int) {
 	if len(args) != 1 {
 		return "", "Expecting exactly 1 argument for connectivity command", -1
@@ -348,6 +372,7 @@ func ConnectivityCheck(_ string, args ...string) (stdout string, stderr string, 
 	for i := 0; i != len(params); i++ {
 		ret.RemoteHosts = append(ret.RemoteHosts, <-hostChan)
 	}
+	canonizeResult(&ret)
 	bytes, err := json.Marshal(&ret)
 	if err != nil {
 		log.Warnf("Could not marshal json: %s", err.Error())

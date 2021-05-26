@@ -9,7 +9,11 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-var replyCache = cache.New(time.Hour, time.Hour)
+var replyCache = newCache()
+
+func newCache() *cache.Cache {
+	return cache.New(time.Hour, time.Hour)
+}
 
 func alreadyExistsInService(stepType models.StepType, value string) bool {
 	storedValue, ok := replyCache.Get(string(stepType))
@@ -18,4 +22,8 @@ func alreadyExistsInService(stepType models.StepType, value string) bool {
 
 func storeInCache(stepType models.StepType, value string) {
 	replyCache.Set(string(stepType), value, cache.DefaultExpiration)
+}
+
+func invalidateCache() {
+	replyCache.Flush()
 }

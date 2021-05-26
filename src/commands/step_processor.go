@@ -116,6 +116,7 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	s.Logger().Info("Query for next steps")
 	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)
 	if err != nil {
+		invalidateCache()
 		switch errValue := err.(type) {
 		case *installer.GetNextStepsNotFound:
 			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory or user is not authorized, going to sleep forever", params.ClusterID)

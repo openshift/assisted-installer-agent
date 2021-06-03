@@ -6,20 +6,18 @@ ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/ocpmetal/as
 
 export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BIN = $(ROOT_DIR)/build
-REPORTS = $(ROOT_DIR)/reports
-GOTEST_PUBLISH_FLAGS = --junitfile-testsuite-name=relative --junitfile-testcase-classname=relative --junitfile $(REPORTS)/$(TEST_SCENARIO)_test.xml
-GOTEST_FLAGS = --format=standard-verbose $(GOTEST_PUBLISH_FLAGS) -- -count=1 -cover -coverprofile=$(REPORTS)/$(TEST_SCENARIO)_coverage.out
+
+REPORTS ?= $(ROOT_DIR)/reports
+CI ?= false
+TEST_FORMAT ?= standard-verbose
+GOTEST_FLAGS = --format=$(TEST_FORMAT) -- -count=1 -cover -coverprofile=$(REPORTS)/$(TEST_SCENARIO)_coverage.out
+GINKGO_FLAGS = -ginkgo.focus="$(FOCUS)" -ginkgo.v -ginkgo.skip="$(SKIP)" -ginkgo.reportFile=./junit_$(TEST_SCENARIO)_test.xml
 
 GIT_REVISION := $(shell git rev-parse HEAD)
 PUBLISH_TAG := $(or ${GIT_REVISION})
 CONTAINER_BUILD_PARAMS = --network=host --label git_revision=${GIT_REVISION} ${CONTAINER_BUILD_EXTRA_PARAMS}
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
-
-# define skip flag for test so users can skip individual tests or suites
-ifdef SKIP
-	GINKGO_SKIP_FLAG = -ginkgo.skip="$(SKIP)"
-endif
 
 all: build
 
@@ -40,16 +38,27 @@ build-image: unit-test
 push: build-image subsystem
 	docker push $(ASSISTED_INSTALLER_AGENT)
 
-_test:
-	gotestsum $(GOTEST_FLAGS) $(TEST) -ginkgo.focus="$(FOCUS)" -ginkgo.v $(GINKGO_SKIP_FLAG)
-	gocov convert $(REPORTS)/$(TEST_SCENARIO)_coverage.out | gocov-xml > $(REPORTS)/$(TEST_SCENARIO)_coverage.xml
+_test: $(REPORTS)
+	gotestsum $(GOTEST_FLAGS) $(TEST) $(GINKGO_FLAGS) -timeout $(TIMEOUT) || ($(MAKE) _post_test && /bin/false)
+	$(MAKE) _post_test
 
-unit-test: $(REPORTS)
-	$(MAKE) _test TEST_SCENARIO=unit TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))"
+_post_test: $(REPORTS)
+	@for name in `find '$(ROOT_DIR)' -name 'junit*.xml' -type f -not -path '$(REPORTS)/*'`; do \
+		mv -f $$name $(REPORTS)/junit_$(TEST_SCENARIO)_$$(basename $$(dirname $$name)).xml; \
+	done
+	$(MAKE) _coverage
+
+_coverage: $(REPORTS)
+ifeq ($(CI), true)
+	gocov convert $(REPORTS)/$(TEST_SCENARIO)_coverage.out | gocov-xml > $(REPORTS)/$(TEST_SCENARIO)_coverage.xml
+endif
+
+unit-test:
+	$(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
 
 subsystem: build-image
 	$(DOCKER_COMPOSE) up --build -d dhcpd wiremock
-	-$(MAKE) _test TEST_SCENARIO=subsystem TEST="./subsystem/..." SKIP="system-test"
+	-$(MAKE) _test TEST_SCENARIO=subsystem TIMEOUT=30m TEST="$(or $(TEST),./subsystem/...)"
 	$(DOCKER_COMPOSE) logs dhcpd > dhcpd.log
 	$(DOCKER_COMPOSE) logs wiremock > wiremock.log
 	$(DOCKER_COMPOSE) down

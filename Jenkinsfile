@@ -2,6 +2,8 @@ String cron_string = BRANCH_NAME == "master" ? "@daily" : ""
 
 pipeline {
   environment {
+        CI = "true"
+
         // Credentials
         SLACK_TOKEN = credentials('slack-token')
         QUAY_IO_CREDS = credentials('ocpmetal_cred')
@@ -35,12 +37,6 @@ pipeline {
         steps {
             sh 'skipper make subsystem'
         }
-        post {
-            always {
-                junit '**/reports/*test.xml'
-                cobertura coberturaReportFile: '**/reports/*coverage.xml', onlyStable: false, enableNewApi: true
-            }
-        }
     }
     stage('publish images') {
         when {
@@ -70,8 +66,11 @@ pipeline {
                       }
                       sh '''curl -X POST -H 'Content-type: application/json' --data-binary "@data.txt" https://hooks.slack.com/services/${SLACK_TOKEN}'''
                 }
+
                 sh 'sudo journalctl TAG=agent --since="1 hour ago" > agent_journalctl.log  || true'
                 archiveArtifacts artifacts: '*.log', fingerprint: true
+                junit '**/reports/junit*.xml'
+                cobertura coberturaReportFile: '**/reports/*coverage.xml', onlyStable: false, enableNewApi: true
             }
         }
   }

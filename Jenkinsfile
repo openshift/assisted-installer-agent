@@ -1,7 +1,44 @@
-String cron_string = BRANCH_NAME == "master" ? "@daily" : ""
+// Get current date
+def now = new Date()
+
+// isTriggerByTimer == true if the timer triggers it
+// isEmpty() on lists is currently broken in Jenkins pipelines... so we have to rely on the size of the list
+boolean isTriggeredByTimer = currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause').size() != 0
+
+// Generate the cron string based off the branch name
+def cronScheduleString(branchName = BRANCH_NAME) {
+    String cronScheduleString
+    if (isCandidateBranch(branchName)) {
+        cronScheduleString = '@daily'
+    } else {
+        cronScheduleString = ''
+    }
+    return cronScheduleString
+}
+
+// Determine if the branch is a branch we want to create release candidate images from
+def isCandidateBranch(branchName = BRANCH_NAME) {
+    // List of regex to match branches for release candidate publishing
+    def candidateBranches = [/^master$/, /^ocm-\d[.]{1}\d$/]
+    return branchName && (candidateBranches.collect { branchName =~ it ? true : false }).contains(true)
+}
+
+// Determine the publish tag for the release candidate images
+def releaseBranchPublishTag(branchName = BRANCH_NAME) {
+    String publish_tag
+    if (branchName == 'master') {
+        publish_tag = 'latest'
+    } else {
+        publish_tag = branchName
+    }
+    return publish_tag
+}
 
 pipeline {
   environment {
+        CURRENT_DATE = now.format("Ymd")
+        PUBLISH_TAG = releaseBranchPublishTag(env.BRANCH_NAME)
+
         // Credentials
         SLACK_TOKEN = credentials('slack-token')
         QUAY_IO_CREDS = credentials('ocpmetal_cred')
@@ -11,7 +48,7 @@ pipeline {
     timeout(time: 1, unit: 'HOURS')
   }
   agent { label 'centos_worker' }
-  triggers { cron(cron_string) }
+  triggers { cron(cronScheduleString(env.BRANCH_NAME)) }
 
   stages {
 
@@ -35,12 +72,6 @@ pipeline {
         steps {
             sh 'skipper make subsystem'
         }
-        post {
-            always {
-                junit '**/reports/*test.xml'
-                cobertura coberturaReportFile: '**/reports/*coverage.xml', onlyStable: false, enableNewApi: true
-            }
-        }
     }
     stage('publish images') {
         when {
@@ -51,12 +82,18 @@ pipeline {
         }
     }
 
-    stage('publish images on push to master') {
+    stage('publish release candidate images') {
         when {
-            branch 'master'
+            expression { isCandidateBranch(env.BRANCH_NAME) }
         }
         steps {
-            sh "make publish PUBLISH_TAG=latest"
+            sh "make publish PUBLISH_TAG=${PUBLISH_TAG}"
+
+            script {
+                if (env.BRANCH_NAME ==~ /^ocm-\d[.]{1}\d$/ && isTriggeredByTimer) {
+                    sh "make publish PUBLISH_TAG=${PUBLISH_TAG}-${CURRENT_DATE}"
+                }
+            }
         }
     }
   }

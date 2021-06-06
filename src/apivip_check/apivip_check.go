@@ -133,14 +133,16 @@ func calculateMachineNetworkCIDR(apiVip net.IP, log logrus.FieldLogger) (string,
 		}
 
 		if !isVIPv4 {
-			util.SetV6PrefixesForAddress(intf.Name, &util.NetlinkRouteFinder{}, log, addrStrs)
+			if err := util.SetV6PrefixesForAddress(intf.Name, &util.NetlinkRouteFinder{}, log, addrStrs); err != nil {
+				log.WithError(err).Warnf("Failed to set V6 prefix for interface %s address %s", intf.Name, addrStrs)
+			}
 		}
 
 		for _, ipAddr := range addrStrs {
 
 			_, ipNet, err := net.ParseCIDR(ipAddr)
 			if err != nil {
-				log.WithError(err).Warnf("Error parsing CIDR: %s", err)
+				log.WithError(err).Warnf("Error parsing CIDR")
 				continue
 			}
 

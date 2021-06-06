@@ -166,7 +166,7 @@ func (s *stepSession) diagnoseSystem() (errorCode, error) {
 
 	defer file.Close()
 
-	_, err = io.ReadFull(file, make([]byte, 2, 2))
+	_, err = io.ReadFull(file, make([]byte, 2))
 	if err != nil {
 		return MediaDisconnected, errors.Wrap(err, "cannot read from the media (ISO) - media was likely disconnected")
 	}

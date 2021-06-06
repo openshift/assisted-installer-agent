@@ -21,7 +21,10 @@ DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
 
 all: build
 
-lint:
+ci-lint:
+	${ROOT_DIR}/hack/check-commits.sh
+
+lint: ci-lint
 	golangci-lint run -v --fix
 
 .PHONY: build clean build-image push subsystem

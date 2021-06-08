@@ -36,7 +36,7 @@ def releaseBranchPublishTag(branchName = BRANCH_NAME) {
 
 pipeline {
   environment {
-        CURRENT_DATE = now.format("Ymd")
+        CURRENT_DATE = now.format("YMMdd")
         PUBLISH_TAG = releaseBranchPublishTag(env.BRANCH_NAME)
 
         // Credentials

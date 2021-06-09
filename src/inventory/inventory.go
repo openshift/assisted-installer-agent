@@ -22,6 +22,7 @@ func ReadInventory() *models.Inventory {
 		Memory:       GetMemory(d),
 		SystemVendor: GetVendor(d),
 		Timestamp:    time.Now().Unix(),
+		Routes:       GetRoutes(d),
 	}
 	return &ret
 }

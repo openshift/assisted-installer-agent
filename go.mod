@@ -13,7 +13,7 @@ require (
 	github.com/jaypipes/pcidb v0.6.0
 	github.com/onsi/ginkgo v1.16.2
 	github.com/onsi/gomega v1.12.0
-	github.com/openshift/assisted-service v1.0.10-0.20210412070223-659b5dab9f67
+	github.com/openshift/assisted-service v1.0.10-0.20210603130323-8a9f14ef82d4
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20210210163937-34f98e0f48fd
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -21,7 +21,7 @@ require (
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/thoas/go-funk v0.7.0
+	github.com/thoas/go-funk v0.8.0
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/sys v0.0.0-20210423082822-04245dca01da
 	gopkg.in/yaml.v2 v2.4.0
@@ -34,4 +34,6 @@ replace (
 	k8s.io/api => k8s.io/api v0.0.0-20190712022805-31fe033ae6f9
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190711222657-391ed67afa7b
 	k8s.io/client-go => k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
+	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
+	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

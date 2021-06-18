@@ -3,9 +3,9 @@
 filters:
   .*:
     approvers:
-      - code-reviewers
+      - approvers
     reviewers:
-      - code-reviewers
+      - approvers
   ^Dockerfile\..*:
     labels:
       - downstream-change-needed

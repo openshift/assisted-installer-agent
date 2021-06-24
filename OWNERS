@@ -3,8 +3,9 @@
 filters:
   .*:
     approvers:
-      - code-reviewers
+      - code-approvers
     reviewers:
+      - code-approvers
       - code-reviewers
   ^Dockerfile\..*:
     labels:

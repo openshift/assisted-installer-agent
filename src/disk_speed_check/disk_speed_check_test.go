@@ -66,7 +66,7 @@ var _ = Describe("Disk speed check test", func() {
 
 func getRequestStr(path string) string {
 	request := models.DiskSpeedCheckRequest{
-		Path:                swag.String(path),
+		Path: swag.String(path),
 	}
 
 	requestBytes, err := json.Marshal(request)

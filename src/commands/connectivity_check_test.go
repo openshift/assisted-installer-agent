@@ -356,7 +356,7 @@ var _ = Describe("parse ping command", func() {
 				Expect(err).To(BeNil())
 			}
 			Expect(conn.AverageRTTMs).Should(Equal(t.averageRTTMs))
-			Expect(conn.PacketLossPercentage).Should(Equal(float64(t.packetLoss)))
+			Expect(conn.PacketLossPercentage).Should(Equal(t.packetLoss))
 		})
 	}
 

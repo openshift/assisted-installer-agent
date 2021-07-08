@@ -43,7 +43,7 @@ func (i *interfaces) getDeviceField(name, field string) string {
 
 func ipWithCidrInCidr(ipWithCidrStr, cidrStr string) bool {
 	ip, _, err := net.ParseCIDR(ipWithCidrStr)
-	if ip == nil {
+	if ip == nil || err != nil {
 		return false
 	}
 	_, ipnet, err := net.ParseCIDR(cidrStr)
@@ -140,6 +140,8 @@ func setV6PrefixesForAddresses(interfaces []*models.Interface, dependencies util
 			continue
 		}
 
-		util.SetV6PrefixesForAddress(intf.Name, dependencies, logrus.StandardLogger(), intf.IPV6Addresses)
+		if err := util.SetV6PrefixesForAddress(intf.Name, dependencies, logrus.StandardLogger(), intf.IPV6Addresses); err != nil {
+			logrus.WithError(err).Warnf("Failed to set V6 prefix for interface %s address %s", intf.Name, intf.IPV6Addresses)
+		}
 	}
 }

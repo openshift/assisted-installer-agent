@@ -192,21 +192,21 @@ var _ = Describe("Interfaces", func() {
 				Vendor:     "my-vendor2",
 			},
 			{
-                                Biosdevname:   "vlan",
-                                ClientID:      "",
-                                Flags:         []string{"up", "broadcast"},
-                                HasCarrier:    false,
-                                IPV4Addresses: []string{"10.0.0.25/24", "192.168.6.14/20"},
-                                IPV6Addresses: []string{
-                                        "de90::d832:8def:dd51:3520/62",
-                                },
-                                MacAddress: "f8:75:a4:a4:00:fc",
-                                Mtu:        1400,
-                                Name:       "eth2.10",
-                                Product:    "",
-                                SpeedMbps:  -1,
-                                Vendor:     "my-vendor2",
-                        },
+				Biosdevname:   "vlan",
+				ClientID:      "",
+				Flags:         []string{"up", "broadcast"},
+				HasCarrier:    false,
+				IPV4Addresses: []string{"10.0.0.25/24", "192.168.6.14/20"},
+				IPV6Addresses: []string{
+					"de90::d832:8def:dd51:3520/62",
+				},
+				MacAddress: "f8:75:a4:a4:00:fc",
+				Mtu:        1400,
+				Name:       "eth2.10",
+				Product:    "",
+				SpeedMbps:  -1,
+				Vendor:     "my-vendor2",
+			},
 		}))
 		for _, i := range rets {
 			i.(*MockInterface).AssertExpectations(GinkgoT())

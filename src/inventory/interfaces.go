@@ -56,7 +56,7 @@ func ipWithCidrInCidr(ipWithCidrStr, cidrStr string) bool {
 func analyzeAddress(addr net.Addr) (isIpv4 bool, addrStr string, err error) {
 	ipNet, ok := addr.(*net.IPNet)
 	if !ok {
-		return false, "", fmt.Errorf("Could not cast to *net.IPNet")
+		return false, "", fmt.Errorf("could not cast to *net.IPNet")
 	}
 	mask, _ := ipNet.Mask.Size()
 	addrStr = fmt.Sprintf("%s/%d", ipNet.IP.String(), mask)

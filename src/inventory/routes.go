@@ -1,8 +1,6 @@
 package inventory
 
 import (
-	"net"
-
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
@@ -40,13 +38,6 @@ func (rh routeHandler) getFamily() int {
 	return rh.family
 }
 
-func getIPZero(family int) *net.IP {
-	if family == familyIPv4 {
-		return &net.IPv4zero
-	}
-	return &net.IPv6zero
-}
-
 func GetRoutes(dependencies util.IDependencies) []*models.Route {
 
 	rh4 := routeHandler{family: familyIPv4}
@@ -78,16 +69,17 @@ func getIPRoutes(h handler) ([]*models.Route, error) {
 			logrus.Errorf("Unable to retrieve the link name for index %d: %s", r.LinkIndex, err)
 			return nil, err
 		}
-		var dst string
-		if r.Dst == nil {
-			dst = getIPZero(h.getFamily()).String()
-		} else {
+		var dst, gw string
+		if r.Dst != nil {
 			dst = r.Dst.IP.String()
+		}
+		if r.Gw != nil {
+			gw = r.Gw.String()
 		}
 		routes = append(routes, &models.Route{
 			Interface:   linkName,
 			Destination: dst,
-			Gateway:     r.Gw.String(),
+			Gateway:     gw,
 			Family:      int32(h.getFamily()),
 		})
 	}

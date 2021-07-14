@@ -63,6 +63,8 @@ func RegisterHostWithRetry() *models.HostRegistrationResponseAO1NextStepRunnerCo
 			s.Logger().Warnf("Error registering host: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
 		case *installer.RegisterHostBadRequest:
 			s.Logger().Warnf("Error registering host: %s, %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
+		case *installer.RegisterHostServiceUnavailable:
+			s.Logger().Warnf("Error registering host: %s. Make sure the assisted-service is available", http.StatusText(http.StatusServiceUnavailable))
 		default:
 			s.Logger().WithError(err).Warn("Error registering host")
 		}

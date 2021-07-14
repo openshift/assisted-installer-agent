@@ -72,9 +72,9 @@ func isImageAvailable(executer ImageAvailabilityDependencies, image string) bool
 	return exitCode == 0 && stdout != ""
 }
 
-func pullImage(executer ImageAvailabilityDependencies, pullTimeoutSeconds int, image string) error {
+func pullImage(executer ImageAvailabilityDependencies, pullTimeoutSeconds int64, image string) error {
 	cmd := fmt.Sprintf(templatePull, image)
-	cmd = fmt.Sprintf(templateTimeout, strconv.FormatInt(int64(pullTimeoutSeconds), 10), cmd)
+	cmd = fmt.Sprintf(templateTimeout, strconv.FormatInt(pullTimeoutSeconds, 10), cmd)
 	stdout, stderr, exitCode := executeString(executer, cmd)
 
 	switch exitCode {
@@ -87,7 +87,7 @@ func pullImage(executer ImageAvailabilityDependencies, pullTimeoutSeconds int, i
 	}
 }
 
-func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.FieldLogger, pullTimeoutSeconds int, image string) *models.ContainerImageAvailability {
+func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.FieldLogger, pullTimeoutSeconds int64, image string) *models.ContainerImageAvailability {
 	imageExistLocallyBeforePull := isImageAvailable(executer, image)
 
 	log.Infof("Image %s exists locally before pull: %s", image, strconv.FormatBool(imageExistLocallyBeforePull))
@@ -95,6 +95,11 @@ func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.
 	response := &models.ContainerImageAvailability{
 		Name:   image,
 		Result: models.ContainerImageAvailabilityResultFailure,
+	}
+
+	if pullTimeoutSeconds <= 0 {
+		log.Warnf("Couldn't pull image %s. Timeout expired", image)
+		return response
 	}
 
 	start := time.Now()
@@ -134,8 +139,9 @@ func Run(requestStr string, executer ImageAvailabilityDependencies, log logrus.F
 		return "", err.Error(), -1
 	}
 
+	finishOnTimeout := time.Now().Add(time.Duration(request.Timeout) * time.Second)
 	for _, image := range request.Images {
-		response.Images = append(response.Images, handleImageAvailability(executer, log, int(request.Timeout), image))
+		response.Images = append(response.Images, handleImageAvailability(executer, log, int64(time.Until(finishOnTimeout).Seconds()), image))
 	}
 
 	b, err := json.Marshal(&response)

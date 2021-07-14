@@ -10,6 +10,7 @@ RUN go mod download
 COPY . .
 
 RUN make build
+RUN make build-arm64
 
 FROM quay.io/centos/centos:centos8
 RUN dnf install -y \
@@ -43,5 +44,7 @@ COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/container_image_availability /usr/bin/container_image_availability
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/domain_resolution /usr/bin/domain_resolution
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/disk_speed_check /usr/bin/disk_speed_check
+
+COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/arm64/ /usr/bin/
 
 COPY scripts/installer/* /usr/local/bin/

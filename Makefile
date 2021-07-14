@@ -27,13 +27,16 @@ ci-lint:
 lint: ci-lint
 	golangci-lint run -v --fix
 
-.PHONY: build clean build-image push subsystem
+.PHONY: build build-arm64 clean build-image push subsystem
 build: build-agent build-connectivity_check build-inventory build-free_addresses build-logs_sender \
 	   build-dhcp_lease_allocate build-apivip_check build-next_step_runner build-ntp_synchronizer \
 	   build-container_image_availability build-domain_resolution build-disk_speed_check
 
 build-%: $(BIN) src/$* #lint
-	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
+	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o ${BIN}/$*${FILE_POSTFIX} src/$*/main/main.go
+
+build-arm64:
+	$(MAKE) build GOOS=linux GOARCH=arm64 BIN=$(BIN)/arm64 FILE_POSTFIX=-arm64
 
 build-image: unit-test
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)

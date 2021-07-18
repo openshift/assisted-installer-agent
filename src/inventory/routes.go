@@ -46,7 +46,6 @@ func getIPZero(family int) *net.IP {
 	}
 	return &net.IPv6zero
 }
-
 func GetRoutes(dependencies util.IDependencies) []*models.Route {
 
 	rh4 := routeHandler{family: familyIPv4}
@@ -78,16 +77,19 @@ func getIPRoutes(h handler) ([]*models.Route, error) {
 			logrus.Errorf("Unable to retrieve the link name for index %d: %s", r.LinkIndex, err)
 			return nil, err
 		}
-		var dst string
+		var dst, gw string
 		if r.Dst == nil {
 			dst = getIPZero(h.getFamily()).String()
 		} else {
 			dst = r.Dst.IP.String()
 		}
+		if r.Gw != nil {
+			gw = r.Gw.String()
+		}
 		routes = append(routes, &models.Route{
 			Interface:   linkName,
 			Destination: dst,
-			Gateway:     r.Gw.String(),
+			Gateway:     gw,
 			Family:      int32(h.getFamily()),
 		})
 	}

@@ -18,7 +18,7 @@ import (
 
 const (
 	defaultTestImage              = "image"
-	defaultTestPullTimeoutSeconds = 3
+	defaultTestPullTimeoutSeconds = 5
 	defaultTestImageSizeInBytes   = int64(333000000)
 )
 
@@ -49,7 +49,7 @@ var _ = Describe("Image availability", func() {
 
 	generatePullCommand := func(image string) []interface{} {
 		cmd := fmt.Sprintf(templatePull, image)
-		cmd = fmt.Sprintf(templateTimeout, strconv.FormatInt(int64(defaultTestPullTimeoutSeconds), 10), cmd)
+		cmd = fmt.Sprintf(templateTimeout, mock.Anything, cmd)
 		return convertStringArryToInterfaceArray(strings.Split(cmd, " "))
 	}
 
@@ -198,10 +198,22 @@ var _ = Describe("Image availability", func() {
 			}
 			b, err := json.Marshal(request)
 			Expect(err).ShouldNot(HaveOccurred())
-
+			remaining := defaultTestPullTimeoutSeconds
+			prevTimeout := remaining
 			for _, image := range images {
 				imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(image)...).Return("", "", 0).Once()
-				imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(image)...).Return("", "", 0).Once()
+				imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(image)...).Return("", "", 0).Once().Run(func (args mock.Arguments) {
+					remainingTimeoutStr, ok := args.Get(1).(string)
+					Expect(ok).To(BeTrue())
+					currentTimeout, err := strconv.Atoi(remainingTimeoutStr)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(currentTimeout).To(BeNumerically(">", 0))
+					Expect(currentTimeout).To(BeNumerically("<", remaining))
+					Expect(currentTimeout).To(BeNumerically("<", prevTimeout))
+					prevTimeout = currentTimeout
+					time.Sleep(time.Second)
+					remaining--
+				})
 				imageAvailabilityDependencies.On("ExecutePrivileged", generateInspectCommand(image)...).Return(strconv.FormatInt(defaultTestImageSizeInBytes, 10), "", 0).Once()
 			}
 

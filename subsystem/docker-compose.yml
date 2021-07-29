@@ -23,7 +23,7 @@ services:
         "/usr/bin/agent",
         "--url",
         "http://wiremock:${WIREMOCK_PORT}",
-        "--cluster-id",
+        "--infra-env-id",
         "11111111-1111-1111-1111-111111111111",
         "--interval",
         "5",

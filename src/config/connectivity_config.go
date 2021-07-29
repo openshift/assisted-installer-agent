@@ -4,6 +4,7 @@ package config
 type ConnectivityConfig struct {
 	TargetURL          string
 	ClusterID          string
+	InfraEnvID         string
 	AgentVersion       string
 	PullSecretToken    string
 	InsecureConnection bool

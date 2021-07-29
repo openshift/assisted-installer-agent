@@ -82,7 +82,7 @@ var _ = Describe("Image availability tests", func() {
 })
 
 func startImageAvailability(hostId string, request models.ContainerImageAvailabilityRequest) {
-	_, err := addRegisterStub(hostId, http.StatusCreated, ClusterID)
+	_, err := addRegisterStub(hostId, http.StatusCreated, InfraEnvID)
 	Expect(err).ShouldNot(HaveOccurred())
 	setImageAvailabilityStub(hostId, request)
 	setReplyStartAgent(hostId)

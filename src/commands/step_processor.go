@@ -16,8 +16,6 @@ import (
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/session"
 	"github.com/openshift/assisted-service/client/installer"
@@ -36,6 +34,7 @@ const (
 
 type stepSession struct {
 	session.InventorySession
+	serviceAPI serviceAPI
 }
 
 func newSession() *stepSession {
@@ -43,7 +42,10 @@ func newSession() *stepSession {
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}
-	ret := stepSession{*invSession}
+	ret := stepSession{
+		InventorySession: *invSession,
+		serviceAPI:       newServiceAPI(),
+	}
 	return &ret
 }
 
@@ -64,21 +66,18 @@ func (s *stepSession) sendStepReply(reply models.StepReply) {
 		logFunc("Sending step <%s> reply output <%s> error <%s> exit-code <%d>", reply.StepID, reply.Output, reply.Error, reply.ExitCode)
 	}
 
-	params := installer.PostStepReplyParams{
-		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
-		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
-		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
-		Reply:                 &reply,
-	}
-
-	_, err := s.Client().Installer.PostStepReply(s.Context(), &params)
+	err := s.serviceAPI.PostStepReply(&s.InventorySession, &reply)
 	if err != nil {
 		switch errValue := err.(type) {
 		case *installer.PostStepReplyInternalServerError:
 			s.Logger().Warnf("Assisted service returned status code %s after processing step reply. Reason: %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
-		case *installer.PostStepReplyUnauthorized:
+		case *installer.V2PostStepReplyInternalServerError:
+			s.Logger().Warnf("Assisted service returned status code %s after processing step reply. Reason: %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		case *installer.PostStepReplyUnauthorized, *installer.V2PostStepReplyUnauthorized:
 			s.Logger().Warn("User is not authenticated to perform the operation")
 		case *installer.PostStepReplyBadRequest:
+			s.Logger().Warnf("Assisted service returned status code %s after processing step reply.  Reason: %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
+		case *installer.V2PostStepReplyBadRequest:
 			s.Logger().Warnf("Assisted service returned status code %s after processing step reply.  Reason: %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
 		default:
 			s.Logger().WithError(err).Warn("Error posting step reply")
@@ -212,31 +211,31 @@ func (s *stepSession) getMountpointSourceDeviceFile() (string, error) {
 }
 
 func (s *stepSession) processSingleSession() (int64, string) {
-	params := installer.GetNextStepsParams{
-		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
-		ClusterID:             strfmt.UUID(config.GlobalAgentConfig.ClusterID),
-		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
-	}
 	s.Logger().Info("Query for next steps")
-	result, err := s.Client().Installer.GetNextSteps(s.Context(), &params)
+	result, err := s.serviceAPI.GetNextSteps(&s.InventorySession)
 	if err != nil {
 		invalidateCache()
 		switch errValue := err.(type) {
 		case *installer.GetNextStepsNotFound:
-			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory or user is not authorized, going to sleep forever", params.ClusterID)
+			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory or user is not authorized, going to sleep forever", config.GlobalAgentConfig.ClusterID)
 			return -1, ""
-		case *installer.GetNextStepsUnauthorized:
+		case *installer.V2GetNextStepsNotFound:
+			s.Logger().WithError(err).Errorf("Infra-env %s was not found in inventory or user is not authorized, going to sleep forever", config.GlobalAgentConfig.InfraEnvID)
+			return -1, ""
+		case *installer.GetNextStepsUnauthorized, *installer.V2GetNextStepsUnauthorized:
 			s.Logger().WithError(err).Errorf("User is not authenticated to perform the operation, going to sleep forever")
 			return -1, ""
 		case *installer.GetNextStepsInternalServerError:
+			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		case *installer.V2GetNextStepsInternalServerError:
 			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
 		default:
 			s.Logger().WithError(err).Warn("Could not query next steps")
 		}
 		return int64(config.GlobalAgentConfig.IntervalSecs), ""
 	}
-	s.handleSteps(result.Payload)
-	return result.Payload.NextInstructionSeconds, *result.Payload.PostStepAction
+	s.handleSteps(result)
+	return result.NextInstructionSeconds, *result.PostStepAction
 }
 
 func ProcessSteps() {

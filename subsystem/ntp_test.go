@@ -92,7 +92,7 @@ func printNtpSources(ntpResponse *models.NtpSynchronizationResponse) {
 
 func startNTPSynchronizer(hostId string, request models.NtpSynchronizationRequest) {
 	addChronyDaemonStub(hostId)
-	_, _ = addRegisterStub(hostId, http.StatusCreated, ClusterID)
+	_, _ = addRegisterStub(hostId, http.StatusCreated, InfraEnvID)
 	setReplyStartAgent(hostId)
 	waitforChronyDaemonToStart(hostId)
 

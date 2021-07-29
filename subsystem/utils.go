@@ -30,7 +30,7 @@ var (
 const (
 	maxTimeout       = 300 * time.Second
 	agentServiceName = "agent"
-	clusterID        = "11111111-1111-1111-1111-111111111111" // This is redeclared here (with lowercase) to solve a lint error
+	infraEnvID        = "11111111-1111-1111-1111-111111111111" // This is redeclared here (with lowercase) to solve a lint error
 )
 
 type RequestDefinition struct {
@@ -153,15 +153,15 @@ func getSpecificStep(hostID string, verifier StepVerifier) *models.StepReply {
 }
 
 func getRegisterURL() string {
-	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts", clusterID)
+	return fmt.Sprintf("/api/assisted-install/v2/infra-envs/%s/hosts", infraEnvID)
 }
 
 func getNextStepsURL(hostID string) string {
-	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", clusterID, hostID)
+	return fmt.Sprintf("/api/assisted-install/v2/infra-envs/%s/hosts/%s/instructions", infraEnvID, hostID)
 }
 
 func getStepReplyURL(hostID string) string {
-	return fmt.Sprintf("/api/assisted-install/v1/clusters/%s/hosts/%s/instructions", clusterID, hostID)
+	return fmt.Sprintf("/api/assisted-install/v2/infra-envs/%s/hosts/%s/instructions", infraEnvID, hostID)
 }
 
 func addStub(stub *StubDefinition) (string, error) {
@@ -188,7 +188,7 @@ func addStub(stub *StubDefinition) (string, error) {
 	return ret.ID, nil
 }
 
-func addRegisterStubInvalidCommand(hostID string, reply int, clusterID string, retryDelay int64) (string, error) {
+func addRegisterStubInvalidCommand(hostID string, reply int, infraEnvID string, retryDelay int64) (string, error) {
 
 	hostUUID := strfmt.UUID(hostID)
 	hostKind := "host"
@@ -230,7 +230,7 @@ func addRegisterStubInvalidCommand(hostID string, reply int, clusterID string, r
 	return addStub(&stub)
 }
 
-func addRegisterStub(hostID string, reply int, clusterID string) (string, error) {
+func addRegisterStub(hostID string, reply int, infraEnvID string) (string, error) {
 	var b []byte
 	var err error
 	hostUUID := strfmt.UUID(hostID)
@@ -247,7 +247,7 @@ func addRegisterStub(hostID string, reply int, clusterID string) (string, error)
 			Command: "/usr/bin/next_step_runner",
 			Args: []string{
 				"--url", AssistedServiceURLFromAgent,
-				"--cluster-id", clusterID,
+				"--infra-env-id", infraEnvID,
 				"--host-id", hostID,
 			},
 		}
@@ -494,6 +494,12 @@ func setReplyStartAgent(hostID string) {
 	Expect(startAgent()).NotTo(HaveOccurred())
 	time.Sleep(5 * time.Second)
 	verifyRegisterRequest()
+	verifyGetNextRequest(hostID, true)
+}
+
+func setPostReply(hostID string) {
+	_, err := addStepReplyStub(hostID)
+	Expect(err).NotTo(HaveOccurred())
 	verifyGetNextRequest(hostID, true)
 }
 

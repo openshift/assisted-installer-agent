@@ -36,7 +36,7 @@ var _ = Describe("API VIP connectivity check tests", func() {
 })
 
 func setWorkerIgnitionStub(hostID string, request *models.APIVipConnectivityRequest) {
-	_, err := addRegisterStub(hostID, http.StatusCreated, ClusterID)
+	_, err := addRegisterStub(hostID, http.StatusCreated, InfraEnvID)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = addWorkerIgnitionStub()

@@ -14,7 +14,6 @@ var GlobalAgentConfig struct {
 	ConnectivityConfig
 	IntervalSecs int
 	HostID       string
-	V2           bool
 	LoggingConfig
 }
 
@@ -26,7 +25,6 @@ func printHelpAndExit() {
 func ProcessArgs() {
 	ret := &GlobalAgentConfig
 	flag.StringVar(&ret.TargetURL, "url", "", "The target URL, including a scheme and optionally a port (overrides the host and port arguments")
-	flag.StringVar(&ret.ClusterID, "cluster-id", "", "The value of the cluster-id")
 	flag.StringVar(&ret.InfraEnvID, "infra-env-id", "", "The value of infra-env-id")
 	flag.StringVar(&ret.AgentVersion, "agent-version", "", "Discovery agent version")
 	flag.IntVar(&ret.IntervalSecs, "interval", 60, "Interval between steps polling in seconds")
@@ -45,15 +43,9 @@ func ProcessArgs() {
 		log.Fatalf("Must provide a target URL")
 	}
 
-	if ret.ClusterID == "" && ret.InfraEnvID == "" {
-		log.Fatal("One of cluster-id, infra-env-id must be provided")
+	if ret.InfraEnvID == "" {
+		log.Fatal("infra-env-id must be provided")
 	}
-
-	if ret.ClusterID != "" && ret.InfraEnvID != "" {
-		log.Fatal("Only one of cluster-id, infra-env-id must be provided")
-	}
-
-	ret.V2 = ret.InfraEnvID != ""
 
 	ret.PullSecretToken = os.Getenv("PULL_SECRET_TOKEN")
 	if ret.PullSecretToken == "" {

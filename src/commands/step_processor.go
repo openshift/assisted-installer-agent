@@ -69,14 +69,10 @@ func (s *stepSession) sendStepReply(reply models.StepReply) {
 	err := s.serviceAPI.PostStepReply(&s.InventorySession, &reply)
 	if err != nil {
 		switch errValue := err.(type) {
-		case *installer.PostStepReplyInternalServerError:
-			s.Logger().Warnf("Assisted service returned status code %s after processing step reply. Reason: %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
 		case *installer.V2PostStepReplyInternalServerError:
 			s.Logger().Warnf("Assisted service returned status code %s after processing step reply. Reason: %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
-		case *installer.PostStepReplyUnauthorized, *installer.V2PostStepReplyUnauthorized:
+		case *installer.V2PostStepReplyUnauthorized:
 			s.Logger().Warn("User is not authenticated to perform the operation")
-		case *installer.PostStepReplyBadRequest:
-			s.Logger().Warnf("Assisted service returned status code %s after processing step reply.  Reason: %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
 		case *installer.V2PostStepReplyBadRequest:
 			s.Logger().Warnf("Assisted service returned status code %s after processing step reply.  Reason: %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
 		default:
@@ -216,17 +212,12 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	if err != nil {
 		invalidateCache()
 		switch errValue := err.(type) {
-		case *installer.GetNextStepsNotFound:
-			s.Logger().WithError(err).Errorf("Cluster %s was not found in inventory or user is not authorized, going to sleep forever", config.GlobalAgentConfig.ClusterID)
-			return -1, ""
 		case *installer.V2GetNextStepsNotFound:
 			s.Logger().WithError(err).Errorf("Infra-env %s was not found in inventory or user is not authorized, going to sleep forever", config.GlobalAgentConfig.InfraEnvID)
 			return -1, ""
-		case *installer.GetNextStepsUnauthorized, *installer.V2GetNextStepsUnauthorized:
+		case *installer.V2GetNextStepsUnauthorized:
 			s.Logger().WithError(err).Errorf("User is not authenticated to perform the operation, going to sleep forever")
 			return -1, ""
-		case *installer.GetNextStepsInternalServerError:
-			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
 		case *installer.V2GetNextStepsInternalServerError:
 			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
 		default:

@@ -2,21 +2,12 @@ package inventory
 
 import (
 	"net"
-	"strings"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
-)
-
-const (
-	familyIPv4 int = 4
-	familyIPv6 int = 6
-)
-
-var (
-	familyDelimiter map[int]string = map[int]string{familyIPv4: ".", familyIPv6: ":"}
+	"golang.org/x/sys/unix"
 )
 
 type handler interface {
@@ -49,39 +40,16 @@ func (rh routeHandler) getFamily() int {
 	return rh.family
 }
 
-func sameFamily(route netlink.Route, family int) bool {
-	if route.Dst == nil && route.Gw == nil && len(route.MultiPath) == 0 {
-		return true
-	}
-	if route.Dst != nil && strings.Contains(route.Dst.IP.String(), familyDelimiter[family]) {
-		return true
-	}
-
-	if route.Gw != nil && strings.Contains(route.Gw.String(), familyDelimiter[family]) {
-		return true
-	}
-
-	if len(route.MultiPath) > 0 {
-		if route.MultiPath[0].NewDst != nil && family == route.MultiPath[0].NewDst.Family() {
-			return true
-		}
-		if route.MultiPath[0].Gw != nil && strings.Contains(route.MultiPath[0].Gw.String(), familyDelimiter[family]) {
-			return true
-		}
-	}
-	return false
-}
-
 func getIPZero(family int) *net.IP {
-	if family == familyIPv4 {
+	if family == unix.AF_INET {
 		return &net.IPv4zero
 	}
 	return &net.IPv6zero
 }
 func GetRoutes(dependencies util.IDependencies) []*models.Route {
 
-	rh4 := routeHandler{family: familyIPv4}
-	rh6 := routeHandler{family: familyIPv6}
+	rh4 := routeHandler{family: unix.AF_INET}
+	rh6 := routeHandler{family: unix.AF_INET6}
 	routes, err := getIPRoutes(rh4)
 	if err != nil {
 		logrus.Warnf("Unable to determine the IPv4 routes: %s", err)
@@ -103,9 +71,6 @@ func getIPRoutes(h handler) ([]*models.Route, error) {
 	}
 	routes := []*models.Route{}
 	for _, r := range rList {
-		if !sameFamily(r, h.getFamily()) {
-			continue
-		}
 		linkName, err := h.getLinkName(r)
 		if err != nil {
 			logrus.Errorf("Unable to retrieve the link name for index %d: %s", r.LinkIndex, err)

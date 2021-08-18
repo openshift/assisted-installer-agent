@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/Microsoft/go-winio v0.4.15-0.20200113171025-3fe6c5262873 // indirect
-	github.com/docker/docker v17.12.0-ce-rc1.0.20200505174321-1655290016ac+incompatible // indirect
 	github.com/go-openapi/strfmt v0.20.0
 	github.com/go-openapi/swag v0.19.14
 	github.com/google/uuid v1.2.0
@@ -12,8 +11,8 @@ require (
 	github.com/jaypipes/ghw v0.7.0
 	github.com/jaypipes/pcidb v0.6.0
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.12.0
-	github.com/openshift/assisted-service v1.0.10-0.20210726144421-e809201cb80d
+	github.com/onsi/gomega v1.13.0
+	github.com/openshift/assisted-service v1.0.10-0.20210817100849-4962ca422755
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20210210163937-34f98e0f48fd
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -25,7 +24,6 @@ require (
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/kubectl v0.20.5 // indirect
 )
 
 replace (

@@ -432,6 +432,7 @@ var _ = Describe("Disks test", func() {
 		blockInfo, expectedDisks := prepareDisksTest(dependencies, 1)
 
 		blockInfo.Disks[0].IsRemovable = true
+		expectedDisks[0].Removable = true
 		expectedDisks[0].InstallationEligibility.Eligible = false
 		expectedDisks[0].InstallationEligibility.NotEligibleReasons = []string{
 			"Disk is removable",

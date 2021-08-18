@@ -214,6 +214,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Vendor:                  unknownToEmpty(disk.Vendor),
 			Wwn:                     unknownToEmpty(disk.WWN),
 			Bootable:                d.getBootable(path),
+			Removable:               disk.IsRemovable,
 			Smart:                   d.getSMART(path),
 			IsInstallationMedia:     isInstallationMedia,
 			InstallationEligibility: eligibility,

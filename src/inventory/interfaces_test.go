@@ -15,8 +15,8 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func newInterfaceMock() *MockInterface {
-	return &MockInterface{}
+func newInterfaceMock() *util.MockInterface {
+	return &util.MockInterface{}
 }
 
 func str2Addr(addrStr string) net.Addr {
@@ -35,7 +35,7 @@ func toAddresses(addrs []string) []net.Addr {
 	return ret
 }
 
-func newFilledInterfaceMock(mtu int, name string, macAddr string, flags net.Flags, addrs []string, isPhysical bool, isBonding bool, isVlan bool, speedMbps int64) *MockInterface {
+func newFilledInterfaceMock(mtu int, name string, macAddr string, flags net.Flags, addrs []string, isPhysical bool, isBonding bool, isVlan bool, speedMbps int64) *util.MockInterface {
 	hwAddr, _ := net.ParseMAC(macAddr)
 	ret := newInterfaceMock()
 	ret.On("IsPhysical").Return(isPhysical)
@@ -209,7 +209,7 @@ var _ = Describe("Interfaces", func() {
 			},
 		}))
 		for _, i := range rets {
-			i.(*MockInterface).AssertExpectations(GinkgoT())
+			i.(*util.MockInterface).AssertExpectations(GinkgoT())
 		}
 	})
 })

@@ -68,6 +68,7 @@ subsystem: build-image
 	$(DOCKER_COMPOSE) down
 
 generate:
+	find "${ROOT_DIR}" -name 'mock_*.go' -type f -delete
 	go generate $(shell go list ./...)
 
 go-import:

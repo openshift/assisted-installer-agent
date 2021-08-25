@@ -2,7 +2,7 @@ package inventory
 
 import (
 	"fmt"
-
+	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -80,6 +80,22 @@ Cached:         12556080 kB
 `
 )
 
+var (
+	mem1 = ghw.MemoryInfo{
+		TotalPhysicalBytes: 0,
+		TotalUsableBytes:   0,
+		SupportedPageSizes: nil,
+		Modules:            nil,
+	}
+
+	mem2 = ghw.MemoryInfo{
+		TotalPhysicalBytes: 35184372088832,
+		TotalUsableBytes:   34244109795328,
+		SupportedPageSizes: nil,
+		Modules:            nil,
+	}
+)
+
 var _ = Describe("Memory test", func() {
 	var dependencies *util.MockIDependencies
 
@@ -92,11 +108,30 @@ var _ = Describe("Memory test", func() {
 	})
 
 	It("Execute+read error", func() {
-		dependencies.On("Execute", "dmidecode", "-t", "17").Return("", "Just an error", -1).Once()
-		dependencies.On("ReadFile", "/proc/meminfo").Return(nil, fmt.Errorf("Another error")).Once()
+		dependencies.On("Execute", "dmidecode", "-t", "17").Return("", "dmidecode error", -1).Once()
+		dependencies.On("ReadFile", "/proc/meminfo").Return(nil, fmt.Errorf("meminfo error")).Twice()
+		dependencies.On("Memory").Return(&mem1, nil).Once()
+
 		ret := GetMemory(dependencies)
 		Expect(ret).To(Equal(&models.Memory{}))
+		Expect(ret.PhysicalBytes).To(Equal(int64(0)))
+		Expect(ret.UsableBytes).To(Equal(int64(0)))
 	})
+	It("dmidecode fallback to ghw", func() {
+		dependencies.On("Execute", "dmidecode", "-t", "17").Return("", "Just an error", -1).Once()
+		dependencies.On("ReadFile", "/proc/meminfo").Return([]byte(meminfoContentskB), nil).Once()
+		dependencies.On("Memory").Return(&mem2, nil).Once()
+		ret := GetMemory(dependencies)
+		Expect(ret.PhysicalBytes).To(Equal(mem2.TotalPhysicalBytes))
+	})
+	It("ghw fallback to usable", func() {
+		dependencies.On("Execute", "dmidecode", "-t", "17").Return("", "Just an error", -1).Once()
+		dependencies.On("ReadFile", "/proc/meminfo").Return([]byte(meminfoContentskB), nil).Twice()
+		dependencies.On("Memory").Return(&mem1, nil).Once()
+		ret := GetMemory(dependencies)
+		Expect(ret.PhysicalBytes).To(Equal(ret.UsableBytes))
+	})
+
 	It("Execute MB+read kB OK", func() {
 		dependencies.On("Execute", "dmidecode", "-t", "17").Return(dmidecodeOutputMB, "", 0).Once()
 		dependencies.On("ReadFile", "/proc/meminfo").Return([]byte(meminfoContentskB), nil).Once()

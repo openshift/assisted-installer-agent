@@ -25,6 +25,7 @@ type IDependencies interface {
 	LinkByName(name string) (netlink.Link, error)
 	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
 	GPU(opts ...*ghw.WithOption) (*ghw.GPUInfo, error)
+	Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error)
 }
 
 type Dependencies struct {
@@ -81,6 +82,10 @@ func (d *Dependencies) EvalSymlinks(path string) (string, error) {
 
 func (d *Dependencies) GPU(opts ...*ghw.WithOption) (*ghw.GPUInfo, error) {
 	return ghw.GPU(opts...)
+}
+
+func (d *Dependencies) Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error) {
+	return ghw.Memory(opts...)
 }
 
 func NewDependencies() IDependencies {

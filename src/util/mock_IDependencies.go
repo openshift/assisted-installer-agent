@@ -9,6 +9,8 @@ import (
 
 	gpu "github.com/jaypipes/ghw/pkg/gpu"
 
+	memory "github.com/jaypipes/ghw/pkg/memory"
+
 	mock "github.com/stretchr/testify/mock"
 
 	netlink "github.com/vishvananda/netlink"
@@ -218,6 +220,35 @@ func (_m *MockIDependencies) LinkByName(name string) (netlink.Link, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Memory provides a mock function with given fields: opts
+func (_m *MockIDependencies) Memory(opts ...*option.Option) (*memory.Info, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *memory.Info
+	if rf, ok := ret.Get(0).(func(...*option.Option) *memory.Info); ok {
+		r0 = rf(opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*memory.Info)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -23,6 +23,8 @@ all: build
 
 ci-lint:
 	${ROOT_DIR}/hack/check-commits.sh
+	$(MAKE) generate
+	git diff --exit-code  # this will fail if generate caused any diff
 
 lint: ci-lint
 	golangci-lint run -v --fix

@@ -115,6 +115,7 @@ var _ = Describe("Memory test", func() {
 		ret := GetMemory(dependencies)
 		Expect(ret).To(Equal(&models.Memory{}))
 		Expect(ret.PhysicalBytes).To(Equal(int64(0)))
+		Expect(string(ret.PhysicalBytesMethod)).To(Equal(""))
 		Expect(ret.UsableBytes).To(Equal(int64(0)))
 	})
 	It("dmidecode fallback to ghw", func() {
@@ -123,6 +124,7 @@ var _ = Describe("Memory test", func() {
 		dependencies.On("Memory").Return(&mem2, nil).Once()
 		ret := GetMemory(dependencies)
 		Expect(ret.PhysicalBytes).To(Equal(mem2.TotalPhysicalBytes))
+		Expect(ret.PhysicalBytesMethod).To(Equal(models.MemoryMethodGhw))
 	})
 	It("ghw fallback to usable", func() {
 		dependencies.On("Execute", "dmidecode", "-t", "17").Return("", "Just an error", -1).Once()
@@ -130,6 +132,7 @@ var _ = Describe("Memory test", func() {
 		dependencies.On("Memory").Return(&mem1, nil).Once()
 		ret := GetMemory(dependencies)
 		Expect(ret.PhysicalBytes).To(Equal(ret.UsableBytes))
+		Expect(ret.PhysicalBytesMethod).To(Equal(models.MemoryMethodMeminfo))
 	})
 
 	It("Execute MB+read kB OK", func() {
@@ -137,8 +140,9 @@ var _ = Describe("Memory test", func() {
 		dependencies.On("ReadFile", "/proc/meminfo").Return([]byte(meminfoContentskB), nil).Once()
 		ret := GetMemory(dependencies)
 		Expect(ret).To(Equal(&models.Memory{
-			PhysicalBytes: 34359738368,
-			UsableBytes:   33441513472,
+			PhysicalBytes:       34359738368,
+			UsableBytes:         33441513472,
+			PhysicalBytesMethod: models.MemoryMethodDmidecode,
 		}))
 	})
 	It("Execute GB+read MB OK", func() {
@@ -146,8 +150,9 @@ var _ = Describe("Memory test", func() {
 		dependencies.On("ReadFile", "/proc/meminfo").Return([]byte(meminfoContentsMB), nil).Once()
 		ret := GetMemory(dependencies)
 		Expect(ret).To(Equal(&models.Memory{
-			PhysicalBytes: 35184372088832,
-			UsableBytes:   34244109795328,
+			PhysicalBytes:       35184372088832,
+			UsableBytes:         34244109795328,
+			PhysicalBytesMethod: models.MemoryMethodDmidecode,
 		}))
 	})
 })

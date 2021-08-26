@@ -38,23 +38,23 @@ func newMemory(dependencies util.IDependencies) *memory {
 	return &memory{dependencies: dependencies}
 }
 
-func (m *memory) getTotalPhysicalBytes() int64 {
+func (m *memory) getTotalPhysicalBytes() (int64, models.MemoryMethod) {
 
 	if physicalBytes := m.getDmidecodeTotalPhysicalBytes(); physicalBytes != 0 {
-		return physicalBytes
+		return physicalBytes, models.MemoryMethodDmidecode
 	}
 
 	// Try to use ghw to get total physical bytes, as dmidecode returns 0 on some platforms
 	if physicalBytes := m.getGhwTotalPhysicalBytes(); physicalBytes != 0 {
-		return physicalBytes
+		return physicalBytes, models.MemoryMethodGhw
 	}
 
 	// Treat usable bytes as physical bytes, as ghw returns 0 on some platforms
 	if usableBytes := m.getTotalUsabeBytes(); usableBytes != 0 {
-		return usableBytes
+		return usableBytes, models.MemoryMethodMeminfo
 	}
 
-	return 0
+	return 0, ""
 }
 
 func (m *memory) getGhwTotalPhysicalBytes() int64 {
@@ -123,9 +123,12 @@ func (m *memory) getTotalUsabeBytes() int64 {
 }
 
 func (m *memory) getMemory() *models.Memory {
+	physicalBytes, physicalBytesMethod := m.getTotalPhysicalBytes()
+
 	ret := models.Memory{
-		PhysicalBytes: m.getTotalPhysicalBytes(),
-		UsableBytes:   m.getTotalUsabeBytes(),
+		PhysicalBytes:       physicalBytes,
+		UsableBytes:         m.getTotalUsabeBytes(),
+		PhysicalBytesMethod: physicalBytesMethod,
 	}
 	return &ret
 }

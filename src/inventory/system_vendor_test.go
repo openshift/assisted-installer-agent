@@ -52,8 +52,20 @@ var _ = Describe("System vendor test", func() {
 			{"AHV", true},
 			{"HVM domU", true},
 			{"20T1S39D3N (LENOVO_MT_20T1_BU_Think_FM_ThinkPad T14s Gen 1)", false},
+			{"oVirt", true},
 		} {
 			Expect(isVirtual(test.Product)).Should(Equal(test.IsVm))
 		}
+	})
+	It("oVirt product detection", func() {
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Family:      "oVirt",
+		}, nil).Once()
+
+		ret := GetVendor(dependencies)
+		Expect(ret).To(Equal(&models.SystemVendor{
+			ProductName: "oVirt",
+			Virtual:     true,
+		}))
 	})
 })

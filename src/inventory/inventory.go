@@ -23,6 +23,7 @@ func ReadInventory() *models.Inventory {
 		SystemVendor: GetVendor(d),
 		Timestamp:    time.Now().Unix(),
 		Routes:       GetRoutes(d),
+		TpmVersion:   GetTPM(d),
 	}
 	return &ret
 }

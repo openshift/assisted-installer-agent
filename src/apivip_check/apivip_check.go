@@ -39,6 +39,7 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 	}
 
 	if checkAPIRequest.VerifyCidr {
+		log.Warnf("The VerifyCidr (verify_cidr) is being deprecated. CIDR verification is done by Assisted Service directly")
 		if err := verifyCIDR(*checkAPIRequest.URL, log); err != nil {
 			wrapped := errors.Wrap(err, "CheckAPIConnectivity: failure verifying CIDR of API VIP")
 			log.WithError(err).Error(wrapped.Error())

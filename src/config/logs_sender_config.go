@@ -14,6 +14,7 @@ var LogsSenderConfig struct {
 	Since                  string
 	HostID                 string
 	ClusterID              string
+	InfraEnvID	       string
 	CleanWhenDone          bool
 	TargetURL              string
 	PullSecretToken        string
@@ -29,6 +30,7 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	flag.StringVar(&LogsSenderConfig.Since, "since", "5 hours ago", "Journalctl since flag, same format")
 	flag.StringVar(&LogsSenderConfig.TargetURL, "url", "", "The target URL, including a scheme and optionally a port (overrides the host and port arguments")
 	flag.StringVar(&LogsSenderConfig.ClusterID, "cluster-id", "", "The value of the cluster-id, required")
+	flag.StringVar(&LogsSenderConfig.InfraEnvID, "infra-env-id", "", "The value of the infra-env-id")
 	flag.StringVar(&LogsSenderConfig.HostID, "host-id", "host-id", "The value of the host-id")
 	flag.StringVar(&LogsSenderConfig.PullSecretToken, "pull-secret-token", "", "Pull secret token")
 	flag.BoolVar(&leaveFiles, "dont-clean", false, "Don't delete all created files on finish. Required")

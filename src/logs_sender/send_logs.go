@@ -42,8 +42,8 @@ type LogsSender interface {
 	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int)
 	CreateFolderIfNotExist(folder string) error
-	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
-		inventoryUrl string, pullSecretToken string, agentVersion string) error
+	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, infraEnvID strfmt.UUID,
+		inventoryUrl string, pullSecretToken string) error
 	LogProgressReport(clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error
 	GatherInstallerLogs(targetDir string) error
 	GatherErrorLogs(targetDir string) error
@@ -92,8 +92,8 @@ func getClient(inventoryUrl string, pullSecretToken string) (*client.AssistedIns
 	return invSession.Client(), invSession.Context()
 }
 
-func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID,
-	inventoryUrl string, pullSecretToken string, agentVersion string) error {
+func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, infraEnvID strfmt.UUID,
+	inventoryUrl string, pullSecretToken string) error {
 
 	uploadFile, err := os.Open(filePath)
 	if err != nil {
@@ -101,13 +101,14 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	}
 	defer uploadFile.Close()
 
-	params := installer.UploadHostLogsParams{
+	params := installer.V2UploadLogsParams{
 		Upfile:                uploadFile,
 		ClusterID:             clusterID,
-		DiscoveryAgentVersion: &agentVersion,
-		HostID:                hostID,
+		HostID:                &hostID,
+		InfraEnvID:	       &infraEnvID,
+		LogsType:              string(models.LogsTypeHost),
 	}
-	_, err = e.client.Installer.UploadHostLogs(e.ctx, &params)
+	_, err = e.client.Installer.V2UploadLogs(e.ctx, &params)
 	return err
 }
 
@@ -278,10 +279,10 @@ func archiveFilesInFolder(l LogsSender, inputPath string, outputFile string) err
 	return nil
 }
 
-func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId strfmt.UUID,
-	inventoryUrl string, pullSecretToken string, agentVersion string) error {
+func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId strfmt.UUID, infraEnvID strfmt.UUID,
+	inventoryUrl string, pullSecretToken string) error {
 
-	err := l.FileUploader(filepath, clusterID, hostId, inventoryUrl, pullSecretToken, agentVersion)
+	err := l.FileUploader(filepath, clusterID, hostId, infraEnvID, inventoryUrl, pullSecretToken)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload file %s to assisted-service", filepath)
 		return err
@@ -359,8 +360,8 @@ func SendLogs(l LogsSender) (error, string) {
 	}
 
 	err := uploadLogs(l, archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
-		config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion)
+		strfmt.UUID(config.LogsSenderConfig.HostID), strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
+		config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken)
 
 	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.ClusterID),
 		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,

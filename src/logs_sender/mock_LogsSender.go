@@ -126,13 +126,13 @@ func (_m *MockLogsSender) ExecutePrivileged(command string, args ...string) (str
 	return r0, r1, r2
 }
 
-// FileUploader provides a mock function with given fields: filePath, clusterID, hostID, inventoryUrl, pullSecretToken, agentVersion
-func (_m *MockLogsSender) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, agentVersion string) error {
-	ret := _m.Called(filePath, clusterID, hostID, inventoryUrl, pullSecretToken, agentVersion)
+// FileUploader provides a mock function with given fields: filePath, clusterID, hostID, infraEnvID, inventoryUrl, pullSecretToken
+func (_m *MockLogsSender) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, infraEnvID strfmt.UUID, inventoryUrl string, pullSecretToken string) error {
+	ret := _m.Called(filePath, clusterID, hostID, infraEnvID, inventoryUrl, pullSecretToken)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, strfmt.UUID, strfmt.UUID, string, string, string) error); ok {
-		r0 = rf(filePath, clusterID, hostID, inventoryUrl, pullSecretToken, agentVersion)
+	if rf, ok := ret.Get(0).(func(string, strfmt.UUID, strfmt.UUID, strfmt.UUID, string, string) error); ok {
+		r0 = rf(filePath, clusterID, hostID, infraEnvID, inventoryUrl, pullSecretToken)
 	} else {
 		r0 = ret.Error(0)
 	}

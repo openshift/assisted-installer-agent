@@ -37,6 +37,7 @@ var _ = Describe("logs sender", func() {
 		config.LogsSenderConfig.PullSecretToken = "test"
 		config.LogsSenderConfig.ClusterID = uuid.New().String()
 		config.LogsSenderConfig.HostID = uuid.New().String()
+		config.LogsSenderConfig.InfraEnvID = uuid.New().String()
 		logsTmpFilesDir = path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
 		config.LogsSenderConfig.IsBootstrap = true
 		config.LogsSenderConfig.InstallerGatherlogging = true
@@ -70,7 +71,8 @@ var _ = Describe("logs sender", func() {
 
 	fileUploaderSuccess := func() {
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
+			strfmt.UUID(config.LogsSenderConfig.HostID), strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
+			config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken).
 			Return(nil)
 	}
 
@@ -165,7 +167,8 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken, config.GlobalAgentConfig.AgentVersion).
+			strfmt.UUID(config.LogsSenderConfig.HostID), strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
+			config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken).
 			Return(errors.Errorf("Dummy"))
 		reportLogProgressSuccess(true)
 		err, _ := SendLogs(logsSenderMock)

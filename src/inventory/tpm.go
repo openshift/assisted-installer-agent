@@ -18,6 +18,7 @@ func GetTPM(dependencies util.IDependencies) string {
 		logrus.WithError(errors.New(stdErr)).Warn("Error checking TPM version")
 		return ""
 	}
+	stdOut = strings.TrimSuffix(stdOut, "\n")
 
 	switch stdOut {
 	case "1":

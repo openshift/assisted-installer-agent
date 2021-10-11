@@ -24,6 +24,7 @@ const (
 	templatePull     = "podman pull %s"
 	templateGetImage = "podman images --quiet %s"
 	templateTimeout  = "timeout %s %s"
+	failedToPullImageExitCode = 2
 )
 
 //go:generate mockery -name ImageAvailabilityDependencies -inpkg
@@ -130,6 +131,7 @@ func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.
 }
 
 func Run(requestStr string, executer ImageAvailabilityDependencies, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
+	exitCode = 0
 	var request models.ContainerImageAvailabilityRequest
 	var response models.ContainerImageAvailabilityResponse
 
@@ -141,7 +143,11 @@ func Run(requestStr string, executer ImageAvailabilityDependencies, log logrus.F
 
 	finishOnTimeout := time.Now().Add(time.Duration(request.Timeout) * time.Second)
 	for _, image := range request.Images {
-		response.Images = append(response.Images, handleImageAvailability(executer, log, int64(time.Until(finishOnTimeout).Seconds()), image))
+		imageResponse := handleImageAvailability(executer, log, int64(time.Until(finishOnTimeout).Seconds()), image)
+		response.Images = append(response.Images, imageResponse)
+		if imageResponse.Result != models.ContainerImageAvailabilityResultSuccess {
+			exitCode = failedToPullImageExitCode
+		}
 	}
 
 	b, err := json.Marshal(&response)
@@ -149,5 +155,5 @@ func Run(requestStr string, executer ImageAvailabilityDependencies, log logrus.F
 		log.WithError(err).Errorf("Failed to marshal image availability response %v", response)
 		return "", err.Error(), -1
 	}
-	return string(b), "", 0
+	return string(b), "", exitCode
 }

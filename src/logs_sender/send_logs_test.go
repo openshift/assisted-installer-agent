@@ -77,11 +77,11 @@ var _ = Describe("logs sender", func() {
 	}
 
 	reportLogProgressSuccess := func(completed bool) {
-		logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.ClusterID),
+		logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
 			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken,
 			models.LogsStateRequested).Return(nil)
 		if completed {
-			logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.ClusterID),
+			logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
 				strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken,
 				models.LogsStateCompleted).Return(nil)
 		}

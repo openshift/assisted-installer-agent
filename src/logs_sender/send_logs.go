@@ -44,7 +44,7 @@ type LogsSender interface {
 	CreateFolderIfNotExist(folder string) error
 	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, infraEnvID strfmt.UUID,
 		inventoryUrl string, pullSecretToken string) error
-	LogProgressReport(clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error
+	LogProgressReport(infraEnvID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error
 	GatherInstallerLogs(targetDir string) error
 	GatherErrorLogs(targetDir string) error
 }
@@ -112,16 +112,16 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	return err
 }
 
-func (e *LogsSenderExecuter) LogProgressReport(clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error {
-	params := installer.UpdateHostLogsProgressParams{
-		ClusterID: clusterID,
+func (e *LogsSenderExecuter) LogProgressReport(infraEnvID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error {
+	params := installer.V2UpdateHostLogsProgressParams{
+		InfraEnvID: infraEnvID,
 		HostID:    hostID,
 		LogsProgressParams: &models.LogsProgressParams{
 			LogsState: progress,
 		},
 	}
 
-	_, err := e.client.Installer.UpdateHostLogsProgress(e.ctx, &params)
+	_, err := e.client.Installer.V2UpdateHostLogsProgress(e.ctx, &params)
 	return err
 }
 
@@ -293,7 +293,7 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 func SendLogs(l LogsSender) (error, string) {
 	var result error
 
-	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.ClusterID),
+	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
 		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
 		config.LogsSenderConfig.PullSecretToken, models.LogsStateRequested); lerr != nil {
 		log.WithError(lerr).Error("failed to send log progress requested to service")
@@ -363,7 +363,7 @@ func SendLogs(l LogsSender) (error, string) {
 		strfmt.UUID(config.LogsSenderConfig.HostID), strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
 		config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken)
 
-	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.ClusterID),
+	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
 		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
 		config.LogsSenderConfig.PullSecretToken, models.LogsStateCompleted); lerr != nil {
 		log.WithError(lerr).Error("failed to send log progress completed to service")

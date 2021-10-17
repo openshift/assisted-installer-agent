@@ -124,30 +124,30 @@ type ImageAVailabilityVerifier struct {
 }
 
 func (i *ImageAVailabilityVerifier) verify(actualReply *models.StepReply) bool {
-	if actualReply.ExitCode != 0 {
-		log.Errorf("ImageAVailabilityVerifier returned with exit code %d. error: %s", actualReply.ExitCode, actualReply.Error)
+	if actualReply.ExitCode != 0 && actualReply.ExitCode != 2 {
+		log.Errorf("ImageAvailabilityVerifier returned with exit code %d. error: %s", actualReply.ExitCode, actualReply.Error, )
 		return false
 	}
 	if actualReply.StepType != models.StepTypeContainerImageAvailability {
-		log.Errorf("ImageAVailabilityVerifier invalid step reply %s", actualReply.StepType)
+		log.Errorf("ImageAvailabilityVerifier invalid step reply %s", actualReply.StepType)
 		return false
 	}
 
 	response := getImageAvailabilityResponseFromStepReply(actualReply)
 
 	if response == nil {
-		log.Errorf("ImageAVailabilityVerifier response is nil")
+		log.Errorf("ImageAvailabilityVerifier response is nil")
 		return false
 	}
 
 	for _, image := range response.Images {
 		if !funk.Contains(i.expectedImages, image.Name) {
-			log.Errorf("ImageAVailabilityVerifier image %s wasn't expected in list %s", image.Name, i.expectedImages)
+			log.Errorf("ImageAvailabilityVerifier image %s wasn't expected in list %s", image.Name, i.expectedImages)
 			return false
 		}
 
 		if !checkImageStatus(image, i.expectedResult, i.isRemoteImage, i.pullTimeout) {
-			log.Errorf("ImageAVailabilityVerifier image %+v wasn't expected to result %v %v", image, i.expectedResult, i.isRemoteImage)
+			log.Errorf("ImageAvailabilityVerifier image %+v wasn't expected to result %v %v", image, i.expectedResult, i.isRemoteImage)
 			return false
 		}
 	}

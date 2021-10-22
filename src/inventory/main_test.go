@@ -9,7 +9,13 @@ import (
 )
 
 func newDependenciesMock() *util.MockIDependencies {
-	return &util.MockIDependencies{}
+	d := &util.MockIDependencies{}
+	mockGetGhwChrootRoot(d)
+	return d
+}
+
+func mockGetGhwChrootRoot(dependencies *util.MockIDependencies) {
+	dependencies.On("GetGhwChrootRoot").Return("/host").Maybe()
 }
 
 func TestSubsystem(t *testing.T) {

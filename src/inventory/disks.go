@@ -170,7 +170,9 @@ func checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallati
 
 func (d *disks) getDisks() []*models.Disk {
 	ret := make([]*models.Disk, 0)
-	blockInfo, err := d.dependencies.Block(ghw.WithChroot("/host"))
+	var blockInfo *ghw.BlockInfo
+	var err error
+	blockInfo, err = d.dependencies.Block(ghw.WithChroot(d.dependencies.GetGhwChrootRoot()))
 	if err != nil {
 		logrus.WithError(err).Warnf("While getting disks info")
 		return ret

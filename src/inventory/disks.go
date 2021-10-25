@@ -9,10 +9,16 @@ import (
 	"github.com/jaypipes/ghw"
 	"github.com/jaypipes/ghw/pkg/block"
 	ghwutil "github.com/jaypipes/ghw/pkg/util"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+)
+
+const (
+	// Arbitrary SMART result to use in dry-run mode, the content doesn't really matter
+	dryRunSmart = `{"json_format_version":[1,0],"smartctl":{"version":[7,1],"svn_revision":"5022","platform_info":"x86_64-linux-5.14.0-60.fc35.x86_64","build_info":"(local build)","argv":["smartctl","--xall","--json=c","/dev/vda"],"messages":[{"string":"/dev/vda: Unable to detect device type","severity":"error"}],"exit_status":1}}`
 )
 
 type disks struct {
@@ -120,6 +126,11 @@ func (d *disks) getBootable(path string) bool {
 func (d *disks) getSMART(path string) string {
 	if path == "" {
 		return ""
+	}
+
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		// smartctl is rather slow, better to avoid it dry run mode
+		return dryRunSmart
 	}
 
 	// We ignore the exit code and stderr because stderr is empty and

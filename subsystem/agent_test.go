@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	InfraEnvID                     = "11111111-1111-1111-1111-111111111111"
+	InfraEnvID                    = "11111111-1111-1111-1111-111111111111"
 	defaultnextInstructionSeconds = int64(1)
 	waitForWiremockTimeout        = 60 * time.Second
 )

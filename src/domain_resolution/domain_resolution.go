@@ -22,7 +22,7 @@ func (e *DomainResolver) Resolve(domain string) (ips []net.IP, err error) {
 	// No need to return error in case domain was not found
 	// It is expected answer and service will handle it
 	if err != nil {
-		if e, ok := err.(*net.DNSError); ok && e.IsNotFound  {
+		if e, ok := err.(*net.DNSError); ok && e.IsNotFound {
 			err = nil
 		}
 	}

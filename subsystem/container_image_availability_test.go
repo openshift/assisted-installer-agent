@@ -125,7 +125,7 @@ type ImageAVailabilityVerifier struct {
 
 func (i *ImageAVailabilityVerifier) verify(actualReply *models.StepReply) bool {
 	if actualReply.ExitCode != 0 && actualReply.ExitCode != 2 {
-		log.Errorf("ImageAvailabilityVerifier returned with exit code %d. error: %s", actualReply.ExitCode, actualReply.Error, )
+		log.Errorf("ImageAvailabilityVerifier returned with exit code %d. error: %s", actualReply.ExitCode, actualReply.Error)
 		return false
 	}
 	if actualReply.StepType != models.StepTypeContainerImageAvailability {

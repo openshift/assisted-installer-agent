@@ -28,8 +28,10 @@ var _ = Describe("Logging test", func() {
 		journalWriter *journalLogger.MockIJournalWriter
 		discard       *WriterMock
 		logger        *logrus.Logger
+		hostID        = "51def48b-169a-4ea2-8ec0-91ee03d12a00"
 		fields        = map[string]interface{}{
-			"TAG": "agent",
+			"TAG":          "agent",
+			"DRY_AGENT_ID": hostID,
 		}
 	)
 	BeforeEach(func() {
@@ -45,18 +47,18 @@ var _ = Describe("Logging test", func() {
 
 	It("Text logging", func() {
 		writer.On("Write", mock.Anything).Return(5, nil)
-		setLogging(logger, journalWriter, "agent", true, false)
+		setLogging(logger, journalWriter, "agent", true, false, hostID)
 		logger.Infof("Hello")
 	})
 	It("Both", func() {
 		writer.On("Write", mock.Anything).Return(5, nil)
 		journalWriter.On("Send", mock.Anything, journald.PriorityInfo, fields).Return(nil).Once()
-		setLogging(logger, journalWriter, "agent", true, true)
+		setLogging(logger, journalWriter, "agent", true, true, hostID)
 		logger.Infof("Hello1")
 	})
 	It("None", func() {
 		discard.On("Write", mock.Anything).Return(5, nil).Once()
-		setLogging(logger, journalWriter, "agent", false, false)
+		setLogging(logger, journalWriter, "agent", false, false, hostID)
 		logger.Infof("Hello2")
 	})
 	AfterEach(func() {

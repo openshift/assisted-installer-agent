@@ -202,7 +202,7 @@ var _ = Describe("Image availability", func() {
 			prevTimeout := remaining
 			for _, image := range images {
 				imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(image)...).Return("", "", 0).Once()
-				imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(image)...).Return("", "", 0).Once().Run(func (args mock.Arguments) {
+				imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(image)...).Return("", "", 0).Once().Run(func(args mock.Arguments) {
 					remainingTimeoutStr, ok := args.Get(1).(string)
 					Expect(ok).To(BeTrue())
 					currentTimeout, err := strconv.Atoi(remainingTimeoutStr)

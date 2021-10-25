@@ -1,1 +1,5 @@
 build
+subsystem/logs
+wiremock.log
+reports
+dhcpd.log

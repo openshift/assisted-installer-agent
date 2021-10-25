@@ -13,7 +13,8 @@ import (
 
 func main() {
 	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	util.SetLogging("disk-speed-check", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging)
+	config.ProcessDryRunArgs()
+	util.SetLogging("disk-speed-check", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
 
 	req := flag.Arg(flag.NArg() - 1)
 	perfCheck := disk_speed_check.NewDiskSpeedCheck(disk_speed_check.NewDependencies())

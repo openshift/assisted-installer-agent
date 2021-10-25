@@ -18,11 +18,18 @@ type serviceAPI interface {
 type v2ServiceAPI struct{}
 
 func (v *v2ServiceAPI) RegisterHost(s *session.InventorySession) (*models.HostRegistrationResponse, error) {
+	var hostID strfmt.UUID = strfmt.UUID("")
+	if !config.GlobalDryRunConfig.DryRunEnabled {
+		hostID = *scanners.ReadId(scanners.NewGHWSerialDiscovery())
+	} else {
+		hostID = strfmt.UUID(config.GlobalDryRunConfig.ForcedHostID)
+	}
+
 	params := &installer.V2RegisterHostParams{
 		InfraEnvID:            strfmt.UUID(config.GlobalAgentConfig.InfraEnvID),
 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
 		NewHostParams: &models.HostCreateParams{
-			HostID:                scanners.ReadId(scanners.NewGHWSerialDiscovery()),
+			HostID:                &hostID,
 			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
 		},
 	}

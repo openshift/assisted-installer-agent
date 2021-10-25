@@ -1,11 +1,13 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -143,6 +145,11 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 // This is in order to detect and report known problems otherwise manifest as confusing error messages or stuck the whole system in the steps themselves.
 // One common example of that is virtual media disconnection.
 func (s *stepSession) diagnoseSystem() (errorCode, error) {
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		// diagnoseSystem is not necessary in dry mode
+		return Undetected, nil
+	}
+
 	source, err := s.getMountpointSourceDeviceFile()
 
 	if err != nil {
@@ -229,15 +236,22 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	return result.NextInstructionSeconds, *result.PostStepAction
 }
 
-func ProcessSteps() {
+func ProcessSteps(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	var nextRunIn int64
 	for afterStep := ""; afterStep != models.StepsPostStepActionExit; {
-		s := newSession()
-		nextRunIn, afterStep = s.processSingleSession()
-		if nextRunIn == -1 {
-			// sleep forever
-			select {}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			s := newSession()
+			nextRunIn, afterStep = s.processSingleSession()
+			if nextRunIn == -1 {
+				// sleep forever
+				select {}
+			}
+			time.Sleep(time.Duration(nextRunIn) * time.Second)
 		}
-		time.Sleep(time.Duration(nextRunIn) * time.Second)
 	}
 }

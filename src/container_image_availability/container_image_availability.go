@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
@@ -20,12 +21,22 @@ var (
 )
 
 const (
-	templateInspect  = "podman image inspect --format={{.Size}} %s"
-	templatePull     = "podman pull %s"
-	templateGetImage = "podman images --quiet %s"
-	templateTimeout  = "timeout %s %s"
+	templateInspect           = "podman image inspect --format={{.Size}} %s"
+	templatePull              = "podman pull %s"
+	templateGetImage          = "podman images --quiet %s"
+	templateTimeout           = "timeout %s %s"
 	failedToPullImageExitCode = 2
 )
+
+func getDryModeContainerImageAvailability(name string) *models.ContainerImageAvailability {
+	return &models.ContainerImageAvailability{
+		DownloadRate: 100,
+		Name:         name,
+		Result:       models.ContainerImageAvailabilityResultSuccess,
+		SizeBytes:    400000000,
+		Time:         10,
+	}
+}
 
 //go:generate mockery -name ImageAvailabilityDependencies -inpkg
 type ImageAvailabilityDependencies interface {
@@ -89,6 +100,11 @@ func pullImage(executer ImageAvailabilityDependencies, pullTimeoutSeconds int64,
 }
 
 func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.FieldLogger, pullTimeoutSeconds int64, image string) *models.ContainerImageAvailability {
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		log.Infof("Running in dry mode - skipping image availability test, returning fake results")
+		return getDryModeContainerImageAvailability(image)
+	}
+
 	imageExistLocallyBeforePull := isImageAvailable(executer, image)
 
 	log.Infof("Image %s exists locally before pull: %s", image, strconv.FormatBool(imageExistLocallyBeforePull))

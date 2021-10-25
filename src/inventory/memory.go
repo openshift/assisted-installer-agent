@@ -1,11 +1,12 @@
 package inventory
 
 import (
-	"github.com/openshift/assisted-installer-agent/src/util"
-	"github.com/sirupsen/logrus"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-service/models"
 )

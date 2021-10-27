@@ -26,10 +26,16 @@ type IDependencies interface {
 	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
 	GPU(opts ...*ghw.WithOption) (*ghw.GPUInfo, error)
 	Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error)
+	GetGhwChrootRoot() string
 }
 
 type Dependencies struct {
 	NetlinkRouteFinder
+	GhwChrootRoot string
+}
+
+func (d *Dependencies) GetGhwChrootRoot() string {
+	return d.GhwChrootRoot
 }
 
 func (d *Dependencies) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
@@ -88,6 +94,8 @@ func (d *Dependencies) Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error) 
 	return ghw.Memory(opts...)
 }
 
-func NewDependencies() IDependencies {
-	return &Dependencies{}
+func NewDependencies(ghwChrootRoot string) IDependencies {
+	return &Dependencies{
+		GhwChrootRoot: ghwChrootRoot,
+	}
 }

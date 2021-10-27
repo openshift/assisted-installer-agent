@@ -168,13 +168,13 @@ func (_m *MockLogsSender) GatherInstallerLogs(targetDir string) error {
 	return r0
 }
 
-// LogProgressReport provides a mock function with given fields: clusterID, hostID, inventoryUrl, pullSecretToken, progress
-func (_m *MockLogsSender) LogProgressReport(clusterID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error {
-	ret := _m.Called(clusterID, hostID, inventoryUrl, pullSecretToken, progress)
+// LogProgressReport provides a mock function with given fields: infraEnvID, hostID, inventoryUrl, pullSecretToken, progress
+func (_m *MockLogsSender) LogProgressReport(infraEnvID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error {
+	ret := _m.Called(infraEnvID, hostID, inventoryUrl, pullSecretToken, progress)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(strfmt.UUID, strfmt.UUID, string, string, models.LogsState) error); ok {
-		r0 = rf(clusterID, hostID, inventoryUrl, pullSecretToken, progress)
+		r0 = rf(infraEnvID, hostID, inventoryUrl, pullSecretToken, progress)
 	} else {
 		r0 = ret.Error(0)
 	}

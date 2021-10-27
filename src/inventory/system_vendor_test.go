@@ -59,7 +59,7 @@ var _ = Describe("System vendor test", func() {
 	})
 	It("oVirt product detection", func() {
 		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
-			Family:      "oVirt",
+			Family: "oVirt",
 		}, nil).Once()
 
 		ret := GetVendor(dependencies)

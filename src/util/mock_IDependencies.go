@@ -160,6 +160,20 @@ func (_m *MockIDependencies) GPU(opts ...*option.Option) (*gpu.Info, error) {
 	return r0, r1
 }
 
+// GetGhwChrootRoot provides a mock function with given fields:
+func (_m *MockIDependencies) GetGhwChrootRoot() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // Hostname provides a mock function with given fields:
 func (_m *MockIDependencies) Hostname() (string, error) {
 	ret := _m.Called()

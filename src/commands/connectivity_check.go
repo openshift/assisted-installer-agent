@@ -19,7 +19,7 @@ import (
 
 func getOutgoingNics() []string {
 	ret := make([]string, 0)
-	d := util.NewDependencies()
+	d := util.NewDependencies("")
 	interfaces, err := d.Interfaces()
 	if err != nil {
 		log.WithError(err).Warnf("Get outgoing nics")

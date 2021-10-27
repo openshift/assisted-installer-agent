@@ -35,8 +35,9 @@ func isOVirtPlatform(family string) bool {
 
 func GetVendor(dependencies util.IDependencies) *models.SystemVendor {
 	var ret models.SystemVendor
-
-	product, err := dependencies.Product(ghw.WithChroot("/host"))
+	var product *ghw.ProductInfo
+	var err error
+	product, err = dependencies.Product(ghw.WithChroot(dependencies.GetGhwChrootRoot()))
 
 	if err != nil {
 		logrus.Errorf("Error running ghw.Product with /host chroot:: %s", err)

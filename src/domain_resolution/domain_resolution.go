@@ -17,7 +17,16 @@ type DomainResolutionDependencies interface {
 type DomainResolver struct{}
 
 func (e *DomainResolver) Resolve(domain string) (ips []net.IP, err error) {
-	return net.LookupIP(domain)
+	ips, err = net.LookupIP(domain)
+
+	// No need to return error in case domain was not found
+	// It is expected answer and service will handle it
+	if err != nil {
+		if e, ok := err.(*net.DNSError); ok && e.IsNotFound  {
+			err = nil
+		}
+	}
+	return ips, err
 }
 
 func handleDomainResolution(resolver DomainResolutionDependencies, log logrus.FieldLogger, domain string) models.DomainResolutionResponseDomain {
@@ -28,7 +37,6 @@ func handleDomainResolution(resolver DomainResolutionDependencies, log logrus.Fi
 	}
 
 	ips, err := resolver.Resolve(domain)
-
 	if err != nil {
 		log.WithError(err).Errorf("error occurred during domain resolution of %s", domain)
 		return result

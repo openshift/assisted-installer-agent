@@ -30,7 +30,7 @@ var (
 const (
 	maxTimeout       = 300 * time.Second
 	agentServiceName = "agent"
-	infraEnvID        = "11111111-1111-1111-1111-111111111111" // This is redeclared here (with lowercase) to solve a lint error
+	infraEnvID       = "11111111-1111-1111-1111-111111111111" // This is redeclared here (with lowercase) to solve a lint error
 )
 
 type RequestDefinition struct {

@@ -77,11 +77,10 @@ var _ = Describe("Domain resolution", func() {
 
 	Context("Resolution error", func() {
 		dm := DomainResolver{}
-		ips, err:= dm.Resolve("faillallthetimeigal-blbl.com")
+		ips, err := dm.Resolve("faillallthetimeigal-blbl.com")
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(ips).Should(BeEmpty())
 	})
-
 
 	Context("Run", func() {
 		It("No domains", func() {

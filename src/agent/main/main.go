@@ -13,7 +13,8 @@ const defaultRetryDelay = 1 * time.Hour
 
 func main() {
 	config.ProcessArgs()
-	util.SetLogging("agent_registration", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging)
+	config.ProcessDryRunArgs()
+	util.SetLogging("agent_registration", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
 
 	for {
 		stepRunnerCommand := commands.RegisterHostWithRetry()
@@ -24,12 +25,19 @@ func main() {
 		}
 
 		if err := commands.StartStepRunner(stepRunnerCommand.Command, stepRunnerCommand.Args...); err != nil {
-
 			var reRegistrerDelay time.Duration
 			if stepRunnerCommand.RetrySeconds > 0 {
 				reRegistrerDelay = time.Duration(stepRunnerCommand.RetrySeconds) * time.Second
 			} else {
 				reRegistrerDelay = defaultRetryDelay
+			}
+
+			if config.GlobalDryRunConfig.DryRunEnabled {
+				// Check if the step runner died just because the installer signaled fake reboot
+				if util.DryRebootHappened() {
+					log.Infof("Dry reboot happened, exiting")
+					return
+				}
 			}
 
 			log.WithError(err).Errorf("Next step runner has crashed and will be restarted in %s", reRegistrerDelay)

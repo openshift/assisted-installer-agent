@@ -31,11 +31,12 @@ func processArgs() {
 
 func main() {
 	processArgs()
+	config.ProcessDryRunArgs()
 	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 
 	util.SetLogging("domain_resolution",
 		config.SubprocessConfig.TextLogging,
-		config.SubprocessConfig.JournalLogging)
+		config.SubprocessConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
 
 	log.StandardLogger().Infof("Processing domain resolution, requested domains: %s", executableConfig.Request)
 

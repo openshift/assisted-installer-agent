@@ -53,7 +53,7 @@ func formatFilePath(path string) string {
 	return arr[len(arr)-1]
 }
 
-func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter, name string, textLogging, journalLogging bool) {
+func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter, name string, textLogging, journalLogging bool, hostID string) {
 	configureLogger(logger)
 	if textLogging {
 		file, err := getLogFileWriter(name)
@@ -65,11 +65,12 @@ func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWrite
 	}
 	if journalLogging {
 		journalLogger.SetJournalLogging(logger, journalWriter, map[string]interface{}{
-			"TAG": "agent",
+			"TAG":          "agent",
+			"DRY_AGENT_ID": hostID,
 		})
 	}
 }
 
-func SetLogging(name string, textLogging, journalLogging bool) {
-	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging)
+func SetLogging(name string, textLogging, journalLogging bool, hostID string) {
+	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, hostID)
 }

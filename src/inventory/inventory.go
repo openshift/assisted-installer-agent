@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
@@ -30,6 +31,11 @@ func ReadInventory(c *Options) *models.Inventory {
 
 func CreateInventoryInfo() []byte {
 	in := ReadInventory(&Options{GhwChrootRoot: "/host"})
+
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		in.Interfaces[0].MacAddress = config.GlobalDryRunConfig.ForcedMacAddress
+	}
+
 	b, _ := json.Marshal(&in)
 	return b
 }

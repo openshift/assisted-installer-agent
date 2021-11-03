@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"gopkg.in/yaml.v2"
 )
@@ -40,6 +41,11 @@ func (b *bmc) getIsEnabled(value interface{}) bool {
 }
 
 func (b *bmc) getBmcAddress() string {
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		// This action is too slow and unnecessary, so skip it in dry run
+		return "0.0.0.0"
+	}
+
 	for ch := 1; ch <= MaxIpmiChannel; ch++ {
 		ret := b.getIpForChannnel(ch)
 		if ret == "" {
@@ -120,6 +126,11 @@ func (b *bmc) getAddrMode(ch int) string {
 }
 
 func (b *bmc) getBmcV6Address() string {
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		// This action is too slow and unnecessary, so skip it in dry run
+		return "::/0"
+	}
+
 	for ch := 1; ch <= MaxIpmiChannel; ch++ {
 		addrMode := b.getAddrMode(ch)
 		if addrMode == "" {

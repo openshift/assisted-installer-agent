@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	dryModeSyncDurationInNS = 1_000_000
 )
 
 type DiskSpeedCheck struct {
@@ -49,6 +54,11 @@ func (p *DiskSpeedCheck) FioPerfCheck(diskSpeedCheckRequestStr string, log logru
 func (p *DiskSpeedCheck) getDiskPerf(path string) (int64, error) {
 	if path == "" {
 		return -1, errors.New("Missing disk path")
+	}
+
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		// Don't want to cause the disk any harm in dry mode, so just pretend it's fast
+		return time.Duration(dryModeSyncDurationInNS).Milliseconds(), nil
 	}
 
 	args := []string{"--filename", path, "--name=test", "--rw=write", "--ioengine=sync",

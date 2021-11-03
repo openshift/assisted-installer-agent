@@ -47,7 +47,7 @@ func GetVendor(dependencies util.IDependencies) *models.SystemVendor {
 	ret.SerialNumber = product.SerialNumber
 	ret.ProductName = product.Name
 	ret.Manufacturer = product.Vendor
-	if isOVirtPlatform(product.Family){
+	if isOVirtPlatform(product.Family) {
 		ret.ProductName = "oVirt"
 	}
 	ret.Virtual = isVirtual(ret.ProductName)

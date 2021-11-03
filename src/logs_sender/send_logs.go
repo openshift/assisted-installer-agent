@@ -102,11 +102,11 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	defer uploadFile.Close()
 
 	params := installer.V2UploadLogsParams{
-		Upfile:                uploadFile,
-		ClusterID:             clusterID,
-		HostID:                &hostID,
-		InfraEnvID:	       &infraEnvID,
-		LogsType:              string(models.LogsTypeHost),
+		Upfile:     uploadFile,
+		ClusterID:  clusterID,
+		HostID:     &hostID,
+		InfraEnvID: &infraEnvID,
+		LogsType:   string(models.LogsTypeHost),
 	}
 	_, err = e.client.Installer.V2UploadLogs(e.ctx, &params)
 	return err
@@ -115,7 +115,7 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 func (e *LogsSenderExecuter) LogProgressReport(infraEnvID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error {
 	params := installer.V2UpdateHostLogsProgressParams{
 		InfraEnvID: infraEnvID,
-		HostID:    hostID,
+		HostID:     hostID,
 		LogsProgressParams: &models.LogsProgressParams{
 			LogsState: progress,
 		},

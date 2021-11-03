@@ -14,7 +14,7 @@ var LogsSenderConfig struct {
 	Since                  string
 	HostID                 string
 	ClusterID              string
-	InfraEnvID	       string
+	InfraEnvID             string
 	CleanWhenDone          bool
 	TargetURL              string
 	PullSecretToken        string

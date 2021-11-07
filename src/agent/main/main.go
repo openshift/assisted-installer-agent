@@ -32,17 +32,17 @@ func main() {
 				reRegistrerDelay = defaultRetryDelay
 			}
 
-			if config.GlobalDryRunConfig.DryRunEnabled {
-				// Check if the step runner died just because the installer signaled fake reboot
-				if util.DryRebootHappened() {
-					log.Infof("Dry reboot happened, exiting")
-					return
-				}
-			}
-
 			log.WithError(err).Errorf("Next step runner has crashed and will be restarted in %s", reRegistrerDelay)
 			time.Sleep(reRegistrerDelay)
 			continue
+		}
+
+		if config.GlobalDryRunConfig.DryRunEnabled {
+			// Check if the step runner died just because the installer signaled fake reboot
+			if util.DryRebootHappened() {
+				log.Infof("Dry reboot happened, exiting")
+				break
+			}
 		}
 
 		log.Info("Next step runner exited, going to re-register host")

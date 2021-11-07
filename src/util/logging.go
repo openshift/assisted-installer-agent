@@ -27,6 +27,11 @@ func setTextLogging(file io.Writer, logger *logrus.Logger) {
 	logger.SetOutput(file)
 }
 
+func setTextAndStdoutLogging(file io.Writer, logger *logrus.Logger) {
+	mw := io.MultiWriter(os.Stdout, file)
+	logger.SetOutput(mw)
+}
+
 func configureLogger(logger *logrus.Logger) {
 	logger.SetReportCaller(true)
 	logger.SetFormatter(&logrus.TextFormatter{
@@ -53,14 +58,17 @@ func formatFilePath(path string) string {
 	return arr[len(arr)-1]
 }
 
-func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter, name string, textLogging, journalLogging bool, hostID string) {
+func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWriter, name string, textLogging, journalLogging, stdOutLogging bool, hostID string) {
 	configureLogger(logger)
+
 	if textLogging {
 		file, err := getLogFileWriter(name)
-		if err == nil {
+		if err == nil && !stdOutLogging {
 			setTextLogging(file, logger)
+		} else if err == nil {
+			setTextAndStdoutLogging(file, logger)
 		}
-	} else {
+	} else if !stdOutLogging {
 		setNullWriter(logger)
 	}
 	if journalLogging {
@@ -71,6 +79,10 @@ func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWrite
 	}
 }
 
+func SetLoggingWithStdOut(name string, textLogging, journalLogging bool, hostID string) {
+	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, true, hostID)
+}
+
 func SetLogging(name string, textLogging, journalLogging bool, hostID string) {
-	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, hostID)
+	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, false, hostID)
 }

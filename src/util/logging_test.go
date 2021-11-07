@@ -47,18 +47,18 @@ var _ = Describe("Logging test", func() {
 
 	It("Text logging", func() {
 		writer.On("Write", mock.Anything).Return(5, nil)
-		setLogging(logger, journalWriter, "agent", true, false, hostID)
+		setLogging(logger, journalWriter, "agent", true, false, false, hostID)
 		logger.Infof("Hello")
 	})
 	It("Both", func() {
 		writer.On("Write", mock.Anything).Return(5, nil)
 		journalWriter.On("Send", mock.Anything, journald.PriorityInfo, fields).Return(nil).Once()
-		setLogging(logger, journalWriter, "agent", true, true, hostID)
+		setLogging(logger, journalWriter, "agent", true, true, false, hostID)
 		logger.Infof("Hello1")
 	})
 	It("None", func() {
 		discard.On("Write", mock.Anything).Return(5, nil).Once()
-		setLogging(logger, journalWriter, "agent", false, false, hostID)
+		setLogging(logger, journalWriter, "agent", false, false, false, hostID)
 		logger.Infof("Hello2")
 	})
 	AfterEach(func() {

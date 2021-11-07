@@ -200,7 +200,7 @@ func getMountLogs(l LogsSender, outputFilePath string) error {
 	}
 	defer logfile.Close()
 
-	result = util.LogPrivilegedCommandOutput(logfile, result, "List block devices", lsblk, "-o NAME,MAJ:MIN,SIZE,TYPE,FSTYPE,KNAME,MODEL,UUID,WWN,HCTL,VENDOR,STATE,TRAN,PKNAME")
+	result = util.LogPrivilegedCommandOutput(logfile, result, "List block devices", lsblk, "-o", "NAME,MAJ:MIN,SIZE,TYPE,FSTYPE,KNAME,MODEL,UUID,WWN,HCTL,VENDOR,STATE,TRAN,PKNAME")
 	result = util.LogPrivilegedCommandOutput(logfile, result, "List mounts", findmnt, "--df")
 	result = logDisksByCategory("id", logfile, result)
 	result = logDisksByCategory("path", logfile, result)

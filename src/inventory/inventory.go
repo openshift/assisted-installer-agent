@@ -33,7 +33,7 @@ func CreateInventoryInfo() []byte {
 	in := ReadInventory(&Options{GhwChrootRoot: "/host"})
 
 	if config.GlobalDryRunConfig.DryRunEnabled {
-		in.Interfaces[0].MacAddress = config.GlobalDryRunConfig.ForcedMacAddress
+		applyDryRunConfig(in)
 	}
 
 	b, _ := json.Marshal(&in)

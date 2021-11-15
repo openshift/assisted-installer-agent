@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/jaypipes/ghw"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/vishvananda/netlink"
 )
 
@@ -51,6 +52,10 @@ func (d *Dependencies) Stat(fname string) (os.FileInfo, error) {
 }
 
 func (d *Dependencies) Hostname() (string, error) {
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		return config.GlobalDryRunConfig.ForcedHostname, nil
+	}
+
 	return os.Hostname()
 }
 

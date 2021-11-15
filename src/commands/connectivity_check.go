@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-installer-agent/src/util/nmap"
 	"github.com/openshift/assisted-service/models"
@@ -70,6 +71,15 @@ func l3CheckAddressOnNic(address string, outgoingNic string, innerChan chan *mod
 		OutgoingNic:     outgoingNic,
 		RemoteIPAddress: address,
 	}
+
+	if config.GlobalDryRunConfig.DryRunEnabled { 
+		ret.Successful = true
+		ret.PacketLossPercentage = 0.0
+		ret.AverageRTTMs = 0.0
+		innerChan <- ret
+		return
+	}
+
 	b, err := conCheck.command("ping", []string{"-c", pingCount, "-W", "3", "-q", "-I", outgoingNic, address})
 	if err != nil {
 		log.Errorf("Error running ping to %s on interface %s: %s", address, outgoingNic, err.Error())
@@ -177,6 +187,12 @@ func analyzeNmap(dstAddr string, dstMAC string, allDstMACs []string, srcNIC stri
 		RemoteIPAddress: dstAddr,
 	}
 
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		ret.Successful = true
+		dataCh <- ret
+		return
+	}
+
 	out, err := conCheck.command("nmap", []string{"-6", "-sn", "-n", "-oX", "-", "-e", srcNIC, dstAddr})
 	if err != nil {
 		log.WithError(err).Warn("nmap command failed")
@@ -264,6 +280,13 @@ func l2IPv4Cmd(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string
 		OutgoingNic:     srcNIC,
 		RemoteIPAddress: dstAddr,
 	}
+
+	if config.GlobalDryRunConfig.DryRunEnabled {
+		ret.Successful = true
+		dataCh <- ret
+		return
+	}
+
 	bytes, err := conCheck.command("arping", []string{"-c", "1", "-w", "2", "-I", srcNIC, dstAddr})
 	if err != nil {
 		log.Errorf("Error while processing 'arping' command: %s", err)

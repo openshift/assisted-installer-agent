@@ -117,7 +117,7 @@ func (e *LogsSenderExecuter) LogProgressReport(infraEnvID strfmt.UUID, hostID st
 		InfraEnvID: infraEnvID,
 		HostID:     hostID,
 		LogsProgressParams: &models.LogsProgressParams{
-			LogsState: progress,
+			LogsState: &progress,
 		},
 	}
 

@@ -151,36 +151,26 @@ func createExpectedSDBModelDisk() *models.Disk {
 SDA disk is real disk data from a bare metal machine.
 */
 func createSDADisk() *ghw.Disk {
-	return &ghw.Disk{
-		Name:      "sda",
-		SizeBytes: 999653638144,
-		DriveType: ghw.DRIVE_TYPE_HDD,
-		// run $cat  /sys/block/diskName/dev and then cat /run/udev/data/b{previous command output}
-		BusPath:                "pci-0000:02:00.0-scsi-0:2:0:0",
-		Vendor:                 "DELL",
-		Model:                  "PERC_H330_Mini",
-		SerialNumber:           "6141877064533b0020adf3bb03167694",
-		WWN:                    "0x6141877064533b0020adf3bb03167694",
-		IsRemovable:            false,
-		NUMANodeID:             0,
-		PhysicalBlockSizeBytes: 512,
-		StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
-	}
+	return createDisk("sda", 0, "6141877064533b0020adf3bb03167694", "0x6141877064533b0020adf3bb03167694")
 }
 
 /**
 SDB disk is real disk data from a bare metal machine.
 */
 func createSDBDisk() *ghw.Disk {
+	return createDisk("sdb", 1, "6141877064533b0020adf3bc0325d664", "0x6141877064533b0020adf3bc0325d664")
+}
+
+func createDisk(name string, index int, serialNumber string, wwn string) *ghw.Disk {
 	return &ghw.Disk{
-		Name:                   "sdb",
+		Name:                   name,
 		SizeBytes:              999653638144,
 		DriveType:              ghw.DRIVE_TYPE_HDD,
-		BusPath:                "pci-0000:02:00.0-scsi-0:2:1:0",
+		BusPath:                fmt.Sprintf("pci-0000:02:00.0-scsi-0:2:%d:0", index),
 		Vendor:                 "DELL",
 		Model:                  "PERC_H330_Mini",
-		SerialNumber:           "6141877064533b0020adf3bc0325d664",
-		WWN:                    "0x6141877064533b0020adf3bc0325d664",
+		SerialNumber:           serialNumber,
+		WWN:                    wwn,
 		IsRemovable:            false,
 		NUMANodeID:             0,
 		PhysicalBlockSizeBytes: 512,
@@ -323,6 +313,10 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		name := disk.Name
 		busPath := disk.BusPath
 
+		if !IsPhysicalDisk(disk) {
+			continue
+		}
+
 		mockGetPathFromDev(dependencies, name, "")
 		mockGetByPath(dependencies, busPath, "")
 		mockGetHctl(dependencies, name, "")
@@ -382,6 +376,19 @@ var _ = Describe("Disks test", func() {
 		mockFetchDisks(dependencies, nil)
 		ret := GetDisks(dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
+	})
+
+	It("Invalid disks", func() {
+		dmDisk := createDisk("dm-2", 3, "6141877064533b0020adf3bc0325d664", "0x6141877064533b0020adf3bc0325d664")
+		zramDisk := createDisk("zram0", 4, "6141877064533b0020adf3bc0325d665", "0x6141877064533b0020adf3bc0325d665")
+		mdDisk := createDisk("md-1", 5, "6141877064533b0020adf3bc0325d667", "0x6141877064533b0020adf3bc0325d667")
+		loopDisk := createDisk("loop5", 6, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d668")
+
+		mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
+		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), dmDisk, zramDisk, mdDisk, loopDisk)
+
+		ret := GetDisks(dependencies)
+		Expect(ret).Should(HaveLen(2))
 	})
 
 	Describe("Single disk", func() {

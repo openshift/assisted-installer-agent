@@ -13,6 +13,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	TestWorkerIgnitionPath = "/config/worker"
+)
+
 var _ = Describe("API connectivity check test", func() {
 	var log logrus.FieldLogger
 	var srv *httptest.Server
@@ -98,7 +102,7 @@ func getRequestStr(url *string, verifyCidr bool) string {
 
 func serverMock(mock func(w http.ResponseWriter, r *http.Request)) *httptest.Server {
 	handler := http.NewServeMux()
-	handler.HandleFunc(WorkerIgnitionPath, mock)
+	handler.HandleFunc(TestWorkerIgnitionPath, mock)
 	srv := httptest.NewServer(handler)
 	return srv
 }

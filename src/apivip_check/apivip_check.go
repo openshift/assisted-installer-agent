@@ -13,10 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	WorkerIgnitionPath = "/config/worker"
-)
-
 func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
 	var checkAPIRequest models.APIVipConnectivityRequest
 
@@ -32,7 +28,7 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 		return createResponse(false), err.Error(), -1
 	}
 
-	if err := httpDownload(*checkAPIRequest.URL + WorkerIgnitionPath); err != nil {
+	if err := httpDownload(*checkAPIRequest.URL); err != nil {
 		wrapped := errors.Wrap(err, "Failed to download worker.ign file")
 		log.WithError(err).Error(wrapped.Error())
 		return createResponse(false), wrapped.Error(), 0

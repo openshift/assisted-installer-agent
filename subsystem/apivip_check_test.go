@@ -12,6 +12,10 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
+const (
+	TestWorkerIgnitionPath = "/config/worker"
+)
+
 var _ = Describe("API VIP connectivity check tests", func() {
 	var (
 		hostID string
@@ -23,7 +27,7 @@ var _ = Describe("API VIP connectivity check tests", func() {
 	})
 
 	It("verify API connectivity", func() {
-		url := WireMockURLFromSubsystemHost
+		url := WireMockURLFromSubsystemHost + TestWorkerIgnitionPath
 		setWorkerIgnitionStub(hostID, &models.APIVipConnectivityRequest{
 			URL: &url,
 		})
@@ -68,13 +72,13 @@ func (i *APIConnectivityCheckVerifier) verify(actualReply *models.StepReply) boo
 }
 
 func addWorkerIgnitionStub() (string, error) {
-	ignitionConfig, err := apivip_check.FormatNodeIgnitionFile(AssistedServiceURLFromAgent + apivip_check.WorkerIgnitionPath)
+	ignitionConfig, err := apivip_check.FormatNodeIgnitionFile(AssistedServiceURLFromAgent + TestWorkerIgnitionPath)
 	if err != nil {
 		return "", err
 	}
 	stub := StubDefinition{
 		Request: &RequestDefinition{
-			URL:    apivip_check.WorkerIgnitionPath,
+			URL:    TestWorkerIgnitionPath,
 			Method: "GET",
 		},
 		Response: &ResponseDefinition{

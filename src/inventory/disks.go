@@ -179,6 +179,13 @@ func checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallati
 	return notEligibleReasons, isInstallationMedia
 }
 
+func IsPhysicalDisk(disk *block.Disk) bool {
+	return !(strings.HasPrefix(disk.Name, "dm-") || // Kernel device-mapper block devices, technology used by LVM/Docker
+		strings.HasPrefix(disk.Name, "loop") || // Loop devices (see `man loop`)
+		strings.HasPrefix(disk.Name, "zram") || // Default name usually assigned to "swap on ZRAM" block devices
+		strings.HasPrefix(disk.Name, "md")) // Linux multiple-device-driver block devices
+}
+
 func (d *disks) getDisks() []*models.Disk {
 	ret := make([]*models.Disk, 0)
 	var blockInfo *ghw.BlockInfo
@@ -198,6 +205,11 @@ func (d *disks) getDisks() []*models.Disk {
 	for diskIndex, disk := range blockInfo.Disks {
 		var eligibility models.DiskInstallationEligibility
 		var isInstallationMedia bool
+
+		// Ignore non physical disks
+		if !IsPhysicalDisk(disk) {
+			continue
+		}
 
 		eligibility.NotEligibleReasons, isInstallationMedia = checkEligibility(disk)
 		eligibility.Eligible = len(eligibility.NotEligibleReasons) == 0

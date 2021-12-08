@@ -32,4 +32,3 @@ func findRelevantInterface(inventory *models.Inventory) (int, error) {
 
 	return -1, fmt.Errorf("No suitable interface for dry run reconfiguration found in %+v", inventory.Interfaces)
 }
-

@@ -3,11 +3,8 @@ package apivip_check
 import (
 	"encoding/json"
 	"io/ioutil"
-	"net"
 	"net/http"
-	"net/url"
 
-	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -32,15 +29,6 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 		wrapped := errors.Wrap(err, "Failed to download worker.ign file")
 		log.WithError(err).Error(wrapped.Error())
 		return createResponse(false), wrapped.Error(), 0
-	}
-
-	if checkAPIRequest.VerifyCidr {
-		log.Warnf("The VerifyCidr (verify_cidr) is being deprecated. CIDR verification is done by Assisted Service directly")
-		if err := verifyCIDR(*checkAPIRequest.URL, log); err != nil {
-			wrapped := errors.Wrap(err, "CheckAPIConnectivity: failure verifying CIDR of API VIP")
-			log.WithError(err).Error(wrapped.Error())
-			return createResponse(false), wrapped.Error(), 0
-		}
 	}
 
 	return createResponse(true), "", 0
@@ -79,75 +67,4 @@ func httpDownload(uri string) error {
 	}
 
 	return err
-}
-
-func verifyCIDR(uri string, log logrus.FieldLogger) error {
-	apiVip, err := getIPByURI(uri)
-	if err != nil {
-		return errors.Wrap(err, "Failed to get VIP API")
-	}
-
-	_, err = calculateMachineNetworkCIDR(apiVip, log)
-	if err != nil {
-		return errors.Wrap(err, "Failed to calculate network CIDR")
-	}
-
-	return nil
-}
-
-func getIPByURI(uri string) (net.IP, error) {
-	u, err := url.Parse(uri)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed parsing specified URL")
-	}
-
-	host, _, _ := net.SplitHostPort(u.Host)
-	if ip := net.ParseIP(host); ip != nil {
-		return ip, nil
-	}
-
-	addr, err := net.LookupIP(host)
-	if err != nil {
-		return nil, errors.Wrap(err, "Unknown host for specified API VIP")
-	}
-	return addr[0], nil
-}
-
-func calculateMachineNetworkCIDR(apiVip net.IP, log logrus.FieldLogger) (string, error) {
-
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		return "", errors.Wrap(err, "Failed to fetch machine's interfaces")
-	}
-
-	isVIPv4 := util.IsIPv4Addr(apiVip.String())
-	for _, intf := range interfaces {
-
-		addrs, _ := intf.Addrs()
-		addrStrs := make([]string, 0)
-		for _, addr := range addrs {
-			addrStrs = append(addrStrs, addr.String())
-		}
-
-		if !isVIPv4 {
-			if err := util.SetV6PrefixesForAddress(intf.Name, &util.NetlinkRouteFinder{}, log, addrStrs); err != nil {
-				log.WithError(err).Warnf("Failed to set V6 prefix for interface %s address %s", intf.Name, addrStrs)
-			}
-		}
-
-		for _, ipAddr := range addrStrs {
-
-			_, ipNet, err := net.ParseCIDR(ipAddr)
-			if err != nil {
-				log.WithError(err).Warnf("Error parsing CIDR")
-				continue
-			}
-
-			if ipNet.Contains(apiVip) {
-				return ipNet.String(), nil
-			}
-		}
-	}
-
-	return "", errors.Errorf("No suitable matching CIDR found for API VIP %s", apiVip)
 }

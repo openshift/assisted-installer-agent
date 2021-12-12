@@ -2,6 +2,7 @@ package apivip_check
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+const ignitionVersion string = "3.2.0"
 
 func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
 	var checkAPIRequest models.APIVipConnectivityRequest
@@ -46,7 +49,16 @@ func createResponse(success bool) string {
 }
 
 func httpDownload(uri string) error {
-	res, err := http.Get(uri)
+	client := http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return errors.Wrap(err, "HTTP download - failed to create request")
+	}
+	req.Header = http.Header{
+		"Accept": []string{fmt.Sprintf("application/vnd.coreos.ignition+json; version=%s", ignitionVersion)},
+	}
+
+	res, err := client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "HTTP download failure")
 	}

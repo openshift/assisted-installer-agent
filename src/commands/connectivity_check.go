@@ -72,7 +72,7 @@ func l3CheckAddressOnNic(address string, outgoingNic string, innerChan chan *mod
 		RemoteIPAddress: address,
 	}
 
-	if config.GlobalDryRunConfig.DryRunEnabled { 
+	if config.GlobalDryRunConfig.DryRunEnabled {
 		ret.Successful = true
 		ret.PacketLossPercentage = 0.0
 		ret.AverageRTTMs = 0.0

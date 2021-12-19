@@ -1,6 +1,8 @@
 package apivip_check
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,7 +30,7 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 		return createResponse(false), err.Error(), -1
 	}
 
-	if err := httpDownload(*checkAPIRequest.URL); err != nil {
+	if err := httpDownload(checkAPIRequest); err != nil {
 		wrapped := errors.Wrap(err, "Failed to download worker.ign file")
 		log.WithError(err).Error(wrapped.Error())
 		return createResponse(false), wrapped.Error(), 0
@@ -48,19 +50,43 @@ func createResponse(success bool) string {
 	return string(bytes)
 }
 
-func httpDownload(uri string) error {
-	client := http.Client{}
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		return errors.Wrap(err, "HTTP download - failed to create request")
+func httpDownload(connectivityReq models.APIVipConnectivityRequest) error {
+	var client *http.Client
+
+	if connectivityReq.CaCertificate != nil {
+		caCertPool := x509.NewCertPool()
+		if ok := caCertPool.AppendCertsFromPEM([]byte(*connectivityReq.CaCertificate)); !ok {
+			return errors.Errorf("unable to parse cert")
+		}
+		client = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		}
+	} else {
+		client = &http.Client{}
 	}
+
+	req, _ := http.NewRequest("GET", *connectivityReq.URL, nil)
+
 	req.Header = http.Header{
 		"Accept": []string{fmt.Sprintf("application/vnd.coreos.ignition+json; version=%s", ignitionVersion)},
+	}
+
+	if connectivityReq.IgnitionEndpointToken != nil {
+		bearerToken := fmt.Sprintf("Bearer %s", *connectivityReq.IgnitionEndpointToken)
+		req.Header.Set("Authorization", bearerToken)
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "HTTP download failure")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return errors.Errorf("HTTP download failure. Status Code: %v", res.StatusCode)
 	}
 
 	defer res.Body.Close()

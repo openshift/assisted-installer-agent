@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	b64 "encoding/base64"
 
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
@@ -55,7 +56,11 @@ func httpDownload(connectivityReq models.APIVipConnectivityRequest) error {
 
 	if connectivityReq.CaCertificate != nil {
 		caCertPool := x509.NewCertPool()
-		if ok := caCertPool.AppendCertsFromPEM([]byte(*connectivityReq.CaCertificate)); !ok {
+		decodedCaCert, err := b64.StdEncoding.DecodeString(*connectivityReq.CaCertificate)
+		if err != nil {
+			return errors.Wrap(err, "Failed to decode CaCertificate")
+		}
+		if ok := caCertPool.AppendCertsFromPEM(decodedCaCert); !ok {
 			return errors.Errorf("unable to parse cert")
 		}
 		client = &http.Client{

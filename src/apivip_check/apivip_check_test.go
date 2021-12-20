@@ -2,6 +2,7 @@ package apivip_check
 
 import (
 	"bytes"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -103,8 +104,8 @@ var _ = Describe("API connectivity check test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			srv, err = httpsServerMock(servConfig, ignitionMock)
 			Expect(err).NotTo(HaveOccurred())
-			caCert := string(caPEM)
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, &caCert, nil), log)
+			encodedCaCert := b64.StdEncoding.EncodeToString(caPEM)
+			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, &encodedCaCert, nil), log)
 			Expect(exitCode).Should(Equal(0))
 			Expect(stderr).Should(BeEmpty())
 		})
@@ -127,7 +128,7 @@ var _ = Describe("API connectivity check test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			srv, err = httpsServerMock(servConfig, ignitionMock)
 			Expect(err).NotTo(HaveOccurred())
-			wrongCert := string(cert)
+			wrongCert := b64.StdEncoding.EncodeToString(cert)
 			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, &wrongCert, nil), log)
 			Expect(exitCode).Should(Equal(0))
 			Expect(stderr).Should(ContainSubstring("unknown authority"))

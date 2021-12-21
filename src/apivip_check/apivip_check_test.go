@@ -29,6 +29,7 @@ import (
 const (
 	TestWorkerIgnitionPath = "/config/worker"
 	AcceptHeader           = "application/vnd.coreos.ignition+json; version=3.2.0"
+	IgnitionSource         = "http://127.0.0.1:1234"
 )
 
 var _ = Describe("API connectivity check test", func() {
@@ -180,7 +181,7 @@ func ignitionMock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ignitionConfig, err := FormatNodeIgnitionFile("http://127.0.0.1:1234")
+	ignitionConfig, err := FormatNodeIgnitionFile(IgnitionSource)
 	if err != nil {
 		return
 	}
@@ -199,6 +200,12 @@ func checkResponse(stdout string, success bool) {
 	var response models.APIVipConnectivityResponse
 	Expect(json.Unmarshal([]byte(stdout), &response)).ToNot(HaveOccurred())
 	Expect(success).To(Equal(response.IsSuccess))
+
+	if success {
+		ignition, err := FormatNodeIgnitionFile(IgnitionSource)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(ignition)).To(Equal(response.Ignition))
+	}
 }
 
 func TestSubsystem(t *testing.T) {

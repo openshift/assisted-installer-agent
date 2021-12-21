@@ -22,26 +22,28 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 	if err := json.Unmarshal([]byte(checkAPIRequestStr), &checkAPIRequest); err != nil {
 		wrapped := errors.Wrap(err, "Error unmarshaling APIVipConnectivityRequest")
 		log.WithError(err).Error(wrapped.Error())
-		return createResponse(false), wrapped.Error(), -1
+		return createResponse(false, ""), wrapped.Error(), -1
 	}
 
 	if checkAPIRequest.URL == nil {
 		err := errors.New("Missing URL in checkAPIRequest")
 		log.WithError(err).Error(err.Error())
-		return createResponse(false), err.Error(), -1
+		return createResponse(false, ""), err.Error(), -1
 	}
 
-	if err := httpDownload(checkAPIRequest); err != nil {
+	ignition, err := httpDownload(checkAPIRequest)
+	if err != nil {
 		wrapped := errors.Wrap(err, "Failed to download worker.ign file")
 		log.WithError(err).Error(wrapped.Error())
-		return createResponse(false), wrapped.Error(), 0
+		return createResponse(false, ""), wrapped.Error(), 0
 	}
 
-	return createResponse(true), "", 0
+	return createResponse(true, ignition), "", 0
 }
 
-func createResponse(success bool) string {
+func createResponse(success bool, ignition string) string {
 	checkAPIResponse := models.APIVipConnectivityResponse{
+		Ignition:  ignition,
 		IsSuccess: success,
 	}
 	bytes, err := json.Marshal(checkAPIResponse)
@@ -51,17 +53,17 @@ func createResponse(success bool) string {
 	return string(bytes)
 }
 
-func httpDownload(connectivityReq models.APIVipConnectivityRequest) error {
+func httpDownload(connectivityReq models.APIVipConnectivityRequest) (string, error) {
 	var client *http.Client
 
 	if connectivityReq.CaCertificate != nil {
 		caCertPool := x509.NewCertPool()
 		decodedCaCert, err := b64.StdEncoding.DecodeString(*connectivityReq.CaCertificate)
 		if err != nil {
-			return errors.Wrap(err, "Failed to decode CaCertificate")
+			return "", errors.Wrap(err, "Failed to decode CaCertificate")
 		}
 		if ok := caCertPool.AppendCertsFromPEM(decodedCaCert); !ok {
-			return errors.Errorf("unable to parse cert")
+			return "", errors.Errorf("unable to parse cert")
 		}
 		client = &http.Client{
 			Transport: &http.Transport{
@@ -87,27 +89,27 @@ func httpDownload(connectivityReq models.APIVipConnectivityRequest) error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "HTTP download failure")
+		return "", errors.Wrap(err, "HTTP download failure")
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return errors.Errorf("HTTP download failure. Status Code: %v", res.StatusCode)
+		return "", errors.Errorf("HTTP download failure. Status Code: %v", res.StatusCode)
 	}
 
 	defer res.Body.Close()
 	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return errors.Wrap(err, "File read failure")
+		return "", errors.Wrap(err, "File read failure")
 	}
 
 	if len(bytes) == 0 {
-		return errors.New("Empty Ignition file")
+		return "", errors.New("Empty Ignition file")
 	}
 
 	var js json.RawMessage
 	if err = json.Unmarshal(bytes, &js); err != nil {
-		return errors.Wrap(err, "Error unmarshaling Ignition string")
+		return "", errors.Wrap(err, "Error unmarshaling Ignition string")
 	}
 
-	return err
+	return string(js), err
 }

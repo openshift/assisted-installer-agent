@@ -12,7 +12,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
-	github.com/openshift/assisted-service v1.0.10-0.20211209144019-0e79e608f2b1
+	github.com/openshift/assisted-service v1.0.10-0.20211220172429-aa87618bd812
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20210210163937-34f98e0f48fd
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1

@@ -3,11 +3,11 @@ package apivip_check
 import (
 	"crypto/tls"
 	"crypto/x509"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	b64 "encoding/base64"
 
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"

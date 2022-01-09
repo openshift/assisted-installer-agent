@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/jaypipes/ghw"
 	"github.com/jaypipes/ghw/pkg/util"
@@ -13,9 +15,10 @@ import (
 )
 
 const (
-	DefaultUUID         = "00000000-0000-0000-0000-000000000000"
-	VmwareDefaultSerial = "None"
+	DefaultUUID = "00000000-0000-0000-0000-000000000000"
 )
+
+var unknownSerialCases = []string{"", util.UNKNOWN, "None", "Unspecified Base Board Serial Number"}
 
 func disableGHWWarnings() {
 	err := os.Setenv("GHW_DISABLE_WARNINGS", "1")
@@ -63,6 +66,7 @@ func (ir *idReader) readSystemUUID() *strfmt.UUID {
 	} else {
 		value = product.UUID
 	}
+
 	if value == "" || value == util.UNKNOWN {
 		log.Warnf("Could not get system UUID.  Using default UUID %s", DefaultUUID)
 		value = DefaultUUID
@@ -74,19 +78,22 @@ func (ir *idReader) readSystemUUID() *strfmt.UUID {
 func (ir *idReader) readMotherboardSerial() *strfmt.UUID {
 	basedboard, err := ir.serialDiscovery.Baseboard()
 	if err != nil {
+		log.WithError(err).Warningf("Failed to get motherboard serial")
 		return nil
 	}
-	value := basedboard.SerialNumber
-	if value == "" || value == util.UNKNOWN || value == VmwareDefaultSerial {
+	log.Infof("Motherboard serial number is %s", basedboard.SerialNumber)
+	// serial can be unknown/unspecified or any other not serial case, we want to return nil
+	if funk.Contains(unknownSerialCases, basedboard.SerialNumber) {
 		return nil
 	}
-	return md5GenerateUUID(value)
+	return md5GenerateUUID(basedboard.SerialNumber)
 }
 
 func ReadId(d SerialDiscovery) *strfmt.UUID {
 	ir := &idReader{serialDiscovery: d}
 	ret := ir.readMotherboardSerial()
 	if ret == nil {
+		log.Warn("No valid motherboard serial, using system UUID instead")
 		ret = ir.readSystemUUID()
 	}
 	return ret

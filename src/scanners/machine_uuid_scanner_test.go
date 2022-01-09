@@ -42,8 +42,14 @@ var _ = Describe("Machine uuid test", func() {
 		id := ReadId(serialDiscovery)
 		Expect(id).To(Equal(toUUID(TestUuid)))
 	})
-	It("Vmware None", func() {
-		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: VmwareDefaultSerial}, nil).Once()
+	It("Vmware None serial", func() {
+		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "None"}, nil).Once()
+		serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: TestUuid}, nil)
+		id := ReadId(serialDiscovery)
+		Expect(id).To(Equal(toUUID(TestUuid)))
+	})
+	It("unspecified serial", func() {
+		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "Unspecified Base Board Serial Number"}, nil).Once()
 		serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: TestUuid}, nil)
 		id := ReadId(serialDiscovery)
 		Expect(id).To(Equal(toUUID(TestUuid)))

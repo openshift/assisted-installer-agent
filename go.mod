@@ -20,7 +20,7 @@ require (
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/thoas/go-funk v0.8.0
+	github.com/thoas/go-funk v0.9.1
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	gopkg.in/yaml.v2 v2.4.0

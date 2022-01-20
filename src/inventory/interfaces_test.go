@@ -15,48 +15,6 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func newInterfaceMock() *util.MockInterface {
-	return &util.MockInterface{}
-}
-
-func str2Addr(addrStr string) net.Addr {
-	ip, ipnet, err := net.ParseCIDR(addrStr)
-	if err != nil {
-		return &net.IPNet{}
-	}
-	return &net.IPNet{IP: ip, Mask: ipnet.Mask}
-}
-
-func toAddresses(addrs []string) []net.Addr {
-	ret := make([]net.Addr, 0)
-	for _, a := range addrs {
-		ret = append(ret, str2Addr(a))
-	}
-	return ret
-}
-
-func newFilledInterfaceMock(mtu int, name string, macAddr string, flags net.Flags, addrs []string, isPhysical bool, isBonding bool, isVlan bool, speedMbps int64) *util.MockInterface {
-	hwAddr, _ := net.ParseMAC(macAddr)
-	ret := newInterfaceMock()
-	ret.On("IsPhysical").Return(isPhysical)
-	if isPhysical || isBonding || isVlan {
-		ret.On("Name").Return(name)
-		ret.On("MTU").Return(mtu)
-		ret.On("HardwareAddr").Return(hwAddr)
-		ret.On("Flags").Return(flags)
-		ret.On("Addrs").Return(toAddresses(addrs), nil).Once()
-		ret.On("SpeedMbps").Return(speedMbps)
-	}
-	if !isPhysical {
-		ret.On("IsBonding").Return(isBonding)
-	}
-	if !(isPhysical || isBonding) {
-		ret.On("IsVlan").Return(isVlan)
-	}
-
-	return ret
-}
-
 var _ = Describe("Interfaces", func() {
 	var dependencies *util.MockIDependencies
 
@@ -81,7 +39,7 @@ var _ = Describe("Interfaces", func() {
 	})
 
 	It("Single result", func() {
-		interfaceMock := newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, true, false, false, 1000)
+		interfaceMock := util.NewFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, true, false, false, 1000)
 		dependencies.On("Interfaces").Return([]util.Interface{interfaceMock}, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("1\n"), nil).Once()
@@ -114,11 +72,11 @@ var _ = Describe("Interfaces", func() {
 	})
 	It("Multiple results", func() {
 		rets := []util.Interface{
-			newFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, true, false, false, 100),
-			newFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, true, false, false, 10),
-			newFilledInterfaceMock(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/126", "de90::d832:8def:dd51:3529/126"}, false, false, false, 5),
-			newFilledInterfaceMock(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, false, true, false, -1),
-			newFilledInterfaceMock(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, false, false, true, -1),
+			util.NewFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, true, false, false, 100),
+			util.NewFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, true, false, false, 10),
+			util.NewFilledInterfaceMock(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/126", "de90::d832:8def:dd51:3529/126"}, false, false, false, 5),
+			util.NewFilledInterfaceMock(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, false, true, false, -1),
+			util.NewFilledInterfaceMock(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, false, false, true, -1),
 		}
 		dependencies.On("Interfaces").Return(rets, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()

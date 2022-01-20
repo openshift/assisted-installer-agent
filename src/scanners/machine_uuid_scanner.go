@@ -94,7 +94,7 @@ func (ir *idReader) readMotherboardSerial() *strfmt.UUID {
 	return md5GenerateUUID(basedboard.SerialNumber)
 }
 
-func ReadId(d SerialDiscovery) *strfmt.UUID {
+func ReadId(d SerialDiscovery, dependencies agent_utils.IDependencies) *strfmt.UUID {
 	ir := &idReader{serialDiscovery: d}
 	ret := ir.readMotherboardSerial()
 	if ret == nil {
@@ -103,7 +103,7 @@ func ReadId(d SerialDiscovery) *strfmt.UUID {
 	}
 	if ret == nil {
 		log.Warn("No valid serial for mother board and  system UUID  moving to interface mac")
-		interfaces := inventory.GetInterfaces(agent_utils.NewDependencies(""))
+		interfaces := inventory.GetInterfaces(dependencies)
 		// sort by mac
 		sort.Slice(interfaces, func(i, j int) bool {
 			return interfaces[i].MacAddress < interfaces[j].MacAddress

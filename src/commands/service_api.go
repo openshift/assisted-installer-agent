@@ -5,6 +5,7 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/scanners"
 	"github.com/openshift/assisted-installer-agent/src/session"
+	agent_utils "github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/client/installer"
 	"github.com/openshift/assisted-service/models"
 )
@@ -20,7 +21,7 @@ type v2ServiceAPI struct{}
 func (v *v2ServiceAPI) RegisterHost(s *session.InventorySession) (*models.HostRegistrationResponse, error) {
 	var hostID strfmt.UUID = strfmt.UUID("")
 	if !config.GlobalDryRunConfig.DryRunEnabled {
-		hostID = *scanners.ReadId(scanners.NewGHWSerialDiscovery())
+		hostID = *scanners.ReadId(scanners.NewGHWSerialDiscovery(), agent_utils.NewDependencies(""))
 	} else {
 		hostID = strfmt.UUID(config.GlobalDryRunConfig.ForcedHostID)
 	}

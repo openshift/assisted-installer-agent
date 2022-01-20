@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/thoas/go-funk"
@@ -11,6 +12,8 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/jaypipes/ghw"
 	"github.com/jaypipes/ghw/pkg/util"
+	"github.com/openshift/assisted-installer-agent/src/inventory"
+	agent_utils "github.com/openshift/assisted-installer-agent/src/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,7 +21,8 @@ const (
 	DefaultUUID = "00000000-0000-0000-0000-000000000000"
 )
 
-var unknownSerialCases = []string{"", util.UNKNOWN, "None", "Unspecified Base Board Serial Number"}
+var unknownSerialCases = []string{"", util.UNKNOWN, "none",
+	"unspecified base board serial number", "default string"}
 
 func disableGHWWarnings() {
 	err := os.Setenv("GHW_DISABLE_WARNINGS", "1")
@@ -67,10 +71,11 @@ func (ir *idReader) readSystemUUID() *strfmt.UUID {
 		value = product.UUID
 	}
 
-	if value == "" || value == util.UNKNOWN {
-		log.Warnf("Could not get system UUID.  Using default UUID %s", DefaultUUID)
-		value = DefaultUUID
+	if funk.Contains(unknownSerialCases, strings.ToLower(value)) {
+		log.Warnf("Could not get system UUID. Got %s", value)
+		return nil
 	}
+
 	ret := strfmt.UUID(strings.ToLower(value))
 	return &ret
 }
@@ -83,7 +88,7 @@ func (ir *idReader) readMotherboardSerial() *strfmt.UUID {
 	}
 	log.Infof("Motherboard serial number is %s", basedboard.SerialNumber)
 	// serial can be unknown/unspecified or any other not serial case, we want to return nil
-	if funk.Contains(unknownSerialCases, basedboard.SerialNumber) {
+	if funk.Contains(unknownSerialCases, strings.ToLower(basedboard.SerialNumber)) {
 		return nil
 	}
 	return md5GenerateUUID(basedboard.SerialNumber)
@@ -96,5 +101,17 @@ func ReadId(d SerialDiscovery) *strfmt.UUID {
 		log.Warn("No valid motherboard serial, using system UUID instead")
 		ret = ir.readSystemUUID()
 	}
+	if ret == nil {
+		log.Warn("No valid serial for mother board and  system UUID  moving to interface mac")
+		interfaces := inventory.GetInterfaces(agent_utils.NewDependencies(""))
+		// sort by mac
+		sort.Slice(interfaces, func(i, j int) bool {
+			return interfaces[i].MacAddress < interfaces[j].MacAddress
+		})
+		log.Infof("Using %s mac from interface %s to provide node-uuid",
+			interfaces[0].MacAddress, interfaces[0].Name)
+		ret = md5GenerateUUID(interfaces[0].MacAddress)
+	}
+
 	return ret
 }

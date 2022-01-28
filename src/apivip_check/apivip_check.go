@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/coreos/ignition/v2/config/v3_2"
+	"github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -38,7 +40,28 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 		return createResponse(false, ""), wrapped.Error(), 0
 	}
 
-	return createResponse(true, ignition), "", 0
+	config, _, err := v3_2.ParseCompatibleVersion([]byte(ignition))
+	if err != nil {
+		wrapped := errors.Wrap(err, "Invalid ignition format")
+		log.WithError(err).Error(wrapped.Error())
+		return createResponse(false, ""), wrapped.Error(), 0
+	}
+
+	// We should return only the relevant sections of the ignition that
+	// are needed by the service. As it's redundant to send the entire
+	// ignition config which tends to be quite large.
+	filteredConfig := types.Config{}
+	filteredConfig.Storage.Luks = config.Storage.Luks
+	// Note: add here any additional objects from the config (when needed by the service)
+
+	configBytes, err := json.Marshal(filteredConfig)
+	if err != nil {
+		wrapped := errors.Wrap(err, "Failed to filter ignition")
+		log.WithError(err).Error(wrapped.Error())
+		return createResponse(false, ""), wrapped.Error(), 0
+	}
+
+	return createResponse(true, string(configBytes)), "", 0
 }
 
 func createResponse(success bool, ignition string) string {

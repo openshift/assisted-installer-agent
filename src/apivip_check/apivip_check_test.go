@@ -19,6 +19,8 @@ import (
 	"math/big"
 	"time"
 
+	v32_types "github.com/coreos/ignition/v2/config/v3_2/types"
+	v31_types "github.com/coreos/ignition/v2/config/v3_1/types"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 
@@ -50,14 +52,29 @@ var _ = Describe("API connectivity check test", func() {
 			stdout, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
 			Expect(exitCode).Should(Equal(0))
 			Expect(stderr).Should(BeEmpty())
-			checkResponse(stdout, true)
+			checkResponse(stdout, true, true)
 		})
 
-		It("Invalid ignition file format", func() {
+		It("Download old ignition file successfully", func() {
+			srv = serverMock(ignitionMock31)
+			stdout, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
+			Expect(exitCode).Should(Equal(0))
+			Expect(stderr).Should(BeEmpty())
+			checkResponse(stdout, true, false)
+		})
+
+		It("ignition not is json format", func() {
 			srv = serverMock(ignitionMockInvalid)
 			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
 			Expect(exitCode).Should(Equal(0))
 			Expect(stderr).Should(ContainSubstring("Error unmarshaling Ignition string"))
+		})
+
+		It("Invalid ignition format", func() {
+			srv = serverMock(ignitionMockInvalidFormat)
+			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
+			Expect(exitCode).Should(Equal(0))
+			Expect(stderr).Should(ContainSubstring("Invalid ignition format"))
 		})
 
 		It("Empty ignition", func() {
@@ -137,6 +154,22 @@ var _ = Describe("API connectivity check test", func() {
 	})
 })
 
+func getIgnitionConfig() v32_types.Config {
+	tpm2Enabled := true
+	device := "/dev/disk"
+	return v32_types.Config{
+		Ignition: v32_types.Ignition{Version: "3.2.0"},
+		Storage: v32_types.Storage{
+			Luks: []v32_types.Luks{
+				{
+					Clevis: &v32_types.Clevis{Tpm2: &tpm2Enabled},
+					Device: &device,
+				},
+			},
+		},
+	}
+}
+
 func getRequestStr(url *string, verifyCidr bool, caCert *string, token *string) string {
 	if url != nil {
 		ignitionURL := *url + TestWorkerIgnitionPath
@@ -181,30 +214,60 @@ func ignitionMock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ignitionConfig, err := FormatNodeIgnitionFile(IgnitionSource)
+	ignitionConfig := getIgnitionConfig()
+	configBytes, err := json.Marshal(ignitionConfig)
 	if err != nil {
+		logrus.Error("failed to marshal config to json")
 		return
 	}
-	_, _ = w.Write(ignitionConfig)
+	_, _ = w.Write(configBytes)
+}
+
+func ignitionMock31(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Accept") != AcceptHeader {
+		logrus.Error("missing Accept header in request")
+		return
+	}
+
+	ignitionConfig := v31_types.Config{
+		Ignition: v31_types.Ignition{Version: "3.1.0"},
+	}
+	configBytes, err := json.Marshal(ignitionConfig)
+	if err != nil {
+		logrus.Error("failed to marshal config to json")
+		return
+	}
+	_, _ = w.Write(configBytes)
 }
 
 func ignitionMockInvalid(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("invalid"))
 }
 
+func ignitionMockInvalidFormat(w http.ResponseWriter, r *http.Request) {
+	_, _ = w.Write([]byte(`{"ignition": {}}`))
+}
+
 func ignitionMockEmpty(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte{})
 }
 
-func checkResponse(stdout string, success bool) {
+func checkResponse(stdout string, success bool, luksEnabled bool) {
 	var response models.APIVipConnectivityResponse
 	Expect(json.Unmarshal([]byte(stdout), &response)).ToNot(HaveOccurred())
 	Expect(success).To(Equal(response.IsSuccess))
 
 	if success {
-		ignition, err := FormatNodeIgnitionFile(IgnitionSource)
+		var responseConfig v32_types.Config
+		err := json.Unmarshal([]byte(response.Ignition), &responseConfig)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(string(ignition)).To(Equal(response.Ignition))
+
+		if luksEnabled {
+			ignitionConfig := getIgnitionConfig()
+			Expect(responseConfig.Storage.Luks).To(Equal(ignitionConfig.Storage.Luks))
+		} else {
+			Expect(responseConfig.Storage.Luks).To(Equal([]v32_types.Luks(nil)))
+		}
 	}
 }
 

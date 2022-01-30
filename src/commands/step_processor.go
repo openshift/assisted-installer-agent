@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/go-openapi/swag"
 
 	log "github.com/sirupsen/logrus"
 
@@ -70,15 +67,13 @@ func (s *stepSession) sendStepReply(reply models.StepReply) {
 
 	err := s.serviceAPI.PostStepReply(&s.InventorySession, &reply)
 	if err != nil {
-		switch errValue := err.(type) {
-		case *installer.V2PostStepReplyInternalServerError:
-			s.Logger().Warnf("Assisted service returned status code %s after processing step reply. Reason: %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		switch err.(type) {
 		case *installer.V2PostStepReplyUnauthorized:
 			s.Logger().Warn("User is not authenticated to perform the operation")
-		case *installer.V2PostStepReplyBadRequest:
-			s.Logger().Warnf("Assisted service returned status code %s after processing step reply.  Reason: %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
+		case *installer.V2PostStepReplyForbidden:
+			s.Logger().Warn("User is forbidden to perform the operation")
 		default:
-			s.Logger().WithError(err).Warn("Error posting step reply")
+			s.Logger().Warnf("Error posting step reply: %s", getErrorMessage(err))
 		}
 	} else if reply.ExitCode == 0 {
 		storeInCache(reply.StepType, reply.Output)
@@ -218,17 +213,18 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	result, err := s.serviceAPI.GetNextSteps(&s.InventorySession)
 	if err != nil {
 		invalidateCache()
-		switch errValue := err.(type) {
+		switch err.(type) {
 		case *installer.V2GetNextStepsNotFound:
 			s.Logger().WithError(err).Errorf("Infra-env %s was not found in inventory or user is not authorized, going to sleep forever", config.GlobalAgentConfig.InfraEnvID)
 			return -1, ""
 		case *installer.V2GetNextStepsUnauthorized:
 			s.Logger().WithError(err).Errorf("User is not authenticated to perform the operation, going to sleep forever")
 			return -1, ""
-		case *installer.V2GetNextStepsInternalServerError:
-			s.Logger().Warnf("Error getting get next steps: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
+		case *installer.V2GetNextStepsForbidden:
+			s.Logger().WithError(err).Errorf("User is forbidden to perform the operation, going to sleep forever")
+			return -1, ""
 		default:
-			s.Logger().WithError(err).Warn("Could not query next steps")
+			s.Logger().Warnf("Could not query next steps: %s", getErrorMessage(err))
 		}
 		return int64(config.GlobalAgentConfig.IntervalSecs), ""
 	}

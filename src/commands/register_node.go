@@ -1,10 +1,7 @@
 package commands
 
 import (
-	"net/http"
 	"time"
-
-	"github.com/go-openapi/swag"
 
 	"github.com/sirupsen/logrus"
 
@@ -29,7 +26,7 @@ func RegisterHostWithRetry() *models.HostRegistrationResponseAO1NextStepRunnerCo
 		}
 
 		// stop register in case of forbidden reply.
-		switch errValue := err.(type) {
+		switch err.(type) {
 		case *installer.V2RegisterHostForbidden:
 			s.Logger().Warn("Host will stop trying to register; host is not allowed to perform the requested operation")
 			// wait forever
@@ -46,12 +43,8 @@ func RegisterHostWithRetry() *models.HostRegistrationResponseAO1NextStepRunnerCo
 			s.Logger().Warnf("Host will stop trying to register; user is not authenticated to perform host registration")
 			// wait forever
 			select {}
-		case *installer.V2RegisterHostInternalServerError:
-			s.Logger().Warnf("Error registering host: %s, %s", http.StatusText(http.StatusInternalServerError), swag.StringValue(errValue.Payload.Reason))
-		case *installer.V2RegisterHostBadRequest:
-			s.Logger().Warnf("Error registering host: %s, %s", http.StatusText(http.StatusBadRequest), swag.StringValue(errValue.Payload.Reason))
 		default:
-			s.Logger().WithError(err).Warn("Error registering host")
+			s.Logger().Warnf("Error registering host: %s", getErrorMessage(err))
 		}
 		time.Sleep(time.Duration(config.GlobalAgentConfig.IntervalSecs) * time.Second)
 	}

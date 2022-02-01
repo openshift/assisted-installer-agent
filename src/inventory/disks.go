@@ -136,7 +136,7 @@ func (d *disks) getSMART(path string) string {
 	// We ignore the exit code and stderr because stderr is empty and
 	// stdout contains the exit code in `--json=c` mode. Whatever the exit
 	// code is, we want to relay the information to the service
-	stdout, _, _ := d.dependencies.Execute("smartctl", "--xall", "--json=c", path)
+	stdout, _, _ := d.dependencies.Execute("smartctl", "--all", "--json=c", path)
 
 	return stdout
 }

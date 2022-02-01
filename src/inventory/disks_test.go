@@ -88,6 +88,57 @@ func createAWSXenEBSDisk() *ghw.Disk {
 	}
 }
 
+func createISCSIDisk() *ghw.Disk {
+	return &ghw.Disk{
+		Name:                   "sda",
+		SizeBytes:              21474836480,
+		DriveType:              ghw.DRIVE_TYPE_HDD,
+		BusPath:                "ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
+		Vendor:                 "LIO-ORG",
+		Model:                  "disk0",
+		SerialNumber:           "6001405961d8b6f55cf48beb0de296b2",
+		WWN:                    "0x6001405961d8b6f55cf48beb0de296b2",
+		IsRemovable:            false,
+		NUMANodeID:             0,
+		PhysicalBlockSizeBytes: 512,
+		StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+	}
+}
+
+func createMultipathDisk() *ghw.Disk {
+	return &ghw.Disk{
+		Name:                   "dm-2",
+		SizeBytes:              21474836480,
+		DriveType:              ghw.DRIVE_TYPE_UNKNOWN,
+		BusPath:                "unknown",
+		Vendor:                 "unknown",
+		Model:                  "unknown",
+		SerialNumber:           "unknown",
+		WWN:                    "unknown",
+		IsRemovable:            false,
+		NUMANodeID:             0,
+		PhysicalBlockSizeBytes: 512,
+		StorageController:      ghw.STORAGE_CONTROLLER_UNKNOWN,
+	}
+}
+
+func createLVMDisk() *ghw.Disk {
+	return &ghw.Disk{
+		Name:                   "dm-2",
+		SizeBytes:              21474836480,
+		DriveType:              ghw.DRIVE_TYPE_UNKNOWN,
+		BusPath:                "unknown",
+		Vendor:                 "unknown",
+		Model:                  "unknown",
+		SerialNumber:           "unknown",
+		WWN:                    "unknown",
+		IsRemovable:            false,
+		NUMANodeID:             0,
+		PhysicalBlockSizeBytes: 512,
+		StorageController:      ghw.STORAGE_CONTROLLER_UNKNOWN,
+	}
+}
+
 const devDiskByIdLocation = "/dev/disk/by-id"
 const sdaWwn = "wwn-0x6141877064533b0020adf3bb03167694"
 const sdaPath = "/dev/sda"
@@ -313,7 +364,7 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		name := disk.Name
 		busPath := disk.BusPath
 
-		if !IsPhysicalDisk(disk) {
+		if !newDisks(dependencies).IsPhysicalDisk(disk) {
 			continue
 		}
 
@@ -379,13 +430,12 @@ var _ = Describe("Disks test", func() {
 	})
 
 	It("Invalid disks", func() {
-		dmDisk := createDisk("dm-2", 3, "6141877064533b0020adf3bc0325d664", "0x6141877064533b0020adf3bc0325d664")
 		zramDisk := createDisk("zram0", 4, "6141877064533b0020adf3bc0325d665", "0x6141877064533b0020adf3bc0325d665")
 		mdDisk := createDisk("md-1", 5, "6141877064533b0020adf3bc0325d667", "0x6141877064533b0020adf3bc0325d667")
 		loopDisk := createDisk("loop5", 6, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d668")
 
 		mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
-		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), dmDisk, zramDisk, mdDisk, loopDisk)
+		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, mdDisk, loopDisk)
 
 		ret := GetDisks(dependencies)
 		Expect(ret).Should(HaveLen(2))
@@ -621,6 +671,7 @@ var _ = Describe("Disks test", func() {
 			},
 		}))
 	})
+
 	It("Fedora 32 DM filter", func() {
 		blockInfo, expectation := prepareDisksTest(dependencies, 1)
 
@@ -634,6 +685,84 @@ var _ = Describe("Disks test", func() {
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
 		ret := GetDisks(dependencies)
 		Expect(ret).To(Equal(expectation))
+	})
+
+	It("iSCSI device", func() {
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		path := "/dev/sda"
+		disk := createISCSIDisk()
+		mockFetchDisks(dependencies, nil, disk)
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetHctl(dependencies, disk.Name, "error")
+		mockGetBootable(dependencies, path, true, "")
+		mockGetByPath(dependencies, disk.BusPath, "")
+		mockGetSMART(dependencies, path, "")
+		ret := GetDisks(dependencies)
+
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ID:        "/dev/disk/by-path/ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
+				ByPath:    "/dev/disk/by-path/ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
+				DriveType: "iSCSI",
+				Hctl:      "",
+				Model:     "disk0",
+				Name:      "sda",
+				Path:      "/dev/sda",
+				Serial:    "6001405961d8b6f55cf48beb0de296b2",
+				SizeBytes: 21474836480,
+				Vendor:    "LIO-ORG",
+				Wwn:       "0x6001405961d8b6f55cf48beb0de296b2",
+				Bootable:  true,
+				Smart:     `{"some": "json"}`,
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible: true,
+				},
+			},
+		}))
+	})
+
+	It("Multipath device", func() {
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		path := "/dev/dm-2"
+		disk := createMultipathDisk()
+		mockFetchDisks(dependencies, nil, disk)
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetHctl(dependencies, disk.Name, "error")
+		mockGetBootable(dependencies, path, true, "")
+		mockGetSMART(dependencies, path, "")
+		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil).Times(3)
+		ret := GetDisks(dependencies)
+
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ID:        "/dev/dm-2",
+				ByPath:    "",
+				DriveType: "DeviceMapper",
+				Hctl:      "",
+				Model:     "",
+				Name:      "dm-2",
+				Path:      "/dev/dm-2",
+				Serial:    "",
+				SizeBytes: 21474836480,
+				Vendor:    "",
+				Wwn:       "",
+				Bootable:  true,
+				Smart:     `{"some": "json"}`,
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible: true,
+				},
+			},
+		}))
+	})
+
+	It("LVM device", func() {
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		disk := createLVMDisk()
+		mockFetchDisks(dependencies, nil, disk)
+		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("LVM-Uq2y4MzaRpGE1XwVHSYDU5VAuHXXOA4gCkn9flYIZlS7UEfwlYPMyzHwx2R6VQoJ\n"), nil).Once()
+		ret := GetDisks(dependencies)
+
+		Expect(ret).To(Equal([]*models.Disk{}))
 	})
 
 	Describe("By-Id", func() {

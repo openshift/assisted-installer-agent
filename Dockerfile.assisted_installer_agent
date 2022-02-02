@@ -18,19 +18,16 @@ RUN dnf install -y \
 		podman \
 		# inventory
 		dmidecode ipmitool biosdevname file fio \
-        # Since centos:8 is using an older version of smartmontools (smartctl needed for the inventory command), we download the fedora 32 RPM package and
-        # install it instead of using the centos repos. (We need version 7.1+ for the `--json=c` flag to work)
-        # Note that doing this is NOT needed in the downstream Dockerfile, the base image used there is openshift/ose-base:ubi8 and it has the 7.1 version of smartmontools in the repos
-        https://download-cc-rdu01.fedoraproject.org/pub/fedora/linux/releases/32/Everything/x86_64/os/Packages/s/smartmontools-7.1-8.fc32.x86_64.rpm \
+		smartmontools \
 		# free_addresses
 		nmap \
 		# dhcp_lease_allocate
 		dhclient \
 		# logs_sender
-		tar openssh-clients\
+		tar openssh-clients \
 		# ntp_synchronizer
-		chrony && \
-		dnf update -y systemd && dnf clean all
+		chrony \
+		&& dnf update -y systemd && dnf clean all
 
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/connectivity_check /usr/bin/connectivity_check

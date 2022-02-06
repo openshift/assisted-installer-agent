@@ -148,17 +148,36 @@ func unknownToEmpty(value string) string {
 	return value
 }
 
+func isDeviceMapper(disk *ghw.Disk) bool {
+	return strings.HasPrefix(disk.Name, "dm-")
+}
+
+func (d *disks) isMultipath(disk *ghw.Disk) bool {
+	if !isDeviceMapper(disk) {
+		return false
+	}
+	path := filepath.Join("/sys", "block", disk.Name, "dm", "uuid")
+	b, err := d.dependencies.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	if strings.HasPrefix(string(b), "mpath-") {
+		return true
+	}
+	return false
+}
+
 // checkEligibility checks if a disk is eligible for installation by testing
 // it against a list of predicates. Returns all the reasons the disk
 // was found to be not eligible, or an empty slice if it was found to
 // be eligible. Also returns whether the disk appears to be an installation
 // media or not.
-func checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallationMedia bool) {
+func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallationMedia bool) {
 	if disk.IsRemovable {
 		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
 	}
 
-	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN {
+	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) {
 		notEligibleReasons = append(notEligibleReasons, "Disk has unknown storage controller")
 	}
 
@@ -179,8 +198,8 @@ func checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallati
 	return notEligibleReasons, isInstallationMedia
 }
 
-func IsPhysicalDisk(disk *block.Disk) bool {
-	return !(strings.HasPrefix(disk.Name, "dm-") || // Kernel device-mapper block devices, technology used by LVM/Docker
+func (d *disks) IsPhysicalDisk(disk *block.Disk) bool {
+	return !((strings.HasPrefix(disk.Name, "dm-") && !d.isMultipath(disk)) || // Device mapper devices, except multipath (includes LVM, crypt, etc)
 		strings.HasPrefix(disk.Name, "loop") || // Loop devices (see `man loop`)
 		strings.HasPrefix(disk.Name, "zram") || // Default name usually assigned to "swap on ZRAM" block devices
 		strings.HasPrefix(disk.Name, "md")) // Linux multiple-device-driver block devices
@@ -207,11 +226,11 @@ func (d *disks) getDisks() []*models.Disk {
 		var isInstallationMedia bool
 
 		// Ignore non physical disks
-		if !IsPhysicalDisk(disk) {
+		if !d.IsPhysicalDisk(disk) {
 			continue
 		}
 
-		eligibility.NotEligibleReasons, isInstallationMedia = checkEligibility(disk)
+		eligibility.NotEligibleReasons, isInstallationMedia = d.checkEligibility(disk)
 		eligibility.Eligible = len(eligibility.NotEligibleReasons) == 0
 
 		// Optical disks should also be considered installation media
@@ -225,6 +244,12 @@ func (d *disks) getDisks() []*models.Disk {
 		}
 
 		path := d.getPath(disk.BusPath, disk.Name)
+		driveType := disk.DriveType.String()
+		if strings.Contains(disk.BusPath, "-iscsi-") {
+			driveType = "iSCSI"
+		} else if d.isMultipath(disk) {
+			driveType = "DeviceMapper"
+		}
 
 		rec := models.Disk{
 			ByID:                    diskPath2diskWWN[path],
@@ -233,7 +258,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Model:                   unknownToEmpty(disk.Model),
 			Name:                    disk.Name,
 			Path:                    path,
-			DriveType:               disk.DriveType.String(),
+			DriveType:               driveType,
 			Serial:                  unknownToEmpty(disk.SerialNumber),
 			SizeBytes:               int64(disk.SizeBytes),
 			Vendor:                  unknownToEmpty(disk.Vendor),

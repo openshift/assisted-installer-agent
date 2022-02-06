@@ -16,7 +16,7 @@ FROM quay.io/centos/centos:stream8
 ARG TARGETPLATFORM
 RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y biosdevname ; fi
 
-RUN dnf install -y \
+RUN dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
 		findutils iputils \
 		podman \
 		# inventory
@@ -31,7 +31,7 @@ RUN dnf install -y \
 		tar openssh-clients \
 		# ntp_synchronizer
 		chrony \
-		&& dnf update -y systemd && dnf clean all
+		&& dnf update --setopt=install_weak_deps=False --setopt=tsdocs=False -y systemd && dnf clean all && rm -rf /var/cache
 
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/free_addresses /usr/bin/free_addresses

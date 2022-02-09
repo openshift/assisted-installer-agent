@@ -35,7 +35,7 @@ build: build-agent build-connectivity_check build-inventory build-free_addresses
 build-%: $(BIN) src/$* #lint
 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
 
-build-image: unit-test
+build-image:
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
 
 push: build-image subsystem
@@ -54,6 +54,9 @@ _post_test: $(REPORTS)
 _coverage: $(REPORTS)
 ifeq ($(CI), true)
 	gocov convert $(REPORTS)/$(TEST_SCENARIO)_coverage.out | gocov-xml > $(REPORTS)/$(TEST_SCENARIO)_coverage.xml
+ifeq ($(TEST_SCENARIO), unit)
+	COVER_PROFILE=$(REPORTS)/$(TEST_SCENARIO)_coverage.out ./hack/publish-codecov.sh
+endif
 endif
 
 unit-test:

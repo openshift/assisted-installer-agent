@@ -2,7 +2,7 @@ include .env
 export
 
 TAG := $(or $(TAG),latest)
-ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/ocpmetal/assisted-installer-agent:$(TAG))
+ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/edge-infrastructure/assisted-installer-agent:$(TAG))
 
 export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BIN = $(ROOT_DIR)/build
@@ -14,7 +14,6 @@ GOTEST_FLAGS = --format=$(TEST_FORMAT) -- -count=1 -cover -coverprofile=$(REPORT
 GINKGO_FLAGS = -ginkgo.focus="$(FOCUS)" -ginkgo.v -ginkgo.skip="$(SKIP)" -ginkgo.reportFile=./junit_$(TEST_SCENARIO)_test.xml
 
 GIT_REVISION := $(shell git rev-parse HEAD)
-PUBLISH_TAG := $(or ${GIT_REVISION})
 CONTAINER_BUILD_PARAMS = --network=host --label git_revision=${GIT_REVISION} ${CONTAINER_BUILD_EXTRA_PARAMS}
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
@@ -82,14 +81,6 @@ $(REPORTS):
 
 $(BIN):
 	-mkdir -p $(BIN)
-
-define publish_image
-        docker tag ${1} ${2}
-        docker push ${2}
-endef # publish_image
-
-publish:
-	$(call publish_image,${ASSISTED_INSTALLER_AGENT},quay.io/ocpmetal/assisted-installer-agent:${PUBLISH_TAG})
 
 clean:
 	rm -rf subsystem/logs $(BIN) $(REPORTS)

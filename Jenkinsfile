@@ -38,23 +38,6 @@ pipeline {
             sh 'skipper make subsystem'
         }
     }
-    stage('publish images') {
-        when {
-            expression {!env.BRANCH_NAME.startsWith('PR')}
-        }
-        steps {
-            sh "make publish"
-        }
-    }
-
-    stage('publish images on push to master') {
-        when {
-            branch 'master'
-        }
-        steps {
-            sh "make publish PUBLISH_TAG=latest"
-        }
-    }
   }
   post {
         always {

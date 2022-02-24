@@ -2,6 +2,7 @@ package scanners
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"testing"
 
@@ -59,38 +60,52 @@ var _ = Describe("Machine uuid test", func() {
 		Expect(id).To(Equal(toUUID(TestUuid)))
 	})
 	It("unspecified serial", func() {
-		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "Unspecified Base Board Serial Number"}, nil).Once()
+		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: SerialUnspecifiedBaseBoardString}, nil).Once()
 		serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: TestUuid}, nil)
 		id := ReadId(serialDiscovery, dependencies)
 		Expect(id).To(Equal(toUUID(TestUuid)))
 	})
-	It("default string serial and system uuid", func() {
-		rets := []agentutils.Interface{
-			agentutils.NewFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, true, false, false, 100),
-			agentutils.NewFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, true, false, false, 10),
-		}
-		dependencies.On("Interfaces").Return(rets, nil).Once()
-		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
-		dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("0\n"), nil).Once()
-		dependencies.On("ReadFile", "/sys/class/net/eth0/device/device").Return([]byte("my-device1"), nil).Once()
-		dependencies.On("ReadFile", "/sys/class/net/eth0/device/vendor").Return([]byte("my-vendor1"), nil).Once()
-		dependencies.On("Execute", "biosdevname", "-i", "eth1").Return("em3", "", 0).Once()
-		dependencies.On("ReadFile", "/sys/class/net/eth1/carrier").Return(nil, errors.New("Blah")).Once()
-		dependencies.On("ReadFile", "/sys/class/net/eth1/device/device").Return(nil, errors.New("Blah")).Once()
-		dependencies.On("ReadFile", "/sys/class/net/eth1/device/vendor").Return([]byte("my-vendor2"), nil).Once()
-		dependencies.On("LinkByName", mock.Anything).Return(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: "eth0"}}, nil)
-		dependencies.On("RouteList", mock.Anything, mock.Anything).Return([]netlink.Route{
-			{
-				Dst:      &net.IPNet{IP: net.ParseIP("de90::"), Mask: net.CIDRMask(64, 128)},
-				Protocol: unix.RTPROT_RA,
-			},
-		}, nil)
 
-		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "Default string"}, nil).Once()
-		serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: "Default string"}, nil)
-		id := ReadId(serialDiscovery, dependencies)
-		Expect(id).To(Equal(md5GenerateUUID("f8:75:a4:a4:00:fe")))
-	})
+	tests := []struct {
+		useCase  string
+		mbSerial string
+		uuid     string
+	}{
+		{useCase: "kaloom", mbSerial: SerialDefaultString, uuid: KaloomUUID},
+		{useCase: "zeroes", mbSerial: SerialDefaultString, uuid: ZeroesUUID},
+	}
+
+	for i := range tests {
+		test := tests[i]
+
+		It(fmt.Sprintf("mac address fallback %s", test.useCase), func() {
+			rets := []agentutils.Interface{
+				agentutils.NewFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, true, false, false, 100),
+				agentutils.NewFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, true, false, false, 10),
+			}
+			dependencies.On("Interfaces").Return(rets, nil).Once()
+			dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
+			dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("0\n"), nil).Once()
+			dependencies.On("ReadFile", "/sys/class/net/eth0/device/device").Return([]byte("my-device1"), nil).Once()
+			dependencies.On("ReadFile", "/sys/class/net/eth0/device/vendor").Return([]byte("my-vendor1"), nil).Once()
+			dependencies.On("Execute", "biosdevname", "-i", "eth1").Return("em3", "", 0).Once()
+			dependencies.On("ReadFile", "/sys/class/net/eth1/carrier").Return(nil, errors.New("Blah")).Once()
+			dependencies.On("ReadFile", "/sys/class/net/eth1/device/device").Return(nil, errors.New("Blah")).Once()
+			dependencies.On("ReadFile", "/sys/class/net/eth1/device/vendor").Return([]byte("my-vendor2"), nil).Once()
+			dependencies.On("LinkByName", mock.Anything).Return(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: "eth0"}}, nil)
+			dependencies.On("RouteList", mock.Anything, mock.Anything).Return([]netlink.Route{
+				{
+					Dst:      &net.IPNet{IP: net.ParseIP("de90::"), Mask: net.CIDRMask(64, 128)},
+					Protocol: unix.RTPROT_RA,
+				},
+			}, nil)
+
+			serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: test.mbSerial}, nil).Once()
+			serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: test.uuid}, nil)
+			id := ReadId(serialDiscovery, dependencies)
+			Expect(id).To(Equal(md5GenerateUUID("f8:75:a4:a4:00:fe")))
+		})
+	}
 	It("Other", func() {
 		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "Other"}, nil).Once()
 		id := ReadId(serialDiscovery, dependencies)

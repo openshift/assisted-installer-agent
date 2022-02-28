@@ -19,8 +19,8 @@ import (
 	"math/big"
 	"time"
 
-	v32_types "github.com/coreos/ignition/v2/config/v3_2/types"
 	v31_types "github.com/coreos/ignition/v2/config/v3_1/types"
+	v32_types "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 

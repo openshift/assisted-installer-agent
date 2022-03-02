@@ -73,6 +73,7 @@ var _ = Describe("Machine uuid test", func() {
 	}{
 		{useCase: "kaloom", mbSerial: SerialDefaultString, uuid: KaloomUUID},
 		{useCase: "zeroes", mbSerial: SerialDefaultString, uuid: ZeroesUUID},
+		{useCase: "linode", mbSerial: SerialNotSpecified, uuid: "Not Settable"},
 	}
 
 	for i := range tests {

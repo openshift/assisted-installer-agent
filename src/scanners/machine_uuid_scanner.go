@@ -21,13 +21,14 @@ const (
 	SerialDefaultString              = "default string"
 	SerialUnspecifiedBaseBoardString = "unspecified base board serial number" // BF cards
 	SerialUnspecifiedSystemString    = "unspecified system serial number"     // BF cards
+	SerialNotSpecified               = "not specified"                        // Linode
 	ZeroesUUID                       = "00000000-0000-0000-0000-000000000000"
 	KaloomUUID                       = "03000200-0400-0500-0006-000700080009" // All hosts of this type have the same UUID
 )
 
 var unknownSerialCases = []string{"", util.UNKNOWN, "none",
 	SerialUnspecifiedBaseBoardString, SerialUnspecifiedSystemString,
-	SerialDefaultString}
+	SerialDefaultString, SerialNotSpecified}
 var unknownUuidCases = []string{"", util.UNKNOWN, ZeroesUUID, KaloomUUID}
 
 func disableGHWWarnings() {
@@ -77,7 +78,7 @@ func (ir *idReader) readSystemUUID() *strfmt.UUID {
 		value = product.UUID
 	}
 
-	if funk.Contains(unknownUuidCases, strings.ToLower(value)) {
+	if !strfmt.IsUUID(value) || funk.Contains(unknownUuidCases, strings.ToLower(value)) {
 		log.Warnf("Could not get system UUID. Got %s", value)
 		return nil
 	}

@@ -62,18 +62,6 @@ var _ = Describe("Image availability tests", func() {
 		checkImageAvailabilityResponse(hostID, images, true, false, pullTimeoutInSeconds)
 	})
 
-	It("Small timeout", func() {
-		images = []string{"quay.io/coreos/etcd:latest"}
-		pullTimeoutInSeconds = 2
-
-		for _, image := range images {
-			deleteImage(image)
-		}
-
-		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})
-		checkImageAvailabilityResponse(hostID, images, false, true, pullTimeoutInSeconds)
-	})
-
 	It("Invalid image", func() {
 		images = []string{"invalid-registry/invalid-repository/image:tag"}
 		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})

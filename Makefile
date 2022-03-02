@@ -62,7 +62,6 @@ unit-test:
 	$(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
 
 subsystem: build-image 
-	docker image rm subsystem_agent; \
 	$(DOCKER_COMPOSE) up --build -d dhcpd wiremock; \
 	$(MAKE) _test TEST_SCENARIO=subsystem TIMEOUT=30m TEST="$(or $(TEST),./subsystem/...)"; \
 	rc=$$?; \

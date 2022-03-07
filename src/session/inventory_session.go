@@ -6,13 +6,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"path"
 	"reflect"
 	"time"
 
@@ -20,6 +20,7 @@ import (
 	rtclient "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/pkg/errors"
 
 	"github.com/openshift/assisted-service/client"
 	"github.com/openshift/assisted-service/models"
@@ -28,8 +29,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func createUrl(inventoryUrl string) string {
-	return fmt.Sprintf("%s/%s", inventoryUrl, client.DefaultBasePath)
+func createUrl(inventoryUrl string) (*url.URL, error) {
+	u, err := url.Parse(inventoryUrl)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed parsing inventory URL")
+	}
+	u.Path = path.Join(u.Path, client.DefaultBasePath)
+	return u, nil
 }
 
 type InventorySession struct {
@@ -103,7 +109,7 @@ func HTMLConsumer() runtime.Consumer {
 func createBmInventoryClient(inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, error) {
 	clientConfig := client.Config{}
 	var err error
-	clientConfig.URL, err = url.ParseRequestURI(createUrl(inventoryUrl))
+	clientConfig.URL, err = createUrl(inventoryUrl)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ require (
 	github.com/go-openapi/swag v0.21.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/jaypipes/ghw v0.7.0
+	github.com/jaypipes/ghw v0.8.0
 	github.com/jaypipes/pcidb v0.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5

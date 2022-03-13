@@ -1,3 +1,0 @@
-build_root:
-  project_image:
-    dockerfile_path: Dockerfile.assisted_installer_agent-build

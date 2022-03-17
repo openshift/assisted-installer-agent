@@ -22,7 +22,7 @@ type Action struct {
 
 func validateCommon(name string, expectedArgsLength int, args []string, modelToValidate runtime.Validatable) error {
 	if len(args) != expectedArgsLength {
-		return fmt.Errorf("%s cmd accepts only 1 params in args, given args %v", name, args)
+		return fmt.Errorf("%s cmd accepts %d params in args, given args %v", name, expectedArgsLength, args)
 	}
 	if modelToValidate != nil {
 		err := json.Unmarshal([]byte(args[0]), &modelToValidate)
@@ -32,7 +32,7 @@ func validateCommon(name string, expectedArgsLength int, args []string, modelToV
 		}
 		err = modelToValidate.Validate(nil)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to on data validation of %s: data, %s", name, args[0])
+			log.WithError(err).Errorf("Failed to validate %s: data, %s", name, args[0])
 			return err
 		}
 	}
@@ -48,6 +48,8 @@ func New(stepType models.StepType, args []string) (*Action, error) {
 		models.StepTypeInstallationDiskSpeedCheck: {diskPerfCheck{args: args}},
 		models.StepTypeAPIVipConnectivityCheck:    {apiVipConnectivityCheck{args: args}},
 		models.StepTypeDhcpLeaseAllocate:          {dhcpLeases{args: args}},
+		models.StepTypeDomainResolution:           {domainResolution{args: args}},
+		models.StepTypeContainerImageAvailability: {imageAvailability{args: args}},
 	}
 
 	action, ok := stepActionMap[stepType]

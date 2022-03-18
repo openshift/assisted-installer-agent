@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/scanners"
@@ -8,6 +11,11 @@ import (
 	agent_utils "github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/client/installer"
 	"github.com/openshift/assisted-service/models"
+)
+
+const (
+	hostIDDir  = "/var/run/assisted-agent"
+	hostIDFile = "host-id"
 )
 
 type serviceAPI interface {
@@ -22,6 +30,12 @@ func (v *v2ServiceAPI) RegisterHost(s *session.InventorySession) (*models.HostRe
 	var hostID strfmt.UUID = strfmt.UUID("")
 	if !config.GlobalDryRunConfig.DryRunEnabled {
 		hostID = *scanners.ReadId(scanners.NewGHWSerialDiscovery(), agent_utils.NewDependencies(""))
+
+		if info, err := os.Stat(hostIDDir); err == nil && info.IsDir() {
+			if err := os.WriteFile(filepath.Join(hostIDDir, hostIDFile), []byte(hostID), 0644); err != nil {
+				return nil, err
+			}
+		}
 	} else {
 		hostID = strfmt.UUID(config.GlobalDryRunConfig.ForcedHostID)
 	}

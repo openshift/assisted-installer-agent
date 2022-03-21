@@ -9,7 +9,7 @@ type ntpSynchronizer struct {
 	args []string
 }
 
-func (a ntpSynchronizer) Validate() error {
+func (a *ntpSynchronizer) Validate() error {
 	modelToValidate := models.NtpSynchronizationRequest{}
 	err := validateCommon("ntp synchronizer", 1, a.args, &modelToValidate)
 	if err != nil {
@@ -18,7 +18,7 @@ func (a ntpSynchronizer) Validate() error {
 	return nil
 }
 
-func (a ntpSynchronizer) Run() (string, []string) {
+func (a *ntpSynchronizer) Run() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm",
 		"-v", "/usr/bin/chronyc:/usr/bin/chronyc",

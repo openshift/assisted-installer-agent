@@ -12,7 +12,7 @@ type imageAvailability struct {
 	args []string
 }
 
-func (a imageAvailability) Validate() error {
+func (a *imageAvailability) Validate() error {
 	modelToValidate := models.ContainerImageAvailabilityRequest{}
 	err := validateCommon("image availability", 1, a.args, &modelToValidate)
 	if err != nil {
@@ -21,7 +21,7 @@ func (a imageAvailability) Validate() error {
 	return nil
 }
 
-func (a imageAvailability) Run() (string, []string) {
+func (a *imageAvailability) Run() (string, []string) {
 	const containerName = "container_image_availability"
 
 	podmanRunCmd := shellescape.QuoteCommand([]string{

@@ -21,6 +21,8 @@ type Action struct {
 }
 
 func validateCommon(name string, expectedArgsLength int, args []string, modelToValidate runtime.Validatable) error {
+	log.Infof("Validating %s with argss %s", name, args)
+
 	if len(args) != expectedArgsLength {
 		return fmt.Errorf("%s cmd accepts %d params in args, given args %v", name, expectedArgsLength, args)
 	}
@@ -40,16 +42,18 @@ func validateCommon(name string, expectedArgsLength int, args []string, modelToV
 }
 
 func New(stepType models.StepType, args []string) (*Action, error) {
-	var stepActionMap = map[models.StepType]Action{
-		models.StepTypeInventory:                  {inventory{args: args}},
-		models.StepTypeConnectivityCheck:          {connectivityCheck{args: args}},
-		models.StepTypeFreeNetworkAddresses:       {freeAddresses{args: args}},
-		models.StepTypeNtpSynchronizer:            {ntpSynchronizer{args: args}},
-		models.StepTypeInstallationDiskSpeedCheck: {diskPerfCheck{args: args}},
-		models.StepTypeAPIVipConnectivityCheck:    {apiVipConnectivityCheck{args: args}},
-		models.StepTypeDhcpLeaseAllocate:          {dhcpLeases{args: args}},
-		models.StepTypeDomainResolution:           {domainResolution{args: args}},
-		models.StepTypeContainerImageAvailability: {imageAvailability{args: args}},
+	var stepActionMap = map[models.StepType]*Action{
+		models.StepTypeInventory:                  {&inventory{args: args}},
+		models.StepTypeConnectivityCheck:          {&connectivityCheck{args: args}},
+		models.StepTypeFreeNetworkAddresses:       {&freeAddresses{args: args}},
+		models.StepTypeNtpSynchronizer:            {&ntpSynchronizer{args: args}},
+		models.StepTypeInstallationDiskSpeedCheck: {&diskPerfCheck{args: args}},
+		models.StepTypeAPIVipConnectivityCheck:    {&apiVipConnectivityCheck{args: args}},
+		models.StepTypeDhcpLeaseAllocate:          {&dhcpLeases{args: args}},
+		models.StepTypeDomainResolution:           {&domainResolution{args: args}},
+		models.StepTypeContainerImageAvailability: {&imageAvailability{args: args}},
+		models.StepTypeStopInstallation:           {&stopInstallation{args: args}},
+		models.StepTypeLogsGather:                 {&logsGather{args: args}},
 	}
 
 	action, ok := stepActionMap[stepType]
@@ -58,5 +62,5 @@ func New(stepType models.StepType, args []string) (*Action, error) {
 		return nil, fmt.Errorf("failed to find action for step type %s", stepType)
 	}
 	err := action.Validate()
-	return &action, err
+	return action, err
 }

@@ -9,7 +9,7 @@ type connectivityCheck struct {
 	args []string
 }
 
-func (a connectivityCheck) Validate() error {
+func (a *connectivityCheck) Validate() error {
 	modelToValidate := models.ConnectivityCheckParams{}
 	err := validateCommon("connectivity check", 1, a.args, &modelToValidate)
 	if err != nil {
@@ -18,7 +18,7 @@ func (a connectivityCheck) Validate() error {
 	return nil
 }
 
-func (a connectivityCheck) Run() (string, []string) {
+func (a *connectivityCheck) Run() (string, []string) {
 	commandArgs := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

@@ -9,7 +9,7 @@ type dhcpLeases struct {
 	args []string
 }
 
-func (a dhcpLeases) Validate() error {
+func (a *dhcpLeases) Validate() error {
 	modelToValidate := models.DhcpAllocationRequest{}
 	err := validateCommon("dhcp leases", 1, a.args, &modelToValidate)
 	if err != nil {
@@ -18,7 +18,7 @@ func (a dhcpLeases) Validate() error {
 	return nil
 }
 
-func (a dhcpLeases) Run() (string, []string) {
+func (a *dhcpLeases) Run() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

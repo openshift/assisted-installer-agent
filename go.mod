@@ -3,7 +3,7 @@ module github.com/openshift/assisted-installer-agent
 go 1.17
 
 require (
-    github.com/alessio/shellescape v1.4.1
+	github.com/alessio/shellescape v1.4.1
 	github.com/coreos/ignition/v2 v2.13.0
 	github.com/go-openapi/runtime v0.23.2
 	github.com/go-openapi/strfmt v0.21.2
@@ -152,8 +152,9 @@ require (
 replace (
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
+	github.com/openshift/assisted-service v1.0.10-0.20220314012014-141adc8ae8f8 => github.com/tsorya/assisted-service v0.0.0-20220321153134-41d3bb18d6ea
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20220314012014-141adc8ae8f8
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20220314012014-141adc8ae8f8
+	github.com/openshift/assisted-service/models => github.com/tsorya/assisted-service/models v0.0.0-20220321153134-41d3bb18d6ea
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

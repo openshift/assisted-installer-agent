@@ -3,6 +3,7 @@ module github.com/openshift/assisted-installer-agent
 go 1.17
 
 require (
+    github.com/alessio/shellescape v1.4.1
 	github.com/coreos/ignition/v2 v2.13.0
 	github.com/go-openapi/runtime v0.23.2
 	github.com/go-openapi/strfmt v0.21.2

@@ -13,7 +13,7 @@ import (
 )
 
 type logsGather struct {
-	args            []string
+	args         []string
 	generatedCmd string
 }
 
@@ -30,7 +30,6 @@ func (a *logsGather) Validate() error {
 		log.WithError(err).Errorf("Failed to generate command for %s with params %s", name, a.args)
 		return err
 	}
-
 
 	return nil
 }

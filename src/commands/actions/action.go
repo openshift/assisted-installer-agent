@@ -21,7 +21,7 @@ type Action struct {
 }
 
 func validateCommon(name string, expectedArgsLength int, args []string, modelToValidate runtime.Validatable) error {
-	log.Infof("Validating %s with argss %s", name, args)
+	log.Infof("Validating %s with args %s", name, args)
 
 	if len(args) != expectedArgsLength {
 		return fmt.Errorf("%s cmd accepts %d params in args, given args %v", name, expectedArgsLength, args)
@@ -54,6 +54,7 @@ func New(stepType models.StepType, args []string) (*Action, error) {
 		models.StepTypeContainerImageAvailability: {&imageAvailability{args: args}},
 		models.StepTypeStopInstallation:           {&stopInstallation{args: args}},
 		models.StepTypeLogsGather:                 {&logsGather{args: args}},
+		models.StepTypeInstall:                    {&install{args: args}},
 	}
 
 	action, ok := stepActionMap[stepType]

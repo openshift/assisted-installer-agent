@@ -21,7 +21,7 @@ var _ = Describe("dhcp leases", func() {
 		action, err := New(models.StepTypeInstallationDiskSpeedCheck, []string{param, timeout})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.Run()
+		command, args := action.CreateCmd()
 		Expect(command).To(Equal("sh"))
 		paths := []string{
 			"/var/log",

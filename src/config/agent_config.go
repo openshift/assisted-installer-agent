@@ -52,9 +52,9 @@ func ProcessArgs() {
 		log.Warnf("Agent Authentication Token not set")
 	}
 
-	// When given <image_url>:<tag> format, AgentVersion should point to the image tag.
+	// When given <image_url>:<tag> format, DiscoveryAgentVersion should point to the image tag.
 	// In a case of multiple delimiters, grab the rightmost slice.
 	// Otherwise, we leave the agent-version str intact.
 	agentVersionTag := strings.Split(ret.AgentVersion, agentVersionTagDelimiter)
-	ret.AgentVersion = agentVersionTag[len(agentVersionTag)-1]
+	ret.DiscoveryAgentVersion = agentVersionTag[len(agentVersionTag)-1]
 }

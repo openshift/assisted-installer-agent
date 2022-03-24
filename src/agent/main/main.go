@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/commands"
+
+	"github.com/openshift/assisted-installer-agent/src/commands/actions"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	log "github.com/sirupsen/logrus"
@@ -24,7 +26,7 @@ func main() {
 			continue
 		}
 
-		if err := commands.StartStepRunner(stepRunnerCommand.Command, stepRunnerCommand.Args...); err != nil {
+		if err := actions.StartStepRunner(stepRunnerCommand.Command, stepRunnerCommand.Args); err != nil {
 			var reRegistrerDelay time.Duration
 			if stepRunnerCommand.RetrySeconds > 0 {
 				reRegistrerDelay = time.Duration(stepRunnerCommand.RetrySeconds) * time.Second

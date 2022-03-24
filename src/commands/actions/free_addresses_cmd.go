@@ -12,13 +12,13 @@ type freeAddresses struct {
 	args []string
 }
 
-func (a freeAddresses) Validate() error {
+func (a *freeAddresses) Validate() error {
 	modelToValidate := models.FreeAddressesRequest{}
 	err := validateCommon("free addresses", 1, a.args, &modelToValidate)
 	return err
 }
 
-func (a freeAddresses) Run() (string, []string) {
+func (a *freeAddresses) CreateCmd() (string, []string) {
 	const containerName = "free_addresses_scanner"
 	podmanRunCmd := []string{
 		podman, "run", "--privileged", "--net=host", "--rm", "--quiet",

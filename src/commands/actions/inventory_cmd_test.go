@@ -28,7 +28,7 @@ var _ = Describe("inventory", func() {
 		action, err := New(models.StepTypeInventory, []string{hostId.String()})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.Run()
+		command, args := action.CreateCmd()
 		By("running two commands via sh")
 		Expect(command).To(Equal("sh"))
 		Expect(args[0]).To(Equal("-c"))

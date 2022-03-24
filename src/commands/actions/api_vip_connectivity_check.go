@@ -9,7 +9,7 @@ type apiVipConnectivityCheck struct {
 	args []string
 }
 
-func (a apiVipConnectivityCheck) Validate() error {
+func (a *apiVipConnectivityCheck) Validate() error {
 	modelToValidate := models.APIVipConnectivityRequest{}
 	err := validateCommon("api vip connectivity check", 1, a.args, &modelToValidate)
 	if err != nil {
@@ -18,7 +18,7 @@ func (a apiVipConnectivityCheck) Validate() error {
 	return nil
 }
 
-func (a apiVipConnectivityCheck) Run() (string, []string) {
+func (a *apiVipConnectivityCheck) CreateCmd() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

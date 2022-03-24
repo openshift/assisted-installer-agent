@@ -13,7 +13,7 @@ type diskPerfCheck struct {
 	args []string
 }
 
-func (a diskPerfCheck) Validate() error {
+func (a *diskPerfCheck) Validate() error {
 	modelToValidate := models.DiskSpeedCheckRequest{}
 	err := validateCommon("disk performance", 2, a.args, &modelToValidate)
 	if err != nil {
@@ -27,7 +27,7 @@ func (a diskPerfCheck) Validate() error {
 	return nil
 }
 
-func (a diskPerfCheck) Run() (string, []string) {
+func (a *diskPerfCheck) CreateCmd() (string, []string) {
 	arguments := []string{
 		"-c",
 		"id=`podman ps --quiet --filter \"name=disk_performance\"` ; " +

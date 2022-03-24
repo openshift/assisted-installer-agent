@@ -9,7 +9,7 @@ type domainResolution struct {
 	args []string
 }
 
-func (a domainResolution) Validate() error {
+func (a *domainResolution) Validate() error {
 	modelToValidate := models.DomainResolutionRequest{}
 	err := validateCommon("domain resolution", 1, a.args, &modelToValidate)
 	if err != nil {
@@ -18,7 +18,7 @@ func (a domainResolution) Validate() error {
 	return nil
 }
 
-func (a domainResolution) Run() (string, []string) {
+func (a *domainResolution) CreateCmd() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

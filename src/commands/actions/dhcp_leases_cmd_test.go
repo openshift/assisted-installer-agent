@@ -19,7 +19,7 @@ var _ = Describe("dhcp leases", func() {
 		action, err := New(models.StepTypeDhcpLeaseAllocate, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.Run()
+		command, args := action.CreateCmd()
 		Expect(command).To(Equal(podman))
 		paths := []string{
 			"/var/log",

@@ -128,7 +128,7 @@ func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string
 				Error:    err.Error(),
 			}
 		}
-		command, args = actionToRun.Run()
+		command, args = actionToRun.CreateCmd()
 	}
 
 	return s.handleSingleStep(stepType, stepID, command, args, handler)

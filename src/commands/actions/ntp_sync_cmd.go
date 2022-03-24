@@ -18,7 +18,7 @@ func (a *ntpSynchronizer) Validate() error {
 	return nil
 }
 
-func (a *ntpSynchronizer) Run() (string, []string) {
+func (a *ntpSynchronizer) CreateCmd() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm",
 		"-v", "/usr/bin/chronyc:/usr/bin/chronyc",

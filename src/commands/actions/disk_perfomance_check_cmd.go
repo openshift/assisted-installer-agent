@@ -27,7 +27,7 @@ func (a *diskPerfCheck) Validate() error {
 	return nil
 }
 
-func (a *diskPerfCheck) Run() (string, []string) {
+func (a *diskPerfCheck) CreateCmd() (string, []string) {
 	arguments := []string{
 		"-c",
 		"id=`podman ps --quiet --filter \"name=disk_performance\"` ; " +

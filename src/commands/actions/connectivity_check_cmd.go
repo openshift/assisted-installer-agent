@@ -18,7 +18,7 @@ func (a *connectivityCheck) Validate() error {
 	return nil
 }
 
-func (a *connectivityCheck) Run() (string, []string) {
+func (a *connectivityCheck) CreateCmd() (string, []string) {
 	commandArgs := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

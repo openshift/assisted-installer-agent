@@ -18,7 +18,7 @@ func (a *apiVipConnectivityCheck) Validate() error {
 	return nil
 }
 
-func (a *apiVipConnectivityCheck) Run() (string, []string) {
+func (a *apiVipConnectivityCheck) CreateCmd() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

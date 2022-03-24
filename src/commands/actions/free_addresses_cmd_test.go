@@ -19,7 +19,7 @@ var _ = Describe("free addresses", func() {
 		action, err := New(models.StepTypeFreeNetworkAddresses, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.Run()
+		command, args := action.CreateCmd()
 		Expect(command).To(Equal("sh"))
 		paths := []string{
 			"/var/log",

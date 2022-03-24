@@ -16,7 +16,7 @@ var _ = Describe("stop", func() {
 		action, err := New(models.StepTypeStopInstallation, []string{})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.Run()
+		command, args := action.CreateCmd()
 		Expect(command).To(Equal("podman"))
 		Expect(strings.Join(args, " ")).To(ContainSubstring("stop"))
 		Expect(strings.Join(args, " ")).To(ContainSubstring("assisted-installer"))

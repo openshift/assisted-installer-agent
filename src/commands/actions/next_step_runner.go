@@ -25,7 +25,7 @@ func (a *nextStepRunner) Validate() error {
 	return nil
 }
 
-func (a *nextStepRunner) Run() (string, []string) {
+func (a *nextStepRunner) CreateCmd() (string, []string) {
 	arguments := []string{"run", "--rm", "-ti", "--privileged", "--pid=host", "--net=host",
 		"-v", "/dev:/dev:rw", "-v", "/opt:/opt:rw",
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
@@ -65,7 +65,7 @@ func StartStepRunner(command string, args []string) error {
 			log.WithError(err).Errorf("next step runner command validation failed")
 			return err
 		}
-		command, args = runner.Run()
+		command, args = runner.CreateCmd()
 	}
 
 	_, stderr, exitCode := util.Execute(command, args...)

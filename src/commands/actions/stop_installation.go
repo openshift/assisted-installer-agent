@@ -12,7 +12,7 @@ func (a *stopInstallation) Validate() error {
 	return nil
 }
 
-func (a *stopInstallation) Run() (string, []string) {
+func (a *stopInstallation) CreateCmd() (string, []string) {
 	podmanRunCmd := []string{
 		"stop", "-i", "-t", "5", "assisted-installer",
 	}

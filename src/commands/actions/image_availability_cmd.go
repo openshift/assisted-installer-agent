@@ -21,7 +21,7 @@ func (a *imageAvailability) Validate() error {
 	return nil
 }
 
-func (a *imageAvailability) Run() (string, []string) {
+func (a *imageAvailability) CreateCmd() (string, []string) {
 	const containerName = "container_image_availability"
 
 	podmanRunCmd := shellescape.QuoteCommand([]string{

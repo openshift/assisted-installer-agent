@@ -18,7 +18,7 @@ func (a *dhcpLeases) Validate() error {
 	return nil
 }
 
-func (a *dhcpLeases) Run() (string, []string) {
+func (a *dhcpLeases) CreateCmd() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

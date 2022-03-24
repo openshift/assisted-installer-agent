@@ -53,7 +53,7 @@ var _ = Describe("installer test", func() {
 		action, err := New(models.StepTypeInstall, []string{params})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.Run()
+		command, args := action.CreateCmd()
 		Expect(command).To(Equal("sh"))
 		paths := []string{
 			"/var/log",
@@ -83,7 +83,7 @@ var _ = Describe("installer test", func() {
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
 
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		paths := []string{
 			"/ca_cert",
 		}
@@ -99,7 +99,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("mco-image"))
 		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("must-gather-image"))
 		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("openshift-version"))
@@ -111,7 +111,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--format-disk /dev/sda"))
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--format-disk /dev/sdb"))
 	})
@@ -123,7 +123,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--insecure"))
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--check-cluster-version"))
 	})
@@ -134,7 +134,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--installer-args"))
 	})
 
@@ -144,7 +144,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--service-ips 192.168.2.1,192.168.3.1"))
 	})
 
@@ -158,7 +158,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--http-proxy 192.0.0.1 --https-proxy 192.0.0.2 --no-proxy domain.org,127.0.0.2,127.0.0.1,localhost"))
 	})
 
@@ -172,7 +172,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
 		Expect(err).NotTo(HaveOccurred())
-		_, args := action.Run()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--http-proxy 192.0.0.1 --no-proxy domain.org,127.0.0.2,127.0.0.1,localhost"))
 	})
 })

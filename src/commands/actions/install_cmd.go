@@ -33,7 +33,7 @@ func (a *install) Validate() error {
 	return nil
 }
 
-func (a *install) Run() (string, []string) {
+func (a *install) CreateCmd() (string, []string) {
 	installCmd := a.getFullInstallerCommand()
 	return "sh", []string{"-c", installCmd}
 }

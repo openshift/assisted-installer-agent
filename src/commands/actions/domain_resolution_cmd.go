@@ -18,7 +18,7 @@ func (a *domainResolution) Validate() error {
 	return nil
 }
 
-func (a *domainResolution) Run() (string, []string) {
+func (a *domainResolution) CreateCmd() (string, []string) {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",

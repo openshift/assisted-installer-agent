@@ -34,7 +34,7 @@ func (a *logsGather) Validate() error {
 	return nil
 }
 
-func (a *logsGather) Run() (string, []string) {
+func (a *logsGather) CreateCmd() (string, []string) {
 	return "timeout", strings.Fields(a.generatedCmd)
 }
 

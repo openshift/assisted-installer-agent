@@ -23,7 +23,7 @@ func (a *inventory) Validate() error {
 	return nil
 }
 
-func (a *inventory) Run() (string, []string) {
+func (a *inventory) CreateCmd() (string, []string) {
 	// Copying mounts file, which is not available by podman's PID
 	// We incorporate the host's ID in the copied mtab file path to allow multiple agents
 	// to run on the same host during load testing easily without fighting over the same

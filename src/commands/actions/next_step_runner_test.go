@@ -22,7 +22,7 @@ func runNextRunner(params string, expectedError bool) (string, []string) {
 		return "", nil
 	}
 	Expect(err).NotTo(HaveOccurred())
-	return action.Run()
+	return action.CreateCmd()
 }
 
 var _ = Describe("next step runner", func() {

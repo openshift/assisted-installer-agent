@@ -12,7 +12,7 @@ import (
 const podman = "podman"
 
 type ActionInterface interface {
-	Run() (string, []string)
+	CreateCmd() (string, []string)
 	Validate() error
 }
 

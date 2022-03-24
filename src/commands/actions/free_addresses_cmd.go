@@ -18,7 +18,7 @@ func (a *freeAddresses) Validate() error {
 	return err
 }
 
-func (a *freeAddresses) Run() (string, []string) {
+func (a *freeAddresses) CreateCmd() (string, []string) {
 	const containerName = "free_addresses_scanner"
 	podmanRunCmd := []string{
 		podman, "run", "--privileged", "--net=host", "--rm", "--quiet",

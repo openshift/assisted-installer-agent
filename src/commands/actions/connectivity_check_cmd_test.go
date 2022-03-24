@@ -25,7 +25,7 @@ var _ = Describe("connectivity check", func() {
 		action, err := New(models.StepTypeConnectivityCheck, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.Run()
+		command, args := action.CreateCmd()
 		Expect(command).To(Equal(podman))
 		paths := []string{
 			"/var/log",

@@ -41,19 +41,19 @@ func (a *logsGather) CreateCmd() (string, []string) {
 func createUploadLogsCmd(params models.LogsGatherCmdRequest) (string, error) {
 
 	data := map[string]string{
-		"BASE_URL":               strings.TrimSpace(swag.StringValue(params.BaseURL)),
+		"BASE_URL":               config.GlobalAgentConfig.TargetURL,
 		"CLUSTER_ID":             params.ClusterID.String(),
 		"HOST_ID":                params.HostID.String(),
 		"INFRA_ENV_ID":           params.InfraEnvID.String(),
 		"AGENT_IMAGE":            config.GlobalAgentConfig.AgentVersion,
-		"SKIP_CERT_VERIFICATION": strconv.FormatBool(swag.BoolValue(params.Insecure)),
+		"SKIP_CERT_VERIFICATION": strconv.FormatBool(config.GlobalAgentConfig.InsecureConnection),
 		"BOOTSTRAP":              strconv.FormatBool(swag.BoolValue(params.Bootstrap)),
 		"INSTALLER_GATHER":       strconv.FormatBool(params.InstallerGather),
 		"MASTERS_IPS":            strings.Join(params.MasterIps, ","),
 	}
 
-	if params.CaCertPath != "" {
-		data["CACERTPATH"] = params.CaCertPath
+	if config.GlobalAgentConfig.CACertificatePath != "" {
+		data["CACERTPATH"] = config.GlobalAgentConfig.CACertificatePath
 	}
 
 	cmdArgsTmpl := "1h podman run --rm --privileged --net=host " +

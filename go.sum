@@ -752,6 +752,7 @@ github.com/jaypipes/pcidb v0.6.0/go.mod h1:L2RGk04sfRhp5wvHO0gfRAMoLY/F3PKv/nwJe
 github.com/jcchavezs/porto v0.1.0/go.mod h1:fESH0gzDHiutHRdX2hv27ojnOVFco37hg1W6E9EZF4A=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jgautheron/goconst v0.0.0-20170703170152-9740945f5dcb/go.mod h1:82TxjOpWQiPmywlbIaB2ZkqJoSYJdLGPgAJDvM3PbKc=
+github.com/jinzhu/copier v0.3.5 h1:GlvfUwHk62RokgqVNvYsku0TATCF7bAHVwEXoBh3iJg=
 github.com/jinzhu/copier v0.3.5/go.mod h1:DfbEm0FYsaqBcKcFuvmOZb218JkPGtvSHsKg8S8hyyg=
 github.com/jinzhu/gorm v1.9.12/go.mod h1:vhTjlKSJUTWNtcbQtrMBFCxy7eXTzeCAzfL5fBZT/Qs=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
@@ -984,6 +985,8 @@ github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible/go.mo
 github.com/openshift/assisted-service v1.0.10-0.20220324105330-f28bddc8d95a h1:j4OUpBRljM0RhXNxJtLmnkLv0gmaBkH6j1Q2nhNXOOE=
 github.com/openshift/assisted-service v1.0.10-0.20220324105330-f28bddc8d95a/go.mod h1:DWzMqvo/yPdEge/LgujPGldOKcVyaj8BdD2c9+NpqpA=
 github.com/openshift/assisted-service/api v0.0.0-20220314012014-141adc8ae8f8/go.mod h1:KXLo37GRdMYq/8PHRbvWPW9AEZjLI3NdFCySAwBJfAQ=
+github.com/openshift/assisted-service/models v0.0.0-20220327160002-d7f1f0923b25 h1:dFjNc0m3rLzMv87+1BsW8Ptag7Afrf3MFrpXZjV1qGE=
+github.com/openshift/assisted-service/models v0.0.0-20220327160002-d7f1f0923b25/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
 github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f/go.mod h1:bTFE2qR9PJJQbLC6Gd74c3WXcgYnR1njVDgabCxXQNI=
 github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f/go.mod h1:/PSTQInIZmfuOmAp/pSgZAs4txs6T49woC0MYIa4QzE=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec h1:1nC/js8H8s+MBzgu20YDSuVw6IF9Ct5HOR1JLxv572Q=
@@ -1214,8 +1217,6 @@ github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/tsenart/deadcode v0.0.0-20160724212837-210d2dc333e9/go.mod h1:q+QjxYvZ+fpjMXqs+XEriussHjSYqeXVnAdSV1tkMYk=
-github.com/tsorya/assisted-service/models v0.0.0-20220324122429-1750acbba9eb h1:neQXIZ+6Ly+IIj5P4Tt5j15faCOVU+6Ss71AbNmZNaA=
-github.com/tsorya/assisted-service/models v0.0.0-20220324122429-1750acbba9eb/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=

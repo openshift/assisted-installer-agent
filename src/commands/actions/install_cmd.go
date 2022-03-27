@@ -46,8 +46,8 @@ func (a *install) getFullInstallerCommand() string {
 		"--infra-env-id", a.installParams.InfraEnvID.String(),
 		"--cluster-id", a.installParams.ClusterID.String(),
 		"--host-id", string(*a.installParams.HostID),
-		"--boot-device", swag.StringValue(a.installParams.Bootdevice),
-		"--url", strings.TrimSpace(swag.StringValue(a.installParams.BaseURL)),
+		"--boot-device", swag.StringValue(a.installParams.BootDevice),
+		"--url", config.GlobalAgentConfig.TargetURL,
 		"--high-availability-mode", swag.StringValue(a.installParams.HighAvailabilityMode),
 		"--controller-image", swag.StringValue(a.installParams.ControllerImage),
 		"--agent-image", config.GlobalAgentConfig.AgentVersion,
@@ -75,7 +75,7 @@ func (a *install) getFullInstallerCommand() string {
 		format <boolean flag> <value> is not supported by golang flag package and will cause the flags processing to finish
 		before processing the rest of the input flags
 	*/
-	if swag.BoolValue(a.installParams.Insecure) {
+	if config.GlobalAgentConfig.InsecureConnection {
 		installerCmdArgs = append(installerCmdArgs, "--insecure")
 	}
 
@@ -83,9 +83,10 @@ func (a *install) getFullInstallerCommand() string {
 		installerCmdArgs = append(installerCmdArgs, "--check-cluster-version")
 	}
 
-	if a.installParams.CaCertPath != "" {
-		podmanCmd = append(podmanCmd, "-v", fmt.Sprintf("%s:%s:rw", a.installParams.CaCertPath, a.installParams.CaCertPath))
-		installerCmdArgs = append(installerCmdArgs, "--cacert", a.installParams.CaCertPath)
+	if config.GlobalAgentConfig.CACertificatePath != "" {
+		podmanCmd = append(podmanCmd, "-v", fmt.Sprintf("%s:%s:rw", config.GlobalAgentConfig.CACertificatePath,
+			config.GlobalAgentConfig.CACertificatePath))
+		installerCmdArgs = append(installerCmdArgs, "--cacert", config.GlobalAgentConfig.CACertificatePath)
 	}
 
 	if a.installParams.InstallerArgs != "" {

@@ -6,26 +6,29 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/openshift/assisted-installer-agent/src/config"
-
+	"github.com/jinzhu/copier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
 var _ = Describe("installer test", func() {
 	var params string
 	var args models.InstallCmdRequest
+	var oldConfig config.ConnectivityConfig
 
 	BeforeEach(func() {
+		Expect(copier.Copy(&oldConfig, &config.GlobalAgentConfig.ConnectivityConfig)).To(BeNil())
 		config.GlobalAgentConfig.AgentVersion = "quay.io/edge-infrastructure/assisted-installer-agent:latest"
+		config.GlobalAgentConfig.InsecureConnection = true
+		config.GlobalAgentConfig.TargetURL = "http://10.1.178.26:6000"
 		clusterId := strfmt.UUID("cd781f46-f32a-4154-9670-6442a367ab81")
 		hostId := strfmt.UUID("f7ac1860-92cf-4ed8-aeec-2d9f20b35bab")
 		infraEnvId := strfmt.UUID("456eecf6-7aec-402d-b453-f609b19783cb")
 		role := models.HostRoleBootstrap
 		args = models.InstallCmdRequest{
-			BaseURL:              swag.String("http://10.1.178.26:6000"),
-			Bootdevice:           swag.String("/dev/disk/by-path/pci-0000:00:06.0"),
+			BootDevice:           swag.String("/dev/disk/by-path/pci-0000:00:06.0"),
 			CheckCvo:             swag.Bool(true),
 			ClusterID:            &clusterId,
 			HostID:               &hostId,
@@ -33,7 +36,6 @@ var _ = Describe("installer test", func() {
 			ControllerImage:      swag.String("quay.io/edge-infrastructure/assisted-installer-controller:latest"),
 			DisksToFormat:        []string{},
 			HighAvailabilityMode: swag.String(models.ClusterHighAvailabilityModeFull),
-			Insecure:             swag.Bool(true),
 			InstallerArgs:        "[\"--append-karg\",\"ip=ens3:dhcp\"]",
 			InstallerImage:       swag.String("quay.io/edge-infrastructure/assisted-installer:latest"),
 			McoImage:             "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:aaa",
@@ -47,6 +49,9 @@ var _ = Describe("installer test", func() {
 		b, err := json.Marshal(&args)
 		Expect(err).NotTo(HaveOccurred())
 		params = string(b)
+	})
+	AfterEach(func() {
+		Expect(copier.Copy(&config.GlobalAgentConfig.ConnectivityConfig, &oldConfig)).To(BeNil())
 	})
 
 	It("install bootstrap", func() {
@@ -77,7 +82,7 @@ var _ = Describe("installer test", func() {
 	})
 	It("install ca cert", func() {
 		caPath := "/ca_cert"
-		args.CaCertPath = caPath
+		config.GlobalAgentConfig.CACertificatePath = caPath
 		b, err := json.Marshal(&args)
 		Expect(err).NotTo(HaveOccurred())
 		action, err := New(models.StepTypeInstall, []string{string(b)})
@@ -117,7 +122,7 @@ var _ = Describe("installer test", func() {
 	})
 
 	It("install insecure and cvo is false", func() {
-		args.Insecure = swag.Bool(false)
+		config.GlobalAgentConfig.InsecureConnection = false
 		args.CheckCvo = swag.Bool(false)
 		b, err := json.Marshal(&args)
 		Expect(err).NotTo(HaveOccurred())

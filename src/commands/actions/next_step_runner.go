@@ -3,7 +3,8 @@ package actions
 import (
 	"fmt"
 	"strconv"
-	"strings"
+
+	"github.com/openshift/assisted-installer-agent/src/config"
 
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -33,8 +34,9 @@ func (a *nextStepRunner) CreateCmd() (string, []string) {
 		"-v", "/run/media:/run/media:rw",
 		"-v", "/etc/pki:/etc/pki"}
 
-	if a.nextStepRunnerParams.CaCertPath != "" {
-		arguments = append(arguments, "-v", fmt.Sprintf("%s:%s", a.nextStepRunnerParams.CaCertPath, a.nextStepRunnerParams.CaCertPath))
+	if config.GlobalAgentConfig.CACertificatePath != "" {
+		arguments = append(arguments, "-v", fmt.Sprintf("%s:%s", config.GlobalAgentConfig.CACertificatePath,
+			config.GlobalAgentConfig.CACertificatePath))
 	}
 
 	arguments = append(arguments,
@@ -44,13 +46,13 @@ func (a *nextStepRunner) CreateCmd() (string, []string) {
 		"--env", "HTTP_PROXY", "--env", "HTTPS_PROXY", "--env", "NO_PROXY",
 		"--env", "http_proxy", "--env", "https_proxy", "--env", "no_proxy",
 		"--name", "next-step-runner", swag.StringValue(a.nextStepRunnerParams.AgentVersion), "next_step_runner",
-		"--url", strings.TrimSpace(swag.StringValue(a.nextStepRunnerParams.BaseURL)),
+		"--url", config.GlobalAgentConfig.TargetURL,
 		"--infra-env-id", a.nextStepRunnerParams.InfraEnvID.String(),
 		"--host-id", a.nextStepRunnerParams.HostID.String(),
 		"--agent-version", swag.StringValue(a.nextStepRunnerParams.AgentVersion),
-		fmt.Sprintf("--insecure=%s", strconv.FormatBool(swag.BoolValue(a.nextStepRunnerParams.Insecure))))
-	if a.nextStepRunnerParams.CaCertPath != "" {
-		arguments = append(arguments, "--cacert", a.nextStepRunnerParams.CaCertPath)
+		fmt.Sprintf("--insecure=%s", strconv.FormatBool(config.GlobalAgentConfig.InsecureConnection)))
+	if config.GlobalAgentConfig.CACertificatePath != "" {
+		arguments = append(arguments, "--cacert", config.GlobalAgentConfig.CACertificatePath)
 	}
 
 	return podman, arguments

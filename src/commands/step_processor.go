@@ -15,7 +15,6 @@ import (
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 
-	"github.com/openshift/assisted-installer-agent/src/commands/actions"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/session"
 	"github.com/openshift/assisted-service/client/installer"
@@ -34,17 +33,19 @@ const (
 
 type stepSession struct {
 	session.InventorySession
-	serviceAPI serviceAPI
+	serviceAPI            serviceAPI
+	nextStepRunnerFactory NextStepRunnerFactory
 }
 
-func newSession() *stepSession {
+func newSession(nextStepRunnerFactory NextStepRunnerFactory) *stepSession {
 	invSession, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}
 	ret := stepSession{
-		InventorySession: *invSession,
-		serviceAPI:       newServiceAPI(),
+		InventorySession:      *invSession,
+		serviceAPI:            newServiceAPI(),
+		nextStepRunnerFactory: nextStepRunnerFactory,
 	}
 	return &ret
 }
@@ -91,47 +92,32 @@ func (s *stepSession) createStepReply(stepType models.StepType, stepID string, o
 	}
 }
 
-func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, command string, args []string, handler HandlerType) models.StepReply {
-	if command == "" {
-		errStr := "Missing command"
-		s.Logger().Warn(errStr)
-		return s.createStepReply(stepType, stepID, "", errStr, -1)
-	}
-
-	s.Logger().Infof("Executing step: <%s>, command: <%s>, args: <%v>", stepID, command, args)
-	stdout, stderr, exitCode := handler(command, args...)
+func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, runner Runner) models.StepReply {
+	stdout, stderr, exitCode := runner.Run()
 	if exitCode != 0 {
+		// In case the format of the message below changes, please modify the triage pattern of
+		// MSG_PATTERN in repo assisted-installer-deployment in file tools/add_triage_signature.py
+		// current link https://github.com/openshift-assisted/assisted-installer-deployment/blob/3f97206dda756dd07886ac038b4cfad32dcc5ee1/tools/add_triage_signature.py#L960-L964
 		s.Logger().Errorf(`Step execution failed (exit code %v): <%s>, command: <%s>, args: <%v>. Output:
 stdout:
 %v
 
 stderr:
 %v
-`, exitCode, stepID, command, args, stdout, stderr)
+`, exitCode, stepID, runner.Command(), runner.Args(), stdout, stderr)
 	}
 
 	return s.createStepReply(stepType, stepID, stdout, stderr, exitCode)
 }
 
-func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string, command string, args []string, handler HandlerType) models.StepReply {
-	s.Logger().Infof("Creating execution step for %s %s", stepType, stepID)
-
-	// TODO: MGMT-9451 remove command == "" after agent changes for new protocol will be pushed, added to allow pushing agent before service
-	if command == "" {
-		actionToRun, err := actions.New(stepType, args)
-		if err != nil {
-			return models.StepReply{
-				StepType: stepType,
-				StepID:   stepID,
-				ExitCode: int64(-1),
-				Output:   "",
-				Error:    err.Error(),
-			}
-		}
-		command, args = actionToRun.CreateCmd()
+func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string, command string, args []string) models.StepReply {
+	s.Logger().Infof("Creating execution step for %s %s command <%s> args <%v>", stepType, stepID, command, args)
+	nextStepRunner, err := s.nextStepRunnerFactory.Create(stepType, command, args)
+	if err != nil {
+		s.Logger().WithError(err).Errorf("Unable to create runner for step <%s>, command <%s> args <%v>", stepID, command, args)
+		return s.createStepReply(stepType, stepID, "", err.Error(), int(-1))
 	}
-
-	return s.handleSingleStep(stepType, stepID, command, args, handler)
+	return s.handleSingleStep(stepType, stepID, nextStepRunner)
 }
 
 func (s *stepSession) handleSteps(steps *models.Steps) {
@@ -139,16 +125,16 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 
 		go func(step *models.Step) {
 			if code, err := s.diagnoseSystem(); code != Undetected {
-				log.Errorf("System issue detected before running step: <%s>, command: <%s>, args: <%v>: %s - stopping the execution", step.StepID, step.Command, step.Args, err.Error())
+				s.Logger().Errorf("System issue detected before running step: <%s>, command: <%s>, args: <%v>: %s - stopping the execution", step.StepID, step.Command, step.Args, err.Error())
 				s.sendStepReply(s.createStepReply(step.StepType, step.StepID, "", err.Error(), int(code)))
 				return
 			}
 
-			reply := s.handleSingleStepV2(step.StepType, step.StepID, step.Command, step.Args, util.ExecutePrivileged)
+			reply := s.handleSingleStepV2(step.StepType, step.StepID, step.Command, step.Args)
 
 			if reply.ExitCode != 0 {
 				if code, err := s.diagnoseSystem(); code != Undetected {
-					log.Errorf("System issue detected after running step: <%s>, command: <%s>, args: <%v>: %s", step.StepID, step.Command, step.Args, err.Error())
+					s.Logger().Errorf("System issue detected after running step: <%s>, command: <%s>, args: <%v>: %s", step.StepID, step.Command, step.Args, err.Error())
 					reply.ExitCode = int64(code)
 				}
 			}
@@ -254,7 +240,7 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	return result.NextInstructionSeconds, *result.PostStepAction
 }
 
-func ProcessSteps(ctx context.Context, wg *sync.WaitGroup) {
+func ProcessSteps(ctx context.Context, nextStepRunnerFactory NextStepRunnerFactory, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var nextRunIn int64
@@ -263,7 +249,7 @@ func ProcessSteps(ctx context.Context, wg *sync.WaitGroup) {
 		case <-ctx.Done():
 			return
 		default:
-			s := newSession()
+			s := newSession(nextStepRunnerFactory)
 			nextRunIn, afterStep = s.processSingleSession()
 			if nextRunIn == -1 {
 				// sleep forever

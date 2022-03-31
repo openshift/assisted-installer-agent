@@ -1,4 +1,5 @@
-FROM quay.io/ocpmetal/assisted-installer-agent:latest
+ARG ASSISTED_INSTALLER_AGENT=quay.io/edge-infrastructure/assisted-installer-agent:latest
+FROM $ASSISTED_INSTALLER_AGENT
 
 RUN yum install -y yum-utils \
     && yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo \

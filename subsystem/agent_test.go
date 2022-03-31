@@ -283,7 +283,7 @@ var _ = Describe("Agent tests", func() {
 		verifyRegisterRequest()
 		verifyGetNextRequest(hostID, true)
 		expectedReply := &EqualReplyVerifier{
-			Error:    "Missing command",
+			Error:    "failed to find action for step type Step-not-exists",
 			ExitCode: -1,
 			Output:   "",
 			StepID:   stepID,

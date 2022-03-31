@@ -61,8 +61,9 @@ endif
 unit-test:
 	$(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
 
-subsystem: build-image 
-	$(DOCKER_COMPOSE) up --build -d dhcpd wiremock; \
+subsystem: build-image
+	$(DOCKER_COMPOSE) build --build-arg ASSISTED_INSTALLER_AGENT=$(ASSISTED_INSTALLER_AGENT) agent || exit 1 ; \
+	$(DOCKER_COMPOSE) up -d dhcpd wiremock; \
 	$(MAKE) _test TEST_SCENARIO=subsystem TIMEOUT=30m TEST="$(or $(TEST),./subsystem/...)"; \
 	rc=$$?; \
 	$(DOCKER_COMPOSE) logs dhcpd > dhcpd.log; \

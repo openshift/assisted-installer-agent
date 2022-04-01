@@ -21,7 +21,8 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go commands.ProcessSteps(ctx, &wg)
+	nextStepRunnerFactory := commands.NewNextStepRunnerFactory()
+	go commands.ProcessSteps(ctx, nextStepRunnerFactory, &wg)
 
 	if config.GlobalDryRunConfig.DryRunEnabled {
 		log.Info(`Dry run enabled, will cancel goroutine on fake "reboot"`)

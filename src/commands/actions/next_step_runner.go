@@ -7,18 +7,19 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/config"
 
 	"github.com/go-openapi/swag"
-	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
-type nextStepRunner struct {
+type nextStepRunnerAction struct {
 	args                 []string
 	nextStepRunnerParams models.NextStepCmdRequest
 }
 
-func (a *nextStepRunner) Validate() error {
+func NewNextStepRunnerAction(args []string) ActionInterface {
+	return &nextStepRunnerAction{args: args}
+}
+
+func (a *nextStepRunnerAction) Validate() error {
 	err := validateCommon("next step runner", 1, a.args, &a.nextStepRunnerParams)
 	if err != nil {
 		return err
@@ -26,7 +27,7 @@ func (a *nextStepRunner) Validate() error {
 	return nil
 }
 
-func (a *nextStepRunner) CreateCmd() (string, []string) {
+func (a *nextStepRunnerAction) CreateCmd() (string, []string) {
 	arguments := []string{"run", "--rm", "-ti", "--privileged", "--pid=host", "--net=host",
 		"-v", "/dev:/dev:rw", "-v", "/opt:/opt:rw",
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
@@ -56,23 +57,4 @@ func (a *nextStepRunner) CreateCmd() (string, []string) {
 	}
 
 	return podman, arguments
-}
-
-func StartStepRunner(command string, args []string) error {
-	log.Infof("Running next step runner. Command: %s, Args: %s", command, args)
-	if command == "" {
-		runner := nextStepRunner{args: args}
-		err := runner.Validate()
-		if err != nil {
-			log.WithError(err).Errorf("next step runner command validation failed")
-			return err
-		}
-		command, args = runner.CreateCmd()
-	}
-
-	_, stderr, exitCode := util.Execute(command, args...)
-	if exitCode != 0 {
-		return errors.Errorf("next step runner command exited with non-zero exit code %d: %s", exitCode, stderr)
-	}
-	return nil
 }

@@ -16,7 +16,7 @@ import (
 )
 
 func runNextRunner(params string, expectedError bool) (string, []string) {
-	action := nextStepRunner{args: []string{params}}
+	action := nextStepRunnerAction{args: []string{params}}
 	err := action.Validate()
 	if expectedError {
 		Expect(err).To(HaveOccurred())
@@ -106,13 +106,13 @@ var _ = Describe("next step runner", func() {
 		if len(params) > 0 {
 			_, _ = runNextRunner("echo aaaa", true)
 			By("Less then 1")
-			action := nextStepRunner{args: []string{}}
+			action := nextStepRunnerAction{args: []string{}}
 			err := action.Validate()
 			Expect(err).To(HaveOccurred())
 		}
 
 		By("More then expected")
-		action := nextStepRunner{args: []string{params, "echo aaaa"}}
+		action := nextStepRunnerAction{args: []string{params, "echo aaaa"}}
 		err := action.Validate()
 		Expect(err).To(HaveOccurred())
 	})

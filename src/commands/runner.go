@@ -7,11 +7,15 @@ import (
 )
 
 type NextStepRunnerFactory interface {
+	Create(command string, args []string) (Runner, error)
+}
+
+type ToolRunnerFactory interface {
 	Create(stepType models.StepType, command string, args []string) (Runner, error)
 }
 
 // Runner is the means to allow pluggable running mechanism to agent.
-// The runner factory should be initiated once, and should be passed forward in the execution floe by dependency
+// The runner factory should be initiated once, and should be passed forward in the execution flow by dependency
 // injection.
 type Runner interface {
 	Run() (stdout, stderr string, exitCode int)
@@ -19,81 +23,55 @@ type Runner interface {
 	Args() []string
 }
 
-func NewActionRunner(action actions.ActionInterface) Runner {
-	return &actionRunner{
-		action:  action,
-		handler: util.Execute,
-	}
+type toolRunnerFactory struct{}
+
+func NewToolRunnerFactory() ToolRunnerFactory {
+	return &toolRunnerFactory{}
 }
 
-func NewPrivilegedActionRunner(action actions.ActionInterface) Runner {
-	return &actionRunner{
-		action:  action,
-		handler: util.ExecutePrivileged,
-	}
-}
-
-type nextStepRunnerFactory struct{}
-
-func NewNextStepRunnerFactory() NextStepRunnerFactory {
-	return &nextStepRunnerFactory{}
-}
-
-func (a *nextStepRunnerFactory) Create(stepType models.StepType, command string, args []string) (Runner, error) {
-	var runner Runner
+func (a *toolRunnerFactory) Create(stepType models.StepType, command string, args []string) (Runner, error) {
 	// TODO: MGMT-9451 remove command == "" after agent changes for new protocol will be pushed, added to allow pushing agent before service
 	if command == "" {
 		actionToRun, err := actions.New(stepType, args)
 		if err != nil {
 			return nil, err
 		}
-		runner = NewPrivilegedActionRunner(actionToRun)
-	} else {
-		runner = NewExecuteRunner(command, args)
+
+		command, args = actionToRun.CreateCmd()
 	}
-	return runner, nil
+	return NewPrivilegedExecuteRunner(command, args), nil
 }
 
-type actionRunner struct {
-	action  actions.ActionInterface
+type executeRunner struct {
+	command string
+	args    []string
 	handler HandlerType
 }
 
-func (a *actionRunner) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.action.CreateCmd()
-	return a.handler(command, args...)
+func (e *executeRunner) Run() (stdout, stderr string, exitCode int) {
+	return e.handler(e.command, e.args...)
 }
 
-func (a *actionRunner) Command() string {
-	command, _ := a.action.CreateCmd()
-	return command
-}
-
-func (a *actionRunner) Args() []string {
-	_, args := a.action.CreateCmd()
-	return args
-}
-
-type ExecuteRunner struct {
-	command string
-	args    []string
-}
-
-func (e *ExecuteRunner) Run() (stdout, stderr string, exitCode int) {
-	return util.ExecutePrivileged(e.command, e.args...)
-}
-
-func (e *ExecuteRunner) Command() string {
+func (e *executeRunner) Command() string {
 	return e.command
 }
 
-func (e *ExecuteRunner) Args() []string {
+func (e *executeRunner) Args() []string {
 	return e.args
 }
 
-func NewExecuteRunner(command string, args []string) Runner {
-	return &ExecuteRunner{
+func NewPrivilegedExecuteRunner(command string, args []string) Runner {
+	return &executeRunner{
 		command: command,
 		args:    args,
+		handler: util.ExecutePrivileged,
+	}
+}
+
+func NewExecuteRunner(command string, args []string) Runner {
+	return &executeRunner{
+		command: command,
+		args:    args,
+		handler: util.Execute,
 	}
 }

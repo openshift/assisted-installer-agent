@@ -33,19 +33,19 @@ const (
 
 type stepSession struct {
 	session.InventorySession
-	serviceAPI            serviceAPI
-	nextStepRunnerFactory NextStepRunnerFactory
+	serviceAPI        serviceAPI
+	toolRunnerFactory ToolRunnerFactory
 }
 
-func newSession(nextStepRunnerFactory NextStepRunnerFactory) *stepSession {
+func newSession(toolRunnerFactory ToolRunnerFactory) *stepSession {
 	invSession, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}
 	ret := stepSession{
-		InventorySession:      *invSession,
-		serviceAPI:            newServiceAPI(),
-		nextStepRunnerFactory: nextStepRunnerFactory,
+		InventorySession:  *invSession,
+		serviceAPI:        newServiceAPI(),
+		toolRunnerFactory: toolRunnerFactory,
 	}
 	return &ret
 }
@@ -112,7 +112,7 @@ stderr:
 
 func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string, command string, args []string) models.StepReply {
 	s.Logger().Infof("Creating execution step for %s %s command <%s> args <%v>", stepType, stepID, command, args)
-	nextStepRunner, err := s.nextStepRunnerFactory.Create(stepType, command, args)
+	nextStepRunner, err := s.toolRunnerFactory.Create(stepType, command, args)
 	if err != nil {
 		s.Logger().WithError(err).Errorf("Unable to create runner for step <%s>, command <%s> args <%v>", stepID, command, args)
 		return s.createStepReply(stepType, stepID, "", err.Error(), int(-1))
@@ -240,7 +240,7 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	return result.NextInstructionSeconds, *result.PostStepAction
 }
 
-func ProcessSteps(ctx context.Context, nextStepRunnerFactory NextStepRunnerFactory, wg *sync.WaitGroup) {
+func ProcessSteps(ctx context.Context, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var nextRunIn int64
@@ -249,7 +249,7 @@ func ProcessSteps(ctx context.Context, nextStepRunnerFactory NextStepRunnerFacto
 		case <-ctx.Done():
 			return
 		default:
-			s := newSession(nextStepRunnerFactory)
+			s := newSession(toolRunnerFactory)
 			nextRunIn, afterStep = s.processSingleSession()
 			if nextRunIn == -1 {
 				// sleep forever

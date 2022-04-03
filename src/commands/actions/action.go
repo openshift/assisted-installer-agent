@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"github.com/go-openapi/runtime"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
@@ -54,7 +56,7 @@ func New(stepType models.StepType, args []string) (*Action, error) {
 		models.StepTypeContainerImageAvailability: {&imageAvailability{args: args}},
 		models.StepTypeStopInstallation:           {&stopInstallation{args: args}},
 		models.StepTypeLogsGather:                 {&logsGather{args: args}},
-		models.StepTypeInstall:                    {&install{args: args}},
+		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs()}},
 	}
 
 	action, ok := stepActionMap[stepType]

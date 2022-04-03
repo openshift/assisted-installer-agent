@@ -1,13 +1,23 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/alessio/shellescape"
 	"github.com/go-openapi/swag"
+	"github.com/hashicorp/go-version"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
+	"github.com/thoas/go-funk"
+
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
+	"github.com/openshift/assisted-service/pkg/validations"
 )
 
 var podmanBaseCmd = [...]string{
@@ -23,6 +33,7 @@ var podmanBaseCmd = [...]string{
 type install struct {
 	args          []string
 	installParams models.InstallCmdRequest
+	filesystem    afero.Fs
 }
 
 func (a *install) Validate() error {
@@ -30,7 +41,44 @@ func (a *install) Validate() error {
 	if err != nil {
 		return err
 	}
-	return nil
+
+	if a.installParams.MustGatherImage != "" {
+		err = validateMustGatherImages(a.installParams.MustGatherImage)
+		if err != nil {
+			return err
+		}
+	}
+
+	if a.installParams.Proxy != nil {
+		err = validateProxy(a.installParams.Proxy)
+		if err != nil {
+			return err
+		}
+	}
+
+	if a.installParams.InstallerArgs != "" {
+		var installAgs []string
+		err := json.Unmarshal([]byte(a.installParams.InstallerArgs), &installAgs)
+		if err != nil {
+			log.WithError(err).Errorf("Failed to unmarshal installer args: json.Unmarshal, %s", a.installParams.InstallerArgs)
+			return err
+		}
+		err = validations.ValidateInstallerArgs(installAgs)
+		if err != nil {
+			return err
+		}
+	}
+
+	if a.installParams.OpenshiftVersion != "" {
+		_, err := version.NewVersion(a.installParams.OpenshiftVersion)
+		if err != nil {
+
+			return errors.Wrapf(err, "Failed to parse OCP version %s", a.installParams.OpenshiftVersion)
+		}
+	}
+
+
+	return a.validateDisks()
 }
 
 func (a *install) CreateCmd() (string, []string) {
@@ -132,4 +180,80 @@ func getProxyArguments(proxy *models.Proxy) []string {
 	}
 
 	return proxyArgs
+}
+
+func validateProxy(proxy *models.Proxy) error {
+	httpProxy := swag.StringValue(proxy.HTTPProxy)
+	httpsProxy := swag.StringValue(proxy.HTTPSProxy)
+	noProxy := swag.StringValue(proxy.NoProxy)
+
+	if httpProxy != "" {
+		err := validations.ValidateHTTPProxyFormat(httpProxy)
+		if err != nil {
+			return err
+		}
+	}
+
+	if httpsProxy != "" {
+		err := validations.ValidateHTTPProxyFormat(httpsProxy)
+		if err != nil {
+			return err
+		}
+	}
+
+	if noProxy != "" {
+		err := validations.ValidateNoProxyFormat(noProxy)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateMustGatherImages(mustGatherImage string) error {
+	var imageMap map[string]string
+	err := json.Unmarshal([]byte(mustGatherImage), &imageMap)
+	if err != nil {
+		// must gather image can be a string and not json
+		imageMap = map[string]string{"ocp": mustGatherImage}
+	}
+	r, errCompile := regexp.Compile(`^(([a-zA-Z0-9\-\.]+)(:[0-9]+)?\/)?[a-z0-9\._\-\/@]+[?::a-zA-Z0-9_\-.]+$`)
+	if errCompile != nil {
+		return errCompile
+	}
+
+	for op, image := range imageMap {
+		if !r.MatchString(image) {
+			return fmt.Errorf("must gather image %s validation failed %v", image, imageMap)
+		}
+		// TODO: adding check for supported operators
+		if !funk.Contains([]string{"cnv", "lso", "ocs", "odf", "ocp"}, op) {
+			return fmt.Errorf("operator name %s validation failed", op)
+		}
+	}
+	return nil
+}
+
+func (a *install) validateDisks() error {
+	disksToValidate := append(a.installParams.DisksToFormat, swag.StringValue(a.installParams.BootDevice))
+	for _, disk := range disksToValidate {
+		if !strings.HasPrefix(disk, "/dev/") {
+			return fmt.Errorf("disk %s should start of with /dev/", disk)
+		}
+		if !a.pathExists(disk) {
+			return fmt.Errorf("disk %s was not found on the host", disk)
+		}
+	}
+	return nil
+}
+
+func (a *install) pathExists(path string) bool {
+	if _, err := a.filesystem.Stat(path); os.IsNotExist(err) {
+		return false
+	} else if err != nil {
+		log.WithError(err).Errorf("failed to verify path %s", path)
+		return false
+	}
+	return true
 }

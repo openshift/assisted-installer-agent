@@ -52,6 +52,7 @@ func (a *nextStepRunnerAction) CreateCmd() (string, []string) {
 		"--host-id", a.nextStepRunnerParams.HostID.String(),
 		"--agent-version", swag.StringValue(a.nextStepRunnerParams.AgentVersion),
 		fmt.Sprintf("--insecure=%s", strconv.FormatBool(config.GlobalAgentConfig.InsecureConnection)))
+
 	if config.GlobalAgentConfig.CACertificatePath != "" {
 		arguments = append(arguments, "--cacert", config.GlobalAgentConfig.CACertificatePath)
 	}

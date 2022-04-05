@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/alessio/shellescape"
 	"github.com/go-openapi/swag"
 	"github.com/hashicorp/go-version"
@@ -77,13 +79,12 @@ func (a *install) Validate() error {
 		}
 	}
 
-
 	return a.validateDisks()
 }
 
 func (a *install) CreateCmd() (string, []string) {
 	installCmd := a.getFullInstallerCommand()
-	return "sh", []string{"-c", installCmd}
+	return a.Command(), []string{"-c", installCmd}
 }
 
 func (a *install) getFullInstallerCommand() string {
@@ -256,4 +257,17 @@ func (a *install) pathExists(path string) bool {
 		return false
 	}
 	return true
+}
+
+func (a *install) Run() (stdout, stderr string, exitCode int) {
+	command, args := a.CreateCmd()
+	return util.ExecutePrivileged(command, args...)
+}
+
+func (a *install) Command() string {
+	return "sh"
+}
+
+func (a *install) Args() []string {
+	return a.args
 }

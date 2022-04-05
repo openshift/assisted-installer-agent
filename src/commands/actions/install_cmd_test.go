@@ -56,12 +56,12 @@ var _ = Describe("installer test", func() {
 			ClusterID:            &clusterId,
 			HostID:               &hostId,
 			InfraEnvID:           &infraEnvId,
-			ControllerImage:      swag.String("quay.io/edge-infrastructure/assisted-installer-controller:latest"),
+			ControllerImage:      swag.String("localhost:5000/edge-infrastructure/assisted-installer-controller:latest"),
 			DisksToFormat:        []string{},
 			HighAvailabilityMode: swag.String(models.ClusterHighAvailabilityModeFull),
 			InstallerArgs:        "[\"--append-karg\",\"ip=ens3:dhcp\"]",
 			InstallerImage:       swag.String("quay.io/edge-infrastructure/assisted-installer:latest"),
-			McoImage:             "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:aaa",
+			McoImage:             "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4",
 			MustGatherImage: "{\"cnv\":\"registry.redhat.io/container-native-virtualization/cnv-must-gather-rhel8:v2.6.5\"," +
 				"\"lso\":\"registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8\"," +
 				"\"ocp\":\"quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4\"," +
@@ -98,9 +98,9 @@ var _ = Describe("installer test", func() {
 		Expect(argsAsString).To(ContainSubstring("--env=PULL_SECRET_TOKEN"))
 		Expect(argsAsString).To(ContainSubstring("--role bootstrap --infra-env-id 456eecf6-7aec-402d-b453-f609b19783cb " +
 			"--cluster-id cd781f46-f32a-4154-9670-6442a367ab81 --host-id f7ac1860-92cf-4ed8-aeec-2d9f20b35bab --boot-device /dev/disk/by-path/pci-0000:00:06.0 " +
-			"--url http://10.1.178.26:6000 --high-availability-mode Full --controller-image quay.io/edge-infrastructure/assisted-installer-controller:latest " +
+			"--url http://10.1.178.26:6000 --high-availability-mode Full --controller-image localhost:5000/edge-infrastructure/assisted-installer-controller:latest " +
 			"--agent-image quay.io/edge-infrastructure/assisted-installer-agent:latest " +
-			"--mco-image quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:aaa " +
+			"--mco-image quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4 " +
 			"--must-gather-image '{\"cnv\":\"registry.redhat.io/container-native-virtualization/cnv-must-gather-rhel8:v2.6.5\"," +
 			"\"lso\":\"registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8\",\"ocp\":\"quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4\"," +
 			"\"ocs\":\"registry.redhat.io/ocs4/ocs-must-gather-rhel8\"}' --openshift-version 4.9.24 --insecure --check-cluster-version --installer-args '[\"--append-karg\",\"ip=ens3:dhcp\"]'"))
@@ -321,8 +321,24 @@ var _ = Describe("installer test", func() {
 	It("good version", func() {
 		args.OpenshiftVersion = "4.10-rc-6-prelease"
 		action := getInstall(args, filesystem, false)
-		_ , args := action.CreateCmd()
+		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--openshift-version 4.10-rc-6-prelease"))
+	})
+
+	It("bad images mco", func() {
+		args.McoImage = "echo"
+		_ = getInstall(args, filesystem, true)
+	})
+
+	It("bad images installer", func() {
+		args.InstallerImage = swag.String("quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:aaa;echo")
+		_ = getInstall(args, filesystem, true)
+	})
+
+	It("bad images controller", func() {
+		args.ControllerImage = swag.String("echo:111|rm")
+		_ = getInstall(args, filesystem, true)
+
 	})
 
 })

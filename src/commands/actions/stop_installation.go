@@ -14,16 +14,8 @@ func (a *stopInstallation) Validate() error {
 	return nil
 }
 
-func (a *stopInstallation) CreateCmd() (string, []string) {
-	podmanRunCmd := []string{
-		"stop", "-i", "-t", "5", "assisted-installer",
-	}
-	return a.Command(), podmanRunCmd
-}
-
 func (a *stopInstallation) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
 }
 
 func (a *stopInstallation) Command() string {
@@ -31,5 +23,7 @@ func (a *stopInstallation) Command() string {
 }
 
 func (a *stopInstallation) Args() []string {
-	return a.args
+	return []string{
+		"stop", "-i", "-t", "5", "assisted-installer",
+	}
 }

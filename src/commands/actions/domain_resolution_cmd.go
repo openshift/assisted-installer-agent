@@ -20,10 +20,6 @@ func (a *domainResolution) Validate() error {
 	return nil
 }
 
-func (a *domainResolution) CreateCmd() (string, []string) {
-	return "", nil
-}
-
 func (a *domainResolution) Run() (stdout, stderr string, exitCode int) {
 	return domain_resolution.Run(a.args[0],
 		&domain_resolution.DomainResolver{}, log.StandardLogger())

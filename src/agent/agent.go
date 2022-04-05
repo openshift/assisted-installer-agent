@@ -27,8 +27,9 @@ func (n *nextStepRunnerFactory) Create(command string, args []string) (commands.
 			log.WithError(err).Errorf("next step runner command validation failed")
 			return nil, err
 		}
-		command, args = action.CreateCmd()
+		return action, nil
 	}
+
 	return commands.NewExecuteRunner(command, args), nil
 }
 

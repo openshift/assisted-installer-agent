@@ -25,7 +25,15 @@ func (a *inventory) Validate() error {
 	return nil
 }
 
-func (a *inventory) CreateCmd() (string, []string) {
+func (a *inventory) Run() (stdout, stderr string, exitCode int) {
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
+}
+
+func (a *inventory) Command() string {
+	return "sh"
+}
+
+func (a *inventory) Args() []string {
 	// Copying mounts file, which is not available by podman's PID
 	// We incorporate the host's ID in the copied mtab file path to allow multiple agents
 	// to run on the same host during load testing easily without fighting over the same
@@ -58,18 +66,5 @@ func (a *inventory) CreateCmd() (string, []string) {
 		"inventory",
 	}, " ")
 
-	return a.Command(), []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
-}
-
-func (a *inventory) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
-}
-
-func (a *inventory) Command() string {
-	return "sh"
-}
-
-func (a *inventory) Args() []string {
-	return a.args
+	return []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
 }

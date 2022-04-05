@@ -19,10 +19,6 @@ func (a *dhcpLeases) Validate() error {
 	return nil
 }
 
-func (a *dhcpLeases) CreateCmd() (string, []string) {
-	return "", nil
-}
-
 func (a *dhcpLeases) Run() (stdout, stderr string, exitCode int) {
 	leaser := dhcp_lease_allocate.NewLeaser(dhcp_lease_allocate.NewLeaserDependencies())
 	return leaser.LeaseAllocate(a.args[0], log.StandardLogger())

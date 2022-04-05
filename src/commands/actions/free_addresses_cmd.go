@@ -19,7 +19,15 @@ func (a *freeAddresses) Validate() error {
 	return err
 }
 
-func (a *freeAddresses) CreateCmd() (string, []string) {
+func (a *freeAddresses) Run() (stdout, stderr string, exitCode int) {
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
+}
+
+func (a *freeAddresses) Command() string {
+	return "sh"
+}
+
+func (a *freeAddresses) Args() []string {
 	const containerName = "free_addresses_scanner"
 	podmanRunCmd := []string{
 		podman, "run", "--privileged", "--net=host", "--rm", "--quiet",
@@ -38,18 +46,5 @@ func (a *freeAddresses) CreateCmd() (string, []string) {
 	// checking if it exists and only running if it doesn't
 	checkAlreadyRunningCmd := fmt.Sprintf("podman ps --format '{{.Names}}' | grep -q '^%s$'", containerName)
 
-	return a.Command(), []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, cmdString)}
-}
-
-func (a *freeAddresses) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
-}
-
-func (a *freeAddresses) Command() string {
-	return "sh"
-}
-
-func (a *freeAddresses) Args() []string {
-	return a.args
+	return []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, cmdString)}
 }

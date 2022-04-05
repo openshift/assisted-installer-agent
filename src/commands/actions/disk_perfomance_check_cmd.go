@@ -29,7 +29,11 @@ func (a *diskPerfCheck) Validate() error {
 	return nil
 }
 
-func (a *diskPerfCheck) CreateCmd() (string, []string) {
+func (a *diskPerfCheck) Command() string {
+	return "sh"
+}
+
+func (a *diskPerfCheck) Args() []string {
 	arguments := []string{
 		"-c",
 		"id=`podman ps --quiet --filter \"name=disk_performance\"` ; " +
@@ -40,19 +44,9 @@ func (a *diskPerfCheck) CreateCmd() (string, []string) {
 			config.GlobalAgentConfig.AgentVersion + " disk_speed_check '" +
 			a.args[0] + "'",
 	}
-
-	return a.Command(), arguments
-}
-
-func (a *diskPerfCheck) Command() string {
-	return "sh"
-}
-
-func (a *diskPerfCheck) Args() []string {
-	return a.args
+	return arguments
 }
 
 func (a *diskPerfCheck) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
 }

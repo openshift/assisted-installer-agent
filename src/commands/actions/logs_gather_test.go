@@ -26,7 +26,8 @@ var _ = Describe("Logs gather test", func() {
 		action, err := New(models.StepTypeLogsGather, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.CreateCmd()
+		args := action.Args()
+		command := action.Command()
 		Expect(command).To(Equal("timeout"))
 		paths := []string{
 			"/var/log",
@@ -52,7 +53,8 @@ var _ = Describe("Logs gather test", func() {
 		action, err := New(models.StepTypeLogsGather, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.CreateCmd()
+		args := action.Args()
+		command := action.Command()
 		Expect(command).To(Equal("timeout"))
 		paths := []string{
 			"/var/log",

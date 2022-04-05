@@ -260,8 +260,7 @@ func (a *install) pathExists(path string) bool {
 }
 
 func (a *install) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
 }
 
 func (a *install) Command() string {
@@ -269,5 +268,5 @@ func (a *install) Command() string {
 }
 
 func (a *install) Args() []string {
-	return a.args
+	return []string{"-c", a.getFullInstallerCommand()}
 }

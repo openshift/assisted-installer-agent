@@ -19,10 +19,6 @@ func (a *apiVipConnectivityCheck) Validate() error {
 	return nil
 }
 
-func (a *apiVipConnectivityCheck) CreateCmd() (string, []string) {
-	return "", nil
-}
-
 func (a *apiVipConnectivityCheck) Run() (stdout, stderr string, exitCode int) {
 	return apivip_check.CheckAPIConnectivity(a.args[0], logrus.StandardLogger())
 }

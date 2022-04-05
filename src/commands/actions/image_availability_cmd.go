@@ -23,7 +23,15 @@ func (a *imageAvailability) Validate() error {
 	return nil
 }
 
-func (a *imageAvailability) CreateCmd() (string, []string) {
+func (a *imageAvailability) Run() (stdout, stderr string, exitCode int) {
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
+}
+
+func (a *imageAvailability) Command() string {
+	return "sh"
+}
+
+func (a *imageAvailability) Args() []string {
 	const containerName = "container_image_availability"
 
 	podmanRunCmd := shellescape.QuoteCommand([]string{
@@ -39,18 +47,5 @@ func (a *imageAvailability) CreateCmd() (string, []string) {
 	// checking if it exists and only running if it doesn't
 	checkAlreadyRunningCmd := fmt.Sprintf("podman ps --format '{{.Names}}' | grep -q '^%s$'", containerName)
 
-	return a.Command(), []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, podmanRunCmd)}
-}
-
-func (a *imageAvailability) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
-}
-
-func (a *imageAvailability) Command() string {
-	return "sh"
-}
-
-func (a *imageAvailability) Args() []string {
-	return a.args
+	return []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, podmanRunCmd)}
 }

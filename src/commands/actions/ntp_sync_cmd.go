@@ -29,7 +29,15 @@ func (a *ntpSynchronizer) Validate() error {
 	return nil
 }
 
-func (a *ntpSynchronizer) CreateCmd() (string, []string) {
+func (a *ntpSynchronizer) Run() (stdout, stderr string, exitCode int) {
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
+}
+
+func (a *ntpSynchronizer) Command() string {
+	return podman
+}
+
+func (a *ntpSynchronizer) Args() []string {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm",
 		"-v", "/usr/bin/chronyc:/usr/bin/chronyc",
@@ -40,18 +48,5 @@ func (a *ntpSynchronizer) CreateCmd() (string, []string) {
 		"ntp_synchronizer",
 	}
 	podmanRunCmd = append(podmanRunCmd, a.args...)
-	return a.Command(), podmanRunCmd
-}
-
-func (a *ntpSynchronizer) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
-}
-
-func (a *ntpSynchronizer) Command() string {
-	return podman
-}
-
-func (a *ntpSynchronizer) Args() []string {
-	return a.args
+	return podmanRunCmd
 }

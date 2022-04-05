@@ -14,7 +14,6 @@ import (
 const podman = "podman"
 
 type ActionInterface interface {
-	CreateCmd() (string, []string)
 	Validate() error
 	Run() (stdout, stderr string, exitCode int)
 	Command() string

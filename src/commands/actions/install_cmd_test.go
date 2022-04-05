@@ -83,7 +83,8 @@ var _ = Describe("installer test", func() {
 		err := action.Validate()
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.CreateCmd()
+		args := action.Args()
+		command := action.Command()
 		Expect(command).To(Equal("sh"))
 		paths := []string{
 			"/var/log",
@@ -109,7 +110,7 @@ var _ = Describe("installer test", func() {
 		caPath := "/ca_cert"
 		config.GlobalAgentConfig.CACertificatePath = caPath
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		paths := []string{
 			"/ca_cert",
 		}
@@ -122,7 +123,7 @@ var _ = Describe("installer test", func() {
 		args.MustGatherImage = ""
 		args.OpenshiftVersion = ""
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("mco-image"))
 		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("must-gather-image"))
 		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("openshift-version"))
@@ -131,7 +132,7 @@ var _ = Describe("installer test", func() {
 	It("install with single must-gather", func() {
 		args.MustGatherImage = "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:d10836be954321a7583d7388498807872bf804d3f2840cbec9100264dd01c165"
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("must-gather-image"))
 	})
 
@@ -142,7 +143,7 @@ var _ = Describe("installer test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		args.DisksToFormat = []string{"/dev/sda", "/dev/sdb"}
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--format-disk /dev/sda"))
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--format-disk /dev/sdb"))
 	})
@@ -172,7 +173,7 @@ var _ = Describe("installer test", func() {
 		config.GlobalAgentConfig.InsecureConnection = false
 		args.CheckCvo = swag.Bool(false)
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--insecure"))
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--check-cluster-version"))
 	})
@@ -180,7 +181,7 @@ var _ = Describe("installer test", func() {
 	It("install no installer args", func() {
 		args.InstallerArgs = ""
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--installer-args"))
 	})
 
@@ -192,7 +193,7 @@ var _ = Describe("installer test", func() {
 	It("install with service ips", func() {
 		args.ServiceIps = []string{"192.168.2.1", "192.168.3.1"}
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--service-ips 192.168.2.1,192.168.3.1"))
 	})
 
@@ -213,7 +214,7 @@ var _ = Describe("installer test", func() {
 			NoProxy:    swag.String("domain.org,127.0.0.2,127.0.0.1,localhost"),
 		}
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--http-proxy http://192.0.0.1 --https-proxy http://192.0.0.2 --no-proxy domain.org,127.0.0.2,127.0.0.1,localhost"))
 	})
 
@@ -224,7 +225,7 @@ var _ = Describe("installer test", func() {
 			NoProxy:    swag.String("domain.org,127.0.0.2,127.0.0.1,localhost"),
 		}
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--http-proxy http://192.0.0.1 --no-proxy domain.org,127.0.0.2,127.0.0.1,localhost"))
 	})
 
@@ -321,13 +322,8 @@ var _ = Describe("installer test", func() {
 	It("good version", func() {
 		args.OpenshiftVersion = "4.10-rc-6-prelease"
 		action := getInstall(args, filesystem, false)
-		_, args := action.CreateCmd()
+		args := action.Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--openshift-version 4.10-rc-6-prelease"))
-	})
-
-	It("bad images mco", func() {
-		args.McoImage = "echo"
-		_ = getInstall(args, filesystem, true)
 	})
 
 	It("bad images installer", func() {

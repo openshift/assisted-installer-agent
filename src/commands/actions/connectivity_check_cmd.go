@@ -19,10 +19,6 @@ func (a *connectivityCheck) Validate() error {
 	return nil
 }
 
-func (a *connectivityCheck) CreateCmd() (string, []string) {
-	return "", nil
-}
-
 func (a *connectivityCheck) Command() string {
 	return "connectivity_check"
 }

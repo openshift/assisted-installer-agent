@@ -36,10 +36,6 @@ func (a *logsGather) Validate() error {
 	return nil
 }
 
-func (a *logsGather) CreateCmd() (string, []string) {
-	return a.Command(), strings.Fields(a.generatedCmd)
-}
-
 func createUploadLogsCmd(params models.LogsGatherCmdRequest) (string, error) {
 
 	data := map[string]string{
@@ -82,8 +78,7 @@ func createUploadLogsCmd(params models.LogsGatherCmdRequest) (string, error) {
 }
 
 func (a *logsGather) Run() (stdout, stderr string, exitCode int) {
-	command, args := a.CreateCmd()
-	return util.ExecutePrivileged(command, args...)
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
 }
 
 func (a *logsGather) Command() string {
@@ -91,5 +86,5 @@ func (a *logsGather) Command() string {
 }
 
 func (a *logsGather) Args() []string {
-	return a.args
+	return strings.Fields(a.generatedCmd)
 }

@@ -19,7 +19,8 @@ var _ = Describe("ntp sync", func() {
 		action, err := New(models.StepTypeNtpSynchronizer, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.CreateCmd()
+		args := action.Args()
+		command := action.Command()
 		Expect(command).To(Equal("podman"))
 		paths := []string{
 			"/var/log",

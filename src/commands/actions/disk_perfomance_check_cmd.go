@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
@@ -39,5 +41,18 @@ func (a *diskPerfCheck) CreateCmd() (string, []string) {
 			a.args[0] + "'",
 	}
 
-	return "sh", arguments
+	return a.Command(), arguments
+}
+
+func (a *diskPerfCheck) Command() string {
+	return "sh"
+}
+
+func (a *diskPerfCheck) Args() []string {
+	return a.args
+}
+
+func (a *diskPerfCheck) Run() (stdout, stderr string, exitCode int) {
+	command, args := a.CreateCmd()
+	return util.ExecutePrivileged(command, args...)
 }

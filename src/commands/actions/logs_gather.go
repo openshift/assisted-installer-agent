@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
@@ -35,7 +37,7 @@ func (a *logsGather) Validate() error {
 }
 
 func (a *logsGather) CreateCmd() (string, []string) {
-	return "timeout", strings.Fields(a.generatedCmd)
+	return a.Command(), strings.Fields(a.generatedCmd)
 }
 
 func createUploadLogsCmd(params models.LogsGatherCmdRequest) (string, error) {
@@ -77,4 +79,17 @@ func createUploadLogsCmd(params models.LogsGatherCmdRequest) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func (a *logsGather) Run() (stdout, stderr string, exitCode int) {
+	command, args := a.CreateCmd()
+	return util.ExecutePrivileged(command, args...)
+}
+
+func (a *logsGather) Command() string {
+	return "timeout"
+}
+
+func (a *logsGather) Args() []string {
+	return a.args
 }

@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -38,17 +37,8 @@ var _ = Describe("api connectivity check", func() {
 	})
 
 	It("api connectivity cmd", func() {
-		action, err := New(models.StepTypeAPIVipConnectivityCheck, []string{param})
+		_, err := New(models.StepTypeAPIVipConnectivityCheck, []string{param})
 		Expect(err).NotTo(HaveOccurred())
-
-		command, args := action.CreateCmd()
-		Expect(command).To(Equal(podman))
-		paths := []string{
-			"/var/log",
-			"/run/systemd/journal/socket",
-		}
-		verifyPaths(strings.Join(args, " "), paths)
-		Expect(args[len(args)-1]).To(ContainSubstring(param))
 	})
 
 	It("api connectivity wrong args", func() {

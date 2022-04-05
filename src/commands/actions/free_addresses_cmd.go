@@ -5,6 +5,7 @@ import (
 
 	"github.com/alessio/shellescape"
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -37,5 +38,18 @@ func (a *freeAddresses) CreateCmd() (string, []string) {
 	// checking if it exists and only running if it doesn't
 	checkAlreadyRunningCmd := fmt.Sprintf("podman ps --format '{{.Names}}' | grep -q '^%s$'", containerName)
 
-	return "sh", []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, cmdString)}
+	return a.Command(), []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, cmdString)}
+}
+
+func (a *freeAddresses) Run() (stdout, stderr string, exitCode int) {
+	command, args := a.CreateCmd()
+	return util.ExecutePrivileged(command, args...)
+}
+
+func (a *freeAddresses) Command() string {
+	return "sh"
+}
+
+func (a *freeAddresses) Args() []string {
+	return a.args
 }

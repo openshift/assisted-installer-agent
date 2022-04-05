@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/openshift/assisted-installer-agent/src/config"
 
 	"github.com/go-openapi/swag"
@@ -57,5 +59,18 @@ func (a *nextStepRunnerAction) CreateCmd() (string, []string) {
 		arguments = append(arguments, "--cacert", config.GlobalAgentConfig.CACertificatePath)
 	}
 
-	return podman, arguments
+	return a.Command(), arguments
+}
+
+func (a *nextStepRunnerAction) Run() (stdout, stderr string, exitCode int) {
+	command, args := a.CreateCmd()
+	return util.ExecutePrivileged(command, args...)
+}
+
+func (a *nextStepRunnerAction) Command() string {
+	return podman
+}
+
+func (a *nextStepRunnerAction) Args() []string {
+	return a.args
 }

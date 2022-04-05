@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-installer-agent/src/config"
 )
@@ -56,5 +58,18 @@ func (a *inventory) CreateCmd() (string, []string) {
 		"inventory",
 	}, " ")
 
-	return "sh", []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
+	return a.Command(), []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
+}
+
+func (a *inventory) Run() (stdout, stderr string, exitCode int) {
+	command, args := a.CreateCmd()
+	return util.ExecutePrivileged(command, args...)
+}
+
+func (a *inventory) Command() string {
+	return "sh"
+}
+
+func (a *inventory) Args() []string {
+	return a.args
 }

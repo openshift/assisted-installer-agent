@@ -32,7 +32,13 @@ var _ = Describe("ntp sync", func() {
 		Expect(args[len(args)-1]).To(ContainSubstring(param))
 	})
 
-	It("ntp sync", func() {
+	It("bad ntp sync commands", func() {
 		badParamsCommonTests(models.StepTypeNtpSynchronizer, []string{param})
+	})
+
+	It("bad ntp sync ntp source", func() {
+		param = "{\"ntp_source\":\"echo aaa\"}"
+		_, err := New(models.StepTypeNtpSynchronizer, []string{param})
+		Expect(err).To(HaveOccurred())
 	})
 })

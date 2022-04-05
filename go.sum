@@ -979,11 +979,11 @@ github.com/openshift/api v0.0.0-20200901182017-7ac89ba6b971/go.mod h1:M3xexPhgM8
 github.com/openshift/api v0.0.0-20201019163320-c6a5ec25f267/go.mod h1:RDvBcRQMGLa3aNuDuejVBbTEQj/2i14NXdpOLqbNBvM=
 github.com/openshift/api v0.0.0-20210216211028-bb81baaf35cd/go.mod h1:aqU5Cq+kqKKPbDMqxo9FojgDeSpNJI7iuskjXjtojDg=
 github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible/go.mod h1:dh9o4Fs58gpFXGSYfnVxGR9PnV53I8TW84pQaJDdGiY=
-github.com/openshift/assisted-service v1.0.10-0.20220314012014-141adc8ae8f8 h1:wxHrISWWDeFkqvi2fv5QUVLAsoDkCsrDto8qQNjSWKQ=
-github.com/openshift/assisted-service v1.0.10-0.20220314012014-141adc8ae8f8/go.mod h1:TcA+nXQMitIEpO2rZzZbQ2hXZihrlehcmvfJzf6Njn8=
+github.com/openshift/assisted-service v1.0.10-0.20220403100847-e32775972980 h1:MFplUdf4KIwmylFfnp5aD7ndNKUFtEhoLqc5R/a42ZM=
+github.com/openshift/assisted-service v1.0.10-0.20220403100847-e32775972980/go.mod h1:TcA+nXQMitIEpO2rZzZbQ2hXZihrlehcmvfJzf6Njn8=
 github.com/openshift/assisted-service/api v0.0.0-20220314012014-141adc8ae8f8/go.mod h1:KXLo37GRdMYq/8PHRbvWPW9AEZjLI3NdFCySAwBJfAQ=
-github.com/openshift/assisted-service/models v0.0.0-20220314012014-141adc8ae8f8 h1:rteorPNQeRmURW2fy9RG48pl1Xkc9m9eEl2j53w38Fc=
-github.com/openshift/assisted-service/models v0.0.0-20220314012014-141adc8ae8f8/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
+github.com/openshift/assisted-service/models v0.0.0-20220320125840-bf8fcab0e181 h1:uXzdSyxfMVLaBYfD3GnVpUByCRL1aY2LwcTb1ejf9Wk=
+github.com/openshift/assisted-service/models v0.0.0-20220320125840-bf8fcab0e181/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
 github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f/go.mod h1:bTFE2qR9PJJQbLC6Gd74c3WXcgYnR1njVDgabCxXQNI=
 github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f/go.mod h1:/PSTQInIZmfuOmAp/pSgZAs4txs6T49woC0MYIa4QzE=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec h1:1nC/js8H8s+MBzgu20YDSuVw6IF9Ct5HOR1JLxv572Q=

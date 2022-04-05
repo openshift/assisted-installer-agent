@@ -36,8 +36,7 @@ func (a *toolRunnerFactory) Create(stepType models.StepType, command string, arg
 		if err != nil {
 			return nil, err
 		}
-
-		command, args = actionToRun.CreateCmd()
+		return actionToRun, nil
 	}
 	return NewPrivilegedExecuteRunner(command, args), nil
 }

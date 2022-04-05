@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/connectivity_check"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -15,16 +15,18 @@ func (a *connectivityCheck) Validate() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (a *connectivityCheck) CreateCmd() (string, []string) {
-	commandArgs := []string{
-		"run", "--privileged", "--net=host", "--rm", "--quiet",
-		"-v", "/var/log:/var/log",
-		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-		config.GlobalAgentConfig.AgentVersion,
-		"connectivity_check",
-	}
-	return podman, append(commandArgs, a.args...)
+func (a *connectivityCheck) Command() string {
+	return "connectivity_check"
+}
+
+func (a *connectivityCheck) Args() []string {
+	return a.args
+}
+
+func (a *connectivityCheck) Run() (stdout, stderr string, exitCode int) {
+	return connectivity_check.ConnectivityCheck("", a.args...)
 }

@@ -1,8 +1,9 @@
 package actions
 
 import (
-	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/domain_resolution"
 	"github.com/openshift/assisted-service/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type domainResolution struct {
@@ -15,19 +16,19 @@ func (a *domainResolution) Validate() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (a *domainResolution) CreateCmd() (string, []string) {
-	podmanRunCmd := []string{
-		"run", "--privileged", "--net=host", "--rm", "--quiet",
-		"-v", "/var/log:/var/log",
-		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-		config.GlobalAgentConfig.AgentVersion,
-		"domain_resolution",
-		"-request",
-		a.args[0],
-	}
+func (a *domainResolution) Run() (stdout, stderr string, exitCode int) {
+	return domain_resolution.Run(a.args[0],
+		&domain_resolution.DomainResolver{}, log.StandardLogger())
+}
 
-	return podman, podmanRunCmd
+func (a *domainResolution) Command() string {
+	return "domain_resolution"
+}
+
+func (a *domainResolution) Args() []string {
+	return a.args
 }

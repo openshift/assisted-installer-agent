@@ -1,8 +1,9 @@
 package actions
 
 import (
-	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/apivip_check"
 	"github.com/openshift/assisted-service/models"
+	"github.com/sirupsen/logrus"
 )
 
 type apiVipConnectivityCheck struct {
@@ -18,14 +19,14 @@ func (a *apiVipConnectivityCheck) Validate() error {
 	return nil
 }
 
-func (a *apiVipConnectivityCheck) CreateCmd() (string, []string) {
-	podmanRunCmd := []string{
-		"run", "--privileged", "--net=host", "--rm", "--quiet",
-		"-v", "/var/log:/var/log",
-		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-		config.GlobalAgentConfig.AgentVersion,
-		"apivip_check",
-	}
+func (a *apiVipConnectivityCheck) Run() (stdout, stderr string, exitCode int) {
+	return apivip_check.CheckAPIConnectivity(a.args[0], logrus.StandardLogger())
+}
 
-	return podman, append(podmanRunCmd, a.args...)
+func (a *apiVipConnectivityCheck) Command() string {
+	return "api_vip_connectivity_check"
+}
+
+func (a *apiVipConnectivityCheck) Args() []string {
+	return a.args
 }

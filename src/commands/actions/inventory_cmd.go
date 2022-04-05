@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-installer-agent/src/config"
 )
@@ -23,7 +25,15 @@ func (a *inventory) Validate() error {
 	return nil
 }
 
-func (a *inventory) CreateCmd() (string, []string) {
+func (a *inventory) Run() (stdout, stderr string, exitCode int) {
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
+}
+
+func (a *inventory) Command() string {
+	return "sh"
+}
+
+func (a *inventory) Args() []string {
 	// Copying mounts file, which is not available by podman's PID
 	// We incorporate the host's ID in the copied mtab file path to allow multiple agents
 	// to run on the same host during load testing easily without fighting over the same
@@ -56,5 +66,5 @@ func (a *inventory) CreateCmd() (string, []string) {
 		"inventory",
 	}, " ")
 
-	return "sh", []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
+	return []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
 }

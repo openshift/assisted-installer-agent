@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"github.com/go-openapi/runtime"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
@@ -12,8 +14,10 @@ import (
 const podman = "podman"
 
 type ActionInterface interface {
-	CreateCmd() (string, []string)
 	Validate() error
+	Run() (stdout, stderr string, exitCode int)
+	Command() string
+	Args() []string
 }
 
 type Action struct {
@@ -54,7 +58,7 @@ func New(stepType models.StepType, args []string) (*Action, error) {
 		models.StepTypeContainerImageAvailability: {&imageAvailability{args: args}},
 		models.StepTypeStopInstallation:           {&stopInstallation{args: args}},
 		models.StepTypeLogsGather:                 {&logsGather{args: args}},
-		models.StepTypeInstall:                    {&install{args: args}},
+		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs()}},
 	}
 
 	action, ok := stepActionMap[stepType]

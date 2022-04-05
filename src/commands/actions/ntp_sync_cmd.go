@@ -1,8 +1,12 @@
 package actions
 
 import (
+	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
+	"github.com/openshift/assisted-service/pkg/validations"
+	"github.com/pkg/errors"
 )
 
 type ntpSynchronizer struct {
@@ -10,15 +14,30 @@ type ntpSynchronizer struct {
 }
 
 func (a *ntpSynchronizer) Validate() error {
-	modelToValidate := models.NtpSynchronizationRequest{}
-	err := validateCommon("ntp synchronizer", 1, a.args, &modelToValidate)
+	var request models.NtpSynchronizationRequest
+	err := validateCommon("ntp synchronizer", 1, a.args, &request)
 	if err != nil {
 		return err
 	}
+
+	ntpSource := swag.StringValue(request.NtpSource)
+	if ntpSource != "" && !validations.ValidateAdditionalNTPSource(ntpSource) {
+		err = errors.Errorf("Invalid NTP source: %s", ntpSource)
+		return err
+	}
+
 	return nil
 }
 
-func (a *ntpSynchronizer) CreateCmd() (string, []string) {
+func (a *ntpSynchronizer) Run() (stdout, stderr string, exitCode int) {
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
+}
+
+func (a *ntpSynchronizer) Command() string {
+	return podman
+}
+
+func (a *ntpSynchronizer) Args() []string {
 	podmanRunCmd := []string{
 		"run", "--privileged", "--net=host", "--rm",
 		"-v", "/usr/bin/chronyc:/usr/bin/chronyc",
@@ -29,5 +48,5 @@ func (a *ntpSynchronizer) CreateCmd() (string, []string) {
 		"ntp_synchronizer",
 	}
 	podmanRunCmd = append(podmanRunCmd, a.args...)
-	return podman, podmanRunCmd
+	return podmanRunCmd
 }

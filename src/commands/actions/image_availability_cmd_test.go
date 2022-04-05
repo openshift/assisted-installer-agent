@@ -22,7 +22,8 @@ var _ = Describe("image availability", func() {
 		action, err := New(models.StepTypeContainerImageAvailability, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
-		command, args := action.CreateCmd()
+		args := action.Args()
+		command := action.Command()
 		Expect(command).To(Equal("sh"))
 		paths := []string{
 			"/var/log",

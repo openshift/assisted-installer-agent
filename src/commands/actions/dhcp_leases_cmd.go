@@ -1,8 +1,9 @@
 package actions
 
 import (
-	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/dhcp_lease_allocate"
 	"github.com/openshift/assisted-service/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type dhcpLeases struct {
@@ -18,15 +19,15 @@ func (a *dhcpLeases) Validate() error {
 	return nil
 }
 
-func (a *dhcpLeases) CreateCmd() (string, []string) {
-	podmanRunCmd := []string{
-		"run", "--privileged", "--net=host", "--rm", "--quiet",
-		"-v", "/var/log:/var/log",
-		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-		config.GlobalAgentConfig.AgentVersion,
-		"dhcp_lease_allocate",
-	}
+func (a *dhcpLeases) Run() (stdout, stderr string, exitCode int) {
+	leaser := dhcp_lease_allocate.NewLeaser(dhcp_lease_allocate.NewLeaserDependencies())
+	return leaser.LeaseAllocate(a.args[0], log.StandardLogger())
+}
 
-	podmanRunCmd = append(podmanRunCmd, a.args...)
-	return podman, podmanRunCmd
+func (a *dhcpLeases) Command() string {
+	return "dhcp_leases"
+}
+
+func (a *dhcpLeases) Args() []string {
+	return a.args
 }

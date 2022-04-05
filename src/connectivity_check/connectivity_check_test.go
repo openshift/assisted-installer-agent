@@ -1,4 +1,4 @@
-package commands
+package connectivity_check
 
 import (
 	"errors"
@@ -508,7 +508,7 @@ func (t testHostChecker) command(name string, args []string) ([]byte, error) {
 		for _, h := range t.host.Nics {
 			for _, ip := range h.IPAddresses {
 				if ip == args[len(args)-1] {
-					mac = h.Mac
+					mac = h.Mac.String()
 					break
 				}
 			}

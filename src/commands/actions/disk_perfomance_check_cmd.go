@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
@@ -27,7 +29,11 @@ func (a *diskPerfCheck) Validate() error {
 	return nil
 }
 
-func (a *diskPerfCheck) CreateCmd() (string, []string) {
+func (a *diskPerfCheck) Command() string {
+	return "sh"
+}
+
+func (a *diskPerfCheck) Args() []string {
 	arguments := []string{
 		"-c",
 		"id=`podman ps --quiet --filter \"name=disk_performance\"` ; " +
@@ -38,6 +44,9 @@ func (a *diskPerfCheck) CreateCmd() (string, []string) {
 			config.GlobalAgentConfig.AgentVersion + " disk_speed_check '" +
 			a.args[0] + "'",
 	}
+	return arguments
+}
 
-	return "sh", arguments
+func (a *diskPerfCheck) Run() (stdout, stderr string, exitCode int) {
+	return util.ExecutePrivileged(a.Command(), a.Args()...)
 }

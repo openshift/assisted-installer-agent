@@ -1,4 +1,4 @@
-package commands
+package connectivity_check
 
 import (
 	"encoding/json"
@@ -259,7 +259,7 @@ func l2CheckConnectivity(dataCh chan any, conCheck connectivityCmd) {
 	defer sendDone(dataCh)
 	allDstMACs := make([]string, len(conCheck.getHost().Nics))
 	for i, destNic := range conCheck.getHost().Nics {
-		allDstMACs[i] = destNic.Mac
+		allDstMACs[i] = destNic.Mac.String()
 	}
 	numAddresses := 0
 	for _, destNic := range conCheck.getHost().Nics {
@@ -269,7 +269,7 @@ func l2CheckConnectivity(dataCh chan any, conCheck connectivityCmd) {
 	wg.Add(numAddresses)
 	for _, destNic := range conCheck.getHost().Nics {
 		for _, address := range destNic.IPAddresses {
-			go l2CheckAddress(address, destNic.Mac, allDstMACs, dataCh, &wg, conCheck)
+			go l2CheckAddress(address, destNic.Mac.String(), allDstMACs, dataCh, &wg, conCheck)
 		}
 	}
 	wg.Wait()

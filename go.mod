@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/coreos/ignition/v2 v2.13.0
-	github.com/go-openapi/runtime v0.23.2
+	github.com/go-openapi/runtime v0.23.3
 	github.com/go-openapi/strfmt v0.21.2
 	github.com/go-openapi/swag v0.21.1
 	github.com/google/uuid v1.3.0

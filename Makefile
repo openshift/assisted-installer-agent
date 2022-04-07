@@ -20,7 +20,11 @@ DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
 
 all: build
 
-ci-lint:
+vendor-diff:
+	go mod vendor && git diff --exit-code vendor
+
+ci-lint: vendor-diff
+	${ROOT_DIR}/hack/sync-dockerfiles.sh
 	${ROOT_DIR}/hack/check-commits.sh
 
 lint: ci-lint

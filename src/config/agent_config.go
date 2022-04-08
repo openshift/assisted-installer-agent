@@ -10,7 +10,8 @@ import (
 
 const agentVersionTagDelimiter = ":"
 
-var GlobalAgentConfig struct {
+type AgentConfig struct {
+	DryRunConfig
 	ConnectivityConfig
 	IntervalSecs int
 	HostID       string
@@ -22,8 +23,8 @@ func printHelpAndExit() {
 	os.Exit(0)
 }
 
-func ProcessArgs() {
-	ret := &GlobalAgentConfig
+func ProcessArgs() *AgentConfig {
+	ret := &AgentConfig{}
 	flag.StringVar(&ret.TargetURL, "url", "", "The target URL, including a scheme and optionally a port (overrides the host and port arguments")
 	flag.StringVar(&ret.InfraEnvID, "infra-env-id", "", "The value of infra-env-id")
 	flag.StringVar(&ret.AgentVersion, "agent-version", "", "Discovery agent version")
@@ -57,4 +58,5 @@ func ProcessArgs() {
 	// Otherwise, we leave the agent-version str intact.
 	agentVersionTag := strings.Split(ret.AgentVersion, agentVersionTagDelimiter)
 	ret.DiscoveryAgentVersion = agentVersionTag[len(agentVersionTag)-1]
+	return ret
 }

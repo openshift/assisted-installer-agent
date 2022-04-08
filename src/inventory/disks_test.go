@@ -9,6 +9,7 @@ import (
 	"github.com/jaypipes/ghw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
@@ -364,7 +365,7 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		name := disk.Name
 		busPath := disk.BusPath
 
-		if !newDisks(dependencies).IsPhysicalDisk(disk) {
+		if !newDisks(&config.SubprocessConfig{}, dependencies).IsPhysicalDisk(disk) {
 			continue
 		}
 
@@ -419,13 +420,13 @@ var _ = Describe("Disks test", func() {
 
 	It("Execute error", func() {
 		mockFetchDisks(dependencies, fmt.Errorf("just an error"))
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
 
 	It("Empty", func() {
 		mockFetchDisks(dependencies, nil)
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
 
@@ -437,7 +438,7 @@ var _ = Describe("Disks test", func() {
 		mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
 		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, mdDisk, loopDisk)
 
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).Should(HaveLen(2))
 	})
 
@@ -473,7 +474,7 @@ var _ = Describe("Disks test", func() {
 		})
 
 		AfterEach(func() {
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Expect(ret).To(Equal(expectation))
 		})
 	})
@@ -481,7 +482,7 @@ var _ = Describe("Disks test", func() {
 	It("Multiple disks", func() {
 		blockInfo, expectedDisks := prepareDisksTest(dependencies, 2)
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -496,7 +497,7 @@ var _ = Describe("Disks test", func() {
 		}
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -543,7 +544,7 @@ var _ = Describe("Disks test", func() {
 		expectedDisks[2].IsInstallationMedia = false
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -561,7 +562,7 @@ var _ = Describe("Disks test", func() {
 		expectedDisks[1].DriveType = "HDD"
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -589,7 +590,7 @@ var _ = Describe("Disks test", func() {
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, true, "")
 		mockGetSMART(dependencies, path, "")
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -649,7 +650,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, false, "")
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockGetSMART(dependencies, path, "")
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{
 			{
 				ID:        "/dev/disk/by-path/pci-0000:3d:00.0-nvme-1",
@@ -683,7 +684,7 @@ var _ = Describe("Disks test", func() {
 		}
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal(expectation))
 	})
 
@@ -697,7 +698,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockGetSMART(dependencies, path, "")
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -731,7 +732,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockGetSMART(dependencies, path, "")
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil).Times(3)
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -760,7 +761,7 @@ var _ = Describe("Disks test", func() {
 		disk := createLVMDisk()
 		mockFetchDisks(dependencies, nil, disk)
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("LVM-Uq2y4MzaRpGE1XwVHSYDU5VAuHXXOA4gCkn9flYIZlS7UEfwlYPMyzHwx2R6VQoJ\n"), nil).Once()
-		ret := GetDisks(dependencies)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
@@ -769,7 +770,7 @@ var _ = Describe("Disks test", func() {
 		Specify("GetDisk does not affect from failures while fetching the disk WWN - Read dir failed", func() {
 			mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -796,7 +797,7 @@ var _ = Describe("Disks test", func() {
 			})
 
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -827,7 +828,7 @@ var _ = Describe("Disks test", func() {
 			})
 
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 			Ω(ret).Should(HaveLen(2))
 
@@ -846,7 +847,7 @@ var _ = Describe("Disks test", func() {
 			byidmapping["path"] = "id"
 			mockGetWWNCallForSuccess(dependencies, byidmapping)
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -857,7 +858,7 @@ var _ = Describe("Disks test", func() {
 		It("Should have the by-id information", func() {
 			mockGetWWNCallForSuccess(dependencies, createWWNResults())
 			mockAllForSuccess(dependencies, createSDADisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(Equal(sdaIdFullPath))
@@ -868,7 +869,7 @@ var _ = Describe("Disks test", func() {
 			delete(results, sdbPath)
 			mockGetWWNCallForSuccess(dependencies, results)
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -883,7 +884,7 @@ var _ = Describe("Disks test", func() {
 		It("Should have the by-id information for all the disks", func() {
 			mockGetWWNCallForSuccess(dependencies, createWWNResults())
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -901,7 +902,7 @@ var _ = Describe("Disks test", func() {
 			byidmapping["/dev/nvme0n1"] = nvmeById
 			mockGetWWNCallForSuccess(dependencies, byidmapping)
 			mockAllForSuccess(dependencies, createNVMEDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(Equal(filepath.Join(devDiskByIdLocation, nvmeById)))
@@ -910,7 +911,7 @@ var _ = Describe("Disks test", func() {
 		It("All the other fields are the same", func() {
 			mockGetWWNCallForSuccess(dependencies, createWWNResults())
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 			Expect(ret).Should(ConsistOf(createExpectedSDAModelDisk(), createExpectedSDBModelDisk()))
 		})
@@ -921,7 +922,7 @@ var _ = Describe("Disks test", func() {
 			mockAllForSuccess(dependencies, sdaDisk)
 			remockGetByPath(dependencies, sdaDisk.BusPath, "Error")
 
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(BeEmpty())
@@ -931,7 +932,7 @@ var _ = Describe("Disks test", func() {
 		It("Id equals to the disk by-path field", func() {
 			mockGetWWNCallForSuccess(dependencies, make(map[string]string))
 			mockAllForSuccess(dependencies, createSDADisk())
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(BeEmpty())
@@ -947,7 +948,7 @@ var _ = Describe("Disks test", func() {
 			path := fmt.Sprintf("/dev/disk/by-path/%s", sda.BusPath)
 			util.DeleteExpectedMethod(&dependencies.Mock, "Stat", path)
 			util.DeleteExpectedMethod(&dependencies.Mock, "Stat", path)
-			ret := GetDisks(dependencies)
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 			disk := ret[0]
 			Ω(disk.ByID).Should(BeEmpty())

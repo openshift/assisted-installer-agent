@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -13,7 +14,7 @@ var _ = Describe("stop", func() {
 	})
 
 	It("stop", func() {
-		action, err := New(models.StepTypeStopInstallation, []string{})
+		action, err := New(&config.AgentConfig{}, models.StepTypeStopInstallation, []string{})
 		Expect(err).NotTo(HaveOccurred())
 
 		args := action.Args()

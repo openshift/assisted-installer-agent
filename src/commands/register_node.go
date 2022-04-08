@@ -11,14 +11,14 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func RegisterHostWithRetry() *models.HostRegistrationResponseAO1NextStepRunnerCommand {
+func RegisterHostWithRetry(agentConfig *config.AgentConfig) *models.HostRegistrationResponseAO1NextStepRunnerCommand {
 
 	for {
-		s, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
+		s, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken)
 		if err != nil {
 			logrus.Fatalf("Failed to initialize connection: %e", err)
 		}
-		serviceAPI := newServiceAPI()
+		serviceAPI := newServiceAPI(agentConfig)
 
 		registerResult, err := serviceAPI.RegisterHost(s)
 		if err == nil {
@@ -36,7 +36,7 @@ func RegisterHostWithRetry() *models.HostRegistrationResponseAO1NextStepRunnerCo
 			// wait forever
 			select {}
 		case *installer.V2RegisterHostNotFound:
-			s.Logger().Warnf("Host will stop trying to register; infra-env id %s does not exist, or user is not authorized", config.GlobalAgentConfig.InfraEnvID)
+			s.Logger().Warnf("Host will stop trying to register; infra-env id %s does not exist, or user is not authorized", agentConfig.InfraEnvID)
 			// wait forever
 			select {}
 		case *installer.V2RegisterHostUnauthorized:
@@ -46,6 +46,6 @@ func RegisterHostWithRetry() *models.HostRegistrationResponseAO1NextStepRunnerCo
 		default:
 			s.Logger().Warnf("Error registering host: %s", getErrorMessage(err))
 		}
-		time.Sleep(time.Duration(config.GlobalAgentConfig.IntervalSecs) * time.Second)
+		time.Sleep(time.Duration(agentConfig.IntervalSecs) * time.Second)
 	}
 }

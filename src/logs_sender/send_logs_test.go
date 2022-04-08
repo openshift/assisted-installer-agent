@@ -26,21 +26,23 @@ var _ = Describe("logs sender", func() {
 	var logsSenderMock *MockLogsSender
 	var archivePath string
 	var logsTmpFilesDir string
+	var loggingConfig *config.LogsSenderConfig
 
 	BeforeEach(func() {
 		logsSenderMock = &MockLogsSender{}
 		archivePath = fmt.Sprintf("%s/logs.tar.gz", logsDir)
-		config.LogsSenderConfig.Tags = []string{"agent", "installer"}
-		config.LogsSenderConfig.Services = []string{"test", "test1"}
-		config.LogsSenderConfig.Since = "5 seconds ago"
-		config.LogsSenderConfig.TargetURL = "http://test.com"
-		config.LogsSenderConfig.PullSecretToken = "test"
-		config.LogsSenderConfig.ClusterID = uuid.New().String()
-		config.LogsSenderConfig.HostID = uuid.New().String()
-		config.LogsSenderConfig.InfraEnvID = uuid.New().String()
-		logsTmpFilesDir = path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
-		config.LogsSenderConfig.IsBootstrap = true
-		config.LogsSenderConfig.InstallerGatherlogging = true
+		loggingConfig = &config.LogsSenderConfig{}
+		loggingConfig.Tags = []string{"agent", "installer"}
+		loggingConfig.Services = []string{"test", "test1"}
+		loggingConfig.Since = "5 seconds ago"
+		loggingConfig.TargetURL = "http://test.com"
+		loggingConfig.PullSecretToken = "test"
+		loggingConfig.ClusterID = uuid.New().String()
+		loggingConfig.HostID = uuid.New().String()
+		loggingConfig.InfraEnvID = uuid.New().String()
+		logsTmpFilesDir = path.Join(logsDir, fmt.Sprintf("logs_host_%s", loggingConfig.HostID))
+		loggingConfig.IsBootstrap = true
+		loggingConfig.InstallerGatherlogging = true
 	})
 
 	folderSuccess := func() {
@@ -49,16 +51,16 @@ var _ = Describe("logs sender", func() {
 	}
 
 	executeOutputToFileSuccess := func(retVal int) {
-		for _, tag := range config.LogsSenderConfig.Tags {
+		for _, tag := range loggingConfig.Tags {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
 			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-				"--since", config.LogsSenderConfig.Since, "--all", fmt.Sprintf("TAG=%s", tag)).
+				"--since", loggingConfig.Since, "--all", fmt.Sprintf("TAG=%s", tag)).
 				Return("Dummy", retVal)
 		}
-		for _, service := range config.LogsSenderConfig.Services {
+		for _, service := range loggingConfig.Services {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
 			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-				"--since", config.LogsSenderConfig.Since, "--all", "-u", service).
+				"--since", loggingConfig.Since, "--all", "-u", service).
 				Return("Dummy", retVal)
 		}
 	}
@@ -70,19 +72,19 @@ var _ = Describe("logs sender", func() {
 	}
 
 	fileUploaderSuccess := func() {
-		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
-			config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken).
+		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(loggingConfig.ClusterID),
+			strfmt.UUID(loggingConfig.HostID), strfmt.UUID(loggingConfig.InfraEnvID),
+			loggingConfig.TargetURL, loggingConfig.PullSecretToken).
 			Return(nil)
 	}
 
 	reportLogProgressSuccess := func(completed bool) {
-		logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken,
+		logsSenderMock.On("LogProgressReport", strfmt.UUID(loggingConfig.InfraEnvID),
+			strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL, loggingConfig.PullSecretToken,
 			models.LogsStateRequested).Return(nil)
 		if completed {
-			logsSenderMock.On("LogProgressReport", strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
-				strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken,
+			logsSenderMock.On("LogProgressReport", strfmt.UUID(loggingConfig.InfraEnvID),
+				strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL, loggingConfig.PullSecretToken,
 				models.LogsStateCompleted).Return(nil)
 		}
 	}
@@ -103,7 +105,7 @@ var _ = Describe("logs sender", func() {
 		logsSenderMock.On("CreateFolderIfNotExist", logsTmpFilesDir).
 			Return(errors.Errorf("Dummy"))
 		reportLogProgressSuccess(false)
-		err, report := SendLogs(logsSenderMock)
+		err, report := SendLogs(loggingConfig, logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
 		Expect(report).To(Equal(""))
@@ -117,7 +119,7 @@ var _ = Describe("logs sender", func() {
 		fileUploaderSuccess()
 		reportLogProgressSuccess(true)
 		logsSenderMock.On("GatherInstallerLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
-		err, report := SendLogs(logsSenderMock)
+		err, report := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).To(Not(HaveOccurred()))
 		Expect(report).To(ContainSubstring("Dummy"))
 	})
@@ -130,19 +132,19 @@ var _ = Describe("logs sender", func() {
 		fileUploaderSuccess()
 		reportLogProgressSuccess(true)
 		logsSenderMock.On("GatherErrorLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
-		err, report := SendLogs(logsSenderMock)
+		err, report := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(report).To(ContainSubstring("Dummy"))
 	})
 
 	It("ExecuteOutputToFile failed", func() {
-		config.LogsSenderConfig.InstallerGatherlogging = false
+		loggingConfig.InstallerGatherlogging = false
 		folderSuccess()
 		archiveSuccess()
 		fileUploaderSuccess()
 		reportLogProgressSuccess(true)
 		executeOutputToFileSuccess(-1)
-		err, report := SendLogs(logsSenderMock)
+		err, report := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).To(Not(HaveOccurred()))
 		Expect(report).To(ContainSubstring("Dummy"))
 	})
@@ -156,7 +158,7 @@ var _ = Describe("logs sender", func() {
 			filepath.Base(logsTmpFilesDir)).
 			Return("Dummy", "Dummy", -1)
 		reportLogProgressSuccess(false)
-		err, _ := SendLogs(logsSenderMock)
+		err, _ := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -166,12 +168,12 @@ var _ = Describe("logs sender", func() {
 		gatherErrorLogsSuccess()
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
-		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-			strfmt.UUID(config.LogsSenderConfig.HostID), strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
-			config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken).
+		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(loggingConfig.ClusterID),
+			strfmt.UUID(loggingConfig.HostID), strfmt.UUID(loggingConfig.InfraEnvID),
+			loggingConfig.TargetURL, loggingConfig.PullSecretToken).
 			Return(errors.Errorf("Dummy"))
 		reportLogProgressSuccess(true)
-		err, _ := SendLogs(logsSenderMock)
+		err, _ := SendLogs(loggingConfig, logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
 	})
@@ -195,8 +197,8 @@ var _ = Describe("logs sender", func() {
 	It("full journal logs", func() {
 		outputPath := path.Join(logsTmpFilesDir, "journal.logs")
 		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-			"--since", config.LogsSenderConfig.Since, "--all").Return("Dummy", 0)
-		err := getJournalLogs(logsSenderMock, config.LogsSenderConfig.Since, outputPath, []string{})
+			"--since", loggingConfig.Since, "--all").Return("Dummy", 0)
+		err := getJournalLogs(logsSenderMock, loggingConfig.Since, outputPath, []string{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -208,7 +210,7 @@ var _ = Describe("logs sender", func() {
 		archiveSuccess()
 		fileUploaderSuccess()
 		reportLogProgressSuccess(true)
-		err, _ := SendLogs(logsSenderMock)
+		err, _ := SendLogs(loggingConfig, logsSenderMock)
 		fmt.Println(err)
 		Expect(err).NotTo(HaveOccurred())
 	})

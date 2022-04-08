@@ -35,17 +35,19 @@ type stepSession struct {
 	session.InventorySession
 	serviceAPI        serviceAPI
 	toolRunnerFactory ToolRunnerFactory
+	agentConfig       *config.AgentConfig
 }
 
-func newSession(toolRunnerFactory ToolRunnerFactory) *stepSession {
-	invSession, err := session.New(config.GlobalAgentConfig.TargetURL, config.GlobalAgentConfig.PullSecretToken)
+func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory) *stepSession {
+	invSession, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}
 	ret := stepSession{
 		InventorySession:  *invSession,
-		serviceAPI:        newServiceAPI(),
+		serviceAPI:        newServiceAPI(agentConfig),
 		toolRunnerFactory: toolRunnerFactory,
+		agentConfig:       agentConfig,
 	}
 	return &ret
 }
@@ -112,7 +114,7 @@ stderr:
 
 func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string, command string, args []string) models.StepReply {
 	s.Logger().Infof("Creating execution step for %s %s command <%s> args <%v>", stepType, stepID, command, args)
-	nextStepRunner, err := s.toolRunnerFactory.Create(stepType, command, args)
+	nextStepRunner, err := s.toolRunnerFactory.Create(s.agentConfig, stepType, command, args)
 	if err != nil {
 		s.Logger().WithError(err).Errorf("Unable to create runner for step <%s>, command <%s> args <%v>", stepID, command, args)
 		return s.createStepReply(stepType, stepID, "", err.Error(), int(-1))
@@ -148,7 +150,7 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 // This is in order to detect and report known problems otherwise manifest as confusing error messages or stuck the whole system in the steps themselves.
 // One common example of that is virtual media disconnection.
 func (s *stepSession) diagnoseSystem() (errorCode, error) {
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if s.agentConfig.DryRunEnabled {
 		// diagnoseSystem is not necessary in dry mode
 		return Undetected, nil
 	}
@@ -223,7 +225,7 @@ func (s *stepSession) processSingleSession() (int64, string) {
 		invalidateCache()
 		switch err.(type) {
 		case *installer.V2GetNextStepsNotFound:
-			s.Logger().WithError(err).Errorf("Infra-env %s was not found in inventory or user is not authorized, going to sleep forever", config.GlobalAgentConfig.InfraEnvID)
+			s.Logger().WithError(err).Errorf("Infra-env %s was not found in inventory or user is not authorized, going to sleep forever", s.agentConfig.InfraEnvID)
 			return -1, ""
 		case *installer.V2GetNextStepsUnauthorized:
 			s.Logger().WithError(err).Errorf("User is not authenticated to perform the operation, going to sleep forever")
@@ -234,13 +236,13 @@ func (s *stepSession) processSingleSession() (int64, string) {
 		default:
 			s.Logger().Warnf("Could not query next steps: %s", getErrorMessage(err))
 		}
-		return int64(config.GlobalAgentConfig.IntervalSecs), ""
+		return int64(s.agentConfig.IntervalSecs), ""
 	}
 	s.handleSteps(result)
 	return result.NextInstructionSeconds, *result.PostStepAction
 }
 
-func ProcessSteps(ctx context.Context, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup) {
+func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var nextRunIn int64
@@ -249,7 +251,7 @@ func ProcessSteps(ctx context.Context, toolRunnerFactory ToolRunnerFactory, wg *
 		case <-ctx.Done():
 			return
 		default:
-			s := newSession(toolRunnerFactory)
+			s := newSession(agentConfig, toolRunnerFactory)
 			nextRunIn, afterStep = s.processSingleSession()
 			if nextRunIn == -1 {
 				// sleep forever

@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -16,7 +17,7 @@ var _ = Describe("free addresses", func() {
 	})
 
 	It("free addresses", func() {
-		action, err := New(models.StepTypeFreeNetworkAddresses, []string{param})
+		action, err := New(&config.AgentConfig{}, models.StepTypeFreeNetworkAddresses, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
 		args := action.Args()
@@ -35,7 +36,7 @@ var _ = Describe("free addresses", func() {
 
 		By("Bad model object")
 		param = "[\"192.168.127.0/24\",\"rm -f\"]"
-		_, err := New(models.StepTypeFreeNetworkAddresses, []string{param})
+		_, err := New(&config.AgentConfig{}, models.StepTypeFreeNetworkAddresses, []string{param})
 		Expect(err).To(HaveOccurred())
 
 	})

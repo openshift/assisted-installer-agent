@@ -33,6 +33,7 @@ type IDependencies interface {
 type Dependencies struct {
 	NetlinkRouteFinder
 	GhwChrootRoot string
+	dryRunConfig  *config.DryRunConfig
 }
 
 func (d *Dependencies) GetGhwChrootRoot() string {
@@ -52,8 +53,8 @@ func (d *Dependencies) Stat(fname string) (os.FileInfo, error) {
 }
 
 func (d *Dependencies) Hostname() (string, error) {
-	if config.GlobalDryRunConfig.DryRunEnabled {
-		return config.GlobalDryRunConfig.ForcedHostname, nil
+	if d.dryRunConfig.DryRunEnabled {
+		return d.dryRunConfig.ForcedHostname, nil
 	}
 
 	return os.Hostname()
@@ -99,8 +100,9 @@ func (d *Dependencies) Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error) 
 	return ghw.Memory(opts...)
 }
 
-func NewDependencies(ghwChrootRoot string) IDependencies {
+func NewDependencies(dryRunConfig *config.DryRunConfig, ghwChrootRoot string) IDependencies {
 	return &Dependencies{
 		GhwChrootRoot: ghwChrootRoot,
+		dryRunConfig:  dryRunConfig,
 	}
 }

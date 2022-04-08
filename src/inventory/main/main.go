@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	config.ProcessDryRunArgs()
-	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	util.SetLogging("inventory", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
-	fmt.Print(string(inventory.CreateInventoryInfo()))
+	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
+	util.SetLogging("inventory", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
+	fmt.Print(string(inventory.CreateInventoryInfo(subprocessConfig)))
 }

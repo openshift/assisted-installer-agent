@@ -18,9 +18,7 @@ type DryRunConfig struct {
 	FakeRebootMarkerPath string `envconfig:"DRY_FAKE_REBOOT_MARKER_PATH"`
 }
 
-var GlobalDryRunConfig DryRunConfig
-
-var DefaultDryRunConfig DryRunConfig = DryRunConfig{
+var DefaultDryRunConfig = DryRunConfig{
 	DryRunEnabled:        false,
 	ForcedHostID:         "",
 	ForcedHostIPv4:       "",
@@ -29,18 +27,18 @@ var DefaultDryRunConfig DryRunConfig = DryRunConfig{
 	FakeRebootMarkerPath: "",
 }
 
-func ProcessDryRunArgs() {
+func ProcessDryRunArgs(dryRunConfig *DryRunConfig) {
 	err := envconfig.Process("dryconfig", &DefaultDryRunConfig)
 	if err != nil {
 		fmt.Printf("envconfig error: %v", err)
 		os.Exit(1)
 	}
 
-	flag.BoolVar(&GlobalDryRunConfig.DryRunEnabled, "dry-run", DefaultDryRunConfig.DryRunEnabled, "Dry run avoids/fakes certain actions while communicating with the service")
-	flag.StringVar(&GlobalDryRunConfig.ForcedHostID, "force-id", DefaultDryRunConfig.ForcedHostID, "The fake host ID to give to the host")
-	flag.StringVar(&GlobalDryRunConfig.ForcedMacAddress, "force-mac", DefaultDryRunConfig.ForcedMacAddress, "The fake mac address to give to the first network interface")
-	flag.StringVar(&GlobalDryRunConfig.ForcedHostname, "force-hostname", DefaultDryRunConfig.ForcedHostname, "The fake hostname to give to this host")
-	flag.StringVar(&GlobalDryRunConfig.ForcedHostIPv4, "forced-ipv4", DefaultDryRunConfig.ForcedHostIPv4, "The fake ip address to give to the host's network interface")
-	flag.StringVar(&GlobalDryRunConfig.FakeRebootMarkerPath, "fake-reboot-marker-path", DefaultDryRunConfig.FakeRebootMarkerPath, "A path whose existence indicates a fake reboot happened")
+	flag.BoolVar(&dryRunConfig.DryRunEnabled, "dry-run", DefaultDryRunConfig.DryRunEnabled, "Dry run avoids/fakes certain actions while communicating with the service")
+	flag.StringVar(&dryRunConfig.ForcedHostID, "force-id", DefaultDryRunConfig.ForcedHostID, "The fake host ID to give to the host")
+	flag.StringVar(&dryRunConfig.ForcedMacAddress, "force-mac", DefaultDryRunConfig.ForcedMacAddress, "The fake mac address to give to the first network interface")
+	flag.StringVar(&dryRunConfig.ForcedHostname, "force-hostname", DefaultDryRunConfig.ForcedHostname, "The fake hostname to give to this host")
+	flag.StringVar(&dryRunConfig.ForcedHostIPv4, "forced-ipv4", DefaultDryRunConfig.ForcedHostIPv4, "The fake ip address to give to the host's network interface")
+	flag.StringVar(&dryRunConfig.FakeRebootMarkerPath, "fake-reboot-marker-path", DefaultDryRunConfig.FakeRebootMarkerPath, "A path whose existence indicates a fake reboot happened")
 	flag.Parse()
 }

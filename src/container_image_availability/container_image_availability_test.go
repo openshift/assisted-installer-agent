@@ -10,6 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
@@ -26,12 +27,13 @@ var _ = Describe("Image availability", func() {
 	var (
 		imageAvailabilityDependencies *MockImageAvailabilityDependencies
 		log                           *logrus.Logger
+		subprocessConfig              *config.SubprocessConfig
 	)
 
 	BeforeEach(func() {
 		imageAvailabilityDependencies = &MockImageAvailabilityDependencies{}
 		log = logrus.New()
-
+		subprocessConfig = &config.SubprocessConfig{}
 	})
 
 	AfterEach(func() {
@@ -144,7 +146,7 @@ var _ = Describe("Image availability", func() {
 			imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(defaultTestImage)...).Return("", "", 0).Once()
 			imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(defaultTestImage)...).Return("", "", 0).Once()
 			imageAvailabilityDependencies.On("ExecutePrivileged", generateInspectCommand(defaultTestImage)...).Return(strconv.FormatInt(defaultTestImageSizeInBytes, 10), "", 0).Once()
-			output := handleImageAvailability(imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
+			output := handleImageAvailability(subprocessConfig, imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
 
 			Expect(output.Name).Should(Equal(defaultTestImage))
 			checkImageAvailability(output, true, true)
@@ -153,7 +155,7 @@ var _ = Describe("Image availability", func() {
 		It("image_already_exist", func() {
 			imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(defaultTestImage)...).Return("123", "", 0).Once()
 			imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(defaultTestImage)...).Return("", "", 0).Once()
-			output := handleImageAvailability(imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
+			output := handleImageAvailability(subprocessConfig, imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
 
 			checkImageAvailability(output, true, false)
 		})
@@ -161,7 +163,7 @@ var _ = Describe("Image availability", func() {
 		It("failed_to_pull", func() {
 			imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(defaultTestImage)...).Return("", "", 0).Once()
 			imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(defaultTestImage)...).Return("", "", 1).Once()
-			output := handleImageAvailability(imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
+			output := handleImageAvailability(subprocessConfig, imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
 
 			Expect(output.Name).Should(Equal(defaultTestImage))
 			checkImageAvailability(output, false, true)
@@ -172,7 +174,7 @@ var _ = Describe("Image availability", func() {
 			imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(defaultTestImage)...).Return("", "", util.TimeoutExitCode).Run(func(args mock.Arguments) {
 				time.Sleep(defaultTestPullTimeoutSeconds * time.Second)
 			}).Once()
-			output := handleImageAvailability(imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
+			output := handleImageAvailability(subprocessConfig, imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
 
 			Expect(output.Name).Should(Equal(defaultTestImage))
 			checkImageAvailability(output, false, true)
@@ -182,7 +184,7 @@ var _ = Describe("Image availability", func() {
 			imageAvailabilityDependencies.On("ExecutePrivileged", generateGetCommand(defaultTestImage)...).Return("", "", 0).Once()
 			imageAvailabilityDependencies.On("ExecutePrivileged", generatePullCommand(defaultTestImage)...).Return("", "", 0).Once()
 			imageAvailabilityDependencies.On("ExecutePrivileged", generateInspectCommand(defaultTestImage)...).Return("", "", 1).Once()
-			output := handleImageAvailability(imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
+			output := handleImageAvailability(subprocessConfig, imageAvailabilityDependencies, log, defaultTestPullTimeoutSeconds, defaultTestImage)
 
 			Expect(output.Name).Should(Equal(defaultTestImage))
 			checkImageAvailability(output, false, true)
@@ -217,7 +219,7 @@ var _ = Describe("Image availability", func() {
 				imageAvailabilityDependencies.On("ExecutePrivileged", generateInspectCommand(image)...).Return(strconv.FormatInt(defaultTestImageSizeInBytes, 10), "", 0).Once()
 			}
 
-			stdout, stderr, exitCode := Run(string(b), imageAvailabilityDependencies, log)
+			stdout, stderr, exitCode := Run(subprocessConfig, string(b), imageAvailabilityDependencies, log)
 
 			Expect(exitCode).Should(BeZero())
 			Expect(stderr).Should(BeEmpty())

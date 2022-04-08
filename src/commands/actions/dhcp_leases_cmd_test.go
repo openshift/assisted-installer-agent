@@ -3,6 +3,7 @@ package actions
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -14,7 +15,7 @@ var _ = Describe("dhcp leases", func() {
 	})
 
 	It("dhcp leases", func() {
-		_, err := New(models.StepTypeDhcpLeaseAllocate, []string{param})
+		_, err := New(&config.AgentConfig{}, models.StepTypeDhcpLeaseAllocate, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 	})
 

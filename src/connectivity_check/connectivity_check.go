@@ -18,9 +18,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func getOutgoingNics() []string {
+func getOutgoingNics(dryRunConfig *config.DryRunConfig) []string {
 	ret := make([]string, 0)
-	d := util.NewDependencies("")
+	d := util.NewDependencies(dryRunConfig, "")
 	interfaces, err := d.Interfaces()
 	if err != nil {
 		log.WithError(err).Warnf("Get outgoing nics")
@@ -66,13 +66,17 @@ func sendDone(ch chan any) {
 
 const pingCount string = "10"
 
-func l3CheckAddressOnNic(address string, outgoingNic string, innerChan chan *models.L3Connectivity, conCheck connectivityCmd) {
+type connectivity struct {
+	dryRunConfig *config.DryRunConfig
+}
+
+func (c *connectivity) l3CheckAddressOnNic(address string, outgoingNic string, innerChan chan *models.L3Connectivity, conCheck connectivityCmd) {
 	ret := &models.L3Connectivity{
 		OutgoingNic:     outgoingNic,
 		RemoteIPAddress: address,
 	}
 
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if c.dryRunConfig.DryRunEnabled {
 		ret.Successful = true
 		ret.PacketLossPercentage = 0.0
 		ret.AverageRTTMs = 0.0
@@ -128,22 +132,22 @@ func parsePingCmd(conn *models.L3Connectivity, cmdOutput string) error {
 	return nil
 }
 
-func l3CheckConnectivity(addresses []string, dataCh chan any, conCheck connectivityCmd) {
+func (c *connectivity) l3CheckConnectivity(addresses []string, dataCh chan any, conCheck connectivityCmd) {
 
 	defer sendDone(dataCh)
 	wg := sync.WaitGroup{}
 	wg.Add(len(addresses))
 	for _, address := range addresses {
-		go l3CheckAddress(address, conCheck.getOutgoingNICs(), dataCh, &wg, conCheck)
+		go c.l3CheckAddress(address, conCheck.getOutgoingNICs(), dataCh, &wg, conCheck)
 	}
 	wg.Wait()
 }
 
-func l3CheckAddress(address string, outgoingNics []string, dataCh chan any, wg *sync.WaitGroup, conCheck connectivityCmd) {
+func (c *connectivity) l3CheckAddress(address string, outgoingNics []string, dataCh chan any, wg *sync.WaitGroup, conCheck connectivityCmd) {
 	defer wg.Done()
 	innerChan := make(chan *models.L3Connectivity)
 	for _, nic := range outgoingNics {
-		go l3CheckAddressOnNic(address, nic, innerChan, conCheck)
+		go c.l3CheckAddressOnNic(address, nic, innerChan, conCheck)
 	}
 	successful := false
 	for i := 0; i != len(outgoingNics); i++ {
@@ -170,24 +174,24 @@ func macInDstMacs(mac string, allDstMACs []string) bool {
 	return false
 }
 
-func l2CheckAddressOnNic(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd) {
+func (c *connectivity) l2CheckAddressOnNic(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd) {
 	defer sendDone(dataCh)
 	if util.IsIPv4Addr(dstAddr) {
-		l2IPv4Cmd(dstAddr, dstMAC, allDstMACs, srcNIC, dataCh, conCheck)
+		c.l2IPv4Cmd(dstAddr, dstMAC, allDstMACs, srcNIC, dataCh, conCheck)
 	} else {
-		analyzeNmap(dstAddr, dstMAC, allDstMACs, srcNIC, dataCh, conCheck)
+		analyzeNmap(dstAddr, dstMAC, allDstMACs, srcNIC, dataCh, conCheck, c.dryRunConfig.DryRunEnabled)
 	}
 
 }
 
-func analyzeNmap(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd) {
+func analyzeNmap(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd, dryRunEnabled bool) {
 
 	ret := &models.L2Connectivity{
 		OutgoingNic:     srcNIC,
 		RemoteIPAddress: dstAddr,
 	}
 
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if dryRunEnabled {
 		ret.Successful = true
 		dataCh <- ret
 		return
@@ -231,11 +235,11 @@ func analyzeNmap(dstAddr string, dstMAC string, allDstMACs []string, srcNIC stri
 	dataCh <- ret
 }
 
-func l2CheckAddress(dstAddr string, dstMAC string, allDstMACs []string, dataCh chan any, wg *sync.WaitGroup, conCheck connectivityCmd) {
+func (c *connectivity) l2CheckAddress(dstAddr string, dstMAC string, allDstMACs []string, dataCh chan any, wg *sync.WaitGroup, conCheck connectivityCmd) {
 	defer wg.Done()
 	innerChan := make(chan any)
 	for _, srcNIC := range conCheck.getOutgoingNICs() {
-		go l2CheckAddressOnNic(dstAddr, dstMAC, allDstMACs, srcNIC, innerChan, conCheck)
+		go c.l2CheckAddressOnNic(dstAddr, dstMAC, allDstMACs, srcNIC, innerChan, conCheck)
 	}
 	received := false
 	for numDone := 0; numDone != len(conCheck.getOutgoingNICs()); {
@@ -255,7 +259,7 @@ func l2CheckAddress(dstAddr string, dstMAC string, allDstMACs []string, dataCh c
 	}
 }
 
-func l2CheckConnectivity(dataCh chan any, conCheck connectivityCmd) {
+func (c *connectivity) l2CheckConnectivity(dataCh chan any, conCheck connectivityCmd) {
 	defer sendDone(dataCh)
 	allDstMACs := make([]string, len(conCheck.getHost().Nics))
 	for i, destNic := range conCheck.getHost().Nics {
@@ -269,19 +273,19 @@ func l2CheckConnectivity(dataCh chan any, conCheck connectivityCmd) {
 	wg.Add(numAddresses)
 	for _, destNic := range conCheck.getHost().Nics {
 		for _, address := range destNic.IPAddresses {
-			go l2CheckAddress(address, destNic.Mac.String(), allDstMACs, dataCh, &wg, conCheck)
+			go c.l2CheckAddress(address, destNic.Mac.String(), allDstMACs, dataCh, &wg, conCheck)
 		}
 	}
 	wg.Wait()
 }
 
-func l2IPv4Cmd(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd) {
+func (c *connectivity) l2IPv4Cmd(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd) {
 	ret := &models.L2Connectivity{
 		OutgoingNic:     srcNIC,
 		RemoteIPAddress: dstAddr,
 	}
 
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if c.dryRunConfig.DryRunEnabled {
 		ret.Successful = true
 		dataCh <- ret
 		return
@@ -328,7 +332,7 @@ func l2IPv4Cmd(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string
 	}
 }
 
-func checkHost(conCheck connectivityCmd, outCh chan *models.ConnectivityRemoteHost) {
+func (c *connectivity) checkHost(conCheck connectivityCmd, outCh chan *models.ConnectivityRemoteHost) {
 	ret := &models.ConnectivityRemoteHost{
 		HostID:         conCheck.getHost().HostID,
 		L2Connectivity: []*models.L2Connectivity{},
@@ -336,8 +340,8 @@ func checkHost(conCheck connectivityCmd, outCh chan *models.ConnectivityRemoteHo
 	}
 	addresses := getOutgoingAddresses(conCheck.getHost().Nics)
 	dataCh := make(chan any)
-	go l3CheckConnectivity(addresses, dataCh, conCheck)
-	go l2CheckConnectivity(dataCh, conCheck)
+	go c.l3CheckConnectivity(addresses, dataCh, conCheck)
+	go c.l2CheckConnectivity(dataCh, conCheck)
 	for numDone := 0; numDone != 2; {
 		v := <-dataCh
 		switch value := v.(type) {
@@ -375,7 +379,7 @@ func canonizeResult(connectivityReport *models.ConnectivityReport) {
 	})
 }
 
-func ConnectivityCheck(_ string, args ...string) (stdout string, stderr string, exitCode int) {
+func (c *connectivity) connectivityCheck(_ string, args ...string) (stdout string, stderr string, exitCode int) {
 	if len(args) != 1 {
 		return "", "Expecting exactly 1 argument for connectivity command", -1
 	}
@@ -385,11 +389,11 @@ func ConnectivityCheck(_ string, args ...string) (stdout string, stderr string, 
 		log.Warnf("Error unmarshalling json %s: %s", args[0], err.Error())
 		return "", err.Error(), -1
 	}
-	nics := getOutgoingNics()
+	nics := getOutgoingNics(c.dryRunConfig)
 	hostChan := make(chan *models.ConnectivityRemoteHost)
 	for _, host := range params {
 		h := hostChecker{outgoingNICS: nics, host: host}
-		go checkHost(h, hostChan)
+		go c.checkHost(h, hostChan)
 	}
 	ret := models.ConnectivityReport{RemoteHosts: []*models.ConnectivityRemoteHost{}}
 	for i := 0; i != len(params); i++ {
@@ -402,6 +406,13 @@ func ConnectivityCheck(_ string, args ...string) (stdout string, stderr string, 
 		return "", err.Error(), -1
 	}
 	return string(bytes), "", 0
+}
+
+func ConnectivityCheck(dryRunConfig *config.DryRunConfig, command string, args ...string) (string, string, int) {
+	c := &connectivity{
+		dryRunConfig: dryRunConfig,
+	}
+	return c.connectivityCheck(command, args...)
 }
 
 type hostChecker struct {

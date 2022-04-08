@@ -3,6 +3,7 @@ package actions
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -20,7 +21,7 @@ var _ = Describe("connectivity check", func() {
 	})
 
 	It("connectivity cmd", func() {
-		_, err := New(models.StepTypeConnectivityCheck, []string{param})
+		_, err := New(&config.AgentConfig{}, models.StepTypeConnectivityCheck, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 	})
 

@@ -12,7 +12,8 @@ import (
 )
 
 type diskPerfCheck struct {
-	args []string
+	args        []string
+	agentConfig *config.AgentConfig
 }
 
 func (a *diskPerfCheck) Validate() error {
@@ -41,7 +42,7 @@ func (a *diskPerfCheck) Args() []string {
 			fmt.Sprintf("timeout %s ", a.args[1]) +
 			"podman run --privileged --rm --quiet -v /dev:/dev:rw -v /var/log:/var/log -v /run/systemd/journal/socket:/run/systemd/journal/socket " +
 			"--name disk_performance " +
-			config.GlobalAgentConfig.AgentVersion + " disk_speed_check '" +
+			a.agentConfig.AgentVersion + " disk_speed_check '" +
 			a.args[0] + "'",
 	}
 	return arguments

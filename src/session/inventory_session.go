@@ -106,7 +106,7 @@ func HTMLConsumer() runtime.Consumer {
 	})
 }
 
-func createBmInventoryClient(inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, error) {
+func createBmInventoryClient(agentConfig *config.AgentConfig, inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, error) {
 	clientConfig := client.Config{}
 	var err error
 	clientConfig.URL, err = createUrl(inventoryUrl)
@@ -115,10 +115,10 @@ func createBmInventoryClient(inventoryUrl string, pullSecretToken string) (*clie
 	}
 
 	var certs *x509.CertPool
-	if config.GlobalAgentConfig.InsecureConnection {
+	if agentConfig.InsecureConnection {
 		logrus.Warn("Certificate verification is turned off. This is not recommended in production environments")
 	} else {
-		certs, err = readCACertificate()
+		certs, err = readCACertificate(agentConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +136,7 @@ func createBmInventoryClient(inventoryUrl string, pullSecretToken string) (*clie
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: config.GlobalAgentConfig.InsecureConnection,
+			InsecureSkipVerify: agentConfig.InsecureConnection,
 			RootCAs:            certs,
 		},
 	})
@@ -148,28 +148,28 @@ func createBmInventoryClient(inventoryUrl string, pullSecretToken string) (*clie
 	return bmInventory, nil
 }
 
-func readCACertificate() (*x509.CertPool, error) {
+func readCACertificate(agentConfig *config.AgentConfig) (*x509.CertPool, error) {
 
-	if config.GlobalAgentConfig.CACertificatePath == "" {
+	if agentConfig.CACertificatePath == "" {
 		return nil, nil
 	}
 
-	caData, err := ioutil.ReadFile(config.GlobalAgentConfig.CACertificatePath)
+	caData, err := ioutil.ReadFile(agentConfig.CACertificatePath)
 	if err != nil {
 		return nil, err
 	}
 
 	pool := x509.NewCertPool()
 	if !pool.AppendCertsFromPEM(caData) {
-		return nil, fmt.Errorf("failed to load certificate: %s", config.GlobalAgentConfig.CACertificatePath)
+		return nil, fmt.Errorf("failed to load certificate: %s", agentConfig.CACertificatePath)
 	}
 
 	return pool, nil
 }
 
-func New(inventoryUrl string, pullSecretToken string) (*InventorySession, error) {
+func New(agentConfig *config.AgentConfig, inventoryUrl string, pullSecretToken string) (*InventorySession, error) {
 	id := requestid.NewID()
-	inventory, err := createBmInventoryClient(inventoryUrl, pullSecretToken)
+	inventory, err := createBmInventoryClient(agentConfig, inventoryUrl, pullSecretToken)
 	if err != nil {
 		return nil, err
 	}

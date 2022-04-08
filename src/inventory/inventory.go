@@ -9,14 +9,14 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func ReadInventory(c *Options) *models.Inventory {
-	d := util.NewDependencies(c.GhwChrootRoot)
+func ReadInventory(subprocessConfig *config.SubprocessConfig, c *Options) *models.Inventory {
+	d := util.NewDependencies(&subprocessConfig.DryRunConfig, c.GhwChrootRoot)
 	ret := models.Inventory{
-		BmcAddress:   GetBmcAddress(d),
-		BmcV6address: GetBmcV6Address(d),
+		BmcAddress:   GetBmcAddress(subprocessConfig, d),
+		BmcV6address: GetBmcV6Address(subprocessConfig, d),
 		Boot:         GetBoot(d),
 		CPU:          GetCPU(d),
-		Disks:        GetDisks(d),
+		Disks:        GetDisks(subprocessConfig, d),
 		Gpus:         GetGPUs(d),
 		Hostname:     GetHostname(d),
 		Interfaces:   GetInterfaces(d),
@@ -29,11 +29,11 @@ func ReadInventory(c *Options) *models.Inventory {
 	return &ret
 }
 
-func CreateInventoryInfo() []byte {
-	in := ReadInventory(&Options{GhwChrootRoot: "/host"})
+func CreateInventoryInfo(subprocessConfig *config.SubprocessConfig) []byte {
+	in := ReadInventory(subprocessConfig, &Options{GhwChrootRoot: "/host"})
 
-	if config.GlobalDryRunConfig.DryRunEnabled {
-		applyDryRunConfig(in)
+	if subprocessConfig.DryRunEnabled {
+		applyDryRunConfig(subprocessConfig, in)
 	}
 
 	b, _ := json.Marshal(&in)

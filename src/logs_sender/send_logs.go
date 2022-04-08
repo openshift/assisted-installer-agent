@@ -50,17 +50,19 @@ type LogsSender interface {
 }
 
 type LogsSenderExecuter struct {
-	client       *client.AssistedInstall
-	ctx          context.Context
-	agentVersion string
+	client        *client.AssistedInstall
+	ctx           context.Context
+	agentVersion  string
+	loggingConfig *config.LogsSenderConfig
 }
 
-func NewLogsSenderExecuter(inventoryUrl string, pullSecretToken string, agentVersion string) *LogsSenderExecuter {
-	client, ctx := getClient(inventoryUrl, pullSecretToken)
+func NewLogsSenderExecuter(loggingConfig *config.LogsSenderConfig, inventoryUrl string, pullSecretToken string, agentVersion string) *LogsSenderExecuter {
+	client, ctx := getClient(loggingConfig, inventoryUrl, pullSecretToken)
 	return &LogsSenderExecuter{
-		client:       client,
-		ctx:          ctx,
-		agentVersion: agentVersion,
+		client:        client,
+		ctx:           ctx,
+		agentVersion:  agentVersion,
+		loggingConfig: loggingConfig,
 	}
 }
 
@@ -84,8 +86,8 @@ func (e *LogsSenderExecuter) CreateFolderIfNotExist(folder string) error {
 	return nil
 }
 
-func getClient(inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, context.Context) {
-	invSession, err := session.New(inventoryUrl, pullSecretToken)
+func getClient(loggingConfig *config.LogsSenderConfig, inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, context.Context) {
+	invSession, err := session.New(&loggingConfig.AgentConfig, inventoryUrl, pullSecretToken)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}
@@ -129,7 +131,7 @@ func (e *LogsSenderExecuter) GatherInstallerLogs(targetDir string) error {
 	var result, err error
 
 	gatherID := time.Now().Format("20060102150405")
-	mastersIPs := strings.Split(config.LogsSenderConfig.MastersIPs, ",")
+	mastersIPs := strings.Split(e.loggingConfig.MastersIPs, ",")
 	//Create ovs logs where installer-gather expects to find its input.
 	//Then, installer-gather.sh runa as overlay and finally bundles
 	//all logs together. Unlike installer-gather.sh, ovs-installer-gather.sh
@@ -184,7 +186,7 @@ func (e *LogsSenderExecuter) GatherErrorLogs(targetDir string) error {
 
 	// Write the entire output of journal
 	outputFile = path.Join(targetDir, "journal.logs")
-	if err := getJournalLogs(e, config.LogsSenderConfig.Since, outputFile, []string{}); err != nil {
+	if err := getJournalLogs(e, e.loggingConfig.Since, outputFile, []string{}); err != nil {
 		result = multierror.Append(result, err)
 	}
 
@@ -290,22 +292,22 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 	return nil
 }
 
-func SendLogs(l LogsSender) (error, string) {
+func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, string) {
 	var result error
 
-	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
-		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
-		config.LogsSenderConfig.PullSecretToken, models.LogsStateRequested); lerr != nil {
+	if lerr := l.LogProgressReport(strfmt.UUID(loggingConfig.InfraEnvID),
+		strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL,
+		loggingConfig.PullSecretToken, models.LogsStateRequested); lerr != nil {
 		log.WithError(lerr).Error("failed to send log progress requested to service")
 	}
 
 	log.Infof("Start gathering journalctl logs with tags %s, services %s and installer-gather",
-		config.LogsSenderConfig.Tags, config.LogsSenderConfig.Services)
+		loggingConfig.Tags, loggingConfig.Services)
 	archivePath := fmt.Sprintf("%s/logs.tar.gz", logsDir)
-	logsTmpFilesDir := path.Join(logsDir, fmt.Sprintf("logs_host_%s", config.LogsSenderConfig.HostID))
+	logsTmpFilesDir := path.Join(logsDir, fmt.Sprintf("logs_host_%s", loggingConfig.HostID))
 
 	defer func() {
-		if config.LogsSenderConfig.CleanWhenDone {
+		if loggingConfig.CleanWhenDone {
 			_ = os.RemoveAll(logsTmpFilesDir)
 			_ = os.Remove(archivePath)
 		}
@@ -315,8 +317,8 @@ func SendLogs(l LogsSender) (error, string) {
 		return err, ""
 	}
 
-	if config.LogsSenderConfig.InstallerGatherlogging {
-		if config.LogsSenderConfig.IsBootstrap {
+	if loggingConfig.InstallerGatherlogging {
+		if loggingConfig.IsBootstrap {
 			if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
 				log.WithError(err).Error("Failed to gather installer logs")
 				result = multierror.Append(result, err)
@@ -334,17 +336,17 @@ func SendLogs(l LogsSender) (error, string) {
 		result = multierror.Append(result, err)
 	}
 
-	for _, tag := range config.LogsSenderConfig.Tags {
+	for _, tag := range loggingConfig.Tags {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
-		if err := getJournalLogs(l, config.LogsSenderConfig.Since, outputFile,
+		if err := getJournalLogs(l, loggingConfig.Since, outputFile,
 			[]string{fmt.Sprintf("TAG=%s", tag)}); err != nil {
 			result = multierror.Append(result, err)
 		}
 	}
 
-	for _, service := range config.LogsSenderConfig.Services {
+	for _, service := range loggingConfig.Services {
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
-		if err := getJournalLogs(l, config.LogsSenderConfig.Since, outputFile,
+		if err := getJournalLogs(l, loggingConfig.Since, outputFile,
 			[]string{"-u", service}); err != nil {
 			result = multierror.Append(result, err)
 		}
@@ -359,13 +361,13 @@ func SendLogs(l LogsSender) (error, string) {
 		return err, report
 	}
 
-	err := uploadLogs(l, archivePath, strfmt.UUID(config.LogsSenderConfig.ClusterID),
-		strfmt.UUID(config.LogsSenderConfig.HostID), strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
-		config.LogsSenderConfig.TargetURL, config.LogsSenderConfig.PullSecretToken)
+	err := uploadLogs(l, archivePath, strfmt.UUID(loggingConfig.ClusterID),
+		strfmt.UUID(loggingConfig.HostID), strfmt.UUID(loggingConfig.InfraEnvID),
+		loggingConfig.TargetURL, loggingConfig.PullSecretToken)
 
-	if lerr := l.LogProgressReport(strfmt.UUID(config.LogsSenderConfig.InfraEnvID),
-		strfmt.UUID(config.LogsSenderConfig.HostID), config.LogsSenderConfig.TargetURL,
-		config.LogsSenderConfig.PullSecretToken, models.LogsStateCompleted); lerr != nil {
+	if lerr := l.LogProgressReport(strfmt.UUID(loggingConfig.InfraEnvID),
+		strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL,
+		loggingConfig.PullSecretToken, models.LogsStateCompleted); lerr != nil {
 		log.WithError(lerr).Error("failed to send log progress completed to service")
 	}
 

@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-service/models"
@@ -263,7 +264,7 @@ var _ = Describe("nmap analysis test", func() {
 		t := tests[i]
 		It(t.name, func() {
 			out := make(chan any)
-			go analyzeNmap(t.dstAddr, t.dstMAC, t.allDstMACs, "eth0", out, testNmap{t.output})
+			go analyzeNmap(t.dstAddr, t.dstMAC, t.allDstMACs, "eth0", out, testNmap{t.output}, false)
 			Expect(<-out).To(Equal(t.expected))
 		})
 	}
@@ -487,7 +488,8 @@ var _ = Describe("check host parallel validation", func() {
 		t := tests[i]
 		It(t.name, func() {
 			h := testHostChecker{outgoingNICS: t.nics, host: t.hosts, success: t.success}
-			go checkHost(h, hostChan)
+			c := connectivity{dryRunConfig: &config.DryRunConfig{}}
+			go c.checkHost(h, hostChan)
 			r := <-hostChan
 			Expect(r.L2Connectivity).Should(ContainElements(t.expected.L2Connectivity))
 			Expect(r.L3Connectivity).Should(ContainElements(t.expected.L3Connectivity))

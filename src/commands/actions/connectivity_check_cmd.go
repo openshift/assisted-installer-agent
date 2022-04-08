@@ -1,12 +1,14 @@
 package actions
 
 import (
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/connectivity_check"
 	"github.com/openshift/assisted-service/models"
 )
 
 type connectivityCheck struct {
-	args []string
+	agentConfig *config.AgentConfig
+	args        []string
 }
 
 func (a *connectivityCheck) Validate() error {
@@ -28,5 +30,5 @@ func (a *connectivityCheck) Args() []string {
 }
 
 func (a *connectivityCheck) Run() (stdout, stderr string, exitCode int) {
-	return connectivity_check.ConnectivityCheck("", a.args...)
+	return connectivity_check.ConnectivityCheck(&a.agentConfig.DryRunConfig, "", a.args...)
 }

@@ -13,9 +13,9 @@ import (
 )
 
 func main() {
-	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	config.ProcessDryRunArgs()
-	util.SetLogging("apivip_check", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
+	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
+	util.SetLogging("apivip_check", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
 	if flag.NArg() != 1 {
 		log.Warnf("Expecting exactly single argument to apivip_check. Received %d", len(os.Args)-1)
 		os.Exit(-1)

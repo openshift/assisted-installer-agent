@@ -14,11 +14,12 @@ import (
 const MaxIpmiChannel = 12
 
 type bmc struct {
-	dependicies util.IDependencies
+	dependicies      util.IDependencies
+	subprocessConfig *config.SubprocessConfig
 }
 
-func newBMC(dependencies util.IDependencies) *bmc {
-	return &bmc{dependicies: dependencies}
+func newBMC(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) *bmc {
+	return &bmc{dependicies: dependencies, subprocessConfig: subprocessConfig}
 }
 
 func (b *bmc) getIpForChannnel(ch int) string {
@@ -41,7 +42,7 @@ func (b *bmc) getIsEnabled(value interface{}) bool {
 }
 
 func (b *bmc) getBmcAddress() string {
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if b.subprocessConfig.DryRunEnabled {
 		// This action is too slow and unnecessary, so skip it in dry run
 		return "0.0.0.0"
 	}
@@ -62,8 +63,8 @@ func (b *bmc) getBmcAddress() string {
 	return "0.0.0.0"
 }
 
-func GetBmcAddress(dependencies util.IDependencies) string {
-	return newBMC(dependencies).getBmcAddress()
+func GetBmcAddress(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) string {
+	return newBMC(subprocessConfig, dependencies).getBmcAddress()
 }
 
 func (b *bmc) getV6Address(ch int, addressType string) string {
@@ -126,7 +127,7 @@ func (b *bmc) getAddrMode(ch int) string {
 }
 
 func (b *bmc) getBmcV6Address() string {
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if b.subprocessConfig.DryRunEnabled {
 		// This action is too slow and unnecessary, so skip it in dry run
 		return "::/0"
 	}
@@ -152,6 +153,6 @@ func (b *bmc) getBmcV6Address() string {
 	return "::/0"
 }
 
-func GetBmcV6Address(dependencies util.IDependencies) string {
-	return newBMC(dependencies).getBmcV6Address()
+func GetBmcV6Address(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) string {
+	return newBMC(subprocessConfig, dependencies).getBmcV6Address()
 }

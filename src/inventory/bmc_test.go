@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 )
@@ -249,9 +250,11 @@ IPv6 ND/SLAAC Timing Configuration Support: not supported
 
 var _ = Describe("bmc", func() {
 	var dependencies *util.MockIDependencies
+	var subprocessConfig *config.SubprocessConfig
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()
+		subprocessConfig = &config.SubprocessConfig{}
 	})
 
 	AfterEach(func() {
@@ -264,7 +267,7 @@ var _ = Describe("bmc", func() {
 			dependencies.On("Execute", "ipmitool", "lan", "print", ch).Return("", "Invalid channel 10", 0).Once()
 		}
 		dependencies.On("Execute", "ipmitool", "lan", "print", "5").Return(bmcV4OkAnswer, "", 0).Once()
-		addr := GetBmcAddress(dependencies)
+		addr := GetBmcAddress(subprocessConfig, dependencies)
 		Expect(addr).To(Equal("10.16.218.144"))
 	})
 	It("ipv4 not found", func() {
@@ -272,7 +275,7 @@ var _ = Describe("bmc", func() {
 			ch := strconv.FormatInt(int64(i), 10)
 			dependencies.On("Execute", "ipmitool", "lan", "print", ch).Return("", "Invalid channel 10", 0).Once()
 		}
-		addr := GetBmcAddress(dependencies)
+		addr := GetBmcAddress(subprocessConfig, dependencies)
 		Expect(addr).To(Equal("0.0.0.0"))
 	})
 
@@ -286,7 +289,7 @@ var _ = Describe("bmc", func() {
 			ch := strconv.FormatInt(int64(i), 10)
 			dependencies.On("Execute", "ipmitool", "lan6", "print", ch, "enables").Return("", "Failed to get IPv6/IPv4 Addressing Enables: Invalid data field in request", -1).Once()
 		}
-		addr := GetBmcV6Address(dependencies)
+		addr := GetBmcV6Address(subprocessConfig, dependencies)
 		Expect(addr).To(Equal("::/0"))
 	})
 
@@ -300,7 +303,7 @@ var _ = Describe("bmc", func() {
 		for i := 6; i != 13; i++ {
 			dependencies.On("Execute", "ipmitool", "lan6", "print", strconv.FormatInt(int64(i), 10), "enables").Return("", "Failed to get IPv6/IPv4 Addressing Enables: Invalid data field in request", -1).Once()
 		}
-		addr := GetBmcV6Address(dependencies)
+		addr := GetBmcV6Address(subprocessConfig, dependencies)
 		Expect(addr).To(Equal("::/0"))
 	})
 
@@ -311,7 +314,7 @@ var _ = Describe("bmc", func() {
 		}
 		dependencies.On("Execute", "ipmitool", "lan6", "print", "5", "enables").Return("IPv6/IPv4 Addressing Enables: both", "", 0).Once()
 		dependencies.On("Execute", "ipmitool", "lan6", "print", "5", "dynamic_addr").Return(bmcV6Dynamic, "", 0).Once()
-		addr := GetBmcV6Address(dependencies)
+		addr := GetBmcV6Address(subprocessConfig, dependencies)
 		Expect(addr).To(Equal("fe80::779e:a22f:dc5e:ca41"))
 	})
 	It("ipv6 static found", func() {
@@ -322,7 +325,7 @@ var _ = Describe("bmc", func() {
 		dependencies.On("Execute", "ipmitool", "lan6", "print", "5", "enables").Return("IPv6/IPv4 Addressing Enables: both", "", 0).Once()
 		dependencies.On("Execute", "ipmitool", "lan6", "print", "5", "dynamic_addr").Return(bmcV6NoAddress, "", 0).Once()
 		dependencies.On("Execute", "ipmitool", "lan6", "print", "5", "static_addr").Return(bmcV6Static, "", 0).Once()
-		addr := GetBmcV6Address(dependencies)
+		addr := GetBmcV6Address(subprocessConfig, dependencies)
 		Expect(addr).To(Equal("fe80::779e:a22f:dc5e:ca42"))
 	})
 })

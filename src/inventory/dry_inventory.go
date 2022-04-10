@@ -7,15 +7,15 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func applyDryRunConfig(inventory *models.Inventory) {
+func applyDryRunConfig(subprocessConfig *config.SubprocessConfig, inventory *models.Inventory) {
 	targetInterface, err := findRelevantInterface(inventory)
 	if err != nil {
 		return
 	}
 
 	// Override the mac address & IPv4 address to the user requested one
-	inventory.Interfaces[targetInterface].MacAddress = config.GlobalDryRunConfig.ForcedMacAddress
-	inventory.Interfaces[targetInterface].IPV4Addresses[0] = config.GlobalDryRunConfig.ForcedHostIPv4
+	inventory.Interfaces[targetInterface].MacAddress = subprocessConfig.ForcedMacAddress
+	inventory.Interfaces[targetInterface].IPV4Addresses[0] = subprocessConfig.ForcedHostIPv4
 
 	// Throw away other interfaces to avoid some exotic bugs relating to duplicate mac addreses from two different hosts
 	inventory.Interfaces = []*models.Interface{inventory.Interfaces[targetInterface]}

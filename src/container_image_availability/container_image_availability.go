@@ -99,8 +99,8 @@ func pullImage(executer ImageAvailabilityDependencies, pullTimeoutSeconds int64,
 	}
 }
 
-func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.FieldLogger, pullTimeoutSeconds int64, image string) *models.ContainerImageAvailability {
-	if config.GlobalDryRunConfig.DryRunEnabled {
+func handleImageAvailability(subprocessConfig *config.SubprocessConfig, executer ImageAvailabilityDependencies, log logrus.FieldLogger, pullTimeoutSeconds int64, image string) *models.ContainerImageAvailability {
+	if subprocessConfig.DryRunEnabled {
 		log.Infof("Running in dry mode - skipping image availability test, returning fake results")
 		return getDryModeContainerImageAvailability(image)
 	}
@@ -146,7 +146,7 @@ func handleImageAvailability(executer ImageAvailabilityDependencies, log logrus.
 	return response
 }
 
-func Run(requestStr string, executer ImageAvailabilityDependencies, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
+func Run(subprocessConfig *config.SubprocessConfig, requestStr string, executer ImageAvailabilityDependencies, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
 	exitCode = 0
 	var request models.ContainerImageAvailabilityRequest
 	var response models.ContainerImageAvailabilityResponse
@@ -159,7 +159,7 @@ func Run(requestStr string, executer ImageAvailabilityDependencies, log logrus.F
 
 	finishOnTimeout := time.Now().Add(time.Duration(request.Timeout) * time.Second)
 	for _, image := range request.Images {
-		imageResponse := handleImageAvailability(executer, log, int64(time.Until(finishOnTimeout).Seconds()), image)
+		imageResponse := handleImageAvailability(subprocessConfig, executer, log, int64(time.Until(finishOnTimeout).Seconds()), image)
 		response.Images = append(response.Images, imageResponse)
 		if imageResponse.Result != models.ContainerImageAvailabilityResultSuccess {
 			exitCode = failedToPullImageExitCode

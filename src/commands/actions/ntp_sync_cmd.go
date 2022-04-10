@@ -10,7 +10,8 @@ import (
 )
 
 type ntpSynchronizer struct {
-	args []string
+	args        []string
+	agentConfig *config.AgentConfig
 }
 
 func (a *ntpSynchronizer) Validate() error {
@@ -44,7 +45,7 @@ func (a *ntpSynchronizer) Args() []string {
 		"-v", "/var/log:/var/log",
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
 		"-v", "/var/run/chrony:/var/run/chrony",
-		config.GlobalAgentConfig.AgentVersion,
+		a.agentConfig.AgentVersion,
 		"ntp_synchronizer",
 	}
 	podmanRunCmd = append(podmanRunCmd, a.args...)

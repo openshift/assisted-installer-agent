@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	config.ProcessArgs()
-	config.ProcessDryRunArgs()
-	util.SetLogging("agent_registration", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
+	agentConfig := config.ProcessArgs()
+	config.ProcessDryRunArgs(&agentConfig.DryRunConfig)
+	util.SetLogging("agent_registration", agentConfig.TextLogging, agentConfig.JournalLogging, agentConfig.ForcedHostID)
 	nextStepRunnerFactory := agent.NewNextStepRunnerFactory()
-	agent.RunAgent(nextStepRunnerFactory)
+	agent.RunAgent(agentConfig, nextStepRunnerFactory)
 }

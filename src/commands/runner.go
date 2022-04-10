@@ -2,16 +2,17 @@ package commands
 
 import (
 	"github.com/openshift/assisted-installer-agent/src/commands/actions"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
 type NextStepRunnerFactory interface {
-	Create(command string, args []string) (Runner, error)
+	Create(agentConfig *config.AgentConfig, command string, args []string) (Runner, error)
 }
 
 type ToolRunnerFactory interface {
-	Create(stepType models.StepType, command string, args []string) (Runner, error)
+	Create(agentConfig *config.AgentConfig, stepType models.StepType, command string, args []string) (Runner, error)
 }
 
 // Runner is the means to allow pluggable running mechanism to agent.
@@ -29,10 +30,10 @@ func NewToolRunnerFactory() ToolRunnerFactory {
 	return &toolRunnerFactory{}
 }
 
-func (a *toolRunnerFactory) Create(stepType models.StepType, command string, args []string) (Runner, error) {
+func (a *toolRunnerFactory) Create(agentConfig *config.AgentConfig, stepType models.StepType, command string, args []string) (Runner, error) {
 	// TODO: MGMT-9451 remove command == "" after agent changes for new protocol will be pushed, added to allow pushing agent before service
 	if command == "" {
-		actionToRun, err := actions.New(stepType, args)
+		actionToRun, err := actions.New(agentConfig, stepType, args)
 		if err != nil {
 			return nil, err
 		}

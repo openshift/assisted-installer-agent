@@ -11,7 +11,8 @@ import (
 )
 
 type inventory struct {
-	args []string
+	args        []string
+	agentConfig *config.AgentConfig
 }
 
 func (a *inventory) Validate() error {
@@ -62,7 +63,7 @@ func (a *inventory) Args() []string {
 		"-v", "/run/udev:/host/run/udev:ro",
 		"-v", "/dev/disk:/host/dev/disk:ro",
 
-		config.GlobalAgentConfig.AgentVersion,
+		a.agentConfig.AgentVersion,
 		"inventory",
 	}, " ")
 

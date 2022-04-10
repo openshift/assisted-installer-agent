@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -15,17 +16,17 @@ func TestActions(t *testing.T) {
 
 func badParamsCommonTests(stepType models.StepType, params []string) {
 	By("bad command")
-	_, err := New(stepType, []string{"echo aaaa"})
+	_, err := New(&config.AgentConfig{}, stepType, []string{"echo aaaa"})
 	Expect(err).To(HaveOccurred())
 
 	if len(params) > 0 {
 		By("Less then 1")
-		_, err = New(stepType, []string{})
+		_, err = New(&config.AgentConfig{}, stepType, []string{})
 		Expect(err).To(HaveOccurred())
 	}
 
 	By("More then expected")
-	_, err = New(stepType, append(params, "aaaa"))
+	_, err = New(&config.AgentConfig{}, stepType, append(params, "aaaa"))
 	Expect(err).To(HaveOccurred())
 }
 
@@ -37,7 +38,7 @@ var _ = Describe("api connectivity check", func() {
 	})
 
 	It("api connectivity cmd", func() {
-		_, err := New(models.StepTypeAPIVipConnectivityCheck, []string{param})
+		_, err := New(&config.AgentConfig{}, models.StepTypeAPIVipConnectivityCheck, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 	})
 

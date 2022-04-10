@@ -11,7 +11,8 @@ import (
 )
 
 type imageAvailability struct {
-	args []string
+	args        []string
+	agentConfig *config.AgentConfig
 }
 
 func (a *imageAvailability) Validate() error {
@@ -39,7 +40,7 @@ func (a *imageAvailability) Args() []string {
 		"--name", containerName,
 		"-v", "/var/log:/var/log",
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-		config.GlobalAgentConfig.AgentVersion,
+		a.agentConfig.AgentVersion,
 		"container_image_availability",
 		"--request", a.args[0],
 	})

@@ -11,12 +11,12 @@ import (
 )
 
 func main() {
-	config.ProcessLogsSenderConfigArgs(true, true)
-	config.ProcessDryRunArgs()
-	util.SetLoggingWithStdOut("logs-sender", config.LogsSenderConfig.TextLogging, config.LogsSenderConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
-	err, report := logs_sender.SendLogs(logs_sender.NewLogsSenderExecuter(config.LogsSenderConfig.TargetURL,
-		config.LogsSenderConfig.PullSecretToken,
-		config.GlobalAgentConfig.AgentVersion))
+	loggingConfig := config.ProcessLogsSenderConfigArgs(true, true)
+	config.ProcessDryRunArgs(&loggingConfig.DryRunConfig)
+	util.SetLoggingWithStdOut("logs-sender", loggingConfig.TextLogging, loggingConfig.JournalLogging, loggingConfig.ForcedHostID)
+	err, report := logs_sender.SendLogs(loggingConfig, logs_sender.NewLogsSenderExecuter(loggingConfig, loggingConfig.TargetURL,
+		loggingConfig.PullSecretToken,
+		loggingConfig.AgentVersion))
 	if err != nil {
 		fmt.Println("Failed to run send logs ", err.Error())
 		os.Exit(-1)

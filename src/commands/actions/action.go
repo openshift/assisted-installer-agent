@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/spf13/afero"
 
 	"github.com/go-openapi/runtime"
@@ -45,20 +46,20 @@ func validateCommon(name string, expectedArgsLength int, args []string, modelToV
 	return nil
 }
 
-func New(stepType models.StepType, args []string) (*Action, error) {
+func New(agentConfig *config.AgentConfig, stepType models.StepType, args []string) (*Action, error) {
 	var stepActionMap = map[models.StepType]*Action{
-		models.StepTypeInventory:                  {&inventory{args: args}},
-		models.StepTypeConnectivityCheck:          {&connectivityCheck{args: args}},
-		models.StepTypeFreeNetworkAddresses:       {&freeAddresses{args: args}},
-		models.StepTypeNtpSynchronizer:            {&ntpSynchronizer{args: args}},
-		models.StepTypeInstallationDiskSpeedCheck: {&diskPerfCheck{args: args}},
+		models.StepTypeInventory:                  {&inventory{args: args, agentConfig: agentConfig}},
+		models.StepTypeConnectivityCheck:          {&connectivityCheck{args: args, agentConfig: agentConfig}},
+		models.StepTypeFreeNetworkAddresses:       {&freeAddresses{args: args, agentConfig: agentConfig}},
+		models.StepTypeNtpSynchronizer:            {&ntpSynchronizer{args: args, agentConfig: agentConfig}},
+		models.StepTypeInstallationDiskSpeedCheck: {&diskPerfCheck{args: args, agentConfig: agentConfig}},
 		models.StepTypeAPIVipConnectivityCheck:    {&apiVipConnectivityCheck{args: args}},
 		models.StepTypeDhcpLeaseAllocate:          {&dhcpLeases{args: args}},
 		models.StepTypeDomainResolution:           {&domainResolution{args: args}},
-		models.StepTypeContainerImageAvailability: {&imageAvailability{args: args}},
+		models.StepTypeContainerImageAvailability: {&imageAvailability{args: args, agentConfig: agentConfig}},
 		models.StepTypeStopInstallation:           {&stopInstallation{args: args}},
-		models.StepTypeLogsGather:                 {&logsGather{args: args}},
-		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs()}},
+		models.StepTypeLogsGather:                 {&logsGather{args: args, agentConfig: agentConfig}},
+		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs(), agentConfig: agentConfig}},
 	}
 
 	action, ok := stepActionMap[stepType]

@@ -15,11 +15,12 @@ const (
 )
 
 type DiskSpeedCheck struct {
-	dependecies IDependencies
+	dependecies      IDependencies
+	subprocessConfig *config.SubprocessConfig
 }
 
-func NewDiskSpeedCheck(dependencies IDependencies) *DiskSpeedCheck {
-	return &DiskSpeedCheck{dependecies: dependencies}
+func NewDiskSpeedCheck(subprocessConfig *config.SubprocessConfig, dependencies IDependencies) *DiskSpeedCheck {
+	return &DiskSpeedCheck{dependecies: dependencies, subprocessConfig: subprocessConfig}
 }
 
 func (p *DiskSpeedCheck) FioPerfCheck(diskSpeedCheckRequestStr string, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
@@ -56,7 +57,7 @@ func (p *DiskSpeedCheck) getDiskPerf(path string) (int64, error) {
 		return -1, errors.New("Missing disk path")
 	}
 
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if p.subprocessConfig.DryRunEnabled {
 		// Don't want to cause the disk any harm in dry mode, so just pretend it's fast
 		return time.Duration(dryModeSyncDurationInNS).Milliseconds(), nil
 	}

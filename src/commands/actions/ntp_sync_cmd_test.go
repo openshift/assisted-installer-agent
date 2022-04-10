@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -16,7 +17,7 @@ var _ = Describe("ntp sync", func() {
 	})
 
 	It("ntp sync", func() {
-		action, err := New(models.StepTypeNtpSynchronizer, []string{param})
+		action, err := New(&config.AgentConfig{}, models.StepTypeNtpSynchronizer, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
 		args := action.Args()
@@ -39,7 +40,7 @@ var _ = Describe("ntp sync", func() {
 
 	It("bad ntp sync ntp source", func() {
 		param = "{\"ntp_source\":\"echo aaa\"}"
-		_, err := New(models.StepTypeNtpSynchronizer, []string{param})
+		_, err := New(&config.AgentConfig{}, models.StepTypeNtpSynchronizer, []string{param})
 		Expect(err).To(HaveOccurred())
 	})
 })

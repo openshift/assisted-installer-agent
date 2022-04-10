@@ -15,32 +15,33 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func getInstall(args models.InstallCmdRequest, filesystem afero.Fs, errorShouldOccur bool) *install {
-	b, err := json.Marshal(&args)
-	Expect(err).NotTo(HaveOccurred())
-	action := &install{args: []string{string(b)}, filesystem: filesystem}
-	err = action.Validate()
-	if errorShouldOccur {
-		Expect(err).To(HaveOccurred())
-		return nil
-	}
-
-	Expect(err).NotTo(HaveOccurred())
-	return action
-}
-
 var _ = Describe("installer test", func() {
 	var params string
 	var args models.InstallCmdRequest
 	var oldConfig config.ConnectivityConfig
 	var filesystem afero.Fs
+	var agentConfig *config.AgentConfig
+
+	getInstall := func(args models.InstallCmdRequest, filesystem afero.Fs, errorShouldOccur bool) *install {
+		b, err := json.Marshal(&args)
+		Expect(err).NotTo(HaveOccurred())
+		action := &install{args: []string{string(b)}, filesystem: filesystem, agentConfig: agentConfig}
+		err = action.Validate()
+		if errorShouldOccur {
+			Expect(err).To(HaveOccurred())
+			return nil
+		}
+		Expect(err).NotTo(HaveOccurred())
+		return action
+	}
 
 	BeforeEach(func() {
 		filesystem = afero.NewMemMapFs()
-		Expect(copier.Copy(&oldConfig, &config.GlobalAgentConfig.ConnectivityConfig)).To(BeNil())
-		config.GlobalAgentConfig.AgentVersion = "quay.io/edge-infrastructure/assisted-installer-agent:latest"
-		config.GlobalAgentConfig.InsecureConnection = true
-		config.GlobalAgentConfig.TargetURL = "http://10.1.178.26:6000"
+		agentConfig = &config.AgentConfig{}
+		Expect(copier.Copy(&oldConfig, &agentConfig.ConnectivityConfig)).To(BeNil())
+		agentConfig.AgentVersion = "quay.io/edge-infrastructure/assisted-installer-agent:latest"
+		agentConfig.InsecureConnection = true
+		agentConfig.TargetURL = "http://10.1.178.26:6000"
 		clusterId := strfmt.UUID("cd781f46-f32a-4154-9670-6442a367ab81")
 		hostId := strfmt.UUID("f7ac1860-92cf-4ed8-aeec-2d9f20b35bab")
 		infraEnvId := strfmt.UUID("456eecf6-7aec-402d-b453-f609b19783cb")
@@ -75,11 +76,11 @@ var _ = Describe("installer test", func() {
 
 	})
 	AfterEach(func() {
-		Expect(copier.Copy(&config.GlobalAgentConfig.ConnectivityConfig, &oldConfig)).To(BeNil())
+		Expect(copier.Copy(&agentConfig.ConnectivityConfig, &oldConfig)).To(BeNil())
 	})
 
 	It("install bootstrap", func() {
-		action := install{args: []string{params}, filesystem: filesystem}
+		action := install{args: []string{params}, filesystem: filesystem, agentConfig: agentConfig}
 		err := action.Validate()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -108,7 +109,7 @@ var _ = Describe("installer test", func() {
 	})
 	It("install ca cert", func() {
 		caPath := "/ca_cert"
-		config.GlobalAgentConfig.CACertificatePath = caPath
+		agentConfig.CACertificatePath = caPath
 		action := getInstall(args, filesystem, false)
 		args := action.Args()
 		paths := []string{
@@ -170,7 +171,7 @@ var _ = Describe("installer test", func() {
 	})
 
 	It("install insecure and cvo is false", func() {
-		config.GlobalAgentConfig.InsecureConnection = false
+		agentConfig.InsecureConnection = false
 		args.CheckCvo = swag.Bool(false)
 		action := getInstall(args, filesystem, false)
 		args := action.Args()

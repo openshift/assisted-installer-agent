@@ -12,9 +12,9 @@ import (
 )
 
 func main() {
-	config.ProcessArgs()
-	config.ProcessDryRunArgs()
-	util.SetLogging("agent_next_step_runner", config.GlobalAgentConfig.TextLogging, config.GlobalAgentConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
+	agentConfig := config.ProcessArgs()
+	config.ProcessDryRunArgs(&agentConfig.DryRunConfig)
+	util.SetLogging("agent_next_step_runner", agentConfig.TextLogging, agentConfig.JournalLogging, agentConfig.ForcedHostID)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -22,12 +22,12 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	toolRunnerFactory := commands.NewToolRunnerFactory()
-	go commands.ProcessSteps(ctx, toolRunnerFactory, &wg)
+	go commands.ProcessSteps(ctx, agentConfig, toolRunnerFactory, &wg)
 
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if agentConfig.DryRunEnabled {
 		log.Info(`Dry run enabled, will cancel goroutine on fake "reboot"`)
 		for {
-			if util.DryRebootHappened() {
+			if util.DryRebootHappened(&agentConfig.DryRunConfig) {
 				log.Info("Dry reboot happened, exiting")
 				cancel()
 				break

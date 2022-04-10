@@ -17,6 +17,7 @@ import (
 type logsGather struct {
 	args         []string
 	generatedCmd string
+	agentConfig  *config.AgentConfig
 }
 
 func (a *logsGather) Validate() error {
@@ -27,7 +28,7 @@ func (a *logsGather) Validate() error {
 		return err
 	}
 
-	a.generatedCmd, err = createUploadLogsCmd(params)
+	a.generatedCmd, err = a.createUploadLogsCmd(params)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to generate command for %s with params %s", name, a.args)
 		return err
@@ -36,22 +37,22 @@ func (a *logsGather) Validate() error {
 	return nil
 }
 
-func createUploadLogsCmd(params models.LogsGatherCmdRequest) (string, error) {
+func (a *logsGather) createUploadLogsCmd(params models.LogsGatherCmdRequest) (string, error) {
 
 	data := map[string]string{
-		"BASE_URL":               config.GlobalAgentConfig.TargetURL,
+		"BASE_URL":               a.agentConfig.TargetURL,
 		"CLUSTER_ID":             params.ClusterID.String(),
 		"HOST_ID":                params.HostID.String(),
 		"INFRA_ENV_ID":           params.InfraEnvID.String(),
-		"AGENT_IMAGE":            config.GlobalAgentConfig.AgentVersion,
-		"SKIP_CERT_VERIFICATION": strconv.FormatBool(config.GlobalAgentConfig.InsecureConnection),
+		"AGENT_IMAGE":            a.agentConfig.AgentVersion,
+		"SKIP_CERT_VERIFICATION": strconv.FormatBool(a.agentConfig.InsecureConnection),
 		"BOOTSTRAP":              strconv.FormatBool(swag.BoolValue(params.Bootstrap)),
 		"INSTALLER_GATHER":       strconv.FormatBool(params.InstallerGather),
 		"MASTERS_IPS":            strings.Join(params.MasterIps, ","),
 	}
 
-	if config.GlobalAgentConfig.CACertificatePath != "" {
-		data["CACERTPATH"] = config.GlobalAgentConfig.CACertificatePath
+	if a.agentConfig.CACertificatePath != "" {
+		data["CACERTPATH"] = a.agentConfig.CACertificatePath
 	}
 
 	cmdArgsTmpl := "1h podman run --rm --privileged --net=host " +

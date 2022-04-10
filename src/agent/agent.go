@@ -19,9 +19,9 @@ func NewNextStepRunnerFactory() commands.NextStepRunnerFactory {
 	return &nextStepRunnerFactory{}
 }
 
-func (n *nextStepRunnerFactory) Create(command string, args []string) (commands.Runner, error) {
+func (n *nextStepRunnerFactory) Create(agentConfig *config.AgentConfig, command string, args []string) (commands.Runner, error) {
 	if command == "" {
-		action := actions.NewNextStepRunnerAction(args)
+		action := actions.NewNextStepRunnerAction(agentConfig, args)
 		err := action.Validate()
 		if err != nil {
 			log.WithError(err).Errorf("next step runner command validation failed")
@@ -41,16 +41,16 @@ func delayOnError(stepRunnerCommand *models.HostRegistrationResponseAO1NextStepR
 	}
 }
 
-func RunAgent(nextStepRunnerFactory commands.NextStepRunnerFactory) {
+func RunAgent(agentConfig *config.AgentConfig, nextStepRunnerFactory commands.NextStepRunnerFactory) {
 	for {
-		stepRunnerCommand := commands.RegisterHostWithRetry()
+		stepRunnerCommand := commands.RegisterHostWithRetry(agentConfig)
 		if stepRunnerCommand == nil {
 			log.Errorf("Incompatible server version, going to retry in %s", defaultRetryDelay)
 			time.Sleep(defaultRetryDelay)
 			continue
 		}
 
-		nextStepRunner, err := nextStepRunnerFactory.Create(stepRunnerCommand.Command, stepRunnerCommand.Args)
+		nextStepRunner, err := nextStepRunnerFactory.Create(agentConfig, stepRunnerCommand.Command, stepRunnerCommand.Args)
 		if err != nil {
 			reRegisterDelay := delayOnError(stepRunnerCommand)
 			log.WithError(err).Errorf("Unable to create next step runner. Attempt again in %s", reRegisterDelay)
@@ -69,9 +69,9 @@ func RunAgent(nextStepRunnerFactory commands.NextStepRunnerFactory) {
 			continue
 		}
 
-		if config.GlobalDryRunConfig.DryRunEnabled {
+		if agentConfig.DryRunEnabled {
 			// Check if the step runner died just because the installer signaled fake reboot
-			if util.DryRebootHappened() {
+			if util.DryRebootHappened(&agentConfig.DryRunConfig) {
 				log.Infof("Dry reboot happened, exiting")
 				break
 			}

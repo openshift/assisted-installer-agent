@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/swag"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
@@ -19,10 +20,12 @@ var _ = Describe("Disk speed check test", func() {
 	var dependencies *MockIDependencies
 	var perfCheck *DiskSpeedCheck
 	var log logrus.FieldLogger
+	var subprocessConfig *config.SubprocessConfig
 
 	BeforeEach(func() {
+		subprocessConfig = &config.SubprocessConfig{}
 		dependencies = &MockIDependencies{}
-		perfCheck = NewDiskSpeedCheck(dependencies)
+		perfCheck = NewDiskSpeedCheck(subprocessConfig, dependencies)
 		log = logrus.New()
 	})
 

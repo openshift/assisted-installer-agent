@@ -15,26 +15,17 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func runNextRunner(params string, expectedError bool) (string, []string) {
-	action := nextStepRunnerAction{args: []string{params}}
-	err := action.Validate()
-	if expectedError {
-		Expect(err).To(HaveOccurred())
-		return "", nil
-	}
-	Expect(err).NotTo(HaveOccurred())
-	return action.Command(), action.Args()
-}
-
 var _ = Describe("next step runner", func() {
 	var params string
 	var runnerArgs models.NextStepCmdRequest
 	var oldConfig config.ConnectivityConfig
+	var agentConfig *config.AgentConfig
 
 	BeforeEach(func() {
-		Expect(copier.Copy(&oldConfig, &config.GlobalAgentConfig.ConnectivityConfig)).To(BeNil())
-		config.GlobalAgentConfig.InsecureConnection = true
-		config.GlobalAgentConfig.TargetURL = "http://10.1.178.26:6000"
+		agentConfig = &config.AgentConfig{}
+		Expect(copier.Copy(&oldConfig, &agentConfig.ConnectivityConfig)).To(BeNil())
+		agentConfig.InsecureConnection = true
+		agentConfig.TargetURL = "http://10.1.178.26:6000"
 		hostId := strfmt.UUID("f7ac1860-92cf-4ed8-aeec-2d9f20b35bab")
 		infraEnvId := strfmt.UUID("456eecf6-7aec-402d-b453-f609b19783cb")
 		runnerArgs = models.NextStepCmdRequest{
@@ -47,9 +38,20 @@ var _ = Describe("next step runner", func() {
 		params = string(b)
 	})
 	AfterEach(func() {
-		Expect(copier.Copy(&config.GlobalAgentConfig.ConnectivityConfig, &oldConfig)).To(BeNil())
+		Expect(copier.Copy(&agentConfig.ConnectivityConfig, &oldConfig)).To(BeNil())
 	})
 
+	runNextRunner := func(params string, expectedError bool) (string, []string) {
+		action := nextStepRunnerAction{args: []string{params}, agentConfig: agentConfig}
+		err := action.Validate()
+		if expectedError {
+			Expect(err).To(HaveOccurred())
+			return "", nil
+		}
+		Expect(err).NotTo(HaveOccurred())
+		return action.Command(), action.Args()
+	}
+	
 	It("next step runner", func() {
 		command, args := runNextRunner(params, false)
 		Expect(command).To(Equal("podman"))
@@ -72,16 +74,16 @@ var _ = Describe("next step runner", func() {
 		Expect(argsAsString).To(ContainSubstring("--env NO_PROXY"))
 		Expect(argsAsString).To(ContainSubstring("--env no_proxy"))
 		Expect(argsAsString).To(ContainSubstring("--name next-step-runner"))
-		Expect(argsAsString).To(ContainSubstring(fmt.Sprintf("--insecure=%s", strconv.FormatBool(config.GlobalAgentConfig.InsecureConnection))))
+		Expect(argsAsString).To(ContainSubstring(fmt.Sprintf("--insecure=%s", strconv.FormatBool(agentConfig.InsecureConnection))))
 		Expect(argsAsString).To(ContainSubstring(fmt.Sprintf("--agent-version %s", swag.StringValue(runnerArgs.AgentVersion))))
-		Expect(argsAsString).To(ContainSubstring(fmt.Sprintf("--url %s", config.GlobalAgentConfig.TargetURL)))
+		Expect(argsAsString).To(ContainSubstring(fmt.Sprintf("--url %s", agentConfig.TargetURL)))
 		Expect(argsAsString).To(ContainSubstring(fmt.Sprintf("--host-id %s", runnerArgs.HostID.String())))
 		Expect(argsAsString).To(ContainSubstring(fmt.Sprintf("--infra-env-id %s", runnerArgs.InfraEnvID.String())))
 	})
 
 	It("next step runner ca cert", func() {
 		caPath := "/ca_cert"
-		config.GlobalAgentConfig.CACertificatePath = caPath
+		agentConfig.CACertificatePath = caPath
 		b, err := json.Marshal(&runnerArgs)
 		Expect(err).NotTo(HaveOccurred())
 		_, args := runNextRunner(string(b), false)
@@ -93,7 +95,7 @@ var _ = Describe("next step runner", func() {
 	})
 
 	It("next step runner insecure false", func() {
-		config.GlobalAgentConfig.InsecureConnection = false
+		agentConfig.InsecureConnection = false
 		b, err := json.Marshal(&runnerArgs)
 		Expect(err).NotTo(HaveOccurred())
 		_, args := runNextRunner(string(b), false)

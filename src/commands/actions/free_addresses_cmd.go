@@ -10,7 +10,8 @@ import (
 )
 
 type freeAddresses struct {
-	args []string
+	args        []string
+	agentConfig *config.AgentConfig
 }
 
 func (a *freeAddresses) Validate() error {
@@ -34,7 +35,7 @@ func (a *freeAddresses) Args() []string {
 		"--name", containerName,
 		"-v", "/var/log:/var/log",
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-		config.GlobalAgentConfig.AgentVersion,
+		a.agentConfig.AgentVersion,
 		"free_addresses",
 	}
 

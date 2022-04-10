@@ -15,9 +15,8 @@ type Config struct {
 	Request string
 }
 
-var executableConfig Config
-
-func processArgs() {
+func processRequestArg() string {
+	var executableConfig Config
 	ret := &executableConfig
 	flag.StringVar(&ret.Request, "request", "",
 		"The request details. See models.DomainResolutionRequest")
@@ -27,20 +26,21 @@ func processArgs() {
 		flag.CommandLine.Usage()
 		os.Exit(1)
 	}
+	return executableConfig.Request
 }
 
 func main() {
-	processArgs()
-	config.ProcessDryRunArgs()
-	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+	request := processRequestArg()
+	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
 
 	util.SetLogging("domain_resolution",
-		config.SubprocessConfig.TextLogging,
-		config.SubprocessConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
+		subprocessConfig.TextLogging,
+		subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
 
-	log.StandardLogger().Infof("Processing domain resolution, requested domains: %s", executableConfig.Request)
+	log.StandardLogger().Infof("Processing domain resolution, requested domains: %s", request)
 
-	stdout, stderr, exitCode := domain_resolution.Run(executableConfig.Request,
+	stdout, stderr, exitCode := domain_resolution.Run(request,
 		&domain_resolution.DomainResolver{}, log.StandardLogger())
 
 	_, _ = fmt.Fprint(os.Stdout, stdout)

@@ -13,17 +13,19 @@ import (
 var _ = Describe("Logs gather test", func() {
 	var param string
 	var oldConfig config.ConnectivityConfig
+	var agentConfig *config.AgentConfig
 
 	BeforeEach(func() {
 		param = "{\"bootstrap\":true,\"cluster_id\":\"57a0830c-0d5f-45ad-8513-7d0060c33615\"," +
 			"\"host_id\":\"9f45b240-73d5-4390-a04e-7f5a09da44f7\",\"infra_env_id\":\"ea123507-1875-4da2-968a-15bb2d4b1e91\"," +
 			"\"installer_gather\":true,\"master_ips\":[\"192.168.127.10\",\"192.168.127.12\"]}"
+		agentConfig = &config.AgentConfig{}
 	})
 
 	It("Logs gather bootstrap", func() {
-		Expect(copier.Copy(&oldConfig, &config.GlobalAgentConfig.ConnectivityConfig)).To(BeNil())
-		config.GlobalAgentConfig.InsecureConnection = true
-		action, err := New(models.StepTypeLogsGather, []string{param})
+		Expect(copier.Copy(&oldConfig, &agentConfig.ConnectivityConfig)).To(BeNil())
+		agentConfig.InsecureConnection = true
+		action, err := New(agentConfig, models.StepTypeLogsGather, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
 		args := action.Args()
@@ -41,7 +43,7 @@ var _ = Describe("Logs gather test", func() {
 		Expect(strings.Join(args, " ")).To(ContainSubstring("-bootstrap=true -with-installer-gather-logging=true"))
 	})
 	AfterEach(func() {
-		Expect(copier.Copy(&config.GlobalAgentConfig.ConnectivityConfig, &oldConfig)).To(BeNil())
+		Expect(copier.Copy(&agentConfig.ConnectivityConfig, &oldConfig)).To(BeNil())
 	})
 
 	It("Logs gather ca cert", func() {
@@ -49,8 +51,8 @@ var _ = Describe("Logs gather test", func() {
 			"\"host_id\":\"9f45b240-73d5-4390-a04e-7f5a09da44f7\",\"infra_env_id\":\"ea123507-1875-4da2-968a-15bb2d4b1e91\"," +
 			"\"installer_gather\":true,\"master_ips\":[\"192.168.127.10\",\"192.168.127.12\"]}"
 
-		config.GlobalAgentConfig.CACertificatePath = "/ca_cert"
-		action, err := New(models.StepTypeLogsGather, []string{param})
+		agentConfig.CACertificatePath = "/ca_cert"
+		action, err := New(agentConfig, models.StepTypeLogsGather, []string{param})
 		Expect(err).NotTo(HaveOccurred())
 
 		args := action.Args()
@@ -74,21 +76,21 @@ var _ = Describe("Logs gather test", func() {
 		param = "{\"bootstrap\":true,\"cluster_id\":\"bad\"," +
 			"\"host_id\":\"9f45b240-73d5-4390-a04e-7f5a09da44f7\",\"infra_env_id\":\"ea123507-1875-4da2-968a-15bb2d4b1e91\"," +
 			"\"installer_gather\":true,\"master_ips\":[\"192.168.127.10\",\"192.168.127.12\"]}"
-		_, err := New(models.StepTypeLogsGather, []string{param})
+		_, err := New(agentConfig, models.StepTypeLogsGather, []string{param})
 		Expect(err).To(HaveOccurred())
 
 		By("Bad Ip")
 		param = "{\"bootstrap\":true,\"cluster_id\":\"57a0830c-0d5f-45ad-8513-7d0060c33615\"," +
 			"\"host_id\":\"9f45b240-73d5-4390-a04e-7f5a09da44f7\",\"infra_env_id\":\"ea123507-1875-4da2-968a-15bb2d4b1e91\"," +
 			"\"installer_gather\":true,\"master_ips\":[\"192.168.127.10\",\"echo\"]}"
-		_, err = New(models.StepTypeLogsGather, []string{param})
+		_, err = New(agentConfig, models.StepTypeLogsGather, []string{param})
 		Expect(err).To(HaveOccurred())
 
 		By("Bad boolean")
 		param = "{\"bootstrap\":\"echo\",\"cluster_id\":\"57a0830c-0d5f-45ad-8513-7d0060c33615\"," +
 			"\"host_id\":\"9f45b240-73d5-4390-a04e-7f5a09da44f7\",\"infra_env_id\":\"ea123507-1875-4da2-968a-15bb2d4b1e91\"," +
 			"\"installer_gather\":true,\"master_ips\":[\"192.168.127.10\"]}"
-		_, err = New(models.StepTypeLogsGather, []string{param})
+		_, err = New(agentConfig, models.StepTypeLogsGather, []string{param})
 		Expect(err).To(HaveOccurred())
 	})
 })

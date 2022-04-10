@@ -13,9 +13,9 @@ import (
 )
 
 func main() {
-	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	config.ProcessDryRunArgs()
-	util.SetLogging("free_addresses", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging, config.GlobalDryRunConfig.ForcedHostID)
+	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
+	util.SetLogging("free_addresses", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
 	if flag.NArg() != 1 {
 		log.Warnf("Expecting exactly single argument to free_addresses. Received %d", len(os.Args)-1)
 		os.Exit(-1)

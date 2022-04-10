@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
 )
 
@@ -25,7 +26,7 @@ var _ = Describe("inventory", func() {
 
 	It("inventory cmd", func() {
 
-		action, err := New(models.StepTypeInventory, []string{hostId.String()})
+		action, err := New(&config.AgentConfig{}, models.StepTypeInventory, []string{hostId.String()})
 		Expect(err).NotTo(HaveOccurred())
 
 		args := action.Args()

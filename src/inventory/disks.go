@@ -22,11 +22,12 @@ const (
 )
 
 type disks struct {
-	dependencies util.IDependencies
+	dependencies     util.IDependencies
+	subprocessConfig *config.SubprocessConfig
 }
 
-func newDisks(dependencies util.IDependencies) *disks {
-	return &disks{dependencies: dependencies}
+func newDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) *disks {
+	return &disks{dependencies: dependencies, subprocessConfig: subprocessConfig}
 }
 
 func (d *disks) getDisksWWNs() map[string]string {
@@ -128,7 +129,7 @@ func (d *disks) getSMART(path string) string {
 		return ""
 	}
 
-	if config.GlobalDryRunConfig.DryRunEnabled {
+	if d.subprocessConfig.DryRunEnabled {
 		// smartctl is rather slow, better to avoid it dry run mode
 		return dryRunSmart
 	}
@@ -304,6 +305,6 @@ func (d *disks) getBusPath(disks []*block.Disk, index int, busPath string) strin
 	return d.getByPath(busPath)
 }
 
-func GetDisks(dependencies util.IDependencies) []*models.Disk {
-	return newDisks(dependencies).getDisks()
+func GetDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) []*models.Disk {
+	return newDisks(subprocessConfig, dependencies).getDisks()
 }

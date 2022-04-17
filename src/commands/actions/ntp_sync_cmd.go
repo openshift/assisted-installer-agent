@@ -16,7 +16,7 @@ type ntpSynchronizer struct {
 
 func (a *ntpSynchronizer) Validate() error {
 	var request models.NtpSynchronizationRequest
-	err := validateCommon("ntp synchronizer", 1, a.args, &request)
+	err := ValidateCommon("ntp synchronizer", 1, a.args, &request)
 	if err != nil {
 		return err
 	}

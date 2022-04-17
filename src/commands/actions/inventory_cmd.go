@@ -16,7 +16,7 @@ type inventory struct {
 }
 
 func (a *inventory) Validate() error {
-	err := validateCommon("inventory", 1, a.args, nil)
+	err := ValidateCommon("inventory", 1, a.args, nil)
 	if err != nil {
 		return err
 	}

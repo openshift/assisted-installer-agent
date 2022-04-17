@@ -7,7 +7,7 @@ type stopInstallation struct {
 }
 
 func (a *stopInstallation) Validate() error {
-	err := validateCommon("stop installation", 0, a.args, nil)
+	err := ValidateCommon("stop installation", 0, a.args, nil)
 	if err != nil {
 		return err
 	}

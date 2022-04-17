@@ -23,7 +23,7 @@ type logsGather struct {
 func (a *logsGather) Validate() error {
 	name := "logs gather"
 	params := models.LogsGatherCmdRequest{}
-	err := validateCommon(name, 1, a.args, &params)
+	err := ValidateCommon(name, 1, a.args, &params)
 	if err != nil {
 		return err
 	}

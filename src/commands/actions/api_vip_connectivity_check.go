@@ -12,7 +12,7 @@ type apiVipConnectivityCheck struct {
 
 func (a *apiVipConnectivityCheck) Validate() error {
 	modelToValidate := models.APIVipConnectivityRequest{}
-	err := validateCommon("api vip connectivity check", 1, a.args, &modelToValidate)
+	err := ValidateCommon("api vip connectivity check", 1, a.args, &modelToValidate)
 	if err != nil {
 		return err
 	}

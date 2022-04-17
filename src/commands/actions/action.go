@@ -25,7 +25,7 @@ type Action struct {
 	ActionInterface
 }
 
-func validateCommon(name string, expectedArgsLength int, args []string, modelToValidate runtime.Validatable) error {
+func ValidateCommon(name string, expectedArgsLength int, args []string, modelToValidate runtime.Validatable) error {
 	log.Infof("Validating %s with args %s", name, args)
 
 	if len(args) != expectedArgsLength {

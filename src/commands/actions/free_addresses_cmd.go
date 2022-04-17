@@ -16,7 +16,7 @@ type freeAddresses struct {
 
 func (a *freeAddresses) Validate() error {
 	modelToValidate := models.FreeAddressesRequest{}
-	err := validateCommon("free addresses", 1, a.args, &modelToValidate)
+	err := ValidateCommon("free addresses", 1, a.args, &modelToValidate)
 	return err
 }
 

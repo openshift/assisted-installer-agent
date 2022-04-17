@@ -13,7 +13,7 @@ type connectivityCheck struct {
 
 func (a *connectivityCheck) Validate() error {
 	modelToValidate := models.ConnectivityCheckParams{}
-	err := validateCommon("connectivity check", 1, a.args, &modelToValidate)
+	err := ValidateCommon("connectivity check", 1, a.args, &modelToValidate)
 	if err != nil {
 		return err
 	}

@@ -51,7 +51,7 @@ var _ = Describe("next step runner", func() {
 		Expect(err).NotTo(HaveOccurred())
 		return action.Command(), action.Args()
 	}
-	
+
 	It("next step runner", func() {
 		command, args := runNextRunner(params, false)
 		Expect(command).To(Equal("podman"))

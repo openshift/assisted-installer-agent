@@ -46,6 +46,17 @@ var _ = Describe("Image availability tests", func() {
 		}
 
 		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})
+		expectedReply := &EqualReplyVerifier{
+			Error:    "",
+			ExitCode: 0,
+			Output:   "",
+			StepID:   "",
+			StepType: models.StepTypeContainerImageAvailability,
+		}
+		// validate it can run only once
+		Eventually(func() bool {
+			return isReplyFound(hostID, expectedReply)
+		}, maxTimeout, 5*time.Second).Should(BeTrue())
 		checkImageAvailabilityResponse(hostID, images, true, true, pullTimeoutInSeconds)
 	})
 
@@ -76,20 +87,6 @@ func startImageAvailability(hostId string, request models.ContainerImageAvailabi
 	setReplyStartAgent(hostId)
 }
 
-func setImageAvailabilityStub(hostID string, request models.ContainerImageAvailabilityRequest) {
-	b, err := json.Marshal(&request)
-	Expect(err).ShouldNot(HaveOccurred())
-
-	step := generateContainerStep(models.StepTypeContainerImageAvailability,
-		[]string{
-			"-v", "/usr/bin/docker:/usr/bin/podman", // Overrides podman with docker
-			"-v", "/var/run/docker.sock:/var/run/docker.sock",
-		},
-		[]string{"/usr/bin/container_image_availability", "--request", string(b)})
-	_, err = addNextStepStub(hostID, 10, "", step)
-	Expect(err).NotTo(HaveOccurred())
-}
-
 func checkImageAvailabilityResponse(hostID string, expectedImages []string,
 	expectedResult bool, isRemoteImage bool, pullTimeout int64) {
 	Eventually(func() bool {
@@ -99,6 +96,9 @@ func checkImageAvailabilityResponse(hostID string, expectedImages []string,
 
 func getImageAvailabilityResponseFromStepReply(actualReply *models.StepReply) *models.ContainerImageAvailabilityResponse {
 	var response models.ContainerImageAvailabilityResponse
+	if actualReply.Output == "" {
+		return &response
+	}
 	err := json.Unmarshal([]byte(actualReply.Output), &response)
 	Expect(err).NotTo(HaveOccurred())
 	return &response
@@ -120,7 +120,6 @@ func (i *ImageAVailabilityVerifier) verify(actualReply *models.StepReply) bool {
 		log.Errorf("ImageAvailabilityVerifier invalid step reply %s", actualReply.StepType)
 		return false
 	}
-
 	response := getImageAvailabilityResponseFromStepReply(actualReply)
 
 	if response == nil {

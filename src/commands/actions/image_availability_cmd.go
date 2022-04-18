@@ -1,14 +1,15 @@
 package actions
 
 import (
-	"fmt"
-
-	"github.com/openshift/assisted-installer-agent/src/util"
-
-	"github.com/alessio/shellescape"
 	"github.com/openshift/assisted-installer-agent/src/config"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/openshift/assisted-installer-agent/src/container_image_availability"
 	"github.com/openshift/assisted-service/models"
+	"golang.org/x/sync/semaphore"
 )
+
+var sem = semaphore.NewWeighted(1)
 
 type imageAvailability struct {
 	args        []string
@@ -25,28 +26,22 @@ func (a *imageAvailability) Validate() error {
 }
 
 func (a *imageAvailability) Run() (stdout, stderr string, exitCode int) {
-	return util.ExecutePrivileged(a.Command(), a.Args()...)
+	if !sem.TryAcquire(1) {
+		log.Infof("%s already running", a.Command())
+		return "", "", 0
+	}
+	defer sem.Release(1)
+	subprocessConfig := &config.SubprocessConfig{LoggingConfig: a.agentConfig.LoggingConfig,
+		DryRunConfig: a.agentConfig.DryRunConfig}
+
+	return container_image_availability.Run(subprocessConfig, a.Args()[0],
+		&container_image_availability.ProcessExecuter{}, log.StandardLogger())
 }
 
 func (a *imageAvailability) Command() string {
-	return "sh"
+	return "container_image_availability"
 }
 
 func (a *imageAvailability) Args() []string {
-	const containerName = "container_image_availability"
-
-	podmanRunCmd := shellescape.QuoteCommand([]string{
-		"podman", "run", "--privileged", "--net=host", "--rm", "--quiet", "--pid=host",
-		"--name", containerName,
-		"-v", "/var/log:/var/log",
-		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-		a.agentConfig.AgentVersion,
-		"container_image_availability",
-		"--request", a.args[0],
-	})
-
-	// checking if it exists and only running if it doesn't
-	checkAlreadyRunningCmd := fmt.Sprintf("podman ps --format '{{.Names}}' | grep -q '^%s$'", containerName)
-
-	return []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, podmanRunCmd)}
+	return a.args
 }

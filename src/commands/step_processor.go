@@ -11,13 +11,11 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
-
 	log "github.com/sirupsen/logrus"
-
-	"github.com/openshift/assisted-installer-agent/src/util"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/session"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/client/installer"
 	"github.com/openshift/assisted-service/models"
 )

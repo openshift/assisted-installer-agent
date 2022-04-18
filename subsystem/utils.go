@@ -23,7 +23,6 @@ var (
 	AssistedServiceURLFromAgent  = fmt.Sprintf("http://wiremock:%s", os.Getenv("WIREMOCK_PORT"))
 	RequestsURL                  = fmt.Sprintf("%s/__admin/requests", WireMockURLFromSubsystemHost)
 	MappingsURL                  = fmt.Sprintf("%s/__admin/mappings", WireMockURLFromSubsystemHost)
-	agentImage                   = os.Getenv("ASSISTED_INSTALLER_AGENT")
 	defaultContainerTool         = "docker"
 )
 
@@ -234,6 +233,7 @@ func addRegisterStub(hostID string, reply int, infraEnvID string) (string, error
 	var b []byte
 	var err error
 	hostUUID := strfmt.UUID(hostID)
+	infraEnvUUID := strfmt.UUID(infraEnvID)
 	hostKind := "host"
 
 	switch reply {
@@ -243,13 +243,18 @@ func addRegisterStub(hostID string, reply int, infraEnvID string) (string, error
 			Kind: &hostKind,
 		}
 
+		args := models.NextStepCmdRequest{
+			AgentVersion: swag.String("subsystem_agent:latest"),
+			HostID:       &hostUUID,
+			InfraEnvID:   &infraEnvUUID,
+		}
+
+		b, err = json.Marshal(&args)
+		Expect(err).NotTo(HaveOccurred())
+
 		stepRunnerCommand := &models.HostRegistrationResponseAO1NextStepRunnerCommand{
-			Command: "/usr/bin/next_step_runner",
-			Args: []string{
-				"--url", AssistedServiceURLFromAgent,
-				"--infra-env-id", infraEnvID,
-				"--host-id", hostID,
-			},
+			Command: "",
+			Args:    []string{string(b)},
 		}
 
 		registerResponse := &models.HostRegistrationResponse{
@@ -435,7 +440,7 @@ func stopAgent() error {
 }
 
 func startContainer(args ...string) error {
-	args = append([]string{"-f", "docker-compose.yml", "run", "-d", "--no-deps"}, args...)
+	args = append([]string{"-f", "docker-compose.yml", "up", "-d"}, args...)
 
 	cmd := exec.Command("docker-compose", args...)
 	cmd.Stderr = os.Stderr
@@ -480,14 +485,6 @@ func isReplyFound(hostID string, verifier StepVerifier) bool {
 	return false
 }
 
-func createCustomStub(stepType models.StepType, command string, args ...string) *models.Step {
-	return &models.Step{
-		StepType: stepType,
-		Command:  command,
-		Args:     args,
-	}
-}
-
 func setReplyStartAgent(hostID string) {
 	_, err := addStepReplyStub(hostID)
 	Expect(err).NotTo(HaveOccurred())
@@ -503,37 +500,26 @@ func setPostReply(hostID string) {
 	verifyGetNextRequest(hostID, true)
 }
 
-func generateNsenterStep(stepType models.StepType, args []string) *models.Step {
-	commands_args := []string{"-t", "1", "-m", "-i", "--"}
-	commands_args = append(commands_args, args...)
+func generateStep(stepType models.StepType, args []string) *models.Step {
 	stepID := uuid.New().String()
 
 	return &models.Step{
 		StepType: stepType,
 		StepID:   stepID,
-		Command:  "nsenter",
-		Args:     commands_args,
+		Command:  "",
+		Args:     args,
 	}
 }
 
-func generateContainerStep(stepType models.StepType, containerAdditionalArgs []string, commandArgs []string) *models.Step {
-	containerArgs := []string{
-		"run", "--privileged", "--rm",
-		"-v", "/var/log:/var/log",
-		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
-	}
-	containerArgs = append(containerArgs, containerAdditionalArgs...)
-	stepID := uuid.New().String()
+func createContainerImageAvailabilityStep(request models.ContainerImageAvailabilityRequest) *models.Step {
+	b, err := json.Marshal(&request)
+	Expect(err).ShouldNot(HaveOccurred())
 
-	args := make([]string, 0)
-	args = append(args, containerArgs...)
-	args = append(args, agentImage)
-	args = append(args, commandArgs...)
+	return generateStep(models.StepTypeContainerImageAvailability,
+		[]string{string(b)})
+}
 
-	return &models.Step{
-		StepType: stepType,
-		StepID:   stepID,
-		Command:  defaultContainerTool,
-		Args:     args,
-	}
+func setImageAvailabilityStub(hostID string, request models.ContainerImageAvailabilityRequest) {
+	_, err := addNextStepStub(hostID, 10, "", createContainerImageAvailabilityStep(request))
+	Expect(err).NotTo(HaveOccurred())
 }

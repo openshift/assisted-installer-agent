@@ -36,6 +36,7 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
 }
 
 func Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
+	log.Infof("Executing %s %v", command, args)
 	cmd := exec.Command(command, args...)
 	var stdoutBytes, stderrBytes bytes2.Buffer
 	cmd.Stdout = &stdoutBytes
@@ -112,7 +113,6 @@ func ExecutePrivileged(command string, args ...string) (stdout string, stderr st
 		"--",
 		command,
 	}
-
 	arguments = append(arguments, args...)
 	return Execute(commandBase, arguments...)
 }

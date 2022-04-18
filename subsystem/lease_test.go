@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	agentUtils "github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/go-openapi/strfmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -131,7 +133,7 @@ var _ = Describe("Lease tests", func() {
 		})
 
 		It("invalid_mac", func() {
-			apiMac = "invalid-mac"
+			apiMac = "invalid_mac"
 
 			stepID := setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 				APIVipMac:     &apiMac,
@@ -141,8 +143,8 @@ var _ = Describe("Lease tests", func() {
 
 			setReplyStartAgent(hostID)
 			Eventually(isReplyFound(hostID, &EqualReplyVerifier{
-				Error:    fmt.Sprintf("address %s: invalid MAC address", apiMac),
-				ExitCode: 255,
+				Error:    fmt.Sprintf("validation failure list:\napi_vip_mac in body must be of type mac: \"%s\"", apiMac),
+				ExitCode: -1,
 				Output:   "",
 				StepID:   stepID,
 				StepType: models.StepTypeDhcpLeaseAllocate,
@@ -161,7 +163,7 @@ var _ = Describe("Lease tests", func() {
 			setReplyStartAgent(hostID)
 			Eventually(isReplyFound(hostID, &EqualReplyVerifier{
 				Error:    "numerical result out of range",
-				ExitCode: 255,
+				ExitCode: -1,
 				Output:   "",
 				StepID:   stepID,
 				StepType: models.StepTypeDhcpLeaseAllocate,
@@ -174,18 +176,20 @@ var _ = Describe("Lease tests", func() {
 			resetAll()
 			By("1st time", func() {
 				_, _ = addRegisterStub(hostID, http.StatusCreated, InfraEnvID)
-				addTcpdumpStub(hostID, ifaceName, 11, 6)
-				Expect(startAgent()).ToNot(HaveOccurred())
-				waitforTcpdumpToStart(hostID)
+				setReplyStartAgent(hostID)
+				messages := make(chan string)
+				//Expect(startAgent()).NotTo(HaveOccurred())
+				time.Sleep(60 * time.Second)
+				go startTcpDump(messages, ifaceName, 70, 6)
+				waitforTcpdumpToStart()
 				setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 					APIVipMac:     &apiMac,
 					IngressVipMac: &ingressMac,
 					Interface:     &ifaceName,
 				})
-
 				dhcpResponse = getDHCPResponse(hostID)
 				Expect(dhcpResponse).ShouldNot(BeNil())
-				tcpdumpResponse := getTcpdumpReponse(hostID)
+				tcpdumpResponse := <-messages
 				Expect(countSubstringOccurrences(tcpdumpResponse, "Discover")).To(BeNumerically(">=", 2))
 				Expect(countSubstringOccurrences(tcpdumpResponse, "Request")).To(BeNumerically(">=", 2))
 			})
@@ -194,10 +198,12 @@ var _ = Describe("Lease tests", func() {
 
 			By("2nd time", func() {
 
-				addTcpdumpStub(hostID, ifaceName, 11, 4)
+				messages := make(chan string)
 				_, _ = addRegisterStub(hostID, http.StatusCreated, InfraEnvID)
-				Expect(startAgent()).ToNot(HaveOccurred())
-				waitforTcpdumpToStart(hostID)
+				setReplyStartAgent(hostID)
+				time.Sleep(60 * time.Second)
+				go startTcpDump(messages, ifaceName, 120, 4)
+				waitforTcpdumpToStart()
 				setDHCPLeaseRequestStub(hostID, models.DhcpAllocationRequest{
 					APIVipMac:       &apiMac,
 					IngressVipMac:   &ingressMac,
@@ -214,7 +220,7 @@ var _ = Describe("Lease tests", func() {
 				Expect(secondResponse.IngressVipAddress.String()).ToNot(BeEmpty())
 				Expect(secondResponse.APIVipLease).To(ContainSubstring(secondResponse.APIVipAddress.String()))
 				Expect(secondResponse.IngressVipLease).To(ContainSubstring(secondResponse.IngressVipAddress.String()))
-				tcpdumpResponse := getTcpdumpReponse(hostID)
+				tcpdumpResponse := <-messages
 				Expect(countSubstringOccurrences(tcpdumpResponse, "Discover")).To(Equal(0))
 				Expect(countSubstringOccurrences(tcpdumpResponse, "Request")).To(BeNumerically(">=", 2))
 			})
@@ -222,55 +228,28 @@ var _ = Describe("Lease tests", func() {
 	})
 })
 
-const TcpdumpStepType = models.StepType("tcpdump")
-
 func formatLease(lease string) string {
 	c := regexp.MustCompile(`(\s)(renew|rebind|expire) [^;]*;`)
 	return c.ReplaceAllString(lease, "${1}${2} never;")
 }
 
-func addTcpdumpStub(hostID, ifaceName string, timeoutSecs, count int) {
+func startTcpDump(output chan string, ifaceName string, timeoutSecs, count int) {
 	countStr := ""
 	if count > 0 {
 		countStr = fmt.Sprintf("-c %d", count)
 	}
-	_, err := addNextStepStub(hostID, 5, "",
-		createCustomStub(TcpdumpStepType, "bash", "-c",
-			fmt.Sprintf("timeout %d tcpdump -l -i %s %s -v 'udp dst port 67' | awk '/DHCP-Message Option 53/{print $6}'", timeoutSecs, ifaceName, countStr)),
-		&models.Step{
-			StepType: models.StepTypeExecute,
-			Command:  "bash",
-			Args: []string{
-				"-c",
-				"sleep 1; echo tcpdump started",
-			},
-		},
-	)
-	Expect(err).ToNot(HaveOccurred())
+	dump := fmt.Sprintf("timeout %d tcpdump -l -i %s %s -v 'udp dst port 67' | awk '/DHCP-Message Option 53/{print $6}'", timeoutSecs, ifaceName, countStr)
+
+	s, e, errorCode := agentUtils.Execute("docker", []string{"exec", "agent", "bash", "-c", dump}...)
+	fmt.Println(s, e, errorCode)
+	output <- s
 }
 
-func waitforTcpdumpToStart(hostID string) {
+func waitforTcpdumpToStart() {
 	EventuallyWithOffset(1, func() bool {
-		return isReplyFound(hostID, &EqualReplyVerifier{
-			Output:   "tcpdump started\n",
-			StepType: models.StepTypeExecute,
-		})
+		_, _, exitCode := agentUtils.Execute("docker", []string{"exec", "agent", "bash", "-c", "ps aux | grep -v grep | grep tcpdump"}...)
+		return exitCode == 0
 	}, 30*time.Second, 500*time.Millisecond).Should(BeTrue())
-}
-
-type TcpdumVerifier struct{}
-
-func (*TcpdumVerifier) verify(actualReply *models.StepReply) bool {
-	return actualReply.StepType == TcpdumpStepType
-}
-
-func getTcpdumpReponse(hostID string) string {
-	EventuallyWithOffset(1, func() bool {
-		return isReplyFound(hostID, &TcpdumVerifier{})
-	}, 30*time.Second, 5*time.Second).Should(BeTrue())
-
-	stepReply := getSpecificStep(hostID, &TcpdumVerifier{})
-	return stepReply.Output
 }
 
 func countSubstringOccurrences(s, substr string) int {
@@ -298,9 +277,8 @@ func setDHCPLeaseRequestStub(hostID string, request models.DhcpAllocationRequest
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	step := generateContainerStep(models.StepTypeDhcpLeaseAllocate,
-		[]string{"--net=subsystem_agent_network"},
-		[]string{"/usr/bin/dhcp_lease_allocate", string(b)})
+	step := generateStep(models.StepTypeDhcpLeaseAllocate,
+		[]string{string(b)})
 	_, err = addNextStepStub(hostID, 5, "", step)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -311,8 +289,7 @@ func getDHCPResponse(hostID string) *models.DhcpAllocationResponse {
 	setPostReply(hostID)
 	EventuallyWithOffset(1, func() bool {
 		return isReplyFound(hostID, &DHCPLeaseAllocateVerifier{})
-	}, 30*time.Second, 5*time.Second).Should(BeTrue())
-
+	}, 120*time.Second, 5*time.Second).Should(BeTrue())
 	stepReply := getSpecificStep(hostID, &DHCPLeaseAllocateVerifier{})
 	return getLeaseResponseFromStepReply(stepReply)
 }

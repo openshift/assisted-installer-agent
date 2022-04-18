@@ -40,7 +40,7 @@ type install struct {
 }
 
 func (a *install) Validate() error {
-	err := validateCommon("install", 1, a.args, &a.installParams)
+	err := ValidateCommon("install", 1, a.args, &a.installParams)
 	if err != nil {
 		return err
 	}

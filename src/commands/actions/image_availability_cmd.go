@@ -17,7 +17,7 @@ type imageAvailability struct {
 
 func (a *imageAvailability) Validate() error {
 	modelToValidate := models.ContainerImageAvailabilityRequest{}
-	err := validateCommon("image availability", 1, a.args, &modelToValidate)
+	err := ValidateCommon("image availability", 1, a.args, &modelToValidate)
 	if err != nil {
 		return err
 	}

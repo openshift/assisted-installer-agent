@@ -23,7 +23,7 @@ func NewNextStepRunnerAction(agentConfig *config.AgentConfig, args []string) Act
 }
 
 func (a *nextStepRunnerAction) Validate() error {
-	err := validateCommon("next step runner", 1, a.args, &a.nextStepRunnerParams)
+	err := ValidateCommon("next step runner", 1, a.args, &a.nextStepRunnerParams)
 	if err != nil {
 		return err
 	}

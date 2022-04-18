@@ -12,7 +12,7 @@ type dhcpLeases struct {
 
 func (a *dhcpLeases) Validate() error {
 	modelToValidate := models.DhcpAllocationRequest{}
-	err := validateCommon("dhcp leases", 1, a.args, &modelToValidate)
+	err := ValidateCommon("dhcp leases", 1, a.args, &modelToValidate)
 	if err != nil {
 		return err
 	}

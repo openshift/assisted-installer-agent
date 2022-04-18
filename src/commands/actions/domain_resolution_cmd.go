@@ -12,7 +12,7 @@ type domainResolution struct {
 
 func (a *domainResolution) Validate() error {
 	modelToValidate := models.DomainResolutionRequest{}
-	err := validateCommon("domain resolution", 1, a.args, &modelToValidate)
+	err := ValidateCommon("domain resolution", 1, a.args, &modelToValidate)
 	if err != nil {
 		return err
 	}

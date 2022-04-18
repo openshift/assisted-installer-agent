@@ -18,7 +18,7 @@ type diskPerfCheck struct {
 
 func (a *diskPerfCheck) Validate() error {
 	modelToValidate := models.DiskSpeedCheckRequest{}
-	err := validateCommon("disk performance", 2, a.args, &modelToValidate)
+	err := ValidateCommon("disk performance", 2, a.args, &modelToValidate)
 	if err != nil {
 		return err
 	}

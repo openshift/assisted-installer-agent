@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/openshift/assisted-installer-agent/src/util"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
-	log "github.com/sirupsen/logrus"
 )
 
 type diskPerfCheck struct {

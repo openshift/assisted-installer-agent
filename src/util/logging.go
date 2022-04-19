@@ -86,3 +86,9 @@ func SetLoggingWithStdOut(name string, textLogging, journalLogging bool, hostID 
 func SetLogging(name string, textLogging, journalLogging bool, hostID string) {
 	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, false, hostID)
 }
+
+func NewJournalLogger(name string, hostID string) logrus.FieldLogger {
+	log := logrus.New()
+	setLogging(log, &journalLogger.JournalWriter{}, name, false, true, false, hostID)
+	return log
+}

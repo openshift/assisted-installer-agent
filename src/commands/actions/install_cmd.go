@@ -93,9 +93,12 @@ func (a *install) getFullInstallerCommand() string {
 		"--host-id", string(*a.installParams.HostID),
 		"--boot-device", swag.StringValue(a.installParams.BootDevice),
 		"--url", a.agentConfig.TargetURL,
-		"--high-availability-mode", swag.StringValue(a.installParams.HighAvailabilityMode),
 		"--controller-image", swag.StringValue(a.installParams.ControllerImage),
 		"--agent-image", a.agentConfig.AgentVersion,
+	}
+
+	if a.installParams.HighAvailabilityMode != nil {
+		installerCmdArgs = append(installerCmdArgs, "--high-availability-mode", swag.StringValue(a.installParams.HighAvailabilityMode))
 	}
 
 	if a.installParams.McoImage != "" {

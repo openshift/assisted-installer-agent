@@ -17,7 +17,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
-	github.com/openshift/assisted-service v1.0.10-0.20220426095042-b31fbf34d02b
+	github.com/openshift/assisted-service v1.0.10-0.20220506214521-2f82f2a21d94
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -73,7 +73,7 @@ require (
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
@@ -138,7 +138,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gorm.io/driver/postgres v1.3.5 // indirect
-	gorm.io/gorm v1.23.4 // indirect
+	gorm.io/gorm v1.23.5 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
 	k8s.io/api v0.23.6 // indirect
 	k8s.io/apimachinery v0.23.6 // indirect
@@ -155,7 +155,7 @@ replace (
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20220314012014-141adc8ae8f8
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20220426095042-b31fbf34d02b
+	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20220506214521-2f82f2a21d94
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

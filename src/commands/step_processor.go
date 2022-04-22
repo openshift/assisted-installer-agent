@@ -38,8 +38,8 @@ type stepSession struct {
 	agentConfig       *config.AgentConfig
 }
 
-func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory) *stepSession {
-	invSession, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken)
+func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, log log.FieldLogger) *stepSession {
+	invSession, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken, log)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}
@@ -242,7 +242,7 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	return result.NextInstructionSeconds, *result.PostStepAction
 }
 
-func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup) {
+func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup, log log.FieldLogger) {
 	defer wg.Done()
 
 	var nextRunIn int64
@@ -251,7 +251,7 @@ func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunn
 		case <-ctx.Done():
 			return
 		default:
-			s := newSession(agentConfig, toolRunnerFactory)
+			s := newSession(agentConfig, toolRunnerFactory, log)
 			nextRunIn, afterStep = s.processSingleSession()
 			if nextRunIn == -1 {
 				// sleep forever

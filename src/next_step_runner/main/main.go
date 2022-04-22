@@ -22,7 +22,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	toolRunnerFactory := commands.NewToolRunnerFactory()
-	go commands.ProcessSteps(ctx, agentConfig, toolRunnerFactory, &wg)
+	go commands.ProcessSteps(ctx, agentConfig, toolRunnerFactory, &wg, log.StandardLogger())
 
 	if agentConfig.DryRunEnabled {
 		log.Info(`Dry run enabled, will cancel goroutine on fake "reboot"`)

@@ -41,9 +41,9 @@ func delayOnError(stepRunnerCommand *models.HostRegistrationResponseAO1NextStepR
 	}
 }
 
-func RunAgent(agentConfig *config.AgentConfig, nextStepRunnerFactory commands.NextStepRunnerFactory) {
+func RunAgent(agentConfig *config.AgentConfig, nextStepRunnerFactory commands.NextStepRunnerFactory, log log.FieldLogger) {
 	for {
-		stepRunnerCommand := commands.RegisterHostWithRetry(agentConfig)
+		stepRunnerCommand := commands.RegisterHostWithRetry(agentConfig, log)
 		if stepRunnerCommand == nil {
 			log.Errorf("Incompatible server version, going to retry in %s", defaultRetryDelay)
 			time.Sleep(defaultRetryDelay)

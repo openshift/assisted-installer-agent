@@ -167,7 +167,7 @@ func readCACertificate(agentConfig *config.AgentConfig) (*x509.CertPool, error) 
 	return pool, nil
 }
 
-func New(agentConfig *config.AgentConfig, inventoryUrl string, pullSecretToken string) (*InventorySession, error) {
+func New(agentConfig *config.AgentConfig, inventoryUrl string, pullSecretToken string, log logrus.FieldLogger) (*InventorySession, error) {
 	id := requestid.NewID()
 	inventory, err := createBmInventoryClient(agentConfig, inventoryUrl, pullSecretToken)
 	if err != nil {
@@ -175,7 +175,7 @@ func New(agentConfig *config.AgentConfig, inventoryUrl string, pullSecretToken s
 	}
 	ret := InventorySession{
 		ctx:    requestid.ToContext(context.Background(), id),
-		logger: requestid.RequestIDLogger(logrus.StandardLogger(), id),
+		logger: requestid.RequestIDLogger(log, id),
 		client: inventory,
 	}
 	return &ret, nil

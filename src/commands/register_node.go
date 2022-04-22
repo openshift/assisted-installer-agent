@@ -11,10 +11,10 @@ import (
 	"github.com/openshift/assisted-service/models"
 )
 
-func RegisterHostWithRetry(agentConfig *config.AgentConfig) *models.HostRegistrationResponseAO1NextStepRunnerCommand {
+func RegisterHostWithRetry(agentConfig *config.AgentConfig, log logrus.FieldLogger) *models.HostRegistrationResponseAO1NextStepRunnerCommand {
 
 	for {
-		s, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken)
+		s, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken, log)
 		if err != nil {
 			logrus.Fatalf("Failed to initialize connection: %e", err)
 		}

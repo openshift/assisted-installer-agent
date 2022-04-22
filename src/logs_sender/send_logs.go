@@ -87,7 +87,7 @@ func (e *LogsSenderExecuter) CreateFolderIfNotExist(folder string) error {
 }
 
 func getClient(loggingConfig *config.LogsSenderConfig, inventoryUrl string, pullSecretToken string) (*client.AssistedInstall, context.Context) {
-	invSession, err := session.New(&loggingConfig.AgentConfig, inventoryUrl, pullSecretToken)
+	invSession, err := session.New(&loggingConfig.AgentConfig, inventoryUrl, pullSecretToken, log.StandardLogger())
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}

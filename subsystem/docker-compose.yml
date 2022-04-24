@@ -12,9 +12,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /run/systemd/journal/socket:/run/systemd/journal/socket
       - /dev/log:/dev/log
+      - ./dmi:/sys/class/dmi/id
     privileged: true
     networks:
-      agent_network:
+      - agent_network
     environment:
       - PULL_SECRET_TOKEN=OpenShiftToken
       - WIREMOCK_PORT
@@ -37,7 +38,7 @@ services:
     volumes:
       - ${ROOT_DIR}/subsystem/data:/etc/dhcp:z
     networks:
-      agent_network:
+      - agent_network
     environment:
       - ROOT_DIR
     command: ["-f", "-cf", "/etc/dhcp/dhcpd.conf", "-user", "root", "-group", "root", "--no-pid"]
@@ -47,7 +48,7 @@ services:
     ports:
       - "${WIREMOCK_PORT}:${WIREMOCK_PORT}"
     networks:
-      agent_network:
+      - agent_network
     environment:
       - WIREMOCK_PORT
     volumes:

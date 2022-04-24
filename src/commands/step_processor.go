@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 
 	log "github.com/sirupsen/logrus"
@@ -36,9 +37,10 @@ type stepSession struct {
 	serviceAPI        serviceAPI
 	toolRunnerFactory ToolRunnerFactory
 	agentConfig       *config.AgentConfig
+	stepCache         *cache.Cache
 }
 
-func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, log log.FieldLogger) *stepSession {
+func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, c *cache.Cache, log log.FieldLogger) *stepSession {
 	invSession, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken, log)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
@@ -48,12 +50,13 @@ func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFac
 		serviceAPI:        newServiceAPI(agentConfig),
 		toolRunnerFactory: toolRunnerFactory,
 		agentConfig:       agentConfig,
+		stepCache:         c,
 	}
 	return &ret
 }
 
 func (s *stepSession) sendStepReply(reply models.StepReply) {
-	if reply.ExitCode == 0 && alreadyExistsInService(reply.StepType, reply.Output) {
+	if reply.ExitCode == 0 && alreadyExistsInService(s.stepCache, reply.StepType, reply.Output) {
 		s.Logger().Infof("Result for %s already exists in assisted service", string(reply.StepType))
 		return
 	}
@@ -80,7 +83,7 @@ func (s *stepSession) sendStepReply(reply models.StepReply) {
 			s.Logger().Warnf("Error posting step reply: %s", getErrorMessage(err))
 		}
 	} else if reply.ExitCode == 0 {
-		storeInCache(reply.StepType, reply.Output)
+		storeInCache(s.stepCache, reply.StepType, reply.Output)
 	}
 }
 
@@ -222,7 +225,7 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	s.Logger().Info("Query for next steps")
 	result, err := s.serviceAPI.GetNextSteps(&s.InventorySession)
 	if err != nil {
-		invalidateCache()
+		invalidateCache(s.stepCache)
 		switch err.(type) {
 		case *installer.V2GetNextStepsNotFound:
 			s.Logger().WithError(err).Errorf("Infra-env %s was not found in inventory or user is not authorized, going to sleep forever", s.agentConfig.InfraEnvID)
@@ -246,12 +249,13 @@ func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunn
 	defer wg.Done()
 
 	var nextRunIn int64
+	c := newCache()
 	for afterStep := ""; afterStep != models.StepsPostStepActionExit; {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			s := newSession(agentConfig, toolRunnerFactory, log)
+			s := newSession(agentConfig, toolRunnerFactory, c, log)
 			nextRunIn, afterStep = s.processSingleSession()
 			if nextRunIn == -1 {
 				// sleep forever

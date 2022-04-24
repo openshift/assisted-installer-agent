@@ -17,6 +17,7 @@ GIT_REVISION := $(shell git rev-parse HEAD)
 CONTAINER_BUILD_PARAMS = --network=host --label git_revision=${GIT_REVISION} ${CONTAINER_BUILD_EXTRA_PARAMS}
 
 DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
+LOG_OPTIONS=--no-color --timestamps
 
 all: build
 
@@ -70,8 +71,9 @@ subsystem: build-image
 	$(DOCKER_COMPOSE) up -d dhcpd wiremock; \
 	$(MAKE) _test TEST_SCENARIO=subsystem TIMEOUT=30m TEST="$(or $(TEST),./subsystem/...)"; \
 	rc=$$?; \
-	$(DOCKER_COMPOSE) logs dhcpd > dhcpd.log; \
-	$(DOCKER_COMPOSE) logs wiremock > wiremock.log; \
+	$(DOCKER_COMPOSE) logs $(LOG_OPTIONS) dhcpd > dhcpd.log; \
+	$(DOCKER_COMPOSE) logs $(LOG_OPTIONS) wiremock > wiremock.log; \
+	$(DOCKER_COMPOSE) logs $(LOG_OPTIONS) agent > agent.log; \
 	$(DOCKER_COMPOSE) down; \
 	exit $$rc;
 

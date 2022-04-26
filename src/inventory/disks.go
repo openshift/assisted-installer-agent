@@ -124,6 +124,27 @@ func (d *disks) getBootable(path string) bool {
 	return strings.Contains(stdout, "DOS/MBR boot sector")
 }
 
+func (d *disks) hasUUID(path string) bool {
+	if path == "" {
+		return false
+	}
+
+	// Openshift requires VSphere (and maybe other platforms) VMs to have a UUID for disks
+	// Here we add this information to the inventory for the assisted-service verification.
+	// Getting device page 83 which contains the device WWID(disk.UUID)
+	// please see: https://access.redhat.com/solutions/93943
+	stdout, stderr, exitCode := d.dependencies.Execute("sg_inq", "-p", "0x83", path)
+
+	logrus.Debugf("UUID information for path %s: exit code %d, stdout: %s\n, stderr: %s", path, exitCode, stdout, stderr)
+
+	if exitCode != 0 {
+		logrus.Infof("hasUUID is false for path %s: exit code %d, stdout: %s\n, stderr: %s", path, exitCode, stdout, stderr)
+		return false
+	}
+
+	return true
+}
+
 func (d *disks) getSMART(path string) string {
 	if path == "" {
 		return ""
@@ -269,6 +290,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Smart:                   d.getSMART(path),
 			IsInstallationMedia:     isInstallationMedia,
 			InstallationEligibility: eligibility,
+			HasUUID:                 d.hasUUID(path),
 		}
 
 		rec.ID = rec.Path

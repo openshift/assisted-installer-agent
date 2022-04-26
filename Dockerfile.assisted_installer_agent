@@ -19,6 +19,7 @@ RUN dnf install -y \
 		# inventory
 		dmidecode ipmitool biosdevname file fio \
 		smartmontools \
+		sg3_utils \
 		# free_addresses
 		nmap \
 		# dhcp_lease_allocate

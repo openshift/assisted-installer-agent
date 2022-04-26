@@ -1,11 +1,14 @@
 package subsystem
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	agentUtils "github.com/openshift/assisted-installer-agent/src/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,18 +23,23 @@ const (
 var _ = Describe("NTP tests", func() {
 	var (
 		hostID string
+		ctx    context.Context
+		cancel context.CancelFunc
 	)
 
 	BeforeEach(func() {
+		ctx, cancel = context.WithCancel(context.Background())
 		resetAll()
 		hostID = nextHostID()
+	})
+	AfterEach(func() {
+		cancel()
 	})
 
 	Context("add_new_server", func() {
 		It("IP", func() {
 			server := "1.2.3.4"
-			startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
-
+			startNTPSynchronizer(ctx, hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 			ntpResponse := getNTPResponse(hostID, []string{server})
 			Expect(ntpResponse).ShouldNot(BeNil())
 			printNtpSources(ntpResponse)
@@ -40,8 +48,7 @@ var _ = Describe("NTP tests", func() {
 
 		It("Hostname", func() {
 			server := "dns.google"
-			startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
-
+			startNTPSynchronizer(ctx, hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 			ntpResponse := getNTPResponse(hostID, []string{server})
 			Expect(ntpResponse).ShouldNot(BeNil())
 			printNtpSources(ntpResponse)
@@ -51,7 +58,7 @@ var _ = Describe("NTP tests", func() {
 
 	It("add_existing_server", func() {
 		server := "2.2.2.2"
-		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &server})
+		startNTPSynchronizer(ctx, hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
 		By("Add server 1st time", func() {
 			ntpResponse := getNTPResponse(hostID, []string{server})
@@ -72,8 +79,7 @@ var _ = Describe("NTP tests", func() {
 	It("add_multiple_servers", func() {
 		servers := []string{"1.1.1.3", "1.1.1.4", "1.1.1.5"}
 		serversAsString := strings.Join(servers, ",")
-		startNTPSynchronizer(hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
-
+		startNTPSynchronizer(ctx, hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
 		ntpResponse := getNTPResponse(hostID, servers)
 		Expect(ntpResponse).ShouldNot(BeNil())
 		printNtpSources(ntpResponse)
@@ -90,13 +96,13 @@ func printNtpSources(ntpResponse *models.NtpSynchronizationResponse) {
 	}
 }
 
-func startNTPSynchronizer(hostId string, request models.NtpSynchronizationRequest) {
-	addChronyDaemonStub(hostId)
+func startNTPSynchronizer(ctx context.Context, hostId string, request models.NtpSynchronizationRequest) {
 	_, _ = addRegisterStub(hostId, http.StatusCreated, InfraEnvID)
 	setReplyStartAgent(hostId)
-	waitforChronyDaemonToStart(hostId)
-
+	addChronyDaemon(ctx, hostId)
 	setNTPSyncRequestStub(hostId, request)
+	_, err := addStepReplyStub(hostId)
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func isSourceInList(sourceName string, ls []*models.NtpSource) bool {
@@ -112,8 +118,7 @@ func isSourceInList(sourceName string, ls []*models.NtpSource) bool {
 func setNTPSyncRequestStub(hostID string, request models.NtpSynchronizationRequest) {
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
-
-	step := generateNsenterStep(models.StepTypeNtpSynchronizer, []string{"/usr/bin/ntp_synchronizer", string(b)})
+	step := generateStep(models.StepTypeNtpSynchronizer, []string{string(b)})
 	_, err = addNextStepStub(hostID, timeBetweenSteps, "", step)
 	Expect(err).NotTo(HaveOccurred())
 }
@@ -121,7 +126,7 @@ func setNTPSyncRequestStub(hostID string, request models.NtpSynchronizationReque
 func getNTPResponse(hostID string, expectedNtpSources []string) *models.NtpSynchronizationResponse {
 	Eventually(func() bool {
 		return isReplyFound(hostID, &NTPSynchronizerVerifier{expectedNtpSources})
-	}, 30*time.Second, timeBetweenSteps*time.Second).Should(BeTrue())
+	}, 120*time.Second, timeBetweenSteps*time.Second).Should(BeTrue())
 
 	stepReply := getSpecificStep(hostID, &NTPSynchronizerVerifier{expectedNtpSources})
 	return getNTPResponseFromStepReply(stepReply)
@@ -172,28 +177,8 @@ func getNTPResponseFromStepReply(actualReply *models.StepReply) *models.NtpSynch
 
 /* ===== Chrony Daemon ===== */
 
-const chronyDaemonStepType = models.StepType("chrony")
-
-func addChronyDaemonStub(hostID string) {
-	_, err := addNextStepStub(hostID, 10, "",
-		createCustomStub(chronyDaemonStepType, "chronyd"),
-		&models.Step{
-			StepType: models.StepTypeExecute,
-			Command:  "bash",
-			Args: []string{
-				"-c",
-				"sleep 1; echo chronyd started",
-			},
-		},
-	)
-	Expect(err).ToNot(HaveOccurred())
-}
-
-func waitforChronyDaemonToStart(hostID string) {
-	EventuallyWithOffset(1, func() bool {
-		return isReplyFound(hostID, &EqualReplyVerifier{
-			Output:   "chronyd started\n",
-			StepType: models.StepTypeExecute,
-		})
-	}, 30*time.Second, 500*time.Millisecond).Should(BeTrue())
+func addChronyDaemon(ctx context.Context, hostID string) {
+	s, e, errorCode := agentUtils.Execute("docker", []string{"exec", "agent", "chronyd"}...)
+	fmt.Println(s, e, errorCode)
+	Expect(errorCode).To(Equal(0))
 }

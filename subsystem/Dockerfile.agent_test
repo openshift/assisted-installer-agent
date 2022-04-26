@@ -8,4 +8,9 @@ RUN yum install -y yum-utils \
     docker-ce-cli \
     containerd.io \
     tcpdump \
+    procps \
+    python39 \
     && dnf clean all
+
+RUN echo -e "#!/bin/sh \nshift 7 && \$@" > /usr/bin/nsenter && chmod a+x /usr/bin/nsenter
+ADD podman_override /usr/bin/podman

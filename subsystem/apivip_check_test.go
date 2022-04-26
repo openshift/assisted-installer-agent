@@ -49,9 +49,8 @@ func setWorkerIgnitionStub(hostID string, request *models.APIVipConnectivityRequ
 	b, err := json.Marshal(&request)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	step := generateContainerStep(models.StepTypeAPIVipConnectivityCheck,
-		[]string{"--net=host"},
-		[]string{"/usr/bin/apivip_check", string(b)})
+	step := generateStep(models.StepTypeAPIVipConnectivityCheck,
+		[]string{string(b)})
 	_, err = addNextStepStub(hostID, 5, "", step)
 	Expect(err).ShouldNot(HaveOccurred())
 }

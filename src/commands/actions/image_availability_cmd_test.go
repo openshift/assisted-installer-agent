@@ -1,8 +1,6 @@
 package actions
 
 import (
-	"strings"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -22,17 +20,18 @@ var _ = Describe("image availability", func() {
 	It("image availability", func() {
 		action, err := New(&config.AgentConfig{}, models.StepTypeContainerImageAvailability, []string{param})
 		Expect(err).NotTo(HaveOccurred())
-
-		args := action.Args()
-		command := action.Command()
-		Expect(command).To(Equal("sh"))
-		paths := []string{
-			"/var/log",
-			"/run/systemd/journal/socket",
-		}
-		verifyPaths(strings.Join(args, " "), paths)
-		Expect(args[len(args)-1]).To(ContainSubstring(param))
-		Expect(args[len(args)-1]).To(ContainSubstring("container_image_availability"))
+		Expect(action.Command()).To(Equal("container_image_availability"))
+		Expect(action.Args()).To(Equal([]string{param}))
+	})
+	It("image availability with acquired semaphore", func() {
+		action, err := New(&config.AgentConfig{}, models.StepTypeContainerImageAvailability, []string{param})
+		Expect(err).NotTo(HaveOccurred())
+		defer sem.Release(1)
+		Expect(sem.TryAcquire(1)).To(BeTrue())
+		output, stderr, exitCode := action.Run()
+		Expect(output).To(BeEmpty())
+		Expect(stderr).To(BeEmpty())
+		Expect(exitCode).To(Equal(0))
 	})
 
 	It("image availability bad input", func() {

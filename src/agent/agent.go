@@ -20,17 +20,13 @@ func NewNextStepRunnerFactory() commands.NextStepRunnerFactory {
 }
 
 func (n *nextStepRunnerFactory) Create(agentConfig *config.AgentConfig, command string, args []string) (commands.Runner, error) {
-	if command == "" {
-		action := actions.NewNextStepRunnerAction(agentConfig, args)
-		err := action.Validate()
-		if err != nil {
-			log.WithError(err).Errorf("next step runner command validation failed")
-			return nil, err
-		}
-		return action, nil
+	action := actions.NewNextStepRunnerAction(agentConfig, args)
+	err := action.Validate()
+	if err != nil {
+		log.WithError(err).Errorf("next step runner command validation failed")
+		return nil, err
 	}
-
-	return commands.NewExecuteRunner(command, args), nil
+	return action, nil
 }
 
 func delayOnError(stepRunnerCommand *models.HostRegistrationResponseAO1NextStepRunnerCommand) time.Duration {

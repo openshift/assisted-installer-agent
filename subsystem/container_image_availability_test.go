@@ -46,17 +46,6 @@ var _ = Describe("Image availability tests", func() {
 		}
 
 		startImageAvailability(hostID, models.ContainerImageAvailabilityRequest{Images: images, Timeout: pullTimeoutInSeconds})
-		expectedReply := &EqualReplyVerifier{
-			Error:    "",
-			ExitCode: 0,
-			Output:   "",
-			StepID:   "",
-			StepType: models.StepTypeContainerImageAvailability,
-		}
-		// validate it can run only once
-		Eventually(func() bool {
-			return isReplyFound(hostID, expectedReply)
-		}, maxTimeout, 5*time.Second).Should(BeTrue())
 		checkImageAvailabilityResponse(hostID, images, true, true, pullTimeoutInSeconds)
 	})
 

@@ -113,11 +113,11 @@ stderr:
 	return s.createStepReply(stepType, stepID, stdout, stderr, exitCode)
 }
 
-func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string, command string, args []string) models.StepReply {
-	s.Logger().Infof("Creating execution step for %s %s command <%s> args <%v>", stepType, stepID, command, args)
-	nextStepRunner, err := s.toolRunnerFactory.Create(s.agentConfig, stepType, command, args)
+func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string, args []string) models.StepReply {
+	s.Logger().Infof("Creating execution step for %s %s args <%v>", stepType, stepID, args)
+	nextStepRunner, err := s.toolRunnerFactory.Create(s.agentConfig, stepType, args)
 	if err != nil {
-		s.Logger().WithError(err).Errorf("Unable to create runner for step <%s>, command <%s> args <%v>", stepID, command, args)
+		s.Logger().WithError(err).Errorf("Unable to create runner for step <%s>, args <%v>", stepID, args)
 		return s.createStepReply(stepType, stepID, "", err.Error(), int(-1))
 	}
 	return s.handleSingleStep(stepType, stepID, nextStepRunner)
@@ -128,12 +128,12 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 
 		go func(step *models.Step) {
 			if code, err := s.diagnoseSystem(); code != Undetected {
-				s.Logger().Errorf("System issue detected before running step: <%s>, command: <%s>, args: <%v>: %s - stopping the execution", step.StepID, step.Command, step.Args, err.Error())
+				s.Logger().Errorf("System issue detected before running step: <%s>, args: <%v>: %s - stopping the execution", step.StepID, step.Args, err.Error())
 				s.sendStepReply(s.createStepReply(step.StepType, step.StepID, "", err.Error(), int(code)))
 				return
 			}
 
-			reply := s.handleSingleStepV2(step.StepType, step.StepID, step.Command, step.Args)
+			reply := s.handleSingleStepV2(step.StepType, step.StepID, step.Args)
 
 			if reply.ExitCode != 0 {
 				if code, err := s.diagnoseSystem(); code != Undetected {

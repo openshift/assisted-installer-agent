@@ -198,7 +198,6 @@ func addRegisterStubInvalidCommand(hostID string, reply int, infraEnvID string, 
 	}
 
 	stepRunnerCommand := &models.HostRegistrationResponseAO1NextStepRunnerCommand{
-		Command:      "i_do_not_exist",
 		RetrySeconds: retryDelay,
 	}
 
@@ -253,8 +252,7 @@ func addRegisterStub(hostID string, reply int, infraEnvID string) (string, error
 		Expect(err).NotTo(HaveOccurred())
 
 		stepRunnerCommand := &models.HostRegistrationResponseAO1NextStepRunnerCommand{
-			Command: "",
-			Args:    []string{string(b)},
+			Args: []string{string(b)},
 		}
 
 		registerResponse := &models.HostRegistrationResponse{
@@ -506,7 +504,6 @@ func generateStep(stepType models.StepType, args []string) *models.Step {
 	return &models.Step{
 		StepType: stepType,
 		StepID:   stepID,
-		Command:  "",
 		Args:     args,
 	}
 }

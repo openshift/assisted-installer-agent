@@ -7,11 +7,11 @@ import (
 )
 
 type NextStepRunnerFactory interface {
-	Create(agentConfig *config.AgentConfig, command string, args []string) (Runner, error)
+	Create(agentConfig *config.AgentConfig, args []string) (Runner, error)
 }
 
 type ToolRunnerFactory interface {
-	Create(agentConfig *config.AgentConfig, stepType models.StepType, command string, args []string) (Runner, error)
+	Create(agentConfig *config.AgentConfig, stepType models.StepType, args []string) (Runner, error)
 }
 
 // Runner is the means to allow pluggable running mechanism to agent.
@@ -29,7 +29,7 @@ func NewToolRunnerFactory() ToolRunnerFactory {
 	return &toolRunnerFactory{}
 }
 
-func (a *toolRunnerFactory) Create(agentConfig *config.AgentConfig, stepType models.StepType, command string, args []string) (Runner, error) {
+func (a *toolRunnerFactory) Create(agentConfig *config.AgentConfig, stepType models.StepType, args []string) (Runner, error) {
 	actionToRun, err := actions.New(agentConfig, stepType, args)
 	if err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ func NewNextStepRunnerFactory() commands.NextStepRunnerFactory {
 	return &nextStepRunnerFactory{}
 }
 
-func (n *nextStepRunnerFactory) Create(agentConfig *config.AgentConfig, command string, args []string) (commands.Runner, error) {
+func (n *nextStepRunnerFactory) Create(agentConfig *config.AgentConfig, args []string) (commands.Runner, error) {
 	action := actions.NewNextStepRunnerAction(agentConfig, args)
 	err := action.Validate()
 	if err != nil {
@@ -46,7 +46,7 @@ func RunAgent(agentConfig *config.AgentConfig, nextStepRunnerFactory commands.Ne
 			continue
 		}
 
-		nextStepRunner, err := nextStepRunnerFactory.Create(agentConfig, stepRunnerCommand.Command, stepRunnerCommand.Args)
+		nextStepRunner, err := nextStepRunnerFactory.Create(agentConfig, stepRunnerCommand.Args)
 		if err != nil {
 			reRegisterDelay := delayOnError(stepRunnerCommand)
 			log.WithError(err).Errorf("Unable to create next step runner. Attempt again in %s", reRegisterDelay)

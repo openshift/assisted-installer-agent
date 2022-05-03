@@ -28,10 +28,10 @@ func (v *v2ServiceAPI) RegisterHost(s *session.InventorySession) (*models.HostRe
 
 	params := &installer.V2RegisterHostParams{
 		InfraEnvID:            strfmt.UUID(config.GlobalAgentConfig.InfraEnvID),
-		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
+		DiscoveryAgentVersion: &config.GlobalAgentConfig.DiscoveryAgentVersion,
 		NewHostParams: &models.HostCreateParams{
 			HostID:                &hostID,
-			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
+			DiscoveryAgentVersion: config.GlobalAgentConfig.DiscoveryAgentVersion,
 		},
 	}
 
@@ -46,7 +46,7 @@ func (v *v2ServiceAPI) GetNextSteps(s *session.InventorySession) (*models.Steps,
 	params := installer.V2GetNextStepsParams{
 		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
 		InfraEnvID:            strfmt.UUID(config.GlobalAgentConfig.InfraEnvID),
-		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
+		DiscoveryAgentVersion: &config.GlobalAgentConfig.DiscoveryAgentVersion,
 	}
 	result, err := s.Client().Installer.V2GetNextSteps(s.Context(), &params)
 	if err != nil {
@@ -59,7 +59,7 @@ func (v *v2ServiceAPI) PostStepReply(s *session.InventorySession, reply *models.
 	params := installer.V2PostStepReplyParams{
 		HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
 		InfraEnvID:            strfmt.UUID(config.GlobalAgentConfig.InfraEnvID),
-		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
+		DiscoveryAgentVersion: &config.GlobalAgentConfig.DiscoveryAgentVersion,
 		Reply:                 reply,
 	}
 

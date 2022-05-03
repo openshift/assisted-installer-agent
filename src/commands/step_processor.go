@@ -15,6 +15,7 @@ import (
 
 	"github.com/openshift/assisted-installer-agent/src/util"
 
+	"github.com/openshift/assisted-installer-agent/src/commands/actions"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/session"
 	"github.com/openshift/assisted-service/client/installer"
@@ -91,6 +92,12 @@ func (s *stepSession) createStepReply(stepType models.StepType, stepID string, o
 }
 
 func (s *stepSession) handleSingleStep(stepType models.StepType, stepID string, command string, args []string, handler HandlerType) models.StepReply {
+	if command == "" {
+		errStr := "Missing command"
+		s.Logger().Warn(errStr)
+		return s.createStepReply(stepType, stepID, "", errStr, -1)
+	}
+
 	s.Logger().Infof("Executing step: <%s>, command: <%s>, args: <%v>", stepID, command, args)
 	stdout, stderr, exitCode := handler(command, args...)
 	if exitCode != 0 {
@@ -106,14 +113,29 @@ stderr:
 	return s.createStepReply(stepType, stepID, stdout, stderr, exitCode)
 }
 
+func (s *stepSession) handleSingleStepV2(stepType models.StepType, stepID string, command string, args []string, handler HandlerType) models.StepReply {
+	s.Logger().Infof("Creating execution step for %s %s", stepType, stepID)
+
+	// TODO: MGMT-9451 remove command == "" after agent changes for new protocol will be pushed, added to allow pushing agent before service
+	if command == "" {
+		actionToRun, err := actions.New(stepType, args)
+		if err != nil {
+			return models.StepReply{
+				StepType: stepType,
+				StepID:   stepID,
+				ExitCode: int64(-1),
+				Output:   "",
+				Error:    err.Error(),
+			}
+		}
+		command, args = actionToRun.CreateCmd()
+	}
+
+	return s.handleSingleStep(stepType, stepID, command, args, handler)
+}
+
 func (s *stepSession) handleSteps(steps *models.Steps) {
 	for _, step := range steps.Instructions {
-		if step.Command == "" {
-			errStr := "Missing command"
-			s.Logger().Warn(errStr)
-			s.sendStepReply(s.createStepReply(step.StepType, step.StepID, "", errStr, -1))
-			continue
-		}
 
 		go func(step *models.Step) {
 			if code, err := s.diagnoseSystem(); code != Undetected {
@@ -122,7 +144,7 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 				return
 			}
 
-			reply := s.handleSingleStep(step.StepType, step.StepID, step.Command, step.Args, util.ExecutePrivileged)
+			reply := s.handleSingleStepV2(step.StepType, step.StepID, step.Command, step.Args, util.ExecutePrivileged)
 
 			if reply.ExitCode != 0 {
 				if code, err := s.diagnoseSystem(); code != Undetected {

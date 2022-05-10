@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/openshift/assisted-service/internal/common"
+	"github.com/openshift/assisted-service/models"
 	params "github.com/openshift/assisted-service/pkg/context"
 	"github.com/openshift/assisted-service/pkg/ocm"
 	"github.com/openshift/assisted-service/restapi"
@@ -185,7 +187,7 @@ func (a *AuthzHandler) checkClusterBasedAccess(id string, action Action, payload
 	case UpdateAction:
 		return a.hasSubscriptionAccess(id, ocm.AMSActionUpdate, payload)
 	case DeleteAction:
-		return a.hasSubscriptionAccess(id, ocm.AMSActionDelete, payload)
+		return a.hasSubscriptionAccess(id, ocm.AMSActionUpdate, payload)
 	default:
 		return a.hasOwnerAccess(id, &common.Cluster{}, payload)
 	}
@@ -210,6 +212,10 @@ func (a *AuthzHandler) checkInfraEnvBasedAccess(id string, action Action, payloa
 	err = a.db.Select("cluster_id").First(&infraEnv, "id = ?", id).Error
 	if err != nil {
 		a.log.WithError(err).Errorf("failed to retrieve infra-env record %s", id)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// not returning err as the response should be StatusNotFound
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -324,10 +330,31 @@ func (a *AuthzHandler) ocmAuthorizer(request *http.Request) error {
 			return common.NewApiError(http.StatusInternalServerError, err)
 		}
 		if !isAllowed {
+			obj := a.getObjFromRequest(request)
+			if obj != nil && toAction(request) != http.MethodGet {
+				// Check if user has read access (needed for returning an appropriate http status)
+				// Returns status forbidden if only read is allowed on object
+				if canRead, _ := a.HasAccessTo(request.Context(), obj, ReadAction); canRead {
+					return common.NewInfraError(http.StatusForbidden, fmt.Errorf("Unauthorized to manipulate object"))
+				}
+			}
 			return common.NewApiError(http.StatusNotFound, fmt.Errorf("Object Not Found"))
 		}
 	}
 
+	return nil
+}
+
+func (a *AuthzHandler) getObjFromRequest(request *http.Request) interface{} {
+	if clusterID := params.GetParam(request.Context(), params.ClusterId); clusterID != "" {
+		id := strfmt.UUID(clusterID)
+		cluster := &common.Cluster{Cluster: models.Cluster{ID: &id}}
+		return cluster
+	} else if infraEnvID := params.GetParam(request.Context(), params.InfraEnvId); infraEnvID != "" {
+		id := strfmt.UUID(infraEnvID)
+		infraEnv := &common.InfraEnv{InfraEnv: models.InfraEnv{ID: &id}}
+		return infraEnv
+	}
 	return nil
 }
 

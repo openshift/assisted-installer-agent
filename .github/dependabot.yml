@@ -12,7 +12,6 @@ updates:
     labels:
       - "approved"
       - "lgtm"
-      - "ok-to-test"
       - "go"
       - "dependencies"
     commit-message:

@@ -21,8 +21,7 @@ COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/domain_resolution /usr/bin/domain_resolution
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/scripts/installer/* /usr/local/bin/
 
-RUN INSTALL_PKGS="biosdevname dhclient dmidecode file findutils fio ipmitool iputils nmap openssh-clients podman chrony smartmontools" && \
-    dnf install -y $INSTALL_PKGS && \
-    dnf clean all
+RUN if [[ "$(arch)" == "x86_64" ]]; then dnf install -y biosdevname && dnf clean all; fi
+RUN dnf install -y dhclient dmidecode file findutils fio ipmitool iputils nmap openssh-clients podman chrony smartmontools && dnf clean all
 
 ENTRYPOINT ["/usr/bin/agent"]

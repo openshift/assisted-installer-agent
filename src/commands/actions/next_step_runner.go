@@ -40,6 +40,9 @@ func (a *nextStepRunnerAction) Command() string {
 
 func (a *nextStepRunnerAction) Args() []string {
 	arguments := []string{"run", "--rm", "-ti", "--privileged", "--pid=host", "--net=host",
+
+		// unlimited number of processes in the container
+		"--pids-limit=0",
 		"-v", "/dev:/dev:rw", "-v", "/opt:/opt:rw",
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
 		"-v", "/var/log:/var/log:rw",

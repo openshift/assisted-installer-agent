@@ -11,24 +11,16 @@ type Link interface {
 	netlink.Link
 }
 
-func NewFilledInterfaceMock(mtu int, name string, macAddr string, flags net.Flags, addrs []string, isPhysical bool, isBonding bool, isVlan bool, speedMbps int64) *MockInterface {
+func NewFilledInterfaceMock(mtu int, name string, macAddr string, flags net.Flags, addrs []string, isPhysical bool, isBonding bool, isVlan bool, speedMbps int64, interfaceType string) *MockInterface {
 	hwAddr, _ := net.ParseMAC(macAddr)
 	ret := MockInterface{}
-	ret.On("IsPhysical").Return(isPhysical)
-	if isPhysical || isBonding || isVlan {
-		ret.On("Name").Return(name)
-		ret.On("MTU").Return(mtu)
-		ret.On("HardwareAddr").Return(hwAddr)
-		ret.On("Flags").Return(flags)
-		ret.On("Addrs").Return(toAddresses(addrs), nil).Once()
-		ret.On("SpeedMbps").Return(speedMbps)
-	}
-	if !isPhysical {
-		ret.On("IsBonding").Return(isBonding)
-	}
-	if !(isPhysical || isBonding) {
-		ret.On("IsVlan").Return(isVlan)
-	}
+	ret.On("Name").Return(name)
+	ret.On("MTU").Return(mtu)
+	ret.On("HardwareAddr").Return(hwAddr)
+	ret.On("Flags").Return(flags)
+	ret.On("Addrs").Return(toAddresses(addrs), nil).Once()
+	ret.On("SpeedMbps").Return(speedMbps)
+	ret.On("Type").Return(interfaceType, nil).Once()
 
 	return &ret
 }

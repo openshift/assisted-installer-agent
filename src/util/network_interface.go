@@ -20,6 +20,7 @@ type Interface interface {
 	IsBonding() bool
 	IsVlan() bool
 	SpeedMbps() int64
+	Type() (string, error)
 }
 
 type NetworkInterface struct {
@@ -45,6 +46,17 @@ func (n *NetworkInterface) Flags() net.Flags {
 
 func (n *NetworkInterface) Addrs() ([]net.Addr, error) {
 	return n.netInterface.Addrs()
+}
+
+func (n *NetworkInterface) Type() (string, error) {
+	if n.IsPhysical() {
+		return "physical", nil
+	}
+	link, err := n.dependencies.LinkByName(n.netInterface.Name)
+	if err != nil {
+		return "", err
+	}
+	return link.Type(), nil
 }
 
 func (n *NetworkInterface) IsPhysical() bool {

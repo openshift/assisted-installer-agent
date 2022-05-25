@@ -81,15 +81,16 @@ func getFlags(flags net.Flags) []string {
 	}
 }
 
-func (i *interfaces) getInterfaces() []*models.Interface {
+func (i *interfaces) getInterfaces(collectVirtualInterfaces bool) []*models.Interface {
 	ret := make([]*models.Interface, 0)
 	ins, err := i.dependencies.Interfaces()
 	if err != nil {
 		logrus.WithError(err).Warnf("Retrieving interfaces")
 		return ret
 	}
+
 	for _, in := range ins {
-		if !(in.IsPhysical() || in.IsBonding() || in.IsVlan()) {
+		if !collectVirtualInterfaces && in.IsVirtual() {
 			continue
 		}
 		rec := models.Interface{
@@ -111,9 +112,9 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 			continue
 		}
 		for _, addr := range addrs {
-			isIPv4, addrStr, err := analyzeAddress(addr)
-			if err != nil {
-				logrus.WithError(err).Warnf("While analyzing addr")
+			isIPv4, addrStr, addrErr := analyzeAddress(addr)
+			if addrErr != nil {
+				logrus.WithError(addrErr).Warnf("While analyzing addr")
 				continue
 			}
 			if isIPv4 {
@@ -122,14 +123,19 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 				rec.IPV6Addresses = append(rec.IPV6Addresses, addrStr)
 			}
 		}
+		rec.Type, err = in.Type()
+		if err != nil {
+			logrus.WithError(err).Warnf("Retrieiving interface type for %s", in.Name())
+			continue
+		}
 		ret = append(ret, &rec)
 	}
 	setV6PrefixesForAddresses(ret, i.dependencies)
 	return ret
 }
 
-func GetInterfaces(dependencies util.IDependencies) []*models.Interface {
-	return newInterfaces(dependencies).getInterfaces()
+func GetInterfaces(dependencies util.IDependencies, collectVirtualInterfaces bool) []*models.Interface {
+	return newInterfaces(dependencies).getInterfaces(collectVirtualInterfaces)
 }
 
 func setV6PrefixesForAddresses(interfaces []*models.Interface, dependencies util.IDependencies) {

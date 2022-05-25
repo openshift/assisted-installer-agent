@@ -2,9 +2,11 @@ package actions
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/pkg/errors"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -16,12 +18,16 @@ type inventory struct {
 }
 
 func (a *inventory) Validate() error {
-	err := ValidateCommon("inventory", 1, a.args, nil)
-	if err != nil {
-		return err
+	if len(a.args) < 1 || len(a.args) > 2 {
+		return fmt.Errorf("%s cmd accepts 1 - 2 params in args, given args %v", "inventory", a.args)
 	}
 	if !strfmt.IsUUID(a.args[0]) {
-		return fmt.Errorf("inventory cmd accepts only 1 params in args and it should be UUID, given args %v", a.args)
+		return fmt.Errorf("inventory cmd accepts only a UUID as the first arg, given args %v", a.args)
+	}
+	if len(a.args) == 2 {
+		if _, err := strconv.ParseBool(a.args[1]); err != nil {
+			return errors.Wrapf(err, "inventory cmd only accepts a boolean variable as the second arg, given args %v", a.args)
+		}
 	}
 	return nil
 }
@@ -43,7 +49,7 @@ func (a *inventory) Args() []string {
 	mtabCopy := fmt.Sprintf("cp /etc/mtab %s", mtabPath)
 	mtabMount := fmt.Sprintf("%s:/host/etc/mtab:ro", mtabPath)
 
-	podmanRunCmd := strings.Join([]string{
+	podmanRunCmd := []string{
 		podman, "run", "--privileged", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",
 		"-v", "/run/udev:/run/udev",
@@ -62,10 +68,11 @@ func (a *inventory) Args() []string {
 		"-v", "/sys/class:/host/sys/class:ro",
 		"-v", "/run/udev:/host/run/udev:ro",
 		"-v", "/dev/disk:/host/dev/disk:ro",
-
 		a.agentConfig.AgentVersion,
 		"inventory",
-	}, " ")
-
-	return []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
+	}
+	if len(a.args) > 1 {
+		podmanRunCmd = append(podmanRunCmd, fmt.Sprintf("--enable-virtual-interfaces=%s", a.args[1]))
+	}
+	return []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, strings.Join(podmanRunCmd, " "))}
 }

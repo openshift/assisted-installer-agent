@@ -20,6 +20,8 @@ type Interface interface {
 	IsBonding() bool
 	IsVlan() bool
 	SpeedMbps() int64
+	Type() (string, error)
+	IsVirtual() bool
 }
 
 type NetworkInterface struct {
@@ -47,6 +49,17 @@ func (n *NetworkInterface) Addrs() ([]net.Addr, error) {
 	return n.netInterface.Addrs()
 }
 
+func (n *NetworkInterface) Type() (string, error) {
+	if n.IsPhysical() {
+		return "physical", nil
+	}
+	link, err := n.dependencies.LinkByName(n.netInterface.Name)
+	if err != nil {
+		return "", err
+	}
+	return link.Type(), nil
+}
+
 func (n *NetworkInterface) IsPhysical() bool {
 	evaledPath, err := n.dependencies.EvalSymlinks(fmt.Sprintf("/sys/class/net/%s", n.netInterface.Name))
 	if err != nil {
@@ -70,6 +83,10 @@ func (n *NetworkInterface) IsVlan() bool {
 		return false
 	}
 	return link.Type() == "vlan"
+}
+
+func (n *NetworkInterface) IsVirtual() bool {
+	return !(n.IsPhysical() || n.IsBonding() || n.IsVlan())
 }
 
 func (n *NetworkInterface) SpeedMbps() int64 {

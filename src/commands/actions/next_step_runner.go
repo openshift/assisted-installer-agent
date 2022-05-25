@@ -47,6 +47,7 @@ func (a *nextStepRunnerAction) Args() []string {
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
 		"-v", "/var/log:/var/log:rw",
 		"-v", "/run/media:/run/media:rw",
+		"-v", "/usr/bin/chronyc:/usr/bin/chronyc",
 		"-v", "/var/run/chrony:/var/run/chrony",
 		"-v", "/etc/pki:/etc/pki"}
 

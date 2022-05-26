@@ -229,6 +229,13 @@ var _ = Describe("installer test", func() {
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--check-cluster-version"))
 	})
 
+	It("install with skip disk formatting", func() {
+		installCommandRequest.SkipInstallationDiskCleanup = true
+		action := getInstall(installCommandRequest, filesystem, false)
+		args := action.Args()
+		Expect(strings.Join(args, " ")).To(ContainSubstring("--skip-installation-disk-cleanup"))
+	})
+
 	It("install no installer args", func() {
 		installCommandRequest.InstallerArgs = ""
 		action := getInstall(installCommandRequest, filesystem, false)

@@ -131,6 +131,10 @@ func (a *install) getFullInstallerCommand() string {
 		installerCmdArgs = append(installerCmdArgs, "--check-cluster-version")
 	}
 
+	if a.installParams.SkipInstallationDiskCleanup {
+		installerCmdArgs = append(installerCmdArgs, "--skip-installation-disk-cleanup")
+	}
+
 	if a.agentConfig.CACertificatePath != "" {
 		podmanCmd = append(podmanCmd, "-v", fmt.Sprintf("%s:%s:rw", a.agentConfig.CACertificatePath,
 			a.agentConfig.CACertificatePath))

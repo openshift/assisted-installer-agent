@@ -1282,8 +1282,8 @@ github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible/go.mo
 github.com/openshift/assisted-service v1.0.10-0.20220506214521-2f82f2a21d94 h1:nFeTKV8A0PNiJpohgzrRNiCdPV6gw0/HxQloLW8cMN0=
 github.com/openshift/assisted-service v1.0.10-0.20220506214521-2f82f2a21d94/go.mod h1:BV+exAVG8lDSheL0dVOBELns/3uRPOTYZ904ifIVkl4=
 github.com/openshift/assisted-service/api v0.0.0-20220314012014-141adc8ae8f8/go.mod h1:KXLo37GRdMYq/8PHRbvWPW9AEZjLI3NdFCySAwBJfAQ=
-github.com/openshift/assisted-service/models v0.0.0-20220506214521-2f82f2a21d94 h1:FCeSjCOhjAIx06oQqULF/5UJyOovh5nf8fyjsZgU4cc=
-github.com/openshift/assisted-service/models v0.0.0-20220506214521-2f82f2a21d94/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
+github.com/openshift/assisted-service/models v0.0.0-20220526071450-96765ee39dc8 h1:lSsBaCHqOSVyO5NPwSFkV8dtDqr7eMXncgWb92zw8sA=
+github.com/openshift/assisted-service/models v0.0.0-20220526071450-96765ee39dc8/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
 github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f/go.mod h1:bTFE2qR9PJJQbLC6Gd74c3WXcgYnR1njVDgabCxXQNI=
 github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f/go.mod h1:/PSTQInIZmfuOmAp/pSgZAs4txs6T49woC0MYIa4QzE=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec h1:1nC/js8H8s+MBzgu20YDSuVw6IF9Ct5HOR1JLxv572Q=

@@ -355,7 +355,7 @@ func mockGetBootable(dependencies *util.MockIDependencies, path string, bootable
 }
 
 func mockGetSMART(dependencies *util.MockIDependencies, path string, err string) *mock.Call {
-	return mockExecuteDependencyCall(dependencies, "smartctl", `{"some": "json"}`, err, "--all", "--json=c", path)
+	return mockExecuteDependencyCall(dependencies, "smartctl", `{"some": "json"}`, err, "--all", "--quiet=errorsonly", path)
 }
 
 func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk) {
@@ -468,8 +468,8 @@ var _ = Describe("Disks test", func() {
 		})
 
 		It("With a smartctl error - make sure JSON is still transmitted", func() {
-			Expect(util.DeleteExpectedMethod(&dependencies.Mock, "Execute", "smartctl", "--all", "--json=c", "/dev/foo/disk1")).To(BeTrue())
-			dependencies.On("Execute", "smartctl", "--all", "--json=c", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 1).Once()
+			Expect(util.DeleteExpectedMethod(&dependencies.Mock, "Execute", "smartctl", "--all", "--quiet=errorsonly", "/dev/foo/disk1")).To(BeTrue())
+			dependencies.On("Execute", "smartctl", "--all", "--quiet=errorsonly", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 1).Once()
 			expectation[0].Smart = `{"some": "json"}`
 		})
 

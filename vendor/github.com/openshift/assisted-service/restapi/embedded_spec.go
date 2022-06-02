@@ -2339,7 +2339,7 @@ func init() {
           {
             "type": "string",
             "format": "uuid",
-            "description": "The cluster to return preflight requrements for.",
+            "description": "The cluster to return preflight requirements for.",
             "name": "cluster_id",
             "in": "path",
             "required": true
@@ -4627,6 +4627,12 @@ func init() {
             "required": true
           },
           {
+            "type": "integer",
+            "description": "The time on the host as seconds since the Unix epoch.",
+            "name": "timestamp",
+            "in": "query"
+          },
+          {
             "type": "string",
             "description": "The software version of the discovery agent that is retrieving instructions.",
             "name": "discovery_agent_version",
@@ -5039,6 +5045,18 @@ func init() {
             "description": "Success.",
             "schema": {
               "$ref": "#/definitions/openshift-versions"
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
             }
           },
           "503": {
@@ -6871,6 +6889,15 @@ func init() {
         "machine_config_pool_name": {
           "type": "string"
         },
+        "media_status": {
+          "type": "string",
+          "default": "connected",
+          "enum": [
+            "connected",
+            "disconnected"
+          ],
+          "x-nullable": true
+        },
         "node_labels": {
           "description": "Json containing node's labels.",
           "type": "string",
@@ -6952,6 +6979,10 @@ func init() {
         },
         "suggested_role": {
           "$ref": "#/definitions/host-role"
+        },
+        "timestamp": {
+          "description": "The time on the host as seconds since the Unix epoch.",
+          "type": "integer"
         },
         "updated_at": {
           "type": "string",
@@ -7154,6 +7185,7 @@ func init() {
       "type": "string",
       "enum": [
         "connected",
+        "media-connected",
         "has-inventory",
         "has-min-cpu-cores",
         "has-min-valid-disks",
@@ -7708,6 +7740,10 @@ func init() {
             "type": "string",
             "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
           }
+        },
+        "skip_installation_disk_cleanup": {
+          "description": "Skip formatting installation disk",
+          "type": "boolean"
         }
       }
     },
@@ -7774,6 +7810,9 @@ func init() {
         },
         "speed_mbps": {
           "type": "integer"
+        },
+        "type": {
+          "type": "string"
         },
         "vendor": {
           "type": "string"
@@ -8661,9 +8700,6 @@ func init() {
           "items": {
             "type": "string"
           }
-        },
-        "command": {
-          "type": "string"
         },
         "step_id": {
           "type": "string"
@@ -11375,7 +11411,7 @@ func init() {
           {
             "type": "string",
             "format": "uuid",
-            "description": "The cluster to return preflight requrements for.",
+            "description": "The cluster to return preflight requirements for.",
             "name": "cluster_id",
             "in": "path",
             "required": true
@@ -13663,6 +13699,12 @@ func init() {
             "required": true
           },
           {
+            "type": "integer",
+            "description": "The time on the host as seconds since the Unix epoch.",
+            "name": "timestamp",
+            "in": "query"
+          },
+          {
             "type": "string",
             "description": "The software version of the discovery agent that is retrieving instructions.",
             "name": "discovery_agent_version",
@@ -14075,6 +14117,18 @@ func init() {
             "description": "Success.",
             "schema": {
               "$ref": "#/definitions/openshift-versions"
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
             }
           },
           "503": {
@@ -15966,6 +16020,15 @@ func init() {
         "machine_config_pool_name": {
           "type": "string"
         },
+        "media_status": {
+          "type": "string",
+          "default": "connected",
+          "enum": [
+            "connected",
+            "disconnected"
+          ],
+          "x-nullable": true
+        },
         "node_labels": {
           "description": "Json containing node's labels.",
           "type": "string",
@@ -16047,6 +16110,10 @@ func init() {
         },
         "suggested_role": {
           "$ref": "#/definitions/host-role"
+        },
+        "timestamp": {
+          "description": "The time on the host as seconds since the Unix epoch.",
+          "type": "integer"
         },
         "updated_at": {
           "type": "string",
@@ -16249,6 +16316,7 @@ func init() {
       "type": "string",
       "enum": [
         "connected",
+        "media-connected",
         "has-inventory",
         "has-min-cpu-cores",
         "has-min-valid-disks",
@@ -16805,6 +16873,10 @@ func init() {
             "type": "string",
             "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
           }
+        },
+        "skip_installation_disk_cleanup": {
+          "description": "Skip formatting installation disk",
+          "type": "boolean"
         }
       }
     },
@@ -16871,6 +16943,9 @@ func init() {
         },
         "speed_mbps": {
           "type": "integer"
+        },
+        "type": {
+          "type": "string"
         },
         "vendor": {
           "type": "string"
@@ -17747,9 +17822,6 @@ func init() {
           "items": {
             "type": "string"
           }
-        },
-        "command": {
-          "type": "string"
         },
         "step_id": {
           "type": "string"

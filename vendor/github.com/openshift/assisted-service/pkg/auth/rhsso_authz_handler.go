@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
@@ -38,6 +37,10 @@ func (a *AuthzHandler) CreateAuthorizer() func(*http.Request) error {
 
 func (a *AuthzHandler) isTenancyEnabled() bool {
 	return a.cfg.EnableOrgTenancy
+}
+
+func (a *AuthzHandler) isOrgBasedFunctionalityEnabled() bool {
+	return a.cfg.EnableOrgBasedFeatureGates
 }
 
 func (a *AuthzHandler) IsAdmin(ctx context.Context) bool {
@@ -133,22 +136,7 @@ func (a *AuthzHandler) hasSubscriptionAccess(clusterId string, action string, pa
 		if err != nil {
 			return handleOwnershipQueryError(err)
 		}
-
-		cacheKey := fmt.Sprintf("%s_%s_%s_%s", payload.Username, payload.Organization, cluster.AmsSubscriptionID, action)
-		if cacheData, existInCache := a.client.Cache.Get(cacheKey); existInCache {
-			var ok bool
-			isAllowed, ok = cacheData.(bool)
-			if !ok {
-				return false, fmt.Errorf(
-					"error while retrieving cluster edit role from cache for %s",
-					cluster.AmsSubscriptionID.String())
-			}
-			return isAllowed, nil
-		}
 		isAllowed, err = a.hasClusterEditRole(payload, action, cluster.AmsSubscriptionID.String())
-		if shouldStorePayloadInCache(err) {
-			a.client.Cache.Set(cacheKey, isAllowed, 10*time.Minute)
-		}
 		return isAllowed, err
 	}
 
@@ -176,6 +164,18 @@ func (a *AuthzHandler) HasAccessTo(ctx context.Context, obj interface{}, action 
 		return a.checkInfraEnvBasedAccess(host.InfraEnvID.String(), action, ocm.PayloadFromContext(ctx))
 	}
 	return false, errors.New("can not perform access check on this object")
+}
+
+func (a *AuthzHandler) HasOrgBasedCapability(ctx context.Context, capability string) (bool, error) {
+	if !a.isOrgBasedFunctionalityEnabled() {
+		return true, nil
+	}
+
+	username := ocm.UserNameFromContext(ctx)
+	isAllowed, err := a.client.Authorization.CapabilityReview(context.Background(), fmt.Sprint(username), capability, ocm.OrganizationCapabilityType)
+	a.log.Debugf("queried AMS API with CapabilityReview for username: %s about capability: %s, capability type: %s. Result: %t",
+		fmt.Sprint(username), capability, ocm.OrganizationCapabilityType, isAllowed)
+	return isAllowed, err
 }
 
 func (a *AuthzHandler) checkClusterBasedAccess(id string, action Action, payload *ocm.AuthPayload) (bool, error) {

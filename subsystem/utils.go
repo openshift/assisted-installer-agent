@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -33,7 +34,8 @@ const (
 )
 
 type RequestDefinition struct {
-	URL          string            `json:"url"`
+	URL          string            `json:"url,omitempty"`
+	URLPattern   string            `json:"urlPattern,omitempty"`
 	Method       string            `json:"method"`
 	BodyPatterns []interface{}     `json:"bodyPatterns"`
 	Headers      map[string]string `json:"headers"`
@@ -85,7 +87,7 @@ func jsonToMap(str string) map[string]interface{} {
 }
 
 func verifyRegisterRequest() {
-	reqs, err := findAllMatchingRequests(getRegisterURL(), "POST")
+	reqs, err := findAllEqualURLRequests(getRegisterURL(), "POST")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(reqs)).Should(BeNumerically(">", 0))
 	m := jsonToMap(reqs[0].Request.Body)
@@ -98,13 +100,13 @@ func verifyRegisterRequest() {
 }
 
 func verifyNumberOfRegisterRequest(comaparator string, number int) {
-	reqs, err := findAllMatchingRequests(getRegisterURL(), "POST")
+	reqs, err := findAllEqualURLRequests(getRegisterURL(), "POST")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(reqs)).Should(BeNumerically(comaparator, number))
 }
 
 func verifyRegistersSameID() {
-	reqs, err := findAllMatchingRequests(getRegisterURL(), "POST")
+	reqs, err := findAllEqualURLRequests(getRegisterURL(), "POST")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(reqs)).Should(BeNumerically(">", 1))
 	m1 := jsonToMap(reqs[0].Request.Body)
@@ -117,7 +119,7 @@ func verifyRegistersSameID() {
 }
 
 func verifyGetNextRequest(hostID string, matchExpected bool) {
-	reqs, err := findAllMatchingRequests(getNextStepsURL(hostID), "GET")
+	reqs, err := findPrefixURLRequests(getNextStepsURL(hostID), "GET")
 	Expect(err).NotTo(HaveOccurred())
 
 	if !matchExpected {
@@ -128,7 +130,7 @@ func verifyGetNextRequest(hostID string, matchExpected bool) {
 }
 
 func verifyNumberOfGetNextRequest(hostID string, comaparator string, number int) {
-	reqs, err := findAllMatchingRequests(getNextStepsURL(hostID), "GET")
+	reqs, err := findPrefixURLRequests(getNextStepsURL(hostID), "GET")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(reqs)).Should(BeNumerically(comaparator, number))
 }
@@ -138,7 +140,7 @@ type StepVerifier interface {
 }
 
 func getSpecificStep(hostID string, verifier StepVerifier) *models.StepReply {
-	reqs, err := findAllMatchingRequests(getStepReplyURL(hostID), "POST")
+	reqs, err := findAllEqualURLRequests(getStepReplyURL(hostID), "POST")
 	Expect(err).NotTo(HaveOccurred())
 	for _, r := range reqs {
 		var actualReply models.StepReply
@@ -303,6 +305,17 @@ func addRegisterStub(hostID string, reply int, infraEnvID string) (string, error
 	return addStub(&stub)
 }
 
+func addNextStubWithResponse(hostID string, response *ResponseDefinition) (string, error) {
+	stub := StubDefinition{
+		Request: &RequestDefinition{
+			URLPattern: getNextStepsURL(hostID) + "[?]timestamp=[0-9]*",
+			Method:     "GET",
+		},
+		Response: response,
+	}
+	return addStub(&stub)
+}
+
 func addNextStepStub(hostID string, nextInstructionSeconds int64, afterStep string, instructions ...*models.Step) (string, error) {
 	if instructions == nil {
 		instructions = make([]*models.Step, 0)
@@ -317,20 +330,14 @@ func addNextStepStub(hostID string, nextInstructionSeconds int64, afterStep stri
 	if err != nil {
 		return "", err
 	}
-	stub := StubDefinition{
-		Request: &RequestDefinition{
-			URL:    getNextStepsURL(hostID),
-			Method: "GET",
-		},
-		Response: &ResponseDefinition{
-			Status: 200,
-			Body:   string(b),
-			Headers: map[string]string{
-				"Content-Type": "application/json",
-			},
+	response := &ResponseDefinition{
+		Status: 200,
+		Body:   string(b),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
 		},
 	}
-	return addStub(&stub)
+	return addNextStubWithResponse(hostID, response)
 }
 
 func addNextStepClusterNotExistsStub(hostID string, instructions ...*models.Step) (string, error) {
@@ -342,20 +349,14 @@ func addNextStepClusterNotExistsStub(hostID string, instructions ...*models.Step
 	if err != nil {
 		return "", err
 	}
-	stub := StubDefinition{
-		Request: &RequestDefinition{
-			URL:    getNextStepsURL(hostID),
-			Method: "GET",
-		},
-		Response: &ResponseDefinition{
-			Status: 404,
-			Body:   string(b),
-			Headers: map[string]string{
-				"Content-Type": "application/json",
-			},
+	response := &ResponseDefinition{
+		Status: 404,
+		Body:   string(b),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
 		},
 	}
-	return addStub(&stub)
+	return addNextStubWithResponse(hostID, response)
 }
 
 func addStepReplyStub(hostID string) (string, error) {
@@ -394,7 +395,7 @@ func deleteAllStubs() error {
 	return err
 }
 
-func findAllMatchingRequests(url, method string) ([]*RequestOccurrence, error) {
+func findMatchingRequests(url, method string, matcher func(url, method string, r *RequestOccurrence) bool) ([]*RequestOccurrence, error) {
 	resp, err := http.Get(RequestsURL)
 	if err != nil {
 		return nil, err
@@ -412,11 +413,23 @@ func findAllMatchingRequests(url, method string) ([]*RequestOccurrence, error) {
 
 	ret := make([]*RequestOccurrence, 0)
 	for _, r := range requests.Requests {
-		if r.Request.URL == url && r.Request.Method == method {
+		if matcher(url, method, r) {
 			ret = append(ret, r)
 		}
 	}
 	return ret, nil
+}
+
+func findAllEqualURLRequests(url, method string) ([]*RequestOccurrence, error) {
+	return findMatchingRequests(url, method, func(url, method string, r *RequestOccurrence) bool {
+		return r.Request.URL == url && r.Request.Method == method
+	})
+}
+
+func findPrefixURLRequests(url, method string) ([]*RequestOccurrence, error) {
+	return findMatchingRequests(url, method, func(url, method string, r *RequestOccurrence) bool {
+		return strings.HasPrefix(r.Request.URL, url) && r.Request.Method == method
+	})
 }
 
 func resetRequests() error {
@@ -470,7 +483,7 @@ func waitForWiremock() error {
 }
 
 func isReplyFound(hostID string, verifier StepVerifier) bool {
-	reqs, err := findAllMatchingRequests(getStepReplyURL(hostID), "POST")
+	reqs, err := findAllEqualURLRequests(getStepReplyURL(hostID), "POST")
 	Expect(err).NotTo(HaveOccurred())
 	for _, r := range reqs {
 		var actualReply models.StepReply

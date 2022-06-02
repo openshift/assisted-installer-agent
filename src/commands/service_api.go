@@ -1,7 +1,10 @@
 package commands
 
 import (
+	"time"
+
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/scanners"
 	"github.com/openshift/assisted-installer-agent/src/session"
@@ -49,6 +52,7 @@ func (v *v2ServiceAPI) GetNextSteps(s *session.InventorySession) (*models.Steps,
 		HostID:                strfmt.UUID(v.agentConfig.HostID),
 		InfraEnvID:            strfmt.UUID(v.agentConfig.InfraEnvID),
 		DiscoveryAgentVersion: &v.agentConfig.DiscoveryAgentVersion,
+		Timestamp:             swag.Int64(time.Now().Unix()),
 	}
 	result, err := s.Client().Installer.V2GetNextSteps(s.Context(), &params)
 	if err != nil {

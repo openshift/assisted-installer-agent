@@ -2,7 +2,6 @@ package inventory
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -22,7 +21,6 @@ func ReadInventory(subprocessConfig *config.SubprocessConfig, c *Options) *model
 		Interfaces:   GetInterfaces(d),
 		Memory:       GetMemory(d),
 		SystemVendor: GetVendor(d),
-		Timestamp:    time.Now().Unix(),
 		Routes:       GetRoutes(d),
 		TpmVersion:   GetTPM(d),
 	}

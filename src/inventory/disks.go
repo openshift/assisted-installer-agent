@@ -174,6 +174,14 @@ func isDeviceMapper(disk *ghw.Disk) bool {
 	return strings.HasPrefix(disk.Name, "dm-")
 }
 
+func isISCSIDisk(disk *ghw.Disk) bool {
+	return strings.Contains(disk.BusPath, "-iscsi-")
+}
+
+func isFCDisk(disk *ghw.Disk) bool {
+	return strings.Contains(disk.BusPath, "-fc-")
+}
+
 func (d *disks) isMultipath(disk *ghw.Disk) bool {
 	if !isDeviceMapper(disk) {
 		return false
@@ -181,12 +189,30 @@ func (d *disks) isMultipath(disk *ghw.Disk) bool {
 	path := filepath.Join("/sys", "block", disk.Name, "dm", "uuid")
 	b, err := d.dependencies.ReadFile(path)
 	if err != nil {
+		logrus.WithError(err).Warnf("Failed reading dm uuid %s", path)
 		return false
 	}
 	if strings.HasPrefix(string(b), "mpath-") {
 		return true
 	}
 	return false
+}
+
+func (d *disks) getHolders(diskName string) string {
+	dir := fmt.Sprintf("/sys/block/%s/holders", diskName)
+	files, err := d.dependencies.ReadDir(dir)
+	if err != nil {
+		logrus.WithError(err).Warnf("Failed listing device holders %s", dir)
+		return ""
+	}
+	if len(files) == 0 {
+		return ""
+	}
+	var holders []string
+	for _, file := range files {
+		holders = append(holders, file.Name())
+	}
+	return strings.Join(holders, ",")
 }
 
 // checkEligibility checks if a disk is eligible for installation by testing
@@ -267,10 +293,12 @@ func (d *disks) getDisks() []*models.Disk {
 
 		path := d.getPath(disk.BusPath, disk.Name)
 		driveType := disk.DriveType.String()
-		if strings.Contains(disk.BusPath, "-iscsi-") {
+		if isISCSIDisk(disk) {
 			driveType = "iSCSI"
+		} else if isFCDisk(disk) {
+			driveType = "FC"
 		} else if d.isMultipath(disk) {
-			driveType = "DeviceMapper"
+			driveType = "Multipath"
 		}
 
 		rec := models.Disk{
@@ -291,6 +319,7 @@ func (d *disks) getDisks() []*models.Disk {
 			IsInstallationMedia:     isInstallationMedia,
 			InstallationEligibility: eligibility,
 			HasUUID:                 d.hasUUID(path),
+			Holders:                 d.getHolders(disk.Name),
 		}
 
 		rec.ID = rec.Path

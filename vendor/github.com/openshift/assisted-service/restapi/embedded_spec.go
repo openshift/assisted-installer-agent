@@ -6271,6 +6271,10 @@ func init() {
         "hctl": {
           "type": "string"
         },
+        "holders": {
+          "description": "A comma-separated list of disk names that this disk belongs to",
+          "type": "string"
+        },
         "id": {
           "description": "Determine the disk's unique identifier which is the by-id field if it exists and fallback to the by-path field otherwise",
           "type": "string"
@@ -6646,7 +6650,8 @@ func init() {
                   "CUSTOM_MANIFEST",
                   "DISK_ENCRYPTION",
                   "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
-                  "ARM64_ARCHITECTURE"
+                  "ARM64_ARCHITECTURE",
+                  "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING"
                 ]
               },
               "support_level": {
@@ -14321,7 +14326,8 @@ func init() {
             "CUSTOM_MANIFEST",
             "DISK_ENCRYPTION",
             "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
-            "ARM64_ARCHITECTURE"
+            "ARM64_ARCHITECTURE",
+            "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING"
           ]
         },
         "support_level": {
@@ -15470,6 +15476,10 @@ func init() {
           "type": "boolean"
         },
         "hctl": {
+          "type": "string"
+        },
+        "holders": {
+          "description": "A comma-separated list of disk names that this disk belongs to",
           "type": "string"
         },
         "id": {

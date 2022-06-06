@@ -154,6 +154,7 @@ func createExpectedSDAModelDisk() *models.Disk {
 		ID:        sdaIdFullPath,
 		Bootable:  true,
 		ByID:      sdaIdFullPath,
+		HasUUID:   true,
 		ByPath:    "/dev/disk/by-path/pci-0000:02:00.0-scsi-0:2:0:0",
 		DriveType: "HDD",
 		Hctl:      "0.2.0.0",
@@ -178,6 +179,7 @@ func createExpectedSDBModelDisk() *models.Disk {
 	return &models.Disk{
 		ID:        sdbIdFullPath,
 		Bootable:  true,
+		HasUUID:   true,
 		ByID:      sdbIdFullPath,
 		ByPath:    "/dev/disk/by-path/pci-0000:02:00.0-scsi-0:2:1:0",
 		DriveType: "HDD",
@@ -358,12 +360,21 @@ func mockGetSMART(dependencies *util.MockIDependencies, path string, err string)
 	return mockExecuteDependencyCall(dependencies, "smartctl", `{"some": "json"}`, err, "--all", "--quiet=errorsonly", path)
 }
 
+func mockHasUUID(dependencies *util.MockIDependencies, path string, err string) *mock.Call {
+	return mockExecuteDependencyCall(dependencies, "sg_inq", "output", err, "-p", "0x83", path)
+}
+
+func mockNoUUID(dependencies *util.MockIDependencies, path string) *mock.Call {
+	return mockHasUUID(dependencies, path, "no uuid")
+}
+
 func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk) {
 	mockFetchDisks(dependencies, nil, disks...)
 
 	for _, disk := range disks {
 		name := disk.Name
 		busPath := disk.BusPath
+		path := fmt.Sprintf("/dev/%s", name)
 
 		if !newDisks(&config.SubprocessConfig{}, dependencies).IsPhysicalDisk(disk) {
 			continue
@@ -372,8 +383,14 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		mockGetPathFromDev(dependencies, name, "")
 		mockGetByPath(dependencies, busPath, "")
 		mockGetHctl(dependencies, name, "")
-		mockGetBootable(dependencies, fmt.Sprintf("/dev/%s", name), true, "")
-		mockGetSMART(dependencies, fmt.Sprintf("/dev/%s", name), "")
+		mockGetBootable(dependencies, path, true, "")
+		mockGetSMART(dependencies, path, "")
+
+		if disk.WWN == "" {
+			mockNoUUID(dependencies, path)
+		} else {
+			mockHasUUID(dependencies, path, "")
+		}
 	}
 }
 
@@ -388,6 +405,7 @@ func prepareDiskObjects(dependencies *util.MockIDependencies, diskNum int) {
 	mockGetByPath(dependencies, disk.BusPath, "")
 	mockGetBootable(dependencies, path, false, "")
 	mockGetSMART(dependencies, path, "")
+	mockNoUUID(dependencies, path)
 
 	dependencies.On("EvalSymlinks", fmt.Sprintf("/dev/disk/by-path/bus-path%d", diskNum)).Return(fmt.Sprintf("/dev/disk/by-path/../../foo/disk%d", diskNum), nil).Once()
 	dependencies.On("Abs", fmt.Sprintf("/dev/disk/by-path/../../foo/disk%d", diskNum)).Return(path, nil).Once()
@@ -590,6 +608,7 @@ var _ = Describe("Disks test", func() {
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, true, "")
 		mockGetSMART(dependencies, path, "")
+		mockNoUUID(dependencies, path)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
@@ -650,6 +669,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, false, "")
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockGetSMART(dependencies, path, "")
+		mockNoUUID(dependencies, path)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -698,6 +718,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockGetSMART(dependencies, path, "")
+		mockNoUUID(dependencies, path)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
@@ -731,6 +752,7 @@ var _ = Describe("Disks test", func() {
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, true, "")
 		mockGetSMART(dependencies, path, "")
+		mockNoUUID(dependencies, path)
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil).Times(3)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 

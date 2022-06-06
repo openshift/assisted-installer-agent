@@ -153,6 +153,14 @@ func isDeviceMapper(disk *ghw.Disk) bool {
 	return strings.HasPrefix(disk.Name, "dm-")
 }
 
+func isISCSIDisk(disk *ghw.Disk) bool {
+	return strings.Contains(disk.BusPath, "-iscsi-")
+}
+
+func isFCDisk(disk *ghw.Disk) bool {
+	return strings.Contains(disk.BusPath, "-fc-")
+}
+
 func (d *disks) isMultipath(disk *ghw.Disk) bool {
 	if !isDeviceMapper(disk) {
 		return false
@@ -166,6 +174,38 @@ func (d *disks) isMultipath(disk *ghw.Disk) bool {
 		return true
 	}
 	return false
+}
+
+func (d *disks) getMultipathType(disk *ghw.Disk, allDisks []*block.Disk) string {
+	slavesPath := filepath.Join("/sys", "block", disk.Name, "slaves")
+	filesInfo, err := d.dependencies.ReadDir(slavesPath)
+	if err != nil {
+		logrus.Warnf("Cannot read directory %s: %s", slavesPath, err)
+		return "unknown"
+	}
+	mpathType := ""
+	for _, fileInfo := range filesInfo {
+		thisMpathType := ""
+		for _, inventoryDisk := range allDisks {
+			if inventoryDisk.Name == fileInfo.Name() {
+				if isFCDisk(inventoryDisk) {
+					thisMpathType = "FC"
+				} else if isISCSIDisk(inventoryDisk) {
+					thisMpathType = "iSCSI"
+				} else {
+					thisMpathType = "unknown"
+				}
+				break
+			}
+		}
+		if mpathType != "" && thisMpathType != mpathType {
+			mpathType = "unknown"
+		} else {
+			mpathType = thisMpathType
+		}
+	}
+	return mpathType
+
 }
 
 // checkEligibility checks if a disk is eligible for installation by testing
@@ -246,10 +286,12 @@ func (d *disks) getDisks() []*models.Disk {
 
 		path := d.getPath(disk.BusPath, disk.Name)
 		driveType := disk.DriveType.String()
-		if strings.Contains(disk.BusPath, "-iscsi-") {
+		if isISCSIDisk(disk) {
 			driveType = "iSCSI"
+		} else if isFCDisk(disk) {
+			driveType = "FC"
 		} else if d.isMultipath(disk) {
-			driveType = "DeviceMapper"
+			driveType = fmt.Sprintf("Multipath-%s", d.getMultipathType(disk, blockInfo.Disks))
 		}
 
 		rec := models.Disk{

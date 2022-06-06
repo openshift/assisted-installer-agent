@@ -89,14 +89,31 @@ func createAWSXenEBSDisk() *ghw.Disk {
 	}
 }
 
-func createISCSIDisk() *ghw.Disk {
+func createISCSIDisk(name string) *ghw.Disk {
 	return &ghw.Disk{
-		Name:                   "sda",
+		Name:                   name,
 		SizeBytes:              21474836480,
 		DriveType:              ghw.DRIVE_TYPE_HDD,
 		BusPath:                "ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
 		Vendor:                 "LIO-ORG",
 		Model:                  "disk0",
+		SerialNumber:           "6001405961d8b6f55cf48beb0de296b2",
+		WWN:                    "0x6001405961d8b6f55cf48beb0de296b2",
+		IsRemovable:            false,
+		NUMANodeID:             0,
+		PhysicalBlockSizeBytes: 512,
+		StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+	}
+}
+
+func createFCDisk(name string) *ghw.Disk {
+	return &ghw.Disk{
+		Name:                   name,
+		SizeBytes:              21474836480,
+		DriveType:              ghw.DRIVE_TYPE_HDD,
+		BusPath:                "ip-192.168.130.10:3260-fc-iqn.2022-01.com.redhat.foo:disk0-lun-0",
+		Vendor:                 "vendor",
+		Model:                  "model",
 		SerialNumber:           "6001405961d8b6f55cf48beb0de296b2",
 		WWN:                    "0x6001405961d8b6f55cf48beb0de296b2",
 		IsRemovable:            false,
@@ -691,7 +708,7 @@ var _ = Describe("Disks test", func() {
 	It("iSCSI device", func() {
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
 		path := "/dev/sda"
-		disk := createISCSIDisk()
+		disk := createISCSIDisk("sda")
 		mockFetchDisks(dependencies, nil, disk)
 		mockGetPathFromDev(dependencies, disk.Name, "")
 		mockGetHctl(dependencies, disk.Name, "error")
@@ -722,36 +739,51 @@ var _ = Describe("Disks test", func() {
 		}))
 	})
 
-	It("Multipath device", func() {
+	It("Multipath FC device", func() {
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
-		path := "/dev/dm-2"
-		disk := createMultipathDisk()
-		mockFetchDisks(dependencies, nil, disk)
-		mockGetPathFromDev(dependencies, disk.Name, "")
-		mockGetHctl(dependencies, disk.Name, "error")
-		mockGetBootable(dependencies, path, true, "")
-		mockGetSMART(dependencies, path, "")
-		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil).Times(3)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		disks := []*ghw.Disk{createMultipathDisk(), createFCDisk("sda"), createFCDisk("sdb")}
+		mockFetchDisks(dependencies, nil, disks...)
+		for _, disk := range disks {
+			path := fmt.Sprintf("/dev/%s", disk.Name)
+			mockGetPathFromDev(dependencies, disk.Name, "")
+			mockGetHctl(dependencies, disk.Name, "error")
+			mockGetBootable(dependencies, path, true, "")
+			mockGetSMART(dependencies, path, "")
+		}
 
-		Expect(ret).To(Equal([]*models.Disk{
-			{
-				ID:        "/dev/dm-2",
-				ByPath:    "",
-				DriveType: "DeviceMapper",
-				Hctl:      "",
-				Model:     "",
-				Name:      "dm-2",
-				Path:      "/dev/dm-2",
-				Serial:    "",
-				SizeBytes: 21474836480,
-				Vendor:    "",
-				Wwn:       "",
-				Bootable:  true,
-				Smart:     `{"some": "json"}`,
-				InstallationEligibility: models.DiskInstallationEligibility{
-					Eligible: true,
-				},
+		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil).Times(3)
+		slaves := map[string]string{"sda": "", "sdb": ""}
+		slaveInfos := funk.Map(slaves, func(name string, _ string) os.FileInfo {
+			fileInfoMock := MockFileInfo{}
+			fileInfoMock.On("Name").Return(name)
+			fileInfoMock.On("Mode").Return(os.ModeDir)
+			return &fileInfoMock
+		})
+		dependencies.On("ReadDir", "/sys/block/dm-2/slaves").Return(slaveInfos, nil).Times(1)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		var mpathDisk *models.Disk
+		for _, d := range ret {
+			if d.Name == "dm-2" {
+				mpathDisk = d
+			}
+		}
+
+		Expect(*mpathDisk).To(Equal(models.Disk{
+			ID:        "/dev/dm-2",
+			ByPath:    "",
+			DriveType: "Multipath-FC",
+			Hctl:      "",
+			Model:     "",
+			Name:      "dm-2",
+			Path:      "/dev/dm-2",
+			Serial:    "",
+			SizeBytes: 21474836480,
+			Vendor:    "",
+			Wwn:       "",
+			Bootable:  true,
+			Smart:     `{"some": "json"}`,
+			InstallationEligibility: models.DiskInstallationEligibility{
+				Eligible: true,
 			},
 		}))
 	})

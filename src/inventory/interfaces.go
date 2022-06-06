@@ -88,8 +88,10 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 		logrus.WithError(err).Warnf("Retrieving interfaces")
 		return ret
 	}
-
 	for _, in := range ins {
+		if !(in.IsPhysical() || in.IsBonding() || in.IsVlan()) {
+			continue
+		}
 		rec := models.Interface{
 			HasCarrier:    i.hasCarrier(in.Name()),
 			IPV4Addresses: make([]string, 0),
@@ -109,9 +111,9 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 			continue
 		}
 		for _, addr := range addrs {
-			isIPv4, addrStr, addrErr := analyzeAddress(addr)
-			if addrErr != nil {
-				logrus.WithError(addrErr).Warnf("While analyzing addr")
+			isIPv4, addrStr, err := analyzeAddress(addr)
+			if err != nil {
+				logrus.WithError(err).Warnf("While analyzing addr")
 				continue
 			}
 			if isIPv4 {
@@ -119,11 +121,6 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 			} else if !ipWithCidrInCidr(addrStr, ipv6LocalLinkCIDR) {
 				rec.IPV6Addresses = append(rec.IPV6Addresses, addrStr)
 			}
-		}
-		rec.Type, err = in.Type()
-		if err != nil {
-			logrus.WithError(err).Warnf("Retrieiving interface type for %s", in.Name())
-			continue
 		}
 		ret = append(ret, &rec)
 	}

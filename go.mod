@@ -25,7 +25,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.8.2
 	github.com/ssgreg/journald v1.0.0
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	github.com/thoas/go-funk v0.9.2
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -137,7 +137,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.3.5 // indirect
 	gorm.io/gorm v1.23.5 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect

@@ -32,6 +32,7 @@ func createFakeModelDisk(num int) *models.Disk {
 		Wwn:       fmt.Sprintf("disk%d-wwn", num),
 		Bootable:  false,
 		Smart:     `{"some": "json"}`,
+		Holders:   "",
 		InstallationEligibility: models.DiskInstallationEligibility{
 			Eligible: true,
 		},
@@ -89,14 +90,31 @@ func createAWSXenEBSDisk() *ghw.Disk {
 	}
 }
 
-func createISCSIDisk() *ghw.Disk {
+func createISCSIDisk(name string) *ghw.Disk {
 	return &ghw.Disk{
-		Name:                   "sda",
+		Name:                   name,
 		SizeBytes:              21474836480,
 		DriveType:              ghw.DRIVE_TYPE_HDD,
 		BusPath:                "ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
 		Vendor:                 "LIO-ORG",
 		Model:                  "disk0",
+		SerialNumber:           "6001405961d8b6f55cf48beb0de296b2",
+		WWN:                    "0x6001405961d8b6f55cf48beb0de296b2",
+		IsRemovable:            false,
+		NUMANodeID:             0,
+		PhysicalBlockSizeBytes: 512,
+		StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+	}
+}
+
+func createFCDisk(name string) *ghw.Disk {
+	return &ghw.Disk{
+		Name:                   name,
+		SizeBytes:              21474836480,
+		DriveType:              ghw.DRIVE_TYPE_HDD,
+		BusPath:                "ip-192.168.130.10:3260-fc-iqn.2022-01.com.redhat.foo:disk0-lun-0",
+		Vendor:                 "vendor",
+		Model:                  "model",
 		SerialNumber:           "6001405961d8b6f55cf48beb0de296b2",
 		WWN:                    "0x6001405961d8b6f55cf48beb0de296b2",
 		IsRemovable:            false,
@@ -172,6 +190,7 @@ func createExpectedSDAModelDisk() *models.Disk {
 		Smart:               "{\"some\": \"json\"}",
 		Vendor:              "DELL",
 		Wwn:                 "0x6141877064533b0020adf3bb03167694",
+		Holders:             "",
 	}
 }
 
@@ -198,6 +217,7 @@ func createExpectedSDBModelDisk() *models.Disk {
 		Smart:               "{\"some\": \"json\"}",
 		Vendor:              "DELL",
 		Wwn:                 "0x6141877064533b0020adf3bc0325d664",
+		Holders:             "",
 	}
 }
 
@@ -391,6 +411,7 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		} else {
 			mockHasUUID(dependencies, path, "")
 		}
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", name), "")
 	}
 }
 
@@ -406,6 +427,7 @@ func prepareDiskObjects(dependencies *util.MockIDependencies, diskNum int) {
 	mockGetBootable(dependencies, path, false, "")
 	mockGetSMART(dependencies, path, "")
 	mockNoUUID(dependencies, path)
+	mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", name), "")
 
 	dependencies.On("EvalSymlinks", fmt.Sprintf("/dev/disk/by-path/bus-path%d", diskNum)).Return(fmt.Sprintf("/dev/disk/by-path/../../foo/disk%d", diskNum), nil).Once()
 	dependencies.On("Abs", fmt.Sprintf("/dev/disk/by-path/../../foo/disk%d", diskNum)).Return(path, nil).Once()
@@ -609,6 +631,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
@@ -626,6 +649,7 @@ var _ = Describe("Disks test", func() {
 				Wwn:       "",
 				Bootable:  true,
 				Smart:     `{"some": "json"}`,
+				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
 				},
@@ -670,6 +694,7 @@ var _ = Describe("Disks test", func() {
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -686,6 +711,7 @@ var _ = Describe("Disks test", func() {
 				Wwn:       "eui.5cd2e42a91419c24",
 				Bootable:  false,
 				Smart:     `{"some": "json"}`,
+				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
 				},
@@ -711,7 +737,7 @@ var _ = Describe("Disks test", func() {
 	It("iSCSI device", func() {
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
 		path := "/dev/sda"
-		disk := createISCSIDisk()
+		disk := createISCSIDisk("sda")
 		mockFetchDisks(dependencies, nil, disk)
 		mockGetPathFromDev(dependencies, disk.Name, "")
 		mockGetHctl(dependencies, disk.Name, "error")
@@ -719,6 +745,7 @@ var _ = Describe("Disks test", func() {
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
@@ -736,6 +763,53 @@ var _ = Describe("Disks test", func() {
 				Wwn:       "0x6001405961d8b6f55cf48beb0de296b2",
 				Bootable:  true,
 				Smart:     `{"some": "json"}`,
+				Holders:   "",
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible: true,
+				},
+			},
+		}))
+	})
+
+	It("FC device", func() {
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		path := "/dev/sda"
+		disk := createFCDisk("sda")
+		mockFetchDisks(dependencies, nil, disk)
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetHctl(dependencies, disk.Name, "error")
+		mockGetBootable(dependencies, path, true, "")
+		mockNoUUID(dependencies, path)
+		mockGetByPath(dependencies, disk.BusPath, "")
+		mockGetSMART(dependencies, path, "")
+
+		holders := map[string]string{"dm-1": ""}
+		holderInfos := funk.Map(holders, func(name string, _ string) os.FileInfo {
+			fileInfoMock := MockFileInfo{}
+			fileInfoMock.On("Name").Return(name)
+			fileInfoMock.On("Mode").Return(os.ModeDir)
+			return &fileInfoMock
+		})
+		dependencies.On("ReadDir", "/sys/block/sda/holders").Return(holderInfos, nil).Times(1)
+
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ID:        "/dev/disk/by-path/ip-192.168.130.10:3260-fc-iqn.2022-01.com.redhat.foo:disk0-lun-0",
+				ByPath:    "/dev/disk/by-path/ip-192.168.130.10:3260-fc-iqn.2022-01.com.redhat.foo:disk0-lun-0",
+				DriveType: "FC",
+				Hctl:      "",
+				Model:     "model",
+				Name:      "sda",
+				Path:      "/dev/sda",
+				Serial:    "6001405961d8b6f55cf48beb0de296b2",
+				SizeBytes: 21474836480,
+				Vendor:    "vendor",
+				Wwn:       "0x6001405961d8b6f55cf48beb0de296b2",
+				Bootable:  true,
+				Smart:     `{"some": "json"}`,
+				Holders:   "dm-1",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
 				},
@@ -753,6 +827,8 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil).Times(3)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
@@ -760,7 +836,7 @@ var _ = Describe("Disks test", func() {
 			{
 				ID:        "/dev/dm-2",
 				ByPath:    "",
-				DriveType: "DeviceMapper",
+				DriveType: "Multipath",
 				Hctl:      "",
 				Model:     "",
 				Name:      "dm-2",
@@ -771,6 +847,7 @@ var _ = Describe("Disks test", func() {
 				Wwn:       "",
 				Bootable:  true,
 				Smart:     `{"some": "json"}`,
+				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
 				},

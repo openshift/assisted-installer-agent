@@ -5406,12 +5406,6 @@ func init() {
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"primaryKey\""
         },
-        "ignition_config_overrides": {
-          "description": "Json formatted string containing the user overrides for the initial ignition config",
-          "type": "string",
-          "x-go-custom-tag": "gorm:\"type:text\"",
-          "example": "{\"ignition\": {\"version\": \"3.1.0\"}, \"storage\": {\"files\": [{\"path\": \"/tmp/example\", \"contents\": {\"source\": \"data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj\"}}]}}"
-        },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
           "type": "object",
@@ -6263,7 +6257,7 @@ func init() {
           "type": "string"
         },
         "drive_type": {
-          "type": "string"
+          "$ref": "#/definitions/drive_type"
         },
         "has_uuid": {
           "type": "boolean"
@@ -6503,6 +6497,21 @@ func init() {
           }
         }
       }
+    },
+    "drive_type": {
+      "type": "string",
+      "enum": [
+        "Unknown",
+        "HDD",
+        "FDD",
+        "ODD",
+        "SSD",
+        "virtual",
+        "Multipath",
+        "iSCSI",
+        "FC",
+        "LVM"
+      ]
     },
     "error": {
       "type": "object",
@@ -14613,12 +14622,6 @@ func init() {
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"primaryKey\""
         },
-        "ignition_config_overrides": {
-          "description": "Json formatted string containing the user overrides for the initial ignition config",
-          "type": "string",
-          "x-go-custom-tag": "gorm:\"type:text\"",
-          "example": "{\"ignition\": {\"version\": \"3.1.0\"}, \"storage\": {\"files\": [{\"path\": \"/tmp/example\", \"contents\": {\"source\": \"data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj\"}}]}}"
-        },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
           "type": "object",
@@ -15470,7 +15473,7 @@ func init() {
           "type": "string"
         },
         "drive_type": {
-          "type": "string"
+          "$ref": "#/definitions/drive_type"
         },
         "has_uuid": {
           "type": "boolean"
@@ -15673,6 +15676,21 @@ func init() {
           }
         }
       }
+    },
+    "drive_type": {
+      "type": "string",
+      "enum": [
+        "Unknown",
+        "HDD",
+        "FDD",
+        "ODD",
+        "SSD",
+        "virtual",
+        "Multipath",
+        "iSCSI",
+        "FC",
+        "LVM"
+      ]
     },
     "error": {
       "type": "object",

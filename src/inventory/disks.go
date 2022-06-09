@@ -182,7 +182,7 @@ func isFCDisk(disk *ghw.Disk) bool {
 	return strings.Contains(disk.BusPath, "-fc-")
 }
 
-func (d *disks) isMultipath(disk *ghw.Disk) bool {
+func (d *disks) dmUUIDHasPrefix(disk *ghw.Disk, prefix string) bool {
 	if !isDeviceMapper(disk) {
 		return false
 	}
@@ -192,10 +192,18 @@ func (d *disks) isMultipath(disk *ghw.Disk) bool {
 		logrus.WithError(err).Warnf("Failed reading dm uuid %s", path)
 		return false
 	}
-	if strings.HasPrefix(string(b), "mpath-") {
+	if strings.HasPrefix(string(b), prefix) {
 		return true
 	}
 	return false
+}
+
+func (d *disks) isMultipath(disk *ghw.Disk) bool {
+	return d.dmUUIDHasPrefix(disk, "mpath-")
+}
+
+func (d *disks) isLVM(disk *ghw.Disk) bool {
+	return d.dmUUIDHasPrefix(disk, "LVM-")
 }
 
 func (d *disks) getHolders(diskName string) string {
@@ -225,8 +233,12 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
 	}
 
-	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) {
+	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) {
 		notEligibleReasons = append(notEligibleReasons, "Disk has unknown storage controller")
+	}
+
+	if d.isLVM(disk) {
+		notEligibleReasons = append(notEligibleReasons, "Disk is an LVM logical volume")
 	}
 
 	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
@@ -246,11 +258,38 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 	return notEligibleReasons, isInstallationMedia
 }
 
-func (d *disks) IsPhysicalDisk(disk *block.Disk) bool {
-	return !((strings.HasPrefix(disk.Name, "dm-") && !d.isMultipath(disk)) || // Device mapper devices, except multipath (includes LVM, crypt, etc)
+func (d *disks) shouldReturnDisk(disk *block.Disk) bool {
+	return !((strings.HasPrefix(disk.Name, "dm-") && !(d.isMultipath(disk) || d.isLVM(disk))) || // Device mapper devices, except multipath/LVM
 		strings.HasPrefix(disk.Name, "loop") || // Loop devices (see `man loop`)
 		strings.HasPrefix(disk.Name, "zram") || // Default name usually assigned to "swap on ZRAM" block devices
 		strings.HasPrefix(disk.Name, "md")) // Linux multiple-device-driver block devices
+}
+
+func (d *disks) getDriveType(disk *block.Disk) models.DriveType {
+	diskString := disk.DriveType.String()
+	var driveType models.DriveType
+
+	if isISCSIDisk(disk) {
+		driveType = models.DriveTypeISCSI
+	} else if isFCDisk(disk) {
+		driveType = models.DriveTypeFC
+	} else if d.isMultipath(disk) {
+		driveType = models.DriveTypeMultipath
+	} else if d.isLVM(disk) {
+		driveType = models.DriveTypeLVM
+	} else if diskString == ghw.DRIVE_TYPE_FDD.String() {
+		driveType = models.DriveTypeFDD
+	} else if diskString == ghw.DRIVE_TYPE_HDD.String() {
+		driveType = models.DriveTypeHDD
+	} else if diskString == ghw.DRIVE_TYPE_ODD.String() {
+		driveType = models.DriveTypeODD
+	} else if diskString == ghw.DRIVE_TYPE_SSD.String() {
+		driveType = models.DriveTypeSSD
+	} else {
+		driveType = models.DriveTypeUnknown
+	}
+
+	return driveType
 }
 
 func (d *disks) getDisks() []*models.Disk {
@@ -273,8 +312,8 @@ func (d *disks) getDisks() []*models.Disk {
 		var eligibility models.DiskInstallationEligibility
 		var isInstallationMedia bool
 
-		// Ignore non physical disks
-		if !d.IsPhysicalDisk(disk) {
+		// Filter out disks that we don't want to return
+		if !d.shouldReturnDisk(disk) {
 			continue
 		}
 
@@ -292,14 +331,6 @@ func (d *disks) getDisks() []*models.Disk {
 		}
 
 		path := d.getPath(disk.BusPath, disk.Name)
-		driveType := disk.DriveType.String()
-		if isISCSIDisk(disk) {
-			driveType = "iSCSI"
-		} else if isFCDisk(disk) {
-			driveType = "FC"
-		} else if d.isMultipath(disk) {
-			driveType = "Multipath"
-		}
 
 		rec := models.Disk{
 			ByID:                    diskPath2diskWWN[path],
@@ -308,7 +339,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Model:                   unknownToEmpty(disk.Model),
 			Name:                    disk.Name,
 			Path:                    path,
-			DriveType:               driveType,
+			DriveType:               d.getDriveType(disk),
 			Serial:                  unknownToEmpty(disk.SerialNumber),
 			SizeBytes:               int64(disk.SizeBytes),
 			Vendor:                  unknownToEmpty(disk.Vendor),

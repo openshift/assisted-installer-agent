@@ -21,7 +21,7 @@ func createFakeModelDisk(num int) *models.Disk {
 	return &models.Disk{
 		ByPath:    fmt.Sprintf("/dev/disk/by-path/bus-path%d", num),
 		ID:        fmt.Sprintf("/dev/disk/by-path/bus-path%d", num),
-		DriveType: "HDD",
+		DriveType: models.DriveTypeHDD,
 		Hctl:      "0.2.0.0",
 		Model:     fmt.Sprintf("disk%d-model", num),
 		Name:      fmt.Sprintf("disk%d", num),
@@ -124,24 +124,7 @@ func createFCDisk(name string) *ghw.Disk {
 	}
 }
 
-func createMultipathDisk() *ghw.Disk {
-	return &ghw.Disk{
-		Name:                   "dm-2",
-		SizeBytes:              21474836480,
-		DriveType:              ghw.DRIVE_TYPE_UNKNOWN,
-		BusPath:                "unknown",
-		Vendor:                 "unknown",
-		Model:                  "unknown",
-		SerialNumber:           "unknown",
-		WWN:                    "unknown",
-		IsRemovable:            false,
-		NUMANodeID:             0,
-		PhysicalBlockSizeBytes: 512,
-		StorageController:      ghw.STORAGE_CONTROLLER_UNKNOWN,
-	}
-}
-
-func createLVMDisk() *ghw.Disk {
+func createDeviceMapperDisk() *ghw.Disk {
 	return &ghw.Disk{
 		Name:                   "dm-2",
 		SizeBytes:              21474836480,
@@ -174,7 +157,7 @@ func createExpectedSDAModelDisk() *models.Disk {
 		ByID:      sdaIdFullPath,
 		HasUUID:   true,
 		ByPath:    "/dev/disk/by-path/pci-0000:02:00.0-scsi-0:2:0:0",
-		DriveType: "HDD",
+		DriveType: models.DriveTypeHDD,
 		Hctl:      "0.2.0.0",
 		InstallationEligibility: models.DiskInstallationEligibility{
 			Eligible:           true,
@@ -201,7 +184,7 @@ func createExpectedSDBModelDisk() *models.Disk {
 		HasUUID:   true,
 		ByID:      sdbIdFullPath,
 		ByPath:    "/dev/disk/by-path/pci-0000:02:00.0-scsi-0:2:1:0",
-		DriveType: "HDD",
+		DriveType: models.DriveTypeHDD,
 		Hctl:      "0.2.0.0",
 		InstallationEligibility: models.DiskInstallationEligibility{
 			Eligible:           true,
@@ -396,7 +379,7 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		busPath := disk.BusPath
 		path := fmt.Sprintf("/dev/%s", name)
 
-		if !newDisks(&config.SubprocessConfig{}, dependencies).IsPhysicalDisk(disk) {
+		if !newDisks(&config.SubprocessConfig{}, dependencies).shouldReturnDisk(disk) {
 			continue
 		}
 
@@ -594,12 +577,12 @@ var _ = Describe("Disks test", func() {
 		blockInfo.Disks[0].DriveType = ghw.DRIVE_TYPE_ODD
 		expectedDisks[0].InstallationEligibility.Eligible = true
 		expectedDisks[0].IsInstallationMedia = true
-		expectedDisks[0].DriveType = "ODD"
+		expectedDisks[0].DriveType = models.DriveTypeODD
 
 		blockInfo.Disks[1].DriveType = ghw.DRIVE_TYPE_HDD
 		expectedDisks[1].InstallationEligibility.Eligible = true
 		expectedDisks[1].IsInstallationMedia = false
-		expectedDisks[1].DriveType = "HDD"
+		expectedDisks[1].DriveType = models.DriveTypeHDD
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
@@ -638,7 +621,7 @@ var _ = Describe("Disks test", func() {
 			{
 				ID:        "/dev/xvda",
 				ByPath:    "",
-				DriveType: "SSD",
+				DriveType: models.DriveTypeSSD,
 				Hctl:      "",
 				Model:     "",
 				Name:      "xvda",
@@ -700,7 +683,7 @@ var _ = Describe("Disks test", func() {
 			{
 				ID:        "/dev/disk/by-path/pci-0000:3d:00.0-nvme-1",
 				ByPath:    "/dev/disk/by-path/pci-0000:3d:00.0-nvme-1",
-				DriveType: "SSD",
+				DriveType: models.DriveTypeSSD,
 				Hctl:      "",
 				Model:     "INTEL SSDPEKKF256G8L",
 				Name:      "nvme0n1",
@@ -752,7 +735,7 @@ var _ = Describe("Disks test", func() {
 			{
 				ID:        "/dev/disk/by-path/ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
 				ByPath:    "/dev/disk/by-path/ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
-				DriveType: "iSCSI",
+				DriveType: models.DriveTypeISCSI,
 				Hctl:      "",
 				Model:     "disk0",
 				Name:      "sda",
@@ -798,7 +781,7 @@ var _ = Describe("Disks test", func() {
 			{
 				ID:        "/dev/disk/by-path/ip-192.168.130.10:3260-fc-iqn.2022-01.com.redhat.foo:disk0-lun-0",
 				ByPath:    "/dev/disk/by-path/ip-192.168.130.10:3260-fc-iqn.2022-01.com.redhat.foo:disk0-lun-0",
-				DriveType: "FC",
+				DriveType: models.DriveTypeFC,
 				Hctl:      "",
 				Model:     "model",
 				Name:      "sda",
@@ -820,7 +803,7 @@ var _ = Describe("Disks test", func() {
 	It("Multipath device", func() {
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
 		path := "/dev/dm-2"
-		disk := createMultipathDisk()
+		disk := createDeviceMapperDisk()
 		mockFetchDisks(dependencies, nil, disk)
 		mockGetPathFromDev(dependencies, disk.Name, "")
 		mockGetHctl(dependencies, disk.Name, "error")
@@ -829,14 +812,14 @@ var _ = Describe("Disks test", func() {
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 
-		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil).Times(3)
+		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
 				ID:        "/dev/dm-2",
 				ByPath:    "",
-				DriveType: "Multipath",
+				DriveType: models.DriveTypeMultipath,
 				Hctl:      "",
 				Model:     "",
 				Name:      "dm-2",
@@ -857,12 +840,41 @@ var _ = Describe("Disks test", func() {
 
 	It("LVM device", func() {
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
-		disk := createLVMDisk()
+		path := "/dev/dm-2"
+		disk := createDeviceMapperDisk()
 		mockFetchDisks(dependencies, nil, disk)
-		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("LVM-Uq2y4MzaRpGE1XwVHSYDU5VAuHXXOA4gCkn9flYIZlS7UEfwlYPMyzHwx2R6VQoJ\n"), nil).Once()
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetHctl(dependencies, disk.Name, "error")
+		mockGetBootable(dependencies, path, true, "")
+		mockGetSMART(dependencies, path, "")
+		mockNoUUID(dependencies, path)
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+
+		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("LVM-Uq2y4MzaRpGE1XwVHSYDU5VAuHXXOA4gCkn9flYIZlS7UEfwlYPMyzHwx2R6VQoJ2\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
-		Expect(ret).To(Equal([]*models.Disk{}))
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ID:        "/dev/dm-2",
+				ByPath:    "",
+				DriveType: models.DriveTypeLVM,
+				Hctl:      "",
+				Model:     "",
+				Name:      "dm-2",
+				Path:      "/dev/dm-2",
+				Serial:    "",
+				SizeBytes: 21474836480,
+				Vendor:    "",
+				Wwn:       "",
+				Bootable:  true,
+				Smart:     `{"some": "json"}`,
+				Holders:   "",
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible:           false,
+					NotEligibleReasons: []string{"Disk is an LVM logical volume"},
+				},
+			},
+		}))
 	})
 
 	Describe("By-Id", func() {

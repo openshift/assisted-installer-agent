@@ -659,10 +659,10 @@ github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417/go.m
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
 github.com/openshift-online/ocm-sdk-go v0.1.205 h1:DhvfTf55jpQsTFpI283/z3b0Tab8x26oelPDuao7IiM=
 github.com/openshift-online/ocm-sdk-go v0.1.205/go.mod h1:iOhkt/6nFp9v7hasdmGbYlR/YKeUoaZKq5ZBrtyKwKg=
-github.com/openshift/assisted-service v1.0.10-0.20220608004059-c0fee5ccc185 h1:wXc3TD4BKUNdGuMYet89g16a/6qumjouBbIE3NKKuy8=
-github.com/openshift/assisted-service v1.0.10-0.20220608004059-c0fee5ccc185/go.mod h1:Oz7mIRs5fSBkWrCqeCjKT0WNgzP8ZaRiBUlGiH2kPEU=
-github.com/openshift/assisted-service/models v0.0.0-20220608004059-c0fee5ccc185 h1:qDx/2sxr6yJvFRDHu1C6Ff+RKAbAHACN3DdJrnmBl0E=
-github.com/openshift/assisted-service/models v0.0.0-20220608004059-c0fee5ccc185/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
+github.com/openshift/assisted-service v1.0.10-0.20220609033527-ee349efae3fd h1:v7oXmObUW7rcNZ1Yig9XStTMEPdxmKGxGpil/6mF2vA=
+github.com/openshift/assisted-service v1.0.10-0.20220609033527-ee349efae3fd/go.mod h1:Oz7mIRs5fSBkWrCqeCjKT0WNgzP8ZaRiBUlGiH2kPEU=
+github.com/openshift/assisted-service/models v0.0.0-20220609033527-ee349efae3fd h1:ufJH+wn2vCsBzjZDuEn0xlAr3R7oa89RoNM8hi+Mq/s=
+github.com/openshift/assisted-service/models v0.0.0-20220609033527-ee349efae3fd/go.mod h1:jTawnnM2LU/AzpZLYxPeXQy4qBRl5iwFo1bu3zrPv2s=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec h1:1nC/js8H8s+MBzgu20YDSuVw6IF9Ct5HOR1JLxv572Q=
 github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec/go.mod h1:fIhPgDwf2Vm1tIiZ0cFidPw3dS26AKGSRoiIJnlz84o=
 github.com/openshift/installer v0.16.1 h1:PmjALN9x1NVNVi3SCqfz0ZwVCgOkQLQWo2nHYXREq/A=

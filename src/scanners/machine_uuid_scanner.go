@@ -110,7 +110,7 @@ func ReadId(d SerialDiscovery, dependencies agent_utils.IDependencies) *strfmt.U
 	}
 	if ret == nil {
 		log.Warn("No valid serial for mother board and  system UUID  moving to interface mac")
-		interfaces := inventory.GetInterfaces(dependencies, false)
+		interfaces := inventory.GetInterfaces(dependencies)
 		// sort by mac
 		sort.Slice(interfaces, func(i, j int) bool {
 			return interfaces[i].MacAddress < interfaces[j].MacAddress

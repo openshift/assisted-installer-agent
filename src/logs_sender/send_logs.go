@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -42,9 +43,8 @@ type LogsSender interface {
 	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int)
 	CreateFolderIfNotExist(folder string) error
-	FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, infraEnvID strfmt.UUID,
-		inventoryUrl string, pullSecretToken string) error
-	LogProgressReport(infraEnvID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error
+	FileUploader(filePath string) error
+	LogProgressReport(progress models.LogsState) error
 	GatherInstallerLogs(targetDir string) error
 	GatherErrorLogs(targetDir string) error
 }
@@ -94,18 +94,18 @@ func getClient(loggingConfig *config.LogsSenderConfig, inventoryUrl string, pull
 	return invSession.Client(), invSession.Context()
 }
 
-func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID, hostID strfmt.UUID, infraEnvID strfmt.UUID,
-	inventoryUrl string, pullSecretToken string) error {
-
+func (e *LogsSenderExecuter) FileUploader(filePath string) error {
 	uploadFile, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
 	defer uploadFile.Close()
 
+	hostID := strfmt.UUID(e.loggingConfig.HostID)
+	infraEnvID := strfmt.UUID(e.loggingConfig.InfraEnvID)
 	params := installer.V2UploadLogsParams{
 		Upfile:     uploadFile,
-		ClusterID:  clusterID,
+		ClusterID:  strfmt.UUID(e.loggingConfig.ClusterID),
 		HostID:     &hostID,
 		InfraEnvID: &infraEnvID,
 		LogsType:   string(models.LogsTypeHost),
@@ -114,10 +114,10 @@ func (e *LogsSenderExecuter) FileUploader(filePath string, clusterID strfmt.UUID
 	return err
 }
 
-func (e *LogsSenderExecuter) LogProgressReport(infraEnvID strfmt.UUID, hostID strfmt.UUID, inventoryUrl string, pullSecretToken string, progress models.LogsState) error {
+func (e *LogsSenderExecuter) LogProgressReport(progress models.LogsState) error {
 	params := installer.V2UpdateHostLogsProgressParams{
-		InfraEnvID: infraEnvID,
-		HostID:     hostID,
+		InfraEnvID: strfmt.UUID(e.loggingConfig.InfraEnvID),
+		HostID:     strfmt.UUID(e.loggingConfig.HostID),
 		LogsProgressParams: &models.LogsProgressParams{
 			LogsState: &progress,
 		},
@@ -127,11 +127,62 @@ func (e *LogsSenderExecuter) LogProgressReport(infraEnvID strfmt.UUID, hostID st
 	return err
 }
 
+func (e *LogsSenderExecuter) CollectPartialLogs(ctx context.Context, wg *sync.WaitGroup, targetDir string, gatherId string) {
+	defer wg.Done()
+
+	ticker := time.NewTicker(1 * time.Minute)
+	partialDir := path.Join(targetDir, "partial")
+	partialArchivePath := path.Join(partialDir, "log-bundle-partial.tar.gz")
+	inputPath := fmt.Sprintf("/tmp/artifacts-%s", gatherId)
+
+	if err := e.CreateFolderIfNotExist(partialDir); err != nil {
+		log.WithError(err).Errorf("Failed to create directory %s", partialDir)
+		return
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			_ = os.RemoveAll(partialDir)
+			return
+		case <-ticker.C:
+			//collect partial logs from installer gather
+			args := []string{"-czvf", partialArchivePath, "-C", filepath.Dir(inputPath), filepath.Base(inputPath)}
+			_, errOut, execCode := e.Execute("tar", args...)
+			if execCode != 0 {
+				log.WithError(errors.Errorf(errOut)).Errorf("Failed to run to archive %s.", inputPath)
+				continue
+			}
+			log.Info("uploading partial logs...")
+			err := uploadLogs(e, targetDir, fmt.Sprintf("%s/logs.tar.gz", logsDir))
+			if err != nil {
+				log.WithError(err).Error("Failed to upload partial logs")
+			}
+		}
+	}
+}
+
 func (e *LogsSenderExecuter) GatherInstallerLogs(targetDir string) error {
 	var result, err error
 
 	gatherID := time.Now().Format("20060102150405")
 	mastersIPs := strings.Split(e.loggingConfig.MastersIPs, ",")
+
+	//The following sync mechanism makes sure that once the install-gather script is done,
+	//the partial collection thread exits. Then, the main thread waits until the partial logs are sent,
+	//before resuming the execution and sending the final logs.
+	//This synchronization makes sure as much as possible that the last logs reaching the service will
+	//be the most comprehensive ones.
+	collectContext, collectContextCancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
+	defer func() {
+		collectContextCancel()
+		wg.Wait()
+	}()
+
+	go e.CollectPartialLogs(collectContext, &wg, targetDir, gatherID)
+	wg.Add(1)
+
 	//Create ovs logs where installer-gather expects to find its input.
 	//Then, installer-gather.sh runa as overlay and finally bundles
 	//all logs together. Unlike installer-gather.sh, ovs-installer-gather.sh
@@ -268,25 +319,24 @@ func getJournalLogs(l LogsSender, since string, outputFilePath string, journalFi
 	return nil
 }
 
-func archiveFilesInFolder(l LogsSender, inputPath string, outputFile string) error {
-	log.Infof("Archiving %s and creating %s", inputPath, outputFile)
-	args := []string{"-czvf", outputFile, "-C", filepath.Dir(inputPath), filepath.Base(inputPath)}
+func uploadLogs(l LogsSender, inputPath string, archivePath string) error {
+	if lerr := l.LogProgressReport(models.LogsStateCollecting); lerr != nil {
+		log.WithError(lerr).Error("failed to send log progress collecting to service")
+	}
 
-	_, err, execCode := l.Execute("tar", args...)
+	log.Infof("Archiving %s and creating %s", inputPath, archivePath)
+	args := []string{"-czvf", archivePath, "-C", filepath.Dir(inputPath), filepath.Base(inputPath)}
+
+	_, errOut, execCode := l.Execute("tar", args...)
 
 	if execCode != 0 {
-		log.WithError(errors.Errorf(err)).Errorf("Failed to run to archive %s.", inputPath)
-		return fmt.Errorf(err)
+		log.WithError(errors.Errorf(errOut)).Errorf("Failed to run to archive %s.", inputPath)
+		return fmt.Errorf(errOut)
 	}
-	return nil
-}
 
-func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId strfmt.UUID, infraEnvID strfmt.UUID,
-	inventoryUrl string, pullSecretToken string) error {
-
-	err := l.FileUploader(filepath, clusterID, hostId, infraEnvID, inventoryUrl, pullSecretToken)
+	err := l.FileUploader(archivePath)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to upload file %s to assisted-service", filepath)
+		log.WithError(err).Errorf("Failed to upload file %s to assisted-service", archivePath)
 		return err
 	}
 	return nil
@@ -295,9 +345,7 @@ func uploadLogs(l LogsSender, filepath string, clusterID strfmt.UUID, hostId str
 func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, string) {
 	var result error
 
-	if lerr := l.LogProgressReport(strfmt.UUID(loggingConfig.InfraEnvID),
-		strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL,
-		loggingConfig.PullSecretToken, models.LogsStateRequested); lerr != nil {
+	if lerr := l.LogProgressReport(models.LogsStateRequested); lerr != nil {
 		log.WithError(lerr).Error("failed to send log progress requested to service")
 	}
 
@@ -315,20 +363,6 @@ func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, stri
 	if err := l.CreateFolderIfNotExist(logsTmpFilesDir); err != nil {
 		log.WithError(err).Errorf("Failed to create directory %s", logsTmpFilesDir)
 		return err, ""
-	}
-
-	if loggingConfig.InstallerGatherlogging {
-		if loggingConfig.IsBootstrap {
-			if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
-				log.WithError(err).Error("Failed to gather installer logs")
-				result = multierror.Append(result, err)
-			}
-		}
-
-		if err := l.GatherErrorLogs(logsTmpFilesDir); err != nil {
-			log.WithError(err).Error("Failed to gather coredumps and dmesg (ignoring for getting other logs)")
-			result = multierror.Append(result, err)
-		}
 	}
 
 	outputFile := path.Join(logsTmpFilesDir, "mount.logs")
@@ -352,24 +386,36 @@ func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, stri
 		}
 	}
 
+	if loggingConfig.InstallerGatherlogging {
+		if err := l.GatherErrorLogs(logsTmpFilesDir); err != nil {
+			log.WithError(err).Error("Failed to gather coredumps and dmesg (ignoring for getting other logs)")
+			result = multierror.Append(result, err)
+		}
+	}
+
+	if loggingConfig.InstallerGatherlogging {
+		if loggingConfig.IsBootstrap {
+			if err := l.GatherInstallerLogs(logsTmpFilesDir); err != nil {
+				log.WithError(err).Error("Failed to gather installer logs")
+				result = multierror.Append(result, err)
+			}
+		}
+	}
+
 	var report = ""
 	if result != nil {
 		report = result.Error()
+		_ = os.WriteFile(path.Join(logsTmpFilesDir, "report.logs"), []byte(report), 0)
 	}
 
-	if err := archiveFilesInFolder(l, logsTmpFilesDir, archivePath); err != nil {
+	err := uploadLogs(l, logsTmpFilesDir, archivePath)
+	if err != nil {
 		return err, report
 	}
 
-	err := uploadLogs(l, archivePath, strfmt.UUID(loggingConfig.ClusterID),
-		strfmt.UUID(loggingConfig.HostID), strfmt.UUID(loggingConfig.InfraEnvID),
-		loggingConfig.TargetURL, loggingConfig.PullSecretToken)
-
-	if lerr := l.LogProgressReport(strfmt.UUID(loggingConfig.InfraEnvID),
-		strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL,
-		loggingConfig.PullSecretToken, models.LogsStateCompleted); lerr != nil {
+	if lerr := l.LogProgressReport(models.LogsStateCompleted); lerr != nil {
 		log.WithError(lerr).Error("failed to send log progress completed to service")
 	}
 
-	return err, report
+	return nil, report
 }

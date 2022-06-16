@@ -81,8 +81,8 @@ var _ = Describe("Machine uuid test", func() {
 
 		It(fmt.Sprintf("mac address fallback %s", test.useCase), func() {
 			rets := []agentutils.Interface{
-				agentutils.NewFilledInterfaceMock(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, true, false, false, 100, "physical"),
-				agentutils.NewFilledInterfaceMock(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, true, false, false, 10, "physical"),
+				newMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
+				newMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"},10, "physical"),
 			}
 			dependencies.On("Interfaces").Return(rets, nil).Once()
 			dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
@@ -117,4 +117,10 @@ var _ = Describe("Machine uuid test", func() {
 func TestSubsystem(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Scanner unit tests")
+}
+
+func newMockInterface(mtu int, name string, macAddr string, flags net.Flags, addrs []string, speedMbps int64, interfaceType string) *agentutils.MockInterface {
+	interfaceMock := agentutils.MockInterface{}
+	agentutils.FillInterfaceMock(&interfaceMock.Mock, mtu, name, macAddr, flags, addrs, speedMbps, interfaceType)
+	return &interfaceMock
 }

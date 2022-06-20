@@ -25,7 +25,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.8.2
 	github.com/ssgreg/journald v1.0.0
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.3
 	github.com/thoas/go-funk v0.9.2
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -117,7 +117,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/slok/go-http-metrics v0.10.0 // indirect
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace // indirect
-	github.com/stretchr/objx v0.2.0 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

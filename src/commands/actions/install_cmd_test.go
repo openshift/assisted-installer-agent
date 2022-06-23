@@ -378,10 +378,10 @@ var _ = Describe("installer test", func() {
 	})
 
 	It("good version", func() {
-		installCommandRequest.OpenshiftVersion = "4.10-rc-6-prelease"
+		installCommandRequest.OpenshiftVersion = "4.10-rc-6-prerelease"
 		action := getInstall(installCommandRequest, filesystem, false)
 		args := action.Args()
-		Expect(strings.Join(args, " ")).To(ContainSubstring("--openshift-version 4.10-rc-6-prelease"))
+		Expect(strings.Join(args, " ")).To(ContainSubstring("--openshift-version 4.10-rc-6-prerelease"))
 	})
 
 	It("bad images installer", func() {

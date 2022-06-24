@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -143,6 +145,10 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 			}
 
 			s.sendStepReply(reply)
+
+			if s.requiresRestart(reply) {
+				os.Exit(0)
+			}
 		}(step)
 	}
 }
@@ -241,6 +247,28 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	}
 	s.handleSteps(result)
 	return result.NextInstructionSeconds, *result.PostStepAction
+}
+
+// requiresRestart checks if the agent needs to be restarted after completing this step. Currently
+// restarting is necessary after successfully completing the 'upgrade_agent' step.
+func (s *stepSession) requiresRestart(reply models.StepReply) bool {
+	if reply.StepType != models.StepTypeUpgradeAgent {
+		return false
+	}
+	var result models.UpgradeAgentResponse
+	err := json.Unmarshal([]byte(reply.Output), &result)
+	if err != nil {
+		s.Logger().WithError(err).WithFields(
+			logrus.Fields{
+				"output": reply.Output,
+				"code":   reply.ExitCode,
+			}).Error(
+			"Failed to unmarshal step result, will assume that the agent doesn't " +
+				"need to be restarted",
+		)
+		return false
+	}
+	return result.Result == models.UpgradeAgentResultSuccess
 }
 
 func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup, log log.FieldLogger) {

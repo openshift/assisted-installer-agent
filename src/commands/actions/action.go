@@ -61,6 +61,7 @@ func New(agentConfig *config.AgentConfig, stepType models.StepType, args []strin
 		models.StepTypeStopInstallation:           {&stopInstallation{args: args}},
 		models.StepTypeLogsGather:                 {&logsGather{args: args, agentConfig: agentConfig}},
 		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs(), agentConfig: agentConfig}},
+		models.StepTypeUpgradeAgent:               {&upgradeAgent{args: args}},
 	}
 
 	action, ok := stepActionMap[stepType]

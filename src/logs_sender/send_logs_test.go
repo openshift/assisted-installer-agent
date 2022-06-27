@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	strfmt "github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -72,20 +71,17 @@ var _ = Describe("logs sender", func() {
 	}
 
 	fileUploaderSuccess := func() {
-		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(loggingConfig.ClusterID),
-			strfmt.UUID(loggingConfig.HostID), strfmt.UUID(loggingConfig.InfraEnvID),
-			loggingConfig.TargetURL, loggingConfig.PullSecretToken).
+		logsSenderMock.On("FileUploader", archivePath).
 			Return(nil)
 	}
 
-	reportLogProgressSuccess := func(completed bool) {
-		logsSenderMock.On("LogProgressReport", strfmt.UUID(loggingConfig.InfraEnvID),
-			strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL, loggingConfig.PullSecretToken,
-			models.LogsStateRequested).Return(nil)
+	reportLogProgressSuccess := func(completed, collected bool) {
+		logsSenderMock.On("LogProgressReport", models.LogsStateRequested).Return(nil)
+		if collected {
+			logsSenderMock.On("LogProgressReport", models.LogsStateCollecting).Return(nil)
+		}
 		if completed {
-			logsSenderMock.On("LogProgressReport", strfmt.UUID(loggingConfig.InfraEnvID),
-				strfmt.UUID(loggingConfig.HostID), loggingConfig.TargetURL, loggingConfig.PullSecretToken,
-				models.LogsStateCompleted).Return(nil)
+			logsSenderMock.On("LogProgressReport", models.LogsStateCompleted).Return(nil)
 		}
 	}
 
@@ -104,7 +100,7 @@ var _ = Describe("logs sender", func() {
 	It("CreateFolderIfNotExist failed", func() {
 		logsSenderMock.On("CreateFolderIfNotExist", logsTmpFilesDir).
 			Return(errors.Errorf("Dummy"))
-		reportLogProgressSuccess(false)
+		reportLogProgressSuccess(false, false)
 		err, report := SendLogs(loggingConfig, logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
@@ -117,7 +113,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
-		reportLogProgressSuccess(true)
+		reportLogProgressSuccess(true, true)
 		logsSenderMock.On("GatherInstallerLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
 		err, report := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).To(Not(HaveOccurred()))
@@ -130,7 +126,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
-		reportLogProgressSuccess(true)
+		reportLogProgressSuccess(true, true)
 		logsSenderMock.On("GatherErrorLogs", logsTmpFilesDir).Return(errors.New("Dummy"))
 		err, report := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).NotTo(HaveOccurred())
@@ -142,7 +138,7 @@ var _ = Describe("logs sender", func() {
 		folderSuccess()
 		archiveSuccess()
 		fileUploaderSuccess()
-		reportLogProgressSuccess(true)
+		reportLogProgressSuccess(true, true)
 		executeOutputToFileSuccess(-1)
 		err, report := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).To(Not(HaveOccurred()))
@@ -157,7 +153,7 @@ var _ = Describe("logs sender", func() {
 		logsSenderMock.On("Execute", "tar", "-czvf", archivePath, "-C", filepath.Dir(logsTmpFilesDir),
 			filepath.Base(logsTmpFilesDir)).
 			Return("Dummy", "Dummy", -1)
-		reportLogProgressSuccess(false)
+		reportLogProgressSuccess(false, true)
 		err, _ := SendLogs(loggingConfig, logsSenderMock)
 		Expect(err).To(HaveOccurred())
 	})
@@ -168,11 +164,9 @@ var _ = Describe("logs sender", func() {
 		gatherErrorLogsSuccess()
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
-		logsSenderMock.On("FileUploader", archivePath, strfmt.UUID(loggingConfig.ClusterID),
-			strfmt.UUID(loggingConfig.HostID), strfmt.UUID(loggingConfig.InfraEnvID),
-			loggingConfig.TargetURL, loggingConfig.PullSecretToken).
+		logsSenderMock.On("FileUploader", archivePath).
 			Return(errors.Errorf("Dummy"))
-		reportLogProgressSuccess(true)
+		reportLogProgressSuccess(false, true)
 		err, _ := SendLogs(loggingConfig, logsSenderMock)
 		fmt.Println(err)
 		Expect(err).To(HaveOccurred())
@@ -209,7 +203,7 @@ var _ = Describe("logs sender", func() {
 		executeOutputToFileSuccess(0)
 		archiveSuccess()
 		fileUploaderSuccess()
-		reportLogProgressSuccess(true)
+		reportLogProgressSuccess(true, true)
 		err, _ := SendLogs(loggingConfig, logsSenderMock)
 		fmt.Println(err)
 		Expect(err).NotTo(HaveOccurred())

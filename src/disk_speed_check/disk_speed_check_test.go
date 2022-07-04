@@ -50,20 +50,63 @@ var _ = Describe("Disk speed check test", func() {
 				}`, durationInNS), "", 0).Once()
 	}
 
-	It("Sufficient performance", func() {
+	fioFailure := func(file string) {
+		dependencies.On("Execute", "fio", "--filename", file,
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything).Return("", "failure", -1).Once()
+	}
+
+	It("Check succeeded", func() {
 		path := "/dev/disk"
-		fioSuccess(path, 2)
+		for i := 1; i <= numOfFioJobs; i++ {
+			fioSuccess(path, 2)
+		}
 		stdout, _, exitCode := perfCheck.FioPerfCheck(getRequestStr(path), log)
 		Expect(exitCode).Should(Equal(0))
 		checkReturn(stdout, path, 2)
 	})
 
-	It("Slow disk performance", func() {
+	It("Check succeeded - various latencies", func() {
 		path := "/dev/disk"
-		fioSuccess(path, 200)
+		for i := 1; i <= numOfFioJobs; i++ {
+			fioSuccess(path, int64(i)*2)
+		}
 		stdout, _, exitCode := perfCheck.FioPerfCheck(getRequestStr(path), log)
-		Expect(exitCode).To(Equal(0))
-		checkReturn(stdout, path, 200)
+		Expect(exitCode).Should(Equal(0))
+		checkReturn(stdout, path, numOfFioJobs*2)
+	})
+
+	It("Check failed - unmarshal error", func() {
+		_, stderr, exitCode := perfCheck.FioPerfCheck("", log)
+		Expect(exitCode).To(Equal(-1))
+		Expect(stderr).To(Equal("Failed to unmarshal DiskSpeedCheckRequest: unexpected end of JSON input"))
+	})
+
+	It("Check failed - missing path", func() {
+		_, stderr, exitCode := perfCheck.FioPerfCheck(getRequestStr(""), log)
+		Expect(exitCode).To(Equal(-1))
+		Expect(stderr).To(Equal("Missing disk path"))
+	})
+
+	It("Check failed - all fio requests returned errors", func() {
+		path := "/dev/disk"
+		for i := 1; i <= numOfFioJobs; i++ {
+			fioFailure(path)
+		}
+		_, stderr, exitCode := perfCheck.FioPerfCheck(getRequestStr(path), log)
+		Expect(exitCode).To(Equal(-1))
+		Expect(stderr).To(Equal("Could not get I/O performance for path /dev/disk (fio exit code: -1, stderr: failure)"))
+	})
+
+	It("Check succeeded - one fio request returned an error", func() {
+		path := "/dev/disk"
+		fioFailure(path)
+		for i := 1; i <= numOfFioJobs-1; i++ {
+			fioSuccess(path, 1)
+		}
+		stdout, _, exitCode := perfCheck.FioPerfCheck(getRequestStr(path), log)
+		Expect(exitCode).Should(Equal(0))
+		checkReturn(stdout, path, 1)
 	})
 })
 

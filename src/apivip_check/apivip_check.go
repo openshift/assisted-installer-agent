@@ -10,13 +10,80 @@ import (
 	"net/http"
 
 	"github.com/coreos/ignition/v2/config/v3_2"
-	"github.com/coreos/ignition/v2/config/v3_2/types"
+	ignition_types "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const ignitionVersion string = "3.2.0"
+
+func getIgnitionFile(ignition *ignition_types.Config, path string) *ignition_types.File {
+	for _, file := range ignition.Storage.Files {
+		if file.Path == path {
+			return &file
+		}
+	}
+
+	return nil
+}
+
+func copyIgnitionFile(originalConfig *ignition_types.Config, filteredConfig *ignition_types.Config, path string) {
+	if file := getIgnitionFile(originalConfig, path); file != nil {
+		filteredConfig.Storage.Files = append(filteredConfig.Storage.Files, *file)
+	}
+}
+
+// copyIgnitionDiskEncryptionInformation copies disk-encryption related
+// information. See filterIgnition for more info.
+func copyIgnitionDiskEncryptionInformation(originalConfig *ignition_types.Config, filteredConfig *ignition_types.Config) {
+	filteredConfig.Storage.Luks = originalConfig.Storage.Luks
+}
+
+// copyIgnitionManagedNetworkIndications copies (see filterIgnition for more
+// info) ignition storage file entries that can be used by the service in order
+// to detect whether this worker ignition file originated from a cluster that
+// has managed networking or not. This helps the service, for example, to know
+// whether it should perform DNS validations for the day-2 hosts trying to join
+// that cluster or not (as managed network clusters can be joined without any
+// DNS configuration, they do not require such validations).
+func copyIgnitionManagedNetworkIndications(originalConfig *ignition_types.Config, filteredConfig *ignition_types.Config) {
+	// This is a hack - since we have no official way to know whether a worker
+	// ignition file originated from a cluster with managed networking or not,
+	// we instead rely on the presence of coredns and keepalived pod manifests
+	// to indicate that. We only expect those to be present in clusters with
+	// managed networking. To be a bit more robust, we consider the presence of
+	// any one of them to mean that the cluster has managed networking. This
+	// gives us better forwards compatibility if one of them gets renamed /
+	// replaced with other technologies in future OCP versions.
+	//
+	// Another way in which this is hacky is that users could manually create
+	// static pods with the same name as part of their machine-configs, in
+	// which case we would have a false-positive detection. But that is
+	// admittedly very unlikely.
+	//
+	// Hopefully we can negotiate with the relevant OCP teams to have a more
+	// official, stable way to have this detection - like a magic empty file
+	// placed somewhere in the ignition that we can check for the presence of.
+	// Once we have such file, we can slowly deprecate this detection mechanism
+	// and fully move to the new one by inspecting that file instead.
+	copyIgnitionFile(originalConfig, filteredConfig, "/etc/kubernetes/manifests/coredns.yaml")
+	copyIgnitionFile(originalConfig, filteredConfig, "/etc/kubernetes/manifests/keepalived.yaml")
+}
+
+// filterIgnition removes unnecessary sections of the ignition config, leaving
+// only those needed by the service. We do this because the ignition config
+// tends to be quite large.
+func filterIgnition(originalConfig *ignition_types.Config) *ignition_types.Config {
+	filteredConfig := ignition_types.Config{}
+
+	copyIgnitionDiskEncryptionInformation(originalConfig, &filteredConfig)
+	copyIgnitionManagedNetworkIndications(originalConfig, &filteredConfig)
+
+	// NOTE: add here any additional objects from the config (when needed by the service)
+
+	return &filteredConfig
+}
 
 func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
 	var checkAPIRequest models.APIVipConnectivityRequest
@@ -47,14 +114,7 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 		return createResponse(false, ""), wrapped.Error(), 0
 	}
 
-	// We should return only the relevant sections of the ignition that
-	// are needed by the service. As it's redundant to send the entire
-	// ignition config which tends to be quite large.
-	filteredConfig := types.Config{}
-	filteredConfig.Storage.Luks = config.Storage.Luks
-	// Note: add here any additional objects from the config (when needed by the service)
-
-	configBytes, err := json.Marshal(filteredConfig)
+	configBytes, err := json.Marshal(filterIgnition(&config))
 	if err != nil {
 		wrapped := errors.Wrap(err, "Failed to filter ignition")
 		log.WithError(err).Error(wrapped.Error())

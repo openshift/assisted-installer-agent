@@ -24,7 +24,7 @@ identifier (UUID) of the host that the agent is running on.
 * *--cluster-id*: ID of the cluster the host will be connected to.
 * *--agent-version*: Version (image tag) of the agent being run, collected for diagnostic purposes.
 * *--interval*: Interval in seconds between consecutive requests that the agent sends to the server. Default is 60.
-* *--with-text-logging*: Enable writing the agent logs to _/var/log/agent.log_. Default is `true`.
+* *--with-text-logging*: Enable writing the agent logs to ``/var/log/agent.log``. Default is `true`.
 * *--with-journal-logging*: Enable writing logs to systemd journal. Default is `true`.
 * *--insecure*: Skip certificate validation in case of HTTPS transport. Should be used only for testing. Default is `false`.
 * *--cacert*: Path to a custom CA certificate file in PEM format.

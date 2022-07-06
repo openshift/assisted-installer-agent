@@ -405,7 +405,7 @@ func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, stri
 	var report = ""
 	if result != nil {
 		report = result.Error()
-		_ = os.WriteFile(path.Join(logsTmpFilesDir, "report.logs"), []byte(report), 0)
+		_ = os.WriteFile(path.Join(logsTmpFilesDir, "report.logs"), []byte(report), 0755)
 	}
 
 	err := uploadLogs(l, logsTmpFilesDir, archivePath)

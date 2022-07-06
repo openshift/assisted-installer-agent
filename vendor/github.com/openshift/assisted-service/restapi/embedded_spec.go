@@ -5527,6 +5527,11 @@ func init() {
           "type": "boolean",
           "default": false
         },
+        "schedulable_masters_forced_true": {
+          "description": "Indicates if schedule workloads on masters will be enabled regardless the value of 'schedulable_masters' property.\nSet to 'true' when not enough hosts are associated with this cluster to disable the scheduling on masters.\n",
+          "type": "boolean",
+          "default": true
+        },
         "service_network_cidr": {
           "description": "The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
@@ -5930,6 +5935,20 @@ func init() {
           "maximum": 32,
           "minimum": 1
         },
+        "cluster_networks_dualstack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cluster_network"
+          }
+        },
+        "cluster_networks_ipv4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cluster_network"
+          }
+        },
         "inactive_deletion_hours": {
           "type": "integer"
         },
@@ -5940,6 +5959,20 @@ func init() {
         "service_network_cidr": {
           "type": "string",
           "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[\\/]([1-9]|[1-2][0-9]|3[0-2]?)$"
+        },
+        "service_networks_dualstack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/service_network"
+          }
+        },
+        "service_networks_ipv4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/service_network"
+          }
         }
       }
     },
@@ -6660,7 +6693,8 @@ func init() {
                   "DISK_ENCRYPTION",
                   "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
                   "ARM64_ARCHITECTURE",
-                  "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING"
+                  "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING",
+                  "SINGLE_NODE_EXPANSION"
                 ]
               },
               "support_level": {
@@ -7230,7 +7264,8 @@ func init() {
         "dns-wildcard-not-configured",
         "disk-encryption-requirements-satisfied",
         "non-overlapping-subnets",
-        "vsphere-disk-uuid-enabled"
+        "vsphere-disk-uuid-enabled",
+        "compatible-agent"
       ]
     },
     "host_network": {
@@ -8435,7 +8470,6 @@ func init() {
         "openshift_version",
         "cpu_architecture",
         "url",
-        "rootfs_url",
         "version"
       ],
       "properties": {
@@ -8447,10 +8481,6 @@ func init() {
         },
         "openshift_version": {
           "description": "Version of the OpenShift cluster.",
-          "type": "string"
-        },
-        "rootfs_url": {
-          "description": "The OS rootfs url.",
           "type": "string"
         },
         "url": {
@@ -8676,6 +8706,11 @@ func init() {
         "interface": {
           "description": "Interface to which packets for this route will be sent",
           "type": "string"
+        },
+        "metric": {
+          "description": "Route priority metric",
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -8759,7 +8794,8 @@ func init() {
         "domain-resolution",
         "stop-installation",
         "logs-gather",
-        "next-step-runner"
+        "next-step-runner",
+        "upgrade-agent"
       ]
     },
     "steps": {
@@ -8813,6 +8849,35 @@ func init() {
           "type": "boolean"
         }
       }
+    },
+    "upgrade_agent_request": {
+      "type": "object",
+      "properties": {
+        "agent_image": {
+          "description": "Full image reference of the image that the agent should upgrade to, for example\n` + "`" + `quay.io/registry-proxy.engineering.redhat.com/rh-osbs/openshift4-assisted-installer-agent-rhel8:v1.0.0-142` + "`" + `.\n",
+          "type": "string"
+        }
+      }
+    },
+    "upgrade_agent_response": {
+      "type": "object",
+      "properties": {
+        "agent_image": {
+          "description": "Full image reference of the image that the agent has upgraded to, for example\n` + "`" + `quay.io/registry-proxy.engineering.redhat.com/rh-osbs/openshift4-assisted-installer-agent-rhel8:v1.0.0-142` + "`" + `.\n",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/definitions/upgrade_agent_result"
+        }
+      }
+    },
+    "upgrade_agent_result": {
+      "description": "Agent upgrade result.",
+      "type": "string",
+      "enum": [
+        "success",
+        "failure"
+      ]
     },
     "usage": {
       "type": "object",
@@ -14336,7 +14401,8 @@ func init() {
             "DISK_ENCRYPTION",
             "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
             "ARM64_ARCHITECTURE",
-            "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING"
+            "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING",
+            "SINGLE_NODE_EXPANSION"
           ]
         },
         "support_level": {
@@ -14743,6 +14809,11 @@ func init() {
           "type": "boolean",
           "default": false
         },
+        "schedulable_masters_forced_true": {
+          "description": "Indicates if schedule workloads on masters will be enabled regardless the value of 'schedulable_masters' property.\nSet to 'true' when not enough hosts are associated with this cluster to disable the scheduling on masters.\n",
+          "type": "boolean",
+          "default": true
+        },
         "service_network_cidr": {
           "description": "The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
@@ -15146,6 +15217,20 @@ func init() {
           "maximum": 32,
           "minimum": 1
         },
+        "cluster_networks_dualstack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cluster_network"
+          }
+        },
+        "cluster_networks_ipv4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cluster_network"
+          }
+        },
         "inactive_deletion_hours": {
           "type": "integer"
         },
@@ -15156,6 +15241,20 @@ func init() {
         "service_network_cidr": {
           "type": "string",
           "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[\\/]([1-9]|[1-2][0-9]|3[0-2]?)$"
+        },
+        "service_networks_dualstack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/service_network"
+          }
+        },
+        "service_networks_ipv4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/service_network"
+          }
         }
       }
     },
@@ -16375,7 +16474,8 @@ func init() {
         "dns-wildcard-not-configured",
         "disk-encryption-requirements-satisfied",
         "non-overlapping-subnets",
-        "vsphere-disk-uuid-enabled"
+        "vsphere-disk-uuid-enabled",
+        "compatible-agent"
       ]
     },
     "host_network": {
@@ -17571,7 +17671,6 @@ func init() {
         "openshift_version",
         "cpu_architecture",
         "url",
-        "rootfs_url",
         "version"
       ],
       "properties": {
@@ -17583,10 +17682,6 @@ func init() {
         },
         "openshift_version": {
           "description": "Version of the OpenShift cluster.",
-          "type": "string"
-        },
-        "rootfs_url": {
-          "description": "The OS rootfs url.",
           "type": "string"
         },
         "url": {
@@ -17812,6 +17907,11 @@ func init() {
         "interface": {
           "description": "Interface to which packets for this route will be sent",
           "type": "string"
+        },
+        "metric": {
+          "description": "Route priority metric",
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -17895,7 +17995,8 @@ func init() {
         "domain-resolution",
         "stop-installation",
         "logs-gather",
-        "next-step-runner"
+        "next-step-runner",
+        "upgrade-agent"
       ]
     },
     "steps": {
@@ -17949,6 +18050,35 @@ func init() {
           "type": "boolean"
         }
       }
+    },
+    "upgrade_agent_request": {
+      "type": "object",
+      "properties": {
+        "agent_image": {
+          "description": "Full image reference of the image that the agent should upgrade to, for example\n` + "`" + `quay.io/registry-proxy.engineering.redhat.com/rh-osbs/openshift4-assisted-installer-agent-rhel8:v1.0.0-142` + "`" + `.\n",
+          "type": "string"
+        }
+      }
+    },
+    "upgrade_agent_response": {
+      "type": "object",
+      "properties": {
+        "agent_image": {
+          "description": "Full image reference of the image that the agent has upgraded to, for example\n` + "`" + `quay.io/registry-proxy.engineering.redhat.com/rh-osbs/openshift4-assisted-installer-agent-rhel8:v1.0.0-142` + "`" + `.\n",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/definitions/upgrade_agent_result"
+        }
+      }
+    },
+    "upgrade_agent_result": {
+      "description": "Agent upgrade result.",
+      "type": "string",
+      "enum": [
+        "success",
+        "failure"
+      ]
     },
     "usage": {
       "type": "object",

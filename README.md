@@ -22,7 +22,7 @@ identifier (UUID) of the host that the agent is running on.
 
 * *--url*: The URL of an assisted installer server, includes a schema and optionally a port.
 * *--cluster-id*: ID of the cluster the host will be connected to.
-* *--agent-version*: Version (image tag) of the agent being run, collected for diagnostic purposes.
+* *--agent-version*: Version (full image reference) of the agent being run, used for diagnostic and upgrade purposes.
 * *--interval*: Interval in seconds between consecutive requests that the agent sends to the server. Default is 60.
 * *--with-text-logging*: Enable writing the agent logs to ``/var/log/agent.log``. Default is `true`.
 * *--with-journal-logging*: Enable writing logs to systemd journal. Default is `true`.

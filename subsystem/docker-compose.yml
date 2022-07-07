@@ -28,6 +28,8 @@ services:
         "11111111-1111-1111-1111-111111111111",
         "--interval",
         "5",
+        "--agent-version",
+        "quay.io/edge-infrastructure/assisted-installer-agent:latest",
       ]
 
   dhcpd:

@@ -56,7 +56,6 @@ var (
 	ReleaseImage            = "quay.io/openshift-release-dev/ocp-release:4.6.16-x86_64"
 	RhcosImage              = "rhcos_4.6.0"
 	RhcosVersion            = "version-46.123-0"
-	RhcosRootfs             = "rhcos_4.6.0_rootfs"
 	SupportLevel            = "beta"
 	CPUArchitecture         = DefaultCPUArchitecture
 )
@@ -76,7 +75,6 @@ var TestDefaultConfig = &TestConfiguration{
 	OsImage: &models.OsImage{
 		CPUArchitecture:  &CPUArchitecture,
 		OpenshiftVersion: &OpenShiftVersion,
-		RootfsURL:        &RhcosRootfs,
 		URL:              &RhcosImage,
 		Version:          &RhcosVersion,
 	},
@@ -226,6 +224,41 @@ func GenerateTestDefaultInventory() string {
 				IPV6Addresses: []string{
 					"1001:db8::10/120",
 				},
+			},
+		},
+		Disks: []*models.Disk{
+			TestDefaultConfig.Disks,
+		},
+		Routes: TestDefaultRouteConfiguration,
+	}
+
+	b, err := json.Marshal(inventory)
+	Expect(err).To(Not(HaveOccurred()))
+	return string(b)
+}
+
+func GenerateTestInventoryWithVirtualInterface() string {
+	inventory := &models.Inventory{
+		Interfaces: []*models.Interface{
+			{
+				Name: "eth0",
+				IPV4Addresses: []string{
+					"192.0.2.0/24",
+				},
+				IPV6Addresses: []string{
+					"2001:db8::/32",
+				},
+				Type: "physical",
+			},
+			{
+				Name: "cni1",
+				IPV4Addresses: []string{
+					"198.51.100.0/24",
+				},
+				IPV6Addresses: []string{
+					"2001:db8::/32",
+				},
+				Type: "device",
 			},
 		},
 		Disks: []*models.Disk{

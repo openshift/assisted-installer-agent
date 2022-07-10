@@ -7,6 +7,7 @@ import (
 
 	"github.com/alecthomas/units"
 	"github.com/go-openapi/strfmt"
+	"github.com/openshift/assisted-service/internal/common"
 	eventsapi "github.com/openshift/assisted-service/internal/events/api"
 	"github.com/openshift/assisted-service/models"
 	logutil "github.com/openshift/assisted-service/pkg/log"
@@ -33,7 +34,7 @@ const (
 	counterClusterHostInstallationCount           = "assisted_installer_cluster_host_installation_count"
 	counterClusterHostNTPFailuresCount            = "assisted_installer_cluster_host_ntp_failures"
 	counterClusterHostDiskSyncDurationMiliSeconds = "assisted_installer_cluster_host_disk_sync_duration_ms"
-	counterClusterHostImagePullStatus             = "assisted_installer_cluster_host_image_pull_status"
+	counterClusterImagePullStatus                 = "assisted_installer_cluster_image_pull_status"
 	counterHostValidationFailed                   = "assisted_installer_host_validation_is_in_failed_status_on_cluster_deletion"
 	counterHostValidationChanged                  = "assisted_installer_host_validation_failed_after_success_before_installation"
 	counterClusterValidationFailed                = "assisted_installer_cluster_validation_is_in_failed_status_on_cluster_deletion"
@@ -104,7 +105,7 @@ type API interface {
 	ClusterInstallationFinished(ctx context.Context, result, prevState, clusterVersion string, clusterID strfmt.UUID, emailDomain string, installationStartedTime strfmt.DateTime)
 	ReportHostInstallationMetrics(ctx context.Context, clusterVersion string, clusterID strfmt.UUID, emailDomain string, boot *models.Disk, h *models.Host, previousProgress *models.HostProgressInfo, currentStage models.HostStage)
 	DiskSyncDuration(hostID strfmt.UUID, diskPath string, syncDuration int64)
-	ImagePullStatus(hostID strfmt.UUID, imageName, resultStatus string, downloadRate float64)
+	ImagePullStatus(imageName, resultStatus string, downloadRate float64)
 	FileSystemUsage(usageInPercentage float64)
 	MonitoredHostsCount(monitoredHosts int64)
 	MonitoredClusterCount(monitoredClusters int64)
@@ -127,7 +128,7 @@ type MetricsManager struct {
 	serviceLogicClusterHostDiskGb                      *prometheus.HistogramVec
 	serviceLogicClusterHostNicGb                       *prometheus.HistogramVec
 	serviceLogicClusterHostDiskSyncDurationMiliSeconds *prometheus.HistogramVec
-	serviceLogicClusterHostImagePullStatus             *prometheus.HistogramVec
+	serviceLogicClusterImagePullStatus                 *prometheus.HistogramVec
 	serviceLogicHostValidationFailed                   *prometheus.CounterVec
 	serviceLogicHostValidationChanged                  *prometheus.CounterVec
 	serviceLogicClusterValidationFailed                *prometheus.CounterVec
@@ -280,13 +281,13 @@ func NewMetricsManager(registry prometheus.Registerer, eventsHandler eventsapi.H
 				Help:      counterDescriptionClusterValidationChanged,
 			}, []string{openshiftVersionLabel, emailDomainLabel, clusterValidationTypeLabel}),
 
-		serviceLogicClusterHostImagePullStatus: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		serviceLogicClusterImagePullStatus: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      counterClusterHostImagePullStatus,
+			Name:      counterClusterImagePullStatus,
 			Help:      counterDescriptionClusterHostImagePullStatus,
 			Buckets:   []float64{0.1, 0.5, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50},
-		}, []string{resultLabel, imageLabel, hostIdLabel}),
+		}, []string{imageLabel, resultLabel}),
 
 		serviceLogicFilesystemUsagePercentage: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -328,7 +329,7 @@ func NewMetricsManager(registry prometheus.Registerer, eventsHandler eventsapi.H
 		m.serviceLogicHostValidationChanged,
 		m.serviceLogicClusterValidationFailed,
 		m.serviceLogicClusterValidationChanged,
-		m.serviceLogicClusterHostImagePullStatus,
+		m.serviceLogicClusterImagePullStatus,
 		m.serviceLogicFilesystemUsagePercentage,
 		m.serviceLogicMonitoredHosts,
 		m.serviceLogicMonitoredClusters,
@@ -382,8 +383,8 @@ func (m *MetricsManager) DiskSyncDuration(hostID strfmt.UUID, diskPath string, s
 	m.serviceLogicClusterHostDiskSyncDurationMiliSeconds.WithLabelValues(diskPath, hostID.String()).Observe(float64(syncDuration))
 }
 
-func (m *MetricsManager) ImagePullStatus(hostID strfmt.UUID, imageName, resultStatus string, downloadRate float64) {
-	m.serviceLogicClusterHostImagePullStatus.WithLabelValues(imageName, resultStatus, hostID.String()).Observe(downloadRate)
+func (m *MetricsManager) ImagePullStatus(imageName, resultStatus string, downloadRate float64) {
+	m.serviceLogicClusterImagePullStatus.WithLabelValues(imageName, resultStatus).Observe(downloadRate)
 }
 
 func (m *MetricsManager) ReportHostInstallationMetrics(ctx context.Context, clusterVersion string, clusterID strfmt.UUID, emailDomain string, boot *models.Disk,
@@ -426,8 +427,18 @@ func (m *MetricsManager) ReportHostInstallationMetrics(ctx context.Context, clus
 			m.handler.AddMetricsEvent(ctx, clusterID, h.ID, models.EventSeverityInfo, "host.stage.duration", time.Now(),
 				"result", string(phaseResult), "duration", duration, "host_stage", string(previousProgress.CurrentStage), "vendor", hwVendor, "product", hwProduct, "disk_type", diskType, "host_role", roleStr)
 
+			// Since the introduction of the upgrade agent feature the agent will be
+			// sending the full image reference in the `discovery_agent_version`
+			// header, and we will store that in the database. But for metrics we where
+			// assuming that the header and database contained only the version, so to
+			// keep backwards compatibility we need to extract the tag.
+			agentVersion := common.GetTagFromImageRef(h.DiscoveryAgentVersion)
+			if agentVersion == "" {
+				agentVersion = h.DiscoveryAgentVersion
+			}
+
 			m.serviceLogicHostInstallationPhaseSeconds.WithLabelValues(string(previousProgress.CurrentStage),
-				string(phaseResult), clusterVersion, emailDomain, h.DiscoveryAgentVersion, hwVendor, hwProduct, string(diskType)).Observe(duration)
+				string(phaseResult), clusterVersion, emailDomain, agentVersion, hwVendor, hwProduct, string(diskType)).Observe(duration)
 		}
 	}
 }

@@ -126,10 +126,10 @@ func (_m *MockLogsSender) ExecutePrivileged(command string, args ...string) (str
 
 // FileUploader provides a mock function with given fields: filePath
 func (_m *MockLogsSender) FileUploader(filePath string) error {
-	ret := _m.Called(filePath,)
+	ret := _m.Called(filePath)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string,) error); ok {
+	if rf, ok := ret.Get(0).(func(string) error); ok {
 		r0 = rf(filePath)
 	} else {
 		r0 = ret.Error(0)

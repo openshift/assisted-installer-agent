@@ -1,11 +1,12 @@
 package util
 
 import (
-	"github.com/stretchr/testify/mock"
 	"net"
+
+	"github.com/stretchr/testify/mock"
 )
 
-func FillInterfaceMock(mock *mock.Mock,mtu int, name string, macAddr string, flags net.Flags, addrs []string, speedMbps int64, interfaceType string) {
+func FillInterfaceMock(mock *mock.Mock, mtu int, name string, macAddr string, flags net.Flags, addrs []string, speedMbps int64, interfaceType string) {
 	mock.On("Name").Return(name)
 	mock.On("MTU").Return(mtu)
 	hwAddr, _ := net.ParseMAC(macAddr)

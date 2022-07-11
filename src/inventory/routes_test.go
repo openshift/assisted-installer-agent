@@ -20,9 +20,10 @@ type netPair struct {
 var (
 	ipV4GW = netPair{
 		routes: []netlink.Route{
-			{LinkIndex: 0, Dst: nil, Gw: net.IPv4(10, 254, 0, 1)},
-			{LinkIndex: 1, Dst: &net.IPNet{IP: net.IPv4(192, 168, 122, 0)}, Gw: net.IPv4zero}},
-		linkNames: []string{"eth3", "virbr0"}}
+			{LinkIndex: 0, Dst: nil, Gw: net.IPv4(10, 254, 0, 1), Priority: 100},
+			{LinkIndex: 1, Dst: &net.IPNet{IP: net.IPv4(192, 168, 122, 0)}, Gw: net.IPv4zero, Priority: 100},
+			{LinkIndex: 2, Dst: &net.IPNet{IP: net.IPv4(192, 168, 122, 0)}, Gw: nil, Priority: 101}},
+		linkNames: []string{"eth3", "virbr0", "virbr1"}}
 
 	ipv4NoInternetConnection = netPair{
 		routes: []netlink.Route{
@@ -45,9 +46,9 @@ var (
 
 	ipV6GW = netPair{
 		routes: []netlink.Route{
-			{LinkIndex: 0, Gw: net.ParseIP("2001:1::1"), Dst: &net.IPNet{IP: net.IPv6zero}},
-			{LinkIndex: 1, Gw: net.IPv6zero, Dst: &net.IPNet{IP: net.ParseIP("2001:2::1")}},
-			{LinkIndex: 2, Gw: net.IPv6zero, Dst: &net.IPNet{IP: net.IPv6zero}}},
+			{LinkIndex: 0, Gw: net.ParseIP("2001:1::1"), Dst: &net.IPNet{IP: net.IPv6zero}, Priority: 101},
+			{LinkIndex: 1, Gw: net.IPv6zero, Dst: &net.IPNet{IP: net.ParseIP("2001:2::1")}, Priority: 101},
+			{LinkIndex: 2, Gw: nil, Dst: &net.IPNet{IP: net.IPv6zero}, Priority: 102}},
 		linkNames: []string{"eth3", "eth3", "lo"},
 	}
 
@@ -65,8 +66,9 @@ var (
 	}
 
 	ipv4Route = []*models.Route{
-		{Interface: "eth3", Gateway: "10.254.0.1", Destination: "0.0.0.0", Family: int32(unix.AF_INET)},
-		{Interface: "virbr0", Gateway: net.IPv4zero.String(), Destination: "192.168.122.0", Family: int32(unix.AF_INET)}}
+		{Interface: "eth3", Gateway: "10.254.0.1", Destination: "0.0.0.0", Family: int32(unix.AF_INET), Metric: 100},
+		{Interface: "virbr0", Gateway: net.IPv4zero.String(), Destination: "192.168.122.0", Family: int32(unix.AF_INET), Metric: 100},
+		{Interface: "virbr1", Destination: "192.168.122.0", Family: int32(unix.AF_INET), Metric: 101}}
 	ipv4RouteNoInternetConnection = []*models.Route{
 		{Destination: "10.254.0.0", Gateway: net.IPv4zero.String(), Interface: "docker0", Family: int32(unix.AF_INET)},
 		{Destination: "172.17.0.0", Gateway: net.IPv4zero.String(), Interface: "virbr0", Family: int32(unix.AF_INET)},
@@ -76,9 +78,9 @@ var (
 		{Interface: "eth3", Gateway: "10.254.0.1", Destination: "0.0.0.0", Family: int32(unix.AF_INET)}}
 
 	ipv6Route = []*models.Route{
-		{Interface: "eth3", Gateway: "2001:1::1", Destination: net.IPv6zero.String(), Family: int32(unix.AF_INET6)},
-		{Interface: "eth3", Gateway: net.IPv6zero.String(), Destination: "2001:2::1", Family: int32(unix.AF_INET6)},
-		{Interface: "lo", Gateway: net.IPv6zero.String(), Destination: net.IPv6zero.String(), Family: int32(unix.AF_INET6)}}
+		{Interface: "eth3", Gateway: "2001:1::1", Destination: net.IPv6zero.String(), Family: int32(unix.AF_INET6), Metric: 101},
+		{Interface: "eth3", Gateway: net.IPv6zero.String(), Destination: "2001:2::1", Family: int32(unix.AF_INET6), Metric: 101},
+		{Interface: "lo", Destination: net.IPv6zero.String(), Family: int32(unix.AF_INET6), Metric: 102}}
 	ipv6RouteNoInternetConnection = []*models.Route{
 		{Destination: "fd2e:6f44:5dd8:5::9b87", Gateway: net.IPv6zero.String(), Interface: "docker0", Family: int32(unix.AF_INET6)},
 		{Destination: "fe80::5054:ff:fedd:a823", Gateway: net.IPv6zero.String(), Interface: "virbr0", Family: int32(unix.AF_INET6)},

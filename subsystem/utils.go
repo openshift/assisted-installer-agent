@@ -97,6 +97,12 @@ func verifyRegisterRequest() {
 	v, ok = reqs[0].Request.Headers["X-Secret-Key"]
 	Expect(ok).Should(BeTrue())
 	Expect(v).Should(Equal("OpenShiftToken"))
+
+	// Check that the agent is sending the full image reference set in the command line:
+	Expect(reqs[0].Request.Body).To(MatchJQ(
+		".discovery_agent_version",
+		"quay.io/edge-infrastructure/assisted-installer-agent:latest",
+	))
 }
 
 func verifyNumberOfRegisterRequest(comaparator string, number int) {

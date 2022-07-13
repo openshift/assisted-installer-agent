@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/openshift/assisted-installer-agent/pkg/shutdown"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/session"
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -38,9 +39,16 @@ type stepSession struct {
 	toolRunnerFactory ToolRunnerFactory
 	agentConfig       *config.AgentConfig
 	stepCache         *cache.Cache
+	shutdown          *shutdown.Sequence
 }
 
-func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, c *cache.Cache, log log.FieldLogger) *stepSession {
+func newSession(
+	agentConfig *config.AgentConfig,
+	toolRunnerFactory ToolRunnerFactory,
+	c *cache.Cache,
+	log log.FieldLogger,
+	shutdown *shutdown.Sequence,
+) *stepSession {
 	invSession, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken, log)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
@@ -51,6 +59,7 @@ func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFac
 		toolRunnerFactory: toolRunnerFactory,
 		agentConfig:       agentConfig,
 		stepCache:         c,
+		shutdown:          shutdown,
 	}
 	return &ret
 }
@@ -147,7 +156,7 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 			s.sendStepReply(reply)
 
 			if s.requiresRestart(reply) {
-				os.Exit(0)
+				s.shutdown.Start(0)
 			}
 		}(step)
 	}
@@ -271,7 +280,14 @@ func (s *stepSession) requiresRestart(reply models.StepReply) bool {
 	return result.Result == models.UpgradeAgentResultSuccess
 }
 
-func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup, log log.FieldLogger) {
+func ProcessSteps(
+	ctx context.Context,
+	agentConfig *config.AgentConfig,
+	toolRunnerFactory ToolRunnerFactory,
+	wg *sync.WaitGroup,
+	log log.FieldLogger,
+	shutdown *shutdown.Sequence,
+) {
 	defer wg.Done()
 
 	var nextRunIn int64
@@ -281,7 +297,7 @@ func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunn
 		case <-ctx.Done():
 			return
 		default:
-			s := newSession(agentConfig, toolRunnerFactory, c, log)
+			s := newSession(agentConfig, toolRunnerFactory, c, log, shutdown)
 			nextRunIn, afterStep = s.processSingleSession()
 			if nextRunIn == -1 {
 				// sleep forever

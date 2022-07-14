@@ -75,7 +75,12 @@ func copyIgnitionManagedNetworkIndications(originalConfig *ignition_types.Config
 // only those needed by the service. We do this because the ignition config
 // tends to be quite large.
 func filterIgnition(originalConfig *ignition_types.Config) *ignition_types.Config {
-	filteredConfig := ignition_types.Config{}
+	// Marshal then parse for the sake of cloning
+	config, _ := json.Marshal(originalConfig)
+	filteredConfig, _, _ := v3_2.Parse(config)
+
+	filteredConfig.Storage.Files = []ignition_types.File{}
+	filteredConfig.Systemd.Units = []ignition_types.Unit{}
 
 	copyIgnitionDiskEncryptionInformation(originalConfig, &filteredConfig)
 	copyIgnitionManagedNetworkIndications(originalConfig, &filteredConfig)

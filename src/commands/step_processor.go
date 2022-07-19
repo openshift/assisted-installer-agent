@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -32,19 +34,21 @@ const (
 
 type stepSession struct {
 	session.InventorySession
+	cancel            context.CancelFunc
 	serviceAPI        serviceAPI
 	toolRunnerFactory ToolRunnerFactory
 	agentConfig       *config.AgentConfig
 	stepCache         *cache.Cache
 }
 
-func newSession(agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, c *cache.Cache, log log.FieldLogger) *stepSession {
+func newSession(cancel context.CancelFunc, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, c *cache.Cache, log log.FieldLogger) *stepSession {
 	invSession, err := session.New(agentConfig, agentConfig.TargetURL, agentConfig.PullSecretToken, log)
 	if err != nil {
 		log.Fatalf("Failed to initialize connection: %e", err)
 	}
 	ret := stepSession{
 		InventorySession:  *invSession,
+		cancel:            cancel,
 		serviceAPI:        newServiceAPI(agentConfig),
 		toolRunnerFactory: toolRunnerFactory,
 		agentConfig:       agentConfig,
@@ -143,6 +147,10 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 			}
 
 			s.sendStepReply(reply)
+
+			if s.requiresRestart(reply) {
+				s.cancel()
+			}
 		}(step)
 	}
 }
@@ -243,7 +251,29 @@ func (s *stepSession) processSingleSession() (int64, string) {
 	return result.NextInstructionSeconds, *result.PostStepAction
 }
 
-func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup, log log.FieldLogger) {
+// requiresRestart checks if the agent needs to be restarted after completing this step. Currently
+// restarting is necessary after successfully completing the 'upgrade_agent' step.
+func (s *stepSession) requiresRestart(reply models.StepReply) bool {
+	if reply.StepType != models.StepTypeUpgradeAgent {
+		return false
+	}
+	var result models.UpgradeAgentResponse
+	err := json.Unmarshal([]byte(reply.Output), &result)
+	if err != nil {
+		s.Logger().WithError(err).WithFields(
+			logrus.Fields{
+				"output": reply.Output,
+				"code":   reply.ExitCode,
+			}).Error(
+			"Failed to unmarshal step result, will assume that the agent doesn't " +
+				"need to be restarted",
+		)
+		return false
+	}
+	return result.Result == models.UpgradeAgentResultSuccess
+}
+
+func ProcessSteps(ctx context.Context, cancel context.CancelFunc, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup, log log.FieldLogger) {
 	defer wg.Done()
 
 	var nextRunIn int64
@@ -253,7 +283,7 @@ func ProcessSteps(ctx context.Context, agentConfig *config.AgentConfig, toolRunn
 		case <-ctx.Done():
 			return
 		default:
-			s := newSession(agentConfig, toolRunnerFactory, c, log)
+			s := newSession(cancel, agentConfig, toolRunnerFactory, c, log)
 			nextRunIn, afterStep = s.processSingleSession()
 			if nextRunIn == -1 {
 				// sleep forever

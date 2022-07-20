@@ -2,6 +2,7 @@ package disk_speed_check
 
 import (
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -12,11 +13,17 @@ import (
 
 const (
 	dryModeSyncDurationInNS = 1_000_000
+	numOfFioJobs            = 2
 )
 
 type DiskSpeedCheck struct {
 	dependecies      IDependencies
 	subprocessConfig *config.SubprocessConfig
+}
+
+type fioCheckResponse struct {
+	latency int64
+	err     error
 }
 
 func NewDiskSpeedCheck(subprocessConfig *config.SubprocessConfig, dependencies IDependencies) *DiskSpeedCheck {
@@ -27,7 +34,7 @@ func (p *DiskSpeedCheck) FioPerfCheck(diskSpeedCheckRequestStr string, log logru
 	var diskPerfCheckRequest models.DiskSpeedCheckRequest
 
 	if err := json.Unmarshal([]byte(diskSpeedCheckRequestStr), &diskPerfCheckRequest); err != nil {
-		wrapped := errors.Wrap(err, "Error unmarshaling DiskSpeedCheckRequest")
+		wrapped := errors.Wrap(err, "Failed to unmarshal DiskSpeedCheckRequest")
 		log.WithError(err).Error(wrapped.Error())
 		return "", wrapped.Error(), -1
 	}
@@ -38,36 +45,68 @@ func (p *DiskSpeedCheck) FioPerfCheck(diskSpeedCheckRequestStr string, log logru
 		return "", err.Error(), -1
 	}
 
-	diskPerf, err := p.getDiskPerf(*diskPerfCheckRequest.Path)
-	if err != nil {
-		log.WithError(err).Warnf("Failed to get disk's I/O performance: %s", *diskPerfCheckRequest.Path)
-		return createResponse(0, *diskPerfCheckRequest.Path), err.Error(), -1
+	// Invoke multiple FIO checks concurrently to simulate overload on disk
+	responseCh := make(chan fioCheckResponse, numOfFioJobs)
+	p.executeMultipleDiskPerf(*diskPerfCheckRequest.Path, responseCh, numOfFioJobs)
+
+	var maxLatency int64 = -1
+	var errMsg string
+	for res := range responseCh {
+		if res.err != nil {
+			errMsg = res.err.Error()
+			log.Warnf("Failed to get disk's I/O performance: %s", errMsg)
+			// Ignoring the error (as it might be temporary)
+			continue
+		}
+
+		// Store the worst latency
+		if res.latency > maxLatency {
+			maxLatency = res.latency
+		}
 	}
 
-	log.Infof("FIO result on disk %s :fdatasync duration %d ms", *diskPerfCheckRequest.Path, diskPerf)
+	if maxLatency == -1 {
+		// Return an error if all requests failed
+		return createResponse(0, *diskPerfCheckRequest.Path), errMsg, -1
+	}
 
-	response := createResponse(diskPerf, *diskPerfCheckRequest.Path)
-
+	log.Infof("FIO result on disk %s :fdatasync duration %d ms", *diskPerfCheckRequest.Path, maxLatency)
+	response := createResponse(maxLatency, *diskPerfCheckRequest.Path)
 	return response, "", 0
 }
 
+func (p *DiskSpeedCheck) executeMultipleDiskPerf(path string, responseCh chan fioCheckResponse, numOfJobs int) {
+	defer close(responseCh)
+	wg := sync.WaitGroup{}
+	for i := 1; i <= numOfJobs; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// Execute FIO on specified path and send response to channel
+			responseCh <- p.getDiskPerf(path)
+		}()
+	}
+	wg.Wait()
+}
+
 // Returns the 99th percentile of fdatasync durations in milliseconds
-func (p *DiskSpeedCheck) getDiskPerf(path string) (int64, error) {
+func (p *DiskSpeedCheck) getDiskPerf(path string) fioCheckResponse {
 	if path == "" {
-		return -1, errors.New("Missing disk path")
+		return fioCheckResponse{latency: -1, err: errors.New("Missing disk path")}
 	}
 
 	if p.subprocessConfig.DryRunEnabled {
 		// Don't want to cause the disk any harm in dry mode, so just pretend it's fast
-		return time.Duration(dryModeSyncDurationInNS).Milliseconds(), nil
+		return fioCheckResponse{latency: time.Duration(dryModeSyncDurationInNS).Milliseconds(), err: nil}
 	}
 
 	args := []string{"--filename", path, "--name=test", "--rw=write", "--ioengine=sync",
 		"--size=22m", "-bs=2300", "--fdatasync=1", "--output-format=json"}
 	stdout, stderr, exitCode := p.dependecies.Execute("fio", args...)
 	if exitCode != 0 {
-		return -1, errors.Errorf("Could not get I/O performance for path %s: (fio exit code %d) %s",
+		err := errors.Errorf("Could not get I/O performance for path %s (fio exit code: %d, stderr: %s)",
 			path, exitCode, stderr)
+		return fioCheckResponse{latency: -1, err: err}
 	}
 
 	type FIO struct {
@@ -85,10 +124,11 @@ func (p *DiskSpeedCheck) getDiskPerf(path string) (int64, error) {
 	fio := FIO{}
 	err := json.Unmarshal([]byte(stdout), &fio)
 	if err != nil {
-		return -1, errors.Errorf("Failed to get sync duration from I/O info for path %s", path)
+		err1 := errors.Errorf("Failed to get sync duration from I/O info for path %s: %v", path, err)
+		return fioCheckResponse{latency: -1, err: err1}
 	}
 	syncDurationInNS := fio.Jobs[0].Sync.LatNs.Percentile.Nine9_000000
-	return time.Duration(syncDurationInNS).Milliseconds(), nil
+	return fioCheckResponse{latency: time.Duration(syncDurationInNS).Milliseconds(), err: nil}
 }
 
 func createResponse(ioSyncDuration int64, path string) string {

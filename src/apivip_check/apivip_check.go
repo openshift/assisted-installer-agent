@@ -69,6 +69,12 @@ func copyIgnitionManagedNetworkIndications(originalConfig *ignition_types.Config
 	// and fully move to the new one by inspecting that file instead.
 	copyIgnitionFile(originalConfig, filteredConfig, "/etc/kubernetes/manifests/coredns.yaml")
 	copyIgnitionFile(originalConfig, filteredConfig, "/etc/kubernetes/manifests/keepalived.yaml")
+
+	// Some clusters (like hypershift) don't use a domain name at all to
+	// connect to the cluster, the service can tell if this is the case by
+	// looking at the IP address of the kubeconfig within the ignition, so the
+	// agent should include that file for the service
+	copyIgnitionFile(originalConfig, filteredConfig, "/etc/kubernetes/kubeconfig")
 }
 
 // filterIgnition removes unnecessary sections of the ignition config, leaving

@@ -16,6 +16,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/PuerkitoBio/rehttp"
 	"github.com/go-openapi/runtime"
 	rtclient "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/swag"
@@ -27,6 +28,12 @@ import (
 	"github.com/openshift/assisted-service/pkg/auth"
 	"github.com/openshift/assisted-service/pkg/requestid"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	minDelay = time.Duration(2) * time.Second
+	maxDelay = time.Duration(10) * time.Second
+	retries  = 3
 )
 
 func createUrl(inventoryUrl string) (*url.URL, error) {
@@ -124,7 +131,7 @@ func createBmInventoryClient(agentConfig *config.AgentConfig, inventoryUrl strin
 		}
 	}
 
-	clientConfig.Transport = requestid.Transport(&http.Transport{
+	transport := requestid.Transport(&http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
@@ -140,6 +147,18 @@ func createBmInventoryClient(agentConfig *config.AgentConfig, inventoryUrl strin
 			RootCAs:            certs,
 		},
 	})
+
+	// Add retry settings
+	tr := rehttp.NewTransport(
+		transport,
+		rehttp.RetryAll(
+			rehttp.RetryMaxRetries(retries),
+			rehttp.RetryTemporaryErr(),
+		),
+		rehttp.ExpJitterDelay(minDelay, maxDelay),
+	)
+
+	clientConfig.Transport = tr
 
 	clientConfig.AuthInfo = auth.AgentAuthHeaderWriter(pullSecretToken)
 	bmInventory := client.New(clientConfig)

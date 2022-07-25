@@ -62,6 +62,8 @@ func New(agentConfig *config.AgentConfig, stepType models.StepType, args []strin
 		models.StepTypeLogsGather:                 {&logsGather{args: args, agentConfig: agentConfig}},
 		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs(), agentConfig: agentConfig}},
 		models.StepTypeUpgradeAgent:               {&upgradeAgent{args: args}},
+		models.StepTypeDownloadBootArtifacts:      {&downloadBootArtifacts{args: args, agentConfig: agentConfig}},
+		models.StepTypeRebootForReclaim:           {&rebootForReclaim{args: args}},
 	}
 
 	action, ok := stepActionMap[stepType]

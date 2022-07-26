@@ -13,7 +13,7 @@ import (
 func main() {
 	loggingConfig := config.ProcessLogsSenderConfigArgs(true, true)
 	config.ProcessDryRunArgs(&loggingConfig.DryRunConfig)
-	util.SetLoggingWithStdOut("logs-sender", loggingConfig.TextLogging, loggingConfig.JournalLogging, loggingConfig.ForcedHostID)
+	util.SetLogging("logs-sender", loggingConfig.TextLogging, loggingConfig.JournalLogging, loggingConfig.StdoutLogging, loggingConfig.ForcedHostID)
 	err, report := logs_sender.SendLogs(loggingConfig, logs_sender.NewLogsSenderExecuter(loggingConfig, loggingConfig.TargetURL,
 		loggingConfig.PullSecretToken,
 		loggingConfig.AgentVersion))

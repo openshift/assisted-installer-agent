@@ -15,7 +15,7 @@ import (
 func main() {
 	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
-	util.SetLogging("connectivity-check", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
+	util.SetLogging("connectivity-check", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.StdoutLogging, subprocessConfig.ForcedHostID)
 	if flag.NArg() != 1 {
 		log.Warnf("Expecting exactly single argument to connectivity check. Received %d", len(os.Args)-1)
 		os.Exit(-1)

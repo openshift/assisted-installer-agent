@@ -14,7 +14,7 @@ import (
 func main() {
 	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
-	util.SetLogging("disk-speed-check", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
+	util.SetLogging("disk-speed-check", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.StdoutLogging, subprocessConfig.ForcedHostID)
 
 	req := flag.Arg(flag.NArg() - 1)
 	perfCheck := disk_speed_check.NewDiskSpeedCheck(subprocessConfig, disk_speed_check.NewDependencies())

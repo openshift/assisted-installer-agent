@@ -79,12 +79,8 @@ func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWrite
 	}
 }
 
-func SetLoggingWithStdOut(name string, textLogging, journalLogging bool, hostID string) {
-	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, true, hostID)
-}
-
-func SetLogging(name string, textLogging, journalLogging bool, hostID string) {
-	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, false, hostID)
+func SetLogging(name string, textLogging, journalLogging, stdoutLogging bool, hostID string) {
+	setLogging(logrus.StandardLogger(), &journalLogger.JournalWriter{}, name, textLogging, journalLogging, stdoutLogging, hostID)
 }
 
 func NewJournalLogger(name string, hostID string) logrus.FieldLogger {

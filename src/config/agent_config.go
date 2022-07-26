@@ -28,6 +28,7 @@ func ProcessArgs() *AgentConfig {
 	flag.IntVar(&ret.IntervalSecs, "interval", 60, "Interval between steps polling in seconds")
 	flag.BoolVar(&ret.JournalLogging, "with-journal-logging", true, "Use journal logging")
 	flag.BoolVar(&ret.TextLogging, "with-text-logging", false, "Output log to file")
+	flag.BoolVar(&ret.StdoutLogging, "with-stdout-logging", false, "Output log to stdout")
 	flag.StringVar(&ret.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
 	flag.BoolVar(&ret.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
 	flag.StringVar(&ret.HostID, "host-id", "", "Host identification")

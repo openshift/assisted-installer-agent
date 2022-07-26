@@ -33,7 +33,7 @@ func main() {
 	processArgs()
 	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
 	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
-	util.SetLogging("container_image_availability", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
+	util.SetLogging("container_image_availability", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.StdoutLogging, subprocessConfig.ForcedHostID)
 	log.StandardLogger().Infof("Checking image availability, requested images: %s", executableConfig.Request)
 	stdout, stderr, exitCode := container_image_availability.Run(subprocessConfig, executableConfig.Request,
 		&container_image_availability.ProcessExecuter{}, log.StandardLogger())

@@ -36,7 +36,7 @@ func main() {
 
 	util.SetLogging("domain_resolution",
 		subprocessConfig.TextLogging,
-		subprocessConfig.JournalLogging, subprocessConfig.ForcedHostID)
+		subprocessConfig.JournalLogging, subprocessConfig.StdoutLogging, subprocessConfig.ForcedHostID)
 
 	log.StandardLogger().Infof("Processing domain resolution, requested domains: %s", request)
 

@@ -40,29 +40,29 @@ var _ = Describe("Image availability", func() {
 		imageAvailabilityDependencies.AssertExpectations(GinkgoT())
 	})
 
-	convertStringArryToInterfaceArray := func(args []string) []interface{} {
-		args_as_interface := make([]interface{}, len(args))
+	convertStringArrayToInterfaceArray := func(args []string) []interface{} {
+		argsAsInterface := make([]interface{}, len(args))
 		for i := range args {
-			args_as_interface[i] = args[i]
+			argsAsInterface[i] = args[i]
 		}
 
-		return args_as_interface
+		return argsAsInterface
 	}
 
 	generatePullCommand := func(image string) []interface{} {
 		cmd := fmt.Sprintf(templatePull, image)
 		cmd = fmt.Sprintf(templateTimeout, mock.Anything, cmd)
-		return convertStringArryToInterfaceArray(strings.Split(cmd, " "))
+		return convertStringArrayToInterfaceArray(strings.Split(cmd, " "))
 	}
 
 	generateGetCommand := func(image string) []interface{} {
 		cmd := fmt.Sprintf(templateGetImage, image)
-		return convertStringArryToInterfaceArray(strings.Split(cmd, " "))
+		return convertStringArrayToInterfaceArray(strings.Split(cmd, " "))
 	}
 
 	generateInspectCommand := func(image string) []interface{} {
 		cmd := fmt.Sprintf(templateInspect, image)
-		return convertStringArryToInterfaceArray(strings.Split(cmd, " "))
+		return convertStringArrayToInterfaceArray(strings.Split(cmd, " "))
 	}
 
 	Context("pullImage", func() {

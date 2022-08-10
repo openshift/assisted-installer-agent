@@ -14,6 +14,7 @@ import (
 	"github.com/jaypipes/ghw/pkg/util"
 	"github.com/openshift/assisted-installer-agent/src/inventory"
 	agent_utils "github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,6 +25,10 @@ const (
 	SerialNotSpecified               = "not specified"                        // Linode
 	ZeroesUUID                       = "00000000-0000-0000-0000-000000000000"
 	KaloomUUID                       = "03000200-0400-0500-0006-000700080009" // All hosts of this type have the same UUID
+)
+
+var (
+	FailureUUID = strfmt.UUID("deaddead-dead-dead-dead-deaddeaddead")
 )
 
 var unknownSerialCases = []string{"", util.UNKNOWN, "none",
@@ -101,24 +106,46 @@ func (ir *idReader) readMotherboardSerial() *strfmt.UUID {
 	return md5GenerateUUID(basedboard.SerialNumber)
 }
 
-func ReadId(d SerialDiscovery, dependencies agent_utils.IDependencies) *strfmt.UUID {
-	ir := &idReader{serialDiscovery: d}
-	ret := ir.readMotherboardSerial()
-	if ret == nil {
-		log.Warn("No valid motherboard serial, using system UUID instead")
-		ret = ir.readSystemUUID()
-	}
-	if ret == nil {
-		log.Warn("No valid serial for mother board and  system UUID  moving to interface mac")
-		interfaces := inventory.GetInterfaces(dependencies)
-		// sort by mac
-		sort.Slice(interfaces, func(i, j int) bool {
-			return interfaces[i].MacAddress < interfaces[j].MacAddress
-		})
-		log.Infof("Using %s mac from interface %s to provide node-uuid",
-			interfaces[0].MacAddress, interfaces[0].Name)
-		ret = md5GenerateUUID(interfaces[0].MacAddress)
+func uuidFromNetworkInterfaces(interfaces []*models.Interface) *strfmt.UUID {
+	// remove interfaces with no mac address
+	interfaces = funk.Filter(interfaces, func(iface interface{}) bool {
+		return iface.(*models.Interface).MacAddress != ""
+	}).([]*models.Interface)
+
+	if len(interfaces) == 0 {
+		return nil
 	}
 
-	return ret
+	// sort by mac
+	sort.Slice(interfaces, func(i, j int) bool {
+		return interfaces[i].MacAddress < interfaces[j].MacAddress
+	})
+
+	iface := interfaces[0]
+
+	log.Infof("Using %s mac from interface %s to provide node-uuid", iface.MacAddress, iface.Name)
+	return md5GenerateUUID(iface.MacAddress)
+}
+
+func ReadId(d SerialDiscovery, dependencies agent_utils.IDependencies) *strfmt.UUID {
+	idReader := &idReader{serialDiscovery: d}
+
+	motherboardSerialUUID := idReader.readMotherboardSerial()
+	if motherboardSerialUUID != nil {
+		return motherboardSerialUUID
+	}
+
+	log.Warn("No valid motherboard serial, using system UUID instead")
+	systemUUID := idReader.readSystemUUID()
+	if systemUUID != nil {
+		return systemUUID
+	}
+
+	log.Warn("No valid system UUID, moving to network interfaces mac based UUID")
+	interfacesUUID := uuidFromNetworkInterfaces(inventory.GetInterfaces(dependencies))
+	if interfacesUUID != nil {
+		return interfacesUUID
+	}
+
+	return &FailureUUID
 }

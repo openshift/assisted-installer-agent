@@ -81,10 +81,15 @@ var _ = Describe("Machine uuid test", func() {
 
 		It(fmt.Sprintf("mac address fallback %s", test.useCase), func() {
 			rets := []agentutils.Interface{
+				newMockInterface(65536, "lo", "", net.FlagBroadcast|net.FlagLoopback, []string{"127.0.0.1/8"}, 100, "physical"),
 				newMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
 				newMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, 10, "physical"),
 			}
 			dependencies.On("Interfaces").Return(rets, nil).Once()
+			dependencies.On("Execute", "biosdevname", "-i", "lo").Return("em2", "", 0).Once()
+			dependencies.On("ReadFile", "/sys/class/net/lo/carrier").Return([]byte("0\n"), nil).Once()
+			dependencies.On("ReadFile", "/sys/class/net/lo/device/device").Return([]byte("my-device1"), nil).Once()
+			dependencies.On("ReadFile", "/sys/class/net/lo/device/vendor").Return([]byte("my-vendor1"), nil).Once()
 			dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
 			dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("0\n"), nil).Once()
 			dependencies.On("ReadFile", "/sys/class/net/eth0/device/device").Return([]byte("my-device1"), nil).Once()

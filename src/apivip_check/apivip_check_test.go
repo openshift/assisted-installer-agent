@@ -17,6 +17,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+
 	"time"
 
 	v31_types "github.com/coreos/ignition/v2/config/v3_1/types"
@@ -26,6 +27,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	gomega_format "github.com/onsi/gomega/format"
 )
 
 const (
@@ -35,6 +37,8 @@ const (
 )
 
 var _ = Describe("API connectivity check test", func() {
+	gomega_format.CharactersAroundMismatchToInclude = 800
+
 	var log logrus.FieldLogger
 	var srv *httptest.Server
 
@@ -43,76 +47,95 @@ var _ = Describe("API connectivity check test", func() {
 	})
 
 	AfterEach(func() {
-		srv.Close()
+		if srv != nil {
+			srv.Close()
+		}
 	})
 
 	Context("Ignition file", func() {
 		It("Download ignition file successfully", func() {
 			srv = serverMock(ignitionMock)
-			stdout, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(BeEmpty())
-			checkResponse(stdout, true, true)
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)).
+				withExpectedIgnition(getIgnitionConfig()).
+				withLuks().
+				checkResponse()
 		})
 
 		It("Download old ignition file successfully", func() {
 			srv = serverMock(ignitionMock31)
-			stdout, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(BeEmpty())
-			checkResponse(stdout, true, false)
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)).
+				withExpectedIgnition(getIgnitionConfigV31Upgraded()).
+				checkResponse()
 		})
 
 		It("ignition not is json format", func() {
 			srv = serverMock(ignitionMockInvalid)
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(ContainSubstring("Error unmarshaling Ignition string"))
+			errorMessage := `ignition file download failed: response is not valid json:
+invalid
+parse error is: invalid character 'i' looking for beginning of value`
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)).
+				withExpectedError(errorMessage).
+				withExpectedFailure().
+				checkResponse()
 		})
 
 		It("Invalid ignition format", func() {
 			srv = serverMock(ignitionMockInvalidFormat)
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(ContainSubstring("Invalid ignition format"))
+			errorMessage := `response is not a valid ignition file:
+{"ignition": {}}
+parse error is: invalid config version (couldn't parse)`
+
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)).
+				withExpectedError(errorMessage).
+				withExpectedFailure().
+				checkResponse()
 		})
 
 		It("Empty ignition", func() {
 			srv = serverMock(ignitionMockEmpty)
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(Equal("Failed to download worker.ign file: Empty Ignition file"))
+			errorMessage := "ignition file download failed: server responsed with status code 200 but the response was empty"
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)).
+				withExpectedError(errorMessage).
+				withExpectedFailure().
+				checkResponse()
 		})
 	})
 
 	Context("API URL", func() {
 		It("Invalid API URL", func() {
 			url := "http://127.0.0.1:2345"
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&url, false, nil, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(ContainSubstring("HTTP download failure"))
+			errorMessage := `ignition file download failed: request failed: Get "http://127.0.0.1:2345/config/worker": dial tcp 127.0.0.1:2345: connect: connection refused`
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&url, false, nil, nil), log)).
+				withExpectedError(errorMessage).
+				withExpectedFailure().
+				checkResponse()
 		})
 
 		It("Missing API URL", func() {
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(nil, false, nil, nil), log)
-			Expect(exitCode).Should(Equal(-1))
-			Expect(stderr).Should(Equal("Missing URL in checkAPIRequest"))
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(nil, false, nil, nil), log)).
+				withExpectedError("internal error - service request is missing URL").
+				withExpectedExitCode(-1).
+				withExpectedURL("<unknown URL due to internal error>").
+				withExpectedFailure().
+				checkResponse()
 		})
 
 		It("Bearer Token", func() {
 			ignitionToken := "secrettoken"
 			srv = serverMock(bearerIgnitionMock(ignitionToken))
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, &ignitionToken), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(BeEmpty())
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, &ignitionToken), log)).
+				withExpectedIgnition(getIgnitionConfig()).
+				withLuks().
+				checkResponse()
 		})
 
 		It("Wrong Bearer Token", func() {
 			ignitionToken := "secrettoken"
 			srv = serverMock(bearerIgnitionMock("anothertoken"))
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, &ignitionToken), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(ContainSubstring("HTTP download failure"))
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, &ignitionToken), log)).
+				withExpectedFailure().
+				withExpectedError("ignition file download failed: bad status code: 401. server response: Invalid token").
+				checkResponse()
 		})
 	})
 
@@ -123,9 +146,10 @@ var _ = Describe("API connectivity check test", func() {
 			srv, err = httpsServerMock(servConfig, ignitionMock)
 			Expect(err).NotTo(HaveOccurred())
 			encodedCaCert := b64.StdEncoding.EncodeToString(caPEM)
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, &encodedCaCert, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(BeEmpty())
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, &encodedCaCert, nil), log)).
+				withExpectedIgnition(getIgnitionConfig()).
+				withLuks().
+				checkResponse()
 		})
 
 		It("Invalid Cert", func() {
@@ -134,9 +158,10 @@ var _ = Describe("API connectivity check test", func() {
 			srv, err = httpsServerMock(servConfig, ignitionMock)
 			Expect(err).NotTo(HaveOccurred())
 			caCert := "somecert"
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, &caCert, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(ContainSubstring("unable to parse cert"))
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, &caCert, nil), log)).
+				withExpectedFailure().
+				withExpectedError("ignition file download failed: unable to parse cert").
+				checkResponse()
 		})
 
 		It("Wrong Cert", func() {
@@ -147,9 +172,10 @@ var _ = Describe("API connectivity check test", func() {
 			srv, err = httpsServerMock(servConfig, ignitionMock)
 			Expect(err).NotTo(HaveOccurred())
 			wrongCert := b64.StdEncoding.EncodeToString(cert)
-			_, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, &wrongCert, nil), log)
-			Expect(exitCode).Should(Equal(0))
-			Expect(stderr).Should(ContainSubstring("unknown authority"))
+			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, &wrongCert, nil), log)).
+				withExpectedFailure().
+				withExpectedErrorRegex(`ignition file download failed: request failed: Get "https://127.0.0.1:[0-9]*/config/worker": x509: certificate signed by unknown authority \(possibly because of "x509: invalid signature: parent certificate cannot sign this kind of certificate" while trying to verify candidate authority certificate "Company, INC."\)`).
+				checkResponse()
 		})
 	})
 })
@@ -167,6 +193,18 @@ func getIgnitionConfig() v32_types.Config {
 				},
 			},
 		},
+	}
+}
+
+func getIgnitionConfigV31() v31_types.Config {
+	return v31_types.Config{
+		Ignition: v31_types.Ignition{Version: "3.1.0"},
+	}
+}
+
+func getIgnitionConfigV31Upgraded() v32_types.Config {
+	return v32_types.Config{
+		Ignition: v32_types.Ignition{Version: "3.2.0"},
 	}
 }
 
@@ -200,8 +238,11 @@ func bearerIgnitionMock(token string) func(w http.ResponseWriter, r *http.Reques
 	bearerToken := fmt.Sprintf("Bearer %s", token)
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != bearerToken {
-			logrus.Error("missing Auth header in request")
 			w.WriteHeader(http.StatusUnauthorized)
+			response := []byte("Invalid token")
+			n, err := w.Write(response)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(n).To(Equal(len(response)))
 			return
 		}
 		ignitionMock(w, r)
@@ -229,9 +270,7 @@ func ignitionMock31(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ignitionConfig := v31_types.Config{
-		Ignition: v31_types.Ignition{Version: "3.1.0"},
-	}
+	ignitionConfig := getIgnitionConfigV31()
 	configBytes, err := json.Marshal(ignitionConfig)
 	if err != nil {
 		logrus.Error("failed to marshal config to json")
@@ -252,22 +291,117 @@ func ignitionMockEmpty(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte{})
 }
 
-func checkResponse(stdout string, success bool, luksEnabled bool) {
+type responseChecker struct {
+	stdout              string
+	stderr              string
+	exitCode            int
+	expectedStdout      *string
+	expectedStderr      string
+	expectedExitCode    int
+	success             bool
+	luks                bool
+	expectedURL         string
+	expectedError       *string
+	expectedErrorRegex  *string
+	expectedIgnition    *v32_types.Config
+	expectedIgnitionV31 *v31_types.Config
+}
+
+func newResponseChecker(stdout string, stderr string, exitCode int) *responseChecker {
+	return &responseChecker{
+		stdout:              stdout,
+		stderr:              stderr,
+		exitCode:            exitCode,
+		expectedStdout:      nil,
+		expectedStderr:      "",
+		expectedExitCode:    0,
+		success:             true,
+		luks:                false,
+		expectedURL:         "http://127.0.0.1:40313/config/worker",
+		expectedError:       nil,
+		expectedErrorRegex:  nil,
+		expectedIgnition:    nil,
+		expectedIgnitionV31: nil,
+	}
+}
+
+func (r *responseChecker) withExpectedFailure() *responseChecker {
+	r.success = false
+	r.expectedStderr = "ignition download error"
+	return r
+}
+
+func (r *responseChecker) withExpectedExitCode(expectedExitCode int) *responseChecker {
+	r.expectedExitCode = expectedExitCode
+	return r
+}
+
+func (r *responseChecker) withLuks() *responseChecker {
+	r.luks = true
+	return r
+}
+
+func (r *responseChecker) withExpectedURL(expectedURL string) *responseChecker {
+	r.expectedURL = expectedURL
+	return r
+}
+
+func (r *responseChecker) withExpectedError(expectedError string) *responseChecker {
+	r.expectedError = &expectedError
+	return r
+}
+
+func (r *responseChecker) withExpectedErrorRegex(expectedErrorRegex string) *responseChecker {
+	r.expectedErrorRegex = &expectedErrorRegex
+	return r
+}
+
+func (r *responseChecker) withExpectedIgnition(expectedIgnition v32_types.Config) *responseChecker {
+	r.expectedIgnition = &expectedIgnition
+	return r
+}
+
+func (r *responseChecker) checkResponse() {
+	if r.expectedStdout != nil {
+		Expect(r.stdout).To(Equal(r.expectedStdout))
+	}
+	Expect(r.stderr).To(Equal(r.expectedStderr))
+	Expect(r.exitCode).To(Equal(r.expectedExitCode))
+
 	var response models.APIVipConnectivityResponse
-	Expect(json.Unmarshal([]byte(stdout), &response)).ToNot(HaveOccurred())
-	Expect(success).To(Equal(response.IsSuccess))
+	Expect(json.Unmarshal([]byte(r.stdout), &response)).To(Succeed())
+	Expect(response.IsSuccess).To(Equal(r.success))
 
-	if success {
-		var responseConfig v32_types.Config
-		err := json.Unmarshal([]byte(response.Ignition), &responseConfig)
-		Expect(err).ToNot(HaveOccurred())
+	if r.expectedError != nil {
+		Expect(response.DownloadError).To(Equal(*r.expectedError))
+	}
 
-		if luksEnabled {
-			ignitionConfig := getIgnitionConfig()
-			Expect(responseConfig.Storage.Luks).To(Equal(ignitionConfig.Storage.Luks))
-		} else {
-			Expect(responseConfig.Storage.Luks).To(Equal([]v32_types.Luks(nil)))
+	if r.expectedErrorRegex != nil {
+		Expect(response.DownloadError).To(MatchRegexp(*r.expectedErrorRegex))
+	}
+
+	if r.success {
+		if r.expectedIgnition != nil {
+			var responseConfig v32_types.Config
+			err := json.Unmarshal([]byte(response.Ignition), &responseConfig)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(responseConfig).To(Equal(*r.expectedIgnition))
+
+			if r.luks {
+				ignitionConfig := getIgnitionConfig()
+				Expect(responseConfig.Storage.Luks).To(Equal(ignitionConfig.Storage.Luks))
+			} else {
+				Expect(responseConfig.Storage.Luks).To(Equal([]v32_types.Luks(nil)))
+			}
 		}
+
+		if r.expectedIgnitionV31 != nil {
+			var responseConfig v31_types.Config
+			err := json.Unmarshal([]byte(response.Ignition), &responseConfig)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(responseConfig).To(Equal(*r.expectedIgnitionV31))
+		}
+
 	}
 }
 

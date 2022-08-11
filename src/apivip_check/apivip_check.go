@@ -6,7 +6,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/coreos/ignition/v2/config/v3_2"
@@ -17,6 +17,10 @@ import (
 )
 
 const ignitionVersion string = "3.2.0"
+
+const responseErrorSizeLimit int = 512
+
+const ignitionDownloadErrorStderr string = "ignition download error"
 
 func getIgnitionFile(ignition *ignition_types.Config, path string) *ignition_types.File {
 	for _, file := range ignition.Storage.Files {
@@ -42,13 +46,13 @@ func copyIgnitionDiskEncryptionInformation(originalConfig *ignition_types.Config
 
 // copyIgnitionManagedNetworkIndications copies (see filterIgnition for more
 // info) ignition storage file entries that can be used by the service in order
-// to detect whether this worker ignition file originated from a cluster that
+// to detect whether this ignition file originated from a cluster that
 // has managed networking or not. This helps the service, for example, to know
 // whether it should perform DNS validations for the day-2 hosts trying to join
 // that cluster or not (as managed network clusters can be joined without any
 // DNS configuration, they do not require such validations).
 func copyIgnitionManagedNetworkIndications(originalConfig *ignition_types.Config, filteredConfig *ignition_types.Config) {
-	// This is a hack - since we have no official way to know whether a worker
+	// This is a hack - since we have no official way to know whether a
 	// ignition file originated from a cluster with managed networking or not,
 	// we instead rely on the presence of coredns and keepalived pod manifests
 	// to indicate that. We only expect those to be present in clusters with
@@ -100,46 +104,62 @@ func CheckAPIConnectivity(checkAPIRequestStr string, log logrus.FieldLogger) (st
 	var checkAPIRequest models.APIVipConnectivityRequest
 
 	if err := json.Unmarshal([]byte(checkAPIRequestStr), &checkAPIRequest); err != nil {
-		wrapped := errors.Wrap(err, "Error unmarshaling APIVipConnectivityRequest")
-		log.WithError(err).Error(wrapped.Error())
-		return createResponse(false, ""), wrapped.Error(), -1
+		return createResponse("<unknown URL due to internal error>", false,
+			"", fmt.Sprintf("internal error - failed to deserialize service request: %v", err), log), ignitionDownloadErrorStderr, -1
 	}
 
 	if checkAPIRequest.URL == nil {
-		err := errors.New("Missing URL in checkAPIRequest")
-		log.WithError(err).Error(err.Error())
-		return createResponse(false, ""), err.Error(), -1
+		return createResponse("<unknown URL due to internal error>", false,
+			"", "internal error - service request is missing URL", log), ignitionDownloadErrorStderr, -1
 	}
 
-	ignition, err := httpDownload(checkAPIRequest)
+	ignition, err := downloadIgnition(checkAPIRequest)
 	if err != nil {
-		wrapped := errors.Wrap(err, "Failed to download worker.ign file")
-		log.WithError(err).Error(wrapped.Error())
-		return createResponse(false, ""), wrapped.Error(), 0
+		return createResponse(*checkAPIRequest.URL, false, "",
+			errors.Wrap(err, "ignition file download failed").Error(), log), ignitionDownloadErrorStderr, 0
 	}
 
 	config, _, err := v3_2.ParseCompatibleVersion([]byte(ignition))
 	if err != nil {
-		wrapped := errors.Wrap(err, "Invalid ignition format")
-		log.WithError(err).Error(wrapped.Error())
-		return createResponse(false, ""), wrapped.Error(), 0
+		var wrapped error
+		if len(ignition) > responseErrorSizeLimit {
+			// hopefully if the user is hitting some sort of different server
+			// other than MCS (e.g. generic load balancer error page), they can
+			// try and infer what they're hitting from the first
+			// responseErrorSizeLimit bytes. We don't want to return the entire
+			// response body, as it's shown in the UI.
+			wrapped = errors.Wrap(err, fmt.Sprintf(`response JSON is not a valid ignition file, first %d bytes are:
+%s
+parse error is`, responseErrorSizeLimit, ignition[:responseErrorSizeLimit]))
+		} else {
+			wrapped = errors.Wrap(err, fmt.Sprintf(`response is not a valid ignition file:
+%s
+parse error is`, ignition))
+		}
+		return createResponse(*checkAPIRequest.URL, false, "", wrapped.Error(), log), ignitionDownloadErrorStderr, 0
 	}
 
 	configBytes, err := json.Marshal(filterIgnition(&config))
 	if err != nil {
-		wrapped := errors.Wrap(err, "Failed to filter ignition")
-		log.WithError(err).Error(wrapped.Error())
-		return createResponse(false, ""), wrapped.Error(), 0
+		return createResponse(*checkAPIRequest.URL, false, "",
+			errors.Wrap(err, "internal error - failed to re-serialize filtered ignition config").Error(), log), ignitionDownloadErrorStderr, 0
 	}
 
-	return createResponse(true, string(configBytes)), "", 0
+	return createResponse(*checkAPIRequest.URL, true, string(configBytes), "", log), "", 0
 }
 
-func createResponse(success bool, ignition string) string {
+func createResponse(url string, success bool, ignition string, downloadError string, log logrus.FieldLogger) string {
 	checkAPIResponse := models.APIVipConnectivityResponse{
-		Ignition:  ignition,
-		IsSuccess: success,
+		Ignition:      ignition,
+		IsSuccess:     success,
+		URL:           url,
+		DownloadError: downloadError,
 	}
+
+	if downloadError != "" {
+		log.Error(downloadError)
+	}
+
 	bytes, err := json.Marshal(checkAPIResponse)
 	if err != nil {
 		return ""
@@ -147,18 +167,21 @@ func createResponse(success bool, ignition string) string {
 	return string(bytes)
 }
 
-func httpDownload(connectivityReq models.APIVipConnectivityRequest) (string, error) {
+func downloadIgnition(connectivityReq models.APIVipConnectivityRequest) (string, error) {
 	var client *http.Client
 
 	if connectivityReq.CaCertificate != nil {
 		caCertPool := x509.NewCertPool()
+
 		decodedCaCert, err := b64.StdEncoding.DecodeString(*connectivityReq.CaCertificate)
 		if err != nil {
-			return "", errors.Wrap(err, "Failed to decode CaCertificate")
+			return "", errors.Wrap(err, "ignition endpoint CA certificate is not valid base64")
 		}
+
 		if ok := caCertPool.AppendCertsFromPEM(decodedCaCert); !ok {
 			return "", errors.Errorf("unable to parse cert")
 		}
+
 		client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
@@ -170,7 +193,10 @@ func httpDownload(connectivityReq models.APIVipConnectivityRequest) (string, err
 		client = &http.Client{}
 	}
 
-	req, _ := http.NewRequest("GET", *connectivityReq.URL, nil)
+	req, err := http.NewRequest("GET", *connectivityReq.URL, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create request")
+	}
 
 	req.Header = http.Header{
 		"Accept": []string{fmt.Sprintf("application/vnd.coreos.ignition+json; version=%s", ignitionVersion)},
@@ -183,26 +209,43 @@ func httpDownload(connectivityReq models.APIVipConnectivityRequest) (string, err
 
 	res, err := client.Do(req)
 	if err != nil {
-		return "", errors.Wrap(err, "HTTP download failure")
+		return "", errors.Wrap(err, "request failed")
 	}
-
-	if res.StatusCode != http.StatusOK {
-		return "", errors.Errorf("HTTP download failure. Status Code: %v", res.StatusCode)
-	}
-
 	defer res.Body.Close()
-	bytes, err := ioutil.ReadAll(res.Body)
+
+	bytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", errors.Wrap(err, "File read failure")
+		if res.ContentLength != -1 {
+			return "", errors.Wrap(err, fmt.Sprintf("error while reading response body, read %d out of %d bytes", len(bytes), res.ContentLength))
+		}
+
+		return "", errors.Wrap(err, fmt.Sprintf("error while reading response body, read %d bytes", len(bytes)))
+	}
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return "", errors.Errorf("bad status code: %v. server response: %s", res.StatusCode, string(bytes))
 	}
 
 	if len(bytes) == 0 {
-		return "", errors.New("Empty Ignition file")
+		return "", errors.Errorf("server responsed with status code %v but the response was empty", res.StatusCode)
 	}
 
 	var js json.RawMessage
 	if err = json.Unmarshal(bytes, &js); err != nil {
-		return "", errors.Wrap(err, "Error unmarshaling Ignition string")
+		if len(bytes) > responseErrorSizeLimit {
+			// hopefully if the user is hitting some sort of different server
+			// other than MCS (e.g. generic load balancer error page), they can
+			// try and infer what they're hitting from the first
+			// responseErrorSizeLimitbytes bytes. We don't want to return the
+			// entire response body, as it's shown in the UI.
+			return "", errors.Wrap(err, fmt.Sprintf(`expected ignition but got non-valid json, first %d bytes are:
+%s
+parse error is`, responseErrorSizeLimit, string(bytes[:responseErrorSizeLimit])))
+		}
+
+		return "", errors.Wrap(err, fmt.Sprintf(`response is not valid json:
+%s
+parse error is`, string(bytes)))
 	}
 
 	return string(js), err

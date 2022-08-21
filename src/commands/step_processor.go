@@ -148,7 +148,7 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
 
 			if reply.ExitCode != 0 {
 				if code, err := s.diagnoseSystem(); code != Undetected {
-					log.Errorf("System issue detected after running step: <%s>, command: <%s>, args: <%v>: %s", step.StepID, step.Command, step.Args, err.Error())
+					s.Logger().Errorf("System issue detected after running step: <%s>, Type: <%s>, args: <%v>: %e", step.StepID, step.StepType, step.Args, err)
 					reply.ExitCode = int64(code)
 				}
 			}

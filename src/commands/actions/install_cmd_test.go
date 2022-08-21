@@ -70,6 +70,7 @@ var _ = Describe("installer test", func() {
 
 		argsAsString := strings.Join(args, " ")
 		verifyPaths(argsAsString, paths)
+		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--skip-installation-disk-cleanup"))
 		Expect(argsAsString).To(ContainSubstring("--env=PULL_SECRET_TOKEN"))
 		Expect(argsAsString).To(ContainSubstring("--role bootstrap --infra-env-id 456eecf6-7aec-402d-b453-f609b19783cb " +
 			"--cluster-id cd781f46-f32a-4154-9670-6442a367ab81 --host-id f7ac1860-92cf-4ed8-aeec-2d9f20b35bab --boot-device /dev/disk/by-path/pci-0000:00:06.0 " +
@@ -131,6 +132,16 @@ var _ = Describe("installer test", func() {
 		_, args := action.CreateCmd()
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--insecure"))
 		Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--check-cluster-version"))
+	})
+
+	It("install with skip disk formatting", func() {
+		args.SkipInstallationDiskCleanup = true
+		b, err := json.Marshal(&args)
+		Expect(err).NotTo(HaveOccurred())
+		action, err := New(models.StepTypeInstall, []string{string(b)})
+		Expect(err).NotTo(HaveOccurred())
+		_, args := action.CreateCmd()
+		Expect(strings.Join(args, " ")).To(ContainSubstring("--skip-installation-disk-cleanup"))
 	})
 
 	It("install no installer args", func() {

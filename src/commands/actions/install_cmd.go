@@ -89,6 +89,10 @@ func (a *install) getFullInstallerCommand() string {
 		installerCmdArgs = append(installerCmdArgs, "--cacert", config.GlobalAgentConfig.CACertificatePath)
 	}
 
+	if a.installParams.SkipInstallationDiskCleanup {
+		installerCmdArgs = append(installerCmdArgs, "--skip-installation-disk-cleanup")
+	}
+
 	if a.installParams.InstallerArgs != "" {
 		installerCmdArgs = append(installerCmdArgs, "--installer-args", a.installParams.InstallerArgs)
 	}

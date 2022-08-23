@@ -71,6 +71,7 @@ var TestDefaultConfig = &TestConfiguration{
 		OpenshiftVersion: &OpenShiftVersion,
 		URL:              &ReleaseImage,
 		Version:          &ReleaseVersion,
+		CPUArchitectures: []string{CPUArchitecture},
 	},
 	OsImage: &models.OsImage{
 		CPUArchitecture:  &CPUArchitecture,
@@ -123,45 +124,77 @@ var DomainAPIInternal = "api-int.test-cluster.example.com"
 var DomainApps = fmt.Sprintf("%s.apps.test-cluster.example.com", constants.AppsSubDomainNameHostDNSValidation)
 var WildcardDomain = fmt.Sprintf("%s.test-cluster.example.com", constants.DNSWildcardFalseDomainName)
 
-var DomainResolution = []*models.DomainResolutionResponseDomain{
+var DomainResolutions = []*models.DomainResolutionResponseDomain{
 	{
 		DomainName:    &DomainAPI,
 		IPV4Addresses: []strfmt.IPv4{"1.2.3.40/24"},
-		IPV6Addresses: []strfmt.IPv6{"1001:db8::10/120"},
+		IPV6Addresses: []strfmt.IPv6{"1001:db8::20/120"},
 	},
 	{
 		DomainName:    &DomainAPIInternal,
 		IPV4Addresses: []strfmt.IPv4{"4.5.6.7/24"},
-		IPV6Addresses: []strfmt.IPv6{"1002:db8::10/120"},
+		IPV6Addresses: []strfmt.IPv6{"1002:db8::30/120"},
 	},
 	{
 		DomainName:    &DomainApps,
 		IPV4Addresses: []strfmt.IPv4{"7.8.9.10/24"},
-		IPV6Addresses: []strfmt.IPv6{"1003:db8::10/120"},
+		IPV6Addresses: []strfmt.IPv6{"1003:db8::40/120"},
 	},
 	{
 		DomainName:    &WildcardDomain,
 		IPV4Addresses: []strfmt.IPv4{},
 		IPV6Addresses: []strfmt.IPv6{},
-	}}
+	},
+}
+
+var WildcardResolved = []*models.DomainResolutionResponseDomain{
+	{
+		DomainName:    &WildcardDomain,
+		IPV4Addresses: []strfmt.IPv4{"7.8.9.10/24"},
+		IPV6Addresses: []strfmt.IPv6{"1003:db8::40/120"},
+	},
+}
 
 var DomainResolutionNoAPI = []*models.DomainResolutionResponseDomain{
 	{
 		DomainName:    &DomainApps,
 		IPV4Addresses: []strfmt.IPv4{"7.8.9.10/24"},
-		IPV6Addresses: []strfmt.IPv6{"1003:db8::10/120"},
+		IPV6Addresses: []strfmt.IPv6{"1003:db8::40/120"},
 	},
 	{
 		DomainName:    &WildcardDomain,
 		IPV4Addresses: []strfmt.IPv4{},
 		IPV6Addresses: []strfmt.IPv6{},
-	}}
+	},
+}
 
-var TestDomainNameResolutionSuccess = &models.DomainResolutionResponse{
-	Resolutions: DomainResolution}
+var DomainResolutionAllEmpty = []*models.DomainResolutionResponseDomain{
+	{
+		DomainName:    &DomainAPI,
+		IPV4Addresses: []strfmt.IPv4{},
+		IPV6Addresses: []strfmt.IPv6{},
+	},
+	{
+		DomainName:    &DomainAPIInternal,
+		IPV4Addresses: []strfmt.IPv4{},
+		IPV6Addresses: []strfmt.IPv6{},
+	},
+	{
+		DomainName:    &DomainApps,
+		IPV4Addresses: []strfmt.IPv4{},
+		IPV6Addresses: []strfmt.IPv6{},
+	},
+	{
+		DomainName:    &WildcardDomain,
+		IPV4Addresses: []strfmt.IPv4{},
+		IPV6Addresses: []strfmt.IPv6{},
+	},
+}
 
-var TestDomainResolutionNoAPI = &models.DomainResolutionResponse{
-	Resolutions: DomainResolutionNoAPI}
+var TestDomainNameResolutionsSuccess = &models.DomainResolutionResponse{Resolutions: DomainResolutions}
+var TestDomainResolutionsNoAPI = &models.DomainResolutionResponse{Resolutions: DomainResolutionNoAPI}
+var TestDomainResolutionsAllEmpty = &models.DomainResolutionResponse{Resolutions: DomainResolutionAllEmpty}
+var TestDomainNameResolutionsWildcardResolved = &models.DomainResolutionResponse{Resolutions: WildcardResolved}
 
 var TestDefaultRouteConfiguration = []*models.Route{{Family: FamilyIPv4, Interface: "eth0", Gateway: "192.168.1.1", Destination: "0.0.0.0"}}
 
@@ -252,30 +285,29 @@ func GenerateTestDefaultInventory() string {
 	return string(b)
 }
 
-func GenerateTestInventoryWithVirtualInterface() string {
+func generateInterfaces(amount int, intfType string) []*models.Interface {
+	interfaces := make([]*models.Interface, amount)
+	for i := 0; i < amount; i++ {
+		intf := models.Interface{
+			Name: fmt.Sprintf("eth%d", i),
+			IPV4Addresses: []string{
+				fmt.Sprintf("192.%d.2.0/24", i),
+			},
+			IPV6Addresses: []string{
+				fmt.Sprintf("2001:db%d::/32", i),
+			},
+			Type: intfType,
+		}
+		interfaces[i] = &intf
+	}
+	return interfaces
+}
+
+func GenerateTestInventoryWithVirtualInterface(physicalInterfaces, virtualInterfaces int) string {
+	interfaces := generateInterfaces(physicalInterfaces, "physical")
+	interfaces = append(interfaces, generateInterfaces(virtualInterfaces, "device")...)
 	inventory := &models.Inventory{
-		Interfaces: []*models.Interface{
-			{
-				Name: "eth0",
-				IPV4Addresses: []string{
-					"192.0.2.0/24",
-				},
-				IPV6Addresses: []string{
-					"2001:db8::/32",
-				},
-				Type: "physical",
-			},
-			{
-				Name: "cni1",
-				IPV4Addresses: []string{
-					"198.51.100.0/24",
-				},
-				IPV6Addresses: []string{
-					"2001:db8::/32",
-				},
-				Type: "device",
-			},
-		},
+		Interfaces: interfaces,
 		Disks: []*models.Disk{
 			TestDefaultConfig.Disks,
 		},
@@ -404,7 +436,7 @@ func GenerateTestInventoryWithNetwork(netAddress NetAddress) string {
 	return string(b)
 }
 
-func GenerateTestInventoryWithSetNetwork() string {
+func GenerateTestInventoryWithMutate(mutateFn func(*models.Inventory)) string {
 	inventory := &models.Inventory{
 		Interfaces: []*models.Interface{
 			{
@@ -423,9 +455,14 @@ func GenerateTestInventoryWithSetNetwork() string {
 		SystemVendor: &models.SystemVendor{Manufacturer: "Red Hat", ProductName: "RHEL", SerialNumber: "3534"},
 		Routes:       TestDefaultRouteConfiguration,
 	}
+	mutateFn(inventory)
 	b, err := json.Marshal(inventory)
 	Expect(err).To(Not(HaveOccurred()))
 	return string(b)
+}
+
+func GenerateTestInventory() string {
+	return GenerateTestInventoryWithMutate(func(inventory *models.Inventory) {})
 }
 
 func GenerateTestInventoryWithTpmVersion(tpmVersion string) string {

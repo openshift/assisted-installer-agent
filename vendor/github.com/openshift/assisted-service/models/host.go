@@ -23,7 +23,7 @@ import (
 // swagger:model host
 type Host struct {
 
-	// api vip connectivity
+	// Contains a serialized api_vip_connectivity_response
 	APIVipConnectivity string `json:"api_vip_connectivity,omitempty" gorm:"type:text"`
 
 	// bootstrap
@@ -52,6 +52,13 @@ type Host struct {
 
 	// Additional information about disks, formatted as JSON.
 	DisksInfo string `json:"disks_info,omitempty" gorm:"type:text"`
+
+	// A comma-separated list of disks that will be formatted once
+	// installation begins, unless otherwise set to be skipped by
+	// skip_formatting_disks. This means that this list also includes disks
+	// that appear in skip_formatting_disks. This property is managed by the
+	// service and cannot be modified by the user.
+	DisksToBeFormatted string `json:"disks_to_be_formatted,omitempty" gorm:"type:text"`
 
 	// The domain name resolution result.
 	DomainNameResolutions string `json:"domain_name_resolutions,omitempty" gorm:"type:text"`
@@ -135,11 +142,19 @@ type Host struct {
 	// progress stages
 	ProgressStages []HostStage `json:"progress_stages" gorm:"-"`
 
+	// The last time the host's agent tried to register in the service.
+	// Format: date-time
+	RegisteredAt strfmt.DateTime `json:"registered_at,omitempty" gorm:"type:timestamp with time zone"`
+
 	// requested hostname
 	RequestedHostname string `json:"requested_hostname,omitempty"`
 
 	// role
 	Role HostRole `json:"role,omitempty"`
+
+	// A comma-seperated list of host disks that the service will avoid
+	// formatting.
+	SkipFormattingDisks string `json:"skip_formatting_disks,omitempty" gorm:"type:text"`
 
 	// Time at which the current progress stage started.
 	// Format: date-time
@@ -235,6 +250,10 @@ func (m *Host) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateProgressStages(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRegisteredAt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -507,6 +526,18 @@ func (m *Host) validateProgressStages(formats strfmt.Registry) error {
 			return err
 		}
 
+	}
+
+	return nil
+}
+
+func (m *Host) validateRegisteredAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.RegisteredAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("registered_at", "body", "date-time", m.RegisteredAt.String(), formats); err != nil {
+		return err
 	}
 
 	return nil

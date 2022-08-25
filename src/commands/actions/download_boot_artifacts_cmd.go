@@ -1,0 +1,139 @@
+package actions
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path"
+	"syscall"
+
+	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-service/models"
+	log "github.com/sirupsen/logrus"
+)
+
+type downloadBootArtifacts struct {
+	args        []string
+	agentConfig *config.AgentConfig
+}
+
+func (a *downloadBootArtifacts) Validate() error {
+	return ValidateCommon("download boot artifacts", 1, a.args, &models.DownloadBootArtifactsRequest{})
+}
+
+func (a *downloadBootArtifacts) Run() (stdout, stderr string, exitCode int) {
+	err := run(a.agentConfig.InfraEnvID, a.Args()[0])
+	if err != nil {
+		return "", err.Error(), -1
+	}
+	return "Successfully downloaded boot artifacts", "", 0
+}
+
+// Unused, but required as part of ActionInterface
+func (a *downloadBootArtifacts) Command() string {
+	return "download_boot_artifacts"
+}
+
+// Unused, but required as part of ActionInterface
+func (a *downloadBootArtifacts) Args() []string {
+	return a.args
+}
+
+const (
+	artifactsFolder          string = "/boot/discovery"
+	kernelFile               string = "vmlinuz"
+	initrdFile               string = "initrd"
+	bootLoaderConfigFileName string = "/00-assisted-discovery.conf"
+	bootLoaderConfigTemplate string = `title Assisted Installer Discovery
+version 999
+options random.trust_cpu=on ignition.firstboot ignition.platform.id=metal 'coreos.live.rootfs_url=%s'
+linux %s
+initrd %s`
+)
+
+func run(infraEnvId, downloaderRequestStr string) error {
+	var req models.DownloadBootArtifactsRequest
+	if err := json.Unmarshal([]byte(downloaderRequestStr), &req); err != nil {
+		return fmt.Errorf("failed unmarshalling download boot artifacts request: %w", err)
+	}
+
+	bootFolder := path.Join(*req.HostFsMountDir, "/boot")
+	if err := syscall.Mount(bootFolder, bootFolder, "", syscall.MS_REMOUNT, ""); err != nil {
+		return fmt.Errorf("failed remounting /host/boot folder as rw: %w", err)
+	}
+
+	hostArtifactsFolder := path.Join(*req.HostFsMountDir, artifactsFolder)
+	bootLoaderFolder := path.Join(*req.HostFsMountDir, "/boot/loader/entries")
+	if err := createFolders(hostArtifactsFolder, bootLoaderFolder); err != nil {
+		return fmt.Errorf("failed creating folders: %w", err)
+	}
+
+	if err := download(path.Join(hostArtifactsFolder, kernelFile), *req.KernelURL); err != nil {
+		return fmt.Errorf("failed downloading kernel to host: %w", err)
+	}
+
+	if err := download(path.Join(hostArtifactsFolder, initrdFile), *req.InitrdURL); err != nil {
+		return fmt.Errorf("failed downloading initrd to host: %w", err)
+	}
+
+	if err := createBootLoaderConfig(*req.RootfsURL, artifactsFolder, bootLoaderFolder); err != nil {
+		return fmt.Errorf("failed creating bootloader config file on host: %w", err)
+	}
+
+	log.Infof("Successfully downloaded boot artifacts and created bootloader config.")
+	return nil
+}
+
+func download(filePath, url string) error {
+	res, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed getting %s: %w", url, err)
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read body while getting url %s: %w", url, err)
+	}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return fmt.Errorf("failed getting %s, status code received: %d\nBody received: %s", url, res.StatusCode, body)
+	}
+
+	err = os.WriteFile(filePath, body, 0644)
+	if err != nil {
+		return fmt.Errorf("failed writing file %s: %w", filePath, err)
+	}
+	return nil
+}
+
+func createBootLoaderConfig(rootfsUrl, artifactsPath, bootLoaderPath string) error {
+	kernelPath := path.Join(artifactsPath, kernelFile)
+	initrdPath := path.Join(artifactsPath, initrdFile)
+	bootLoaderConfigFile := path.Join(bootLoaderPath, bootLoaderConfigFileName)
+	bootLoaderConfig := fmt.Sprintf(bootLoaderConfigTemplate, rootfsUrl, kernelPath, initrdPath)
+
+	if err := os.WriteFile(bootLoaderConfigFile, []byte(bootLoaderConfig), 0644); err != nil {
+		return fmt.Errorf("failed writing bootloader config content to %s: %w", bootLoaderConfigFile, err)
+	}
+	return nil
+}
+
+func createFolderIfNotExist(folder string) error {
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		return os.MkdirAll(folder, 0755)
+	}
+	return nil
+}
+
+func createFolders(artifactsPath, bootLoaderPath string) error {
+	err := createFolderIfNotExist(artifactsPath)
+	if err != nil {
+		return fmt.Errorf("failed to create artifacts folder [%s]: %w", artifactsPath, err)
+	}
+	err = createFolderIfNotExist(bootLoaderPath)
+	if err != nil {
+		return fmt.Errorf("failed to create bootloader folder [%s]: %w", bootLoaderPath, err)
+	}
+	return nil
+}

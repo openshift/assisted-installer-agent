@@ -18,7 +18,9 @@ import (
 type V2DownloadInfraEnvFilesURL struct {
 	InfraEnvID strfmt.UUID
 
-	FileName string
+	FileName       string
+	IpxeScriptType *string
+	Mac            *strfmt.MAC
 
 	_basePath string
 	// avoid unkeyed usage
@@ -64,6 +66,22 @@ func (o *V2DownloadInfraEnvFilesURL) Build() (*url.URL, error) {
 	fileNameQ := o.FileName
 	if fileNameQ != "" {
 		qs.Set("file_name", fileNameQ)
+	}
+
+	var ipxeScriptTypeQ string
+	if o.IpxeScriptType != nil {
+		ipxeScriptTypeQ = *o.IpxeScriptType
+	}
+	if ipxeScriptTypeQ != "" {
+		qs.Set("ipxe_script_type", ipxeScriptTypeQ)
+	}
+
+	var macQ string
+	if o.Mac != nil {
+		macQ = o.Mac.String()
+	}
+	if macQ != "" {
+		qs.Set("mac", macQ)
 	}
 
 	_result.RawQuery = qs.Encode()

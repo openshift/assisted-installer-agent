@@ -3247,6 +3247,23 @@ func init() {
             "name": "file_name",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "string",
+            "format": "mac",
+            "description": "Mac address of the host running ipxe script.",
+            "name": "mac",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "discovery-image-always",
+              "boot-order-control"
+            ],
+            "type": "string",
+            "description": "Specify the script type to be served for iPXE.",
+            "name": "ipxe_script_type",
+            "in": "query"
           }
         ],
         "responses": {
@@ -3339,6 +3356,16 @@ func init() {
             "name": "file_name",
             "in": "query",
             "required": true
+          },
+          {
+            "enum": [
+              "discovery-image-always",
+              "boot-order-control"
+            ],
+            "type": "string",
+            "description": "Specify the script type to be served for iPXE.",
+            "name": "ipxe_script_type",
+            "in": "query"
           }
         ],
         "responses": {
@@ -5194,15 +5221,24 @@ func init() {
       }
     },
     "api_vip_connectivity_response": {
+      "description": "The response from the day-2 agent's attempt to download the worker ignition file from the API machine config server of the target cluster.\nNote - the name \"API VIP connectivity\" is old and misleading and is preserved for backwards compatibility.",
       "type": "object",
       "properties": {
+        "download_error": {
+          "description": "The error that occurred while downloading the worker ignition file, ignored when is_success is true",
+          "type": "string"
+        },
         "ignition": {
-          "description": "Ignition fetched from the specified API VIP",
+          "description": "Ignition file fetched from the target cluster's API machine config server.\nThis ignition file may be incomplete as almost all files / systemd units are removed from it by the agent in order to save space.",
           "type": "string"
         },
         "is_success": {
-          "description": "Ignition downloadability check result.",
+          "description": "Whether the agent was able to download the ignition or not",
           "type": "boolean"
+        },
+        "url": {
+          "description": "This parameter mirrors the url parameter of the corresponding api_vip_connectivity_request",
+          "type": "string"
         }
       }
     },
@@ -5414,6 +5450,11 @@ func init() {
         "image_info": {
           "$ref": "#/definitions/image_info"
         },
+        "imported": {
+          "description": "Indicates whether this cluster is an imported day-2 cluster or a\nregular cluster. Clusters are considered imported when they are\ncreated via the ../clusters/import endpoint. Day-2 clusters converted\nfrom day-1 clusters by kube-api controllers or the\n../clusters/\u003ccluster_id\u003e/actions/allow-add-workers endpoint are not\nconsidered imported. Imported clusters usually lack a lot of\ninformation and are filled with default values that don't necessarily\nreflect the actual cluster they represent",
+          "type": "boolean",
+          "default": false
+        },
         "ingress_vip": {
           "description": "The virtual IP used for cluster ingress traffic.",
           "type": "string",
@@ -5577,6 +5618,10 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "tags": {
+          "description": "A comma-separated list of tags that are associated to the cluster.",
+          "type": "string"
         },
         "total_host_count": {
           "description": "All hosts associated to this cluster.",
@@ -5791,6 +5836,11 @@ func init() {
           "description": "SSH public key for debugging OpenShift nodes.",
           "type": "string"
         },
+        "tags": {
+          "description": "A comma-separated list of tags that are associated to the cluster.",
+          "type": "string",
+          "x-nullable": true
+        },
         "user_managed_networking": {
           "description": "Indicate if the networking is managed by the user.",
           "type": "boolean",
@@ -5800,7 +5850,7 @@ func init() {
         "vip_dhcp_allocation": {
           "description": "Indicate if virtual IP DHCP allocation mode is enabled.",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "x-nullable": true
         }
       }
@@ -5920,6 +5970,7 @@ func init() {
         "ocs-requirements-satisfied",
         "odf-requirements-satisfied",
         "cnv-requirements-satisfied",
+        "lvm-requirements-satisfied",
         "network-type-valid"
       ]
     },
@@ -6419,6 +6470,24 @@ func init() {
         "install"
       ]
     },
+    "disk-skip-formatting-params": {
+      "description": "Allows an addition or removal of a host disk from the host's skip_formatting_disks list",
+      "type": "object",
+      "required": [
+        "disk_id",
+        "skip_formatting"
+      ],
+      "properties": {
+        "disk_id": {
+          "description": "The ID of the disk that is being added to or removed from the host's skip_formatting_disks list",
+          "type": "string"
+        },
+        "skip_formatting": {
+          "description": "True if you wish to add the disk to the skip_formatting_disks list, false if you wish to remove it",
+          "type": "boolean"
+        }
+      }
+    },
     "disk_info": {
       "type": "object",
       "properties": {
@@ -6535,6 +6604,34 @@ func init() {
             },
             "x-go-name": "DomainResolutionResponseDomain"
           }
+        }
+      }
+    },
+    "download_boot_artifacts_request": {
+      "description": "Information sent to the agent for downloading artifacts to boot a host into discovery.",
+      "type": "object",
+      "required": [
+        "kernel_url",
+        "rootfs_url",
+        "initrd_url",
+        "host_fs_mount_dir"
+      ],
+      "properties": {
+        "host_fs_mount_dir": {
+          "description": "The base directory on the host that contains the /boot folder. The host will download boot\nartifacts into a folder in this directory.",
+          "type": "string"
+        },
+        "initrd_url": {
+          "description": "URL address to download the initrd.",
+          "type": "string"
+        },
+        "kernel_url": {
+          "description": "URL address to download the kernel.",
+          "type": "string"
+        },
+        "rootfs_url": {
+          "description": "URL address to download the rootfs.",
+          "type": "string"
         }
       }
     },
@@ -6800,6 +6897,7 @@ func init() {
       ],
       "properties": {
         "api_vip_connectivity": {
+          "description": "Contains a serialized api_vip_connectivity_response",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
         },
@@ -6856,6 +6954,11 @@ func init() {
         },
         "disks_info": {
           "description": "Additional information about disks, formatted as JSON.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
+        },
+        "disks_to_be_formatted": {
+          "description": "A comma-separated list of disks that will be formatted once\ninstallation begins, unless otherwise set to be skipped by\nskip_formatting_disks. This means that this list also includes disks\nthat appear in skip_formatting_disks. This property is managed by the\nservice and cannot be modified by the user.",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
         },
@@ -6973,11 +7076,22 @@ func init() {
           },
           "x-go-custom-tag": "gorm:\"-\""
         },
+        "registered_at": {
+          "description": "The last time the host's agent tried to register in the service.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
         "requested_hostname": {
           "type": "string"
         },
         "role": {
           "$ref": "#/definitions/host-role"
+        },
+        "skip_formatting_disks": {
+          "description": "A comma-seperated list of host disks that the service will avoid\nformatting.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
         },
         "stage_started_at": {
           "description": "Time at which the current progress stage started.",
@@ -7210,6 +7324,14 @@ func init() {
           },
           "x-nullable": true
         },
+        "disks_skip_formatting": {
+          "description": "Allows changing the host's skip_formatting_disks parameter",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/disk-skip-formatting-params"
+          },
+          "x-nullable": true
+        },
         "host_name": {
           "type": "string",
           "x-nullable": true
@@ -7265,6 +7387,7 @@ func init() {
         "lso-requirements-satisfied",
         "ocs-requirements-satisfied",
         "odf-requirements-satisfied",
+        "lvm-requirements-satisfied",
         "sufficient-installation-disk-speed",
         "cnv-requirements-satisfied",
         "sufficient-network-latency-requirement-for-role",
@@ -7278,7 +7401,10 @@ func init() {
         "disk-encryption-requirements-satisfied",
         "non-overlapping-subnets",
         "vsphere-disk-uuid-enabled",
-        "compatible-agent"
+        "compatible-agent",
+        "no-skip-installation-disk",
+        "no-skip-missing-disk",
+        "service-has-sufficient-spoke-kube-api-access"
       ]
     },
     "host_network": {
@@ -7929,9 +8055,6 @@ func init() {
         "system_vendor": {
           "$ref": "#/definitions/system_vendor"
         },
-        "timestamp": {
-          "type": "integer"
-        },
         "tpm_version": {
           "type": "string",
           "enum": [
@@ -8512,64 +8635,6 @@ func init() {
         "$ref": "#/definitions/os-image"
       }
     },
-    "ovirt-platform": {
-      "description": "oVirt platform-specific configuration upon which to perform the installation.",
-      "type": "object",
-      "properties": {
-        "ca_bundle": {
-          "description": "The CA Bundle of the oVirt's engine certificate.",
-          "type": "string",
-          "x-nullable": true
-        },
-        "cluster_id": {
-          "description": "The oVirt cluster ID.",
-          "type": "string",
-          "format": "uuid",
-          "x-nullable": true
-        },
-        "fqdn": {
-          "description": "The oVirt's engine fully qualified domain name.",
-          "type": "string",
-          "x-nullable": true
-        },
-        "insecure": {
-          "description": "Verify oVirt engine certificate.",
-          "type": "boolean",
-          "default": true,
-          "x-nullable": true
-        },
-        "network_name": {
-          "description": "The oVirt network the VMs will be attached to.",
-          "type": "string",
-          "default": "ovirtmgmt",
-          "x-nullable": true
-        },
-        "password": {
-          "description": "The password for the oVirt user name.",
-          "type": "string",
-          "format": "password",
-          "x-nullable": true
-        },
-        "storage_domain_id": {
-          "description": "The oVirt storage domain ID.",
-          "type": "string",
-          "format": "uuid",
-          "x-nullable": true
-        },
-        "username": {
-          "description": "The user name to use to connect to the oVirt instance.",
-          "type": "string",
-          "x-nullable": true
-        },
-        "vnic_profile_id": {
-          "description": "The oVirt VNIC profile ID.",
-          "type": "string",
-          "format": "uuid",
-          "x-nullable": true
-        }
-      },
-      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:ovirt_\""
-    },
     "platform": {
       "description": "The configuration for the specific platform upon which to perform the installation.",
       "type": "object",
@@ -8577,11 +8642,6 @@ func init() {
         "type"
       ],
       "properties": {
-        "ovirt": {
-          "type": "object",
-          "x-nullable": true,
-          "$ref": "#/definitions/ovirt-platform"
-        },
         "type": {
           "$ref": "#/definitions/platform_type"
         }
@@ -8652,6 +8712,19 @@ func init() {
       },
       "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:proxy_\""
     },
+    "reboot_for_reclaim_request": {
+      "description": "Information sent to the agent for rebooting a host into discovery.",
+      "type": "object",
+      "required": [
+        "host_fs_mount_dir"
+      ],
+      "properties": {
+        "host_fs_mount_dir": {
+          "description": "The base directory on the host that contains the /boot folder. The host needs to\nchroot into this directory in order to properly reboot.",
+          "type": "string"
+        }
+      }
+    },
     "release-image": {
       "type": "object",
       "required": [
@@ -8662,10 +8735,17 @@ func init() {
       ],
       "properties": {
         "cpu_architecture": {
-          "description": "The CPU architecture of the image (x86_64/arm64/etc).",
+          "description": "(DEPRECATED) The CPU architecture of the image (x86_64/arm64/etc).",
           "type": "string",
           "default": "x86_64",
           "x-go-custom-tag": "gorm:\"default:'x86_64'\""
+        },
+        "cpu_architectures": {
+          "description": "List of CPU architectures provided by the image.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "default": {
           "description": "Indication that the version is the recommended one.",
@@ -8809,7 +8889,9 @@ func init() {
         "stop-installation",
         "logs-gather",
         "next-step-runner",
-        "upgrade-agent"
+        "upgrade-agent",
+        "download-boot-artifacts",
+        "reboot-for-reclaim"
       ]
     },
     "steps": {
@@ -9123,6 +9205,11 @@ func init() {
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
+          "type": "string",
+          "x-nullable": true
+        },
+        "tags": {
+          "description": "A comma-separated list of tags that are associated to the cluster.",
           "type": "string",
           "x-nullable": true
         },
@@ -12465,6 +12552,23 @@ func init() {
             "name": "file_name",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "string",
+            "format": "mac",
+            "description": "Mac address of the host running ipxe script.",
+            "name": "mac",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "discovery-image-always",
+              "boot-order-control"
+            ],
+            "type": "string",
+            "description": "Specify the script type to be served for iPXE.",
+            "name": "ipxe_script_type",
+            "in": "query"
           }
         ],
         "responses": {
@@ -12557,6 +12661,16 @@ func init() {
             "name": "file_name",
             "in": "query",
             "required": true
+          },
+          {
+            "enum": [
+              "discovery-image-always",
+              "boot-order-control"
+            ],
+            "type": "string",
+            "description": "Specify the script type to be served for iPXE.",
+            "name": "ipxe_script_type",
+            "in": "query"
           }
         ],
         "responses": {
@@ -14575,15 +14689,24 @@ func init() {
       }
     },
     "api_vip_connectivity_response": {
+      "description": "The response from the day-2 agent's attempt to download the worker ignition file from the API machine config server of the target cluster.\nNote - the name \"API VIP connectivity\" is old and misleading and is preserved for backwards compatibility.",
       "type": "object",
       "properties": {
+        "download_error": {
+          "description": "The error that occurred while downloading the worker ignition file, ignored when is_success is true",
+          "type": "string"
+        },
         "ignition": {
-          "description": "Ignition fetched from the specified API VIP",
+          "description": "Ignition file fetched from the target cluster's API machine config server.\nThis ignition file may be incomplete as almost all files / systemd units are removed from it by the agent in order to save space.",
           "type": "string"
         },
         "is_success": {
-          "description": "Ignition downloadability check result.",
+          "description": "Whether the agent was able to download the ignition or not",
           "type": "boolean"
+        },
+        "url": {
+          "description": "This parameter mirrors the url parameter of the corresponding api_vip_connectivity_request",
+          "type": "string"
         }
       }
     },
@@ -14795,6 +14918,11 @@ func init() {
         "image_info": {
           "$ref": "#/definitions/image_info"
         },
+        "imported": {
+          "description": "Indicates whether this cluster is an imported day-2 cluster or a\nregular cluster. Clusters are considered imported when they are\ncreated via the ../clusters/import endpoint. Day-2 clusters converted\nfrom day-1 clusters by kube-api controllers or the\n../clusters/\u003ccluster_id\u003e/actions/allow-add-workers endpoint are not\nconsidered imported. Imported clusters usually lack a lot of\ninformation and are filled with default values that don't necessarily\nreflect the actual cluster they represent",
+          "type": "boolean",
+          "default": false
+        },
         "ingress_vip": {
           "description": "The virtual IP used for cluster ingress traffic.",
           "type": "string",
@@ -14958,6 +15086,10 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "tags": {
+          "description": "A comma-separated list of tags that are associated to the cluster.",
+          "type": "string"
         },
         "total_host_count": {
           "description": "All hosts associated to this cluster.",
@@ -15172,6 +15304,11 @@ func init() {
           "description": "SSH public key for debugging OpenShift nodes.",
           "type": "string"
         },
+        "tags": {
+          "description": "A comma-separated list of tags that are associated to the cluster.",
+          "type": "string",
+          "x-nullable": true
+        },
         "user_managed_networking": {
           "description": "Indicate if the networking is managed by the user.",
           "type": "boolean",
@@ -15181,7 +15318,7 @@ func init() {
         "vip_dhcp_allocation": {
           "description": "Indicate if virtual IP DHCP allocation mode is enabled.",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "x-nullable": true
         }
       }
@@ -15301,6 +15438,7 @@ func init() {
         "ocs-requirements-satisfied",
         "odf-requirements-satisfied",
         "cnv-requirements-satisfied",
+        "lvm-requirements-satisfied",
         "network-type-valid"
       ]
     },
@@ -15800,6 +15938,24 @@ func init() {
         "install"
       ]
     },
+    "disk-skip-formatting-params": {
+      "description": "Allows an addition or removal of a host disk from the host's skip_formatting_disks list",
+      "type": "object",
+      "required": [
+        "disk_id",
+        "skip_formatting"
+      ],
+      "properties": {
+        "disk_id": {
+          "description": "The ID of the disk that is being added to or removed from the host's skip_formatting_disks list",
+          "type": "string"
+        },
+        "skip_formatting": {
+          "description": "True if you wish to add the disk to the skip_formatting_disks list, false if you wish to remove it",
+          "type": "boolean"
+        }
+      }
+    },
     "disk_info": {
       "type": "object",
       "properties": {
@@ -15879,6 +16035,34 @@ func init() {
           "items": {
             "$ref": "#/definitions/DomainResolutionResponseResolutionsItems0"
           }
+        }
+      }
+    },
+    "download_boot_artifacts_request": {
+      "description": "Information sent to the agent for downloading artifacts to boot a host into discovery.",
+      "type": "object",
+      "required": [
+        "kernel_url",
+        "rootfs_url",
+        "initrd_url",
+        "host_fs_mount_dir"
+      ],
+      "properties": {
+        "host_fs_mount_dir": {
+          "description": "The base directory on the host that contains the /boot folder. The host will download boot\nartifacts into a folder in this directory.",
+          "type": "string"
+        },
+        "initrd_url": {
+          "description": "URL address to download the initrd.",
+          "type": "string"
+        },
+        "kernel_url": {
+          "description": "URL address to download the kernel.",
+          "type": "string"
+        },
+        "rootfs_url": {
+          "description": "URL address to download the rootfs.",
+          "type": "string"
         }
       }
     },
@@ -16109,6 +16293,7 @@ func init() {
       ],
       "properties": {
         "api_vip_connectivity": {
+          "description": "Contains a serialized api_vip_connectivity_response",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
         },
@@ -16165,6 +16350,11 @@ func init() {
         },
         "disks_info": {
           "description": "Additional information about disks, formatted as JSON.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
+        },
+        "disks_to_be_formatted": {
+          "description": "A comma-separated list of disks that will be formatted once\ninstallation begins, unless otherwise set to be skipped by\nskip_formatting_disks. This means that this list also includes disks\nthat appear in skip_formatting_disks. This property is managed by the\nservice and cannot be modified by the user.",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
         },
@@ -16282,11 +16472,22 @@ func init() {
           },
           "x-go-custom-tag": "gorm:\"-\""
         },
+        "registered_at": {
+          "description": "The last time the host's agent tried to register in the service.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
         "requested_hostname": {
           "type": "string"
         },
         "role": {
           "$ref": "#/definitions/host-role"
+        },
+        "skip_formatting_disks": {
+          "description": "A comma-seperated list of host disks that the service will avoid\nformatting.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
         },
         "stage_started_at": {
           "description": "Time at which the current progress stage started.",
@@ -16519,6 +16720,14 @@ func init() {
           },
           "x-nullable": true
         },
+        "disks_skip_formatting": {
+          "description": "Allows changing the host's skip_formatting_disks parameter",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/disk-skip-formatting-params"
+          },
+          "x-nullable": true
+        },
         "host_name": {
           "type": "string",
           "x-nullable": true
@@ -16574,6 +16783,7 @@ func init() {
         "lso-requirements-satisfied",
         "ocs-requirements-satisfied",
         "odf-requirements-satisfied",
+        "lvm-requirements-satisfied",
         "sufficient-installation-disk-speed",
         "cnv-requirements-satisfied",
         "sufficient-network-latency-requirement-for-role",
@@ -16587,7 +16797,10 @@ func init() {
         "disk-encryption-requirements-satisfied",
         "non-overlapping-subnets",
         "vsphere-disk-uuid-enabled",
-        "compatible-agent"
+        "compatible-agent",
+        "no-skip-installation-disk",
+        "no-skip-missing-disk",
+        "service-has-sufficient-spoke-kube-api-access"
       ]
     },
     "host_network": {
@@ -17240,9 +17453,6 @@ func init() {
         "system_vendor": {
           "$ref": "#/definitions/system_vendor"
         },
-        "timestamp": {
-          "type": "integer"
-        },
         "tpm_version": {
           "type": "string",
           "enum": [
@@ -17812,64 +18022,6 @@ func init() {
         "$ref": "#/definitions/os-image"
       }
     },
-    "ovirt-platform": {
-      "description": "oVirt platform-specific configuration upon which to perform the installation.",
-      "type": "object",
-      "properties": {
-        "ca_bundle": {
-          "description": "The CA Bundle of the oVirt's engine certificate.",
-          "type": "string",
-          "x-nullable": true
-        },
-        "cluster_id": {
-          "description": "The oVirt cluster ID.",
-          "type": "string",
-          "format": "uuid",
-          "x-nullable": true
-        },
-        "fqdn": {
-          "description": "The oVirt's engine fully qualified domain name.",
-          "type": "string",
-          "x-nullable": true
-        },
-        "insecure": {
-          "description": "Verify oVirt engine certificate.",
-          "type": "boolean",
-          "default": true,
-          "x-nullable": true
-        },
-        "network_name": {
-          "description": "The oVirt network the VMs will be attached to.",
-          "type": "string",
-          "default": "ovirtmgmt",
-          "x-nullable": true
-        },
-        "password": {
-          "description": "The password for the oVirt user name.",
-          "type": "string",
-          "format": "password",
-          "x-nullable": true
-        },
-        "storage_domain_id": {
-          "description": "The oVirt storage domain ID.",
-          "type": "string",
-          "format": "uuid",
-          "x-nullable": true
-        },
-        "username": {
-          "description": "The user name to use to connect to the oVirt instance.",
-          "type": "string",
-          "x-nullable": true
-        },
-        "vnic_profile_id": {
-          "description": "The oVirt VNIC profile ID.",
-          "type": "string",
-          "format": "uuid",
-          "x-nullable": true
-        }
-      },
-      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:ovirt_\""
-    },
     "platform": {
       "description": "The configuration for the specific platform upon which to perform the installation.",
       "type": "object",
@@ -17877,11 +18029,6 @@ func init() {
         "type"
       ],
       "properties": {
-        "ovirt": {
-          "type": "object",
-          "x-nullable": true,
-          "$ref": "#/definitions/ovirt-platform"
-        },
         "type": {
           "$ref": "#/definitions/platform_type"
         }
@@ -17952,6 +18099,19 @@ func init() {
       },
       "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:proxy_\""
     },
+    "reboot_for_reclaim_request": {
+      "description": "Information sent to the agent for rebooting a host into discovery.",
+      "type": "object",
+      "required": [
+        "host_fs_mount_dir"
+      ],
+      "properties": {
+        "host_fs_mount_dir": {
+          "description": "The base directory on the host that contains the /boot folder. The host needs to\nchroot into this directory in order to properly reboot.",
+          "type": "string"
+        }
+      }
+    },
     "release-image": {
       "type": "object",
       "required": [
@@ -17962,10 +18122,17 @@ func init() {
       ],
       "properties": {
         "cpu_architecture": {
-          "description": "The CPU architecture of the image (x86_64/arm64/etc).",
+          "description": "(DEPRECATED) The CPU architecture of the image (x86_64/arm64/etc).",
           "type": "string",
           "default": "x86_64",
           "x-go-custom-tag": "gorm:\"default:'x86_64'\""
+        },
+        "cpu_architectures": {
+          "description": "List of CPU architectures provided by the image.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "default": {
           "description": "Indication that the version is the recommended one.",
@@ -18109,7 +18276,9 @@ func init() {
         "stop-installation",
         "logs-gather",
         "next-step-runner",
-        "upgrade-agent"
+        "upgrade-agent",
+        "download-boot-artifacts",
+        "reboot-for-reclaim"
       ]
     },
     "steps": {
@@ -18397,6 +18566,11 @@ func init() {
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
+          "type": "string",
+          "x-nullable": true
+        },
+        "tags": {
+          "description": "A comma-separated list of tags that are associated to the cluster.",
           "type": "string",
           "x-nullable": true
         },

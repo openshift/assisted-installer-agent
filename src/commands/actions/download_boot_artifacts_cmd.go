@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,7 +26,7 @@ func (a *downloadBootArtifacts) Validate() error {
 }
 
 func (a *downloadBootArtifacts) Run() (stdout, stderr string, exitCode int) {
-	err := run(a.agentConfig.InfraEnvID, a.Args()[0])
+	err := run(a.agentConfig.InfraEnvID, a.Args()[0], a.agentConfig.CACertificatePath)
 	if err != nil {
 		return "", err.Error(), -1
 	}
@@ -53,7 +55,7 @@ linux %s
 initrd %s`
 )
 
-func run(infraEnvId, downloaderRequestStr string) error {
+func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 	var req models.DownloadBootArtifactsRequest
 	if err := json.Unmarshal([]byte(downloaderRequestStr), &req); err != nil {
 		return fmt.Errorf("failed unmarshalling download boot artifacts request: %w", err)
@@ -70,11 +72,16 @@ func run(infraEnvId, downloaderRequestStr string) error {
 		return fmt.Errorf("failed creating folders: %w", err)
 	}
 
-	if err := download(path.Join(hostArtifactsFolder, kernelFile), *req.KernelURL); err != nil {
+	httpClient, err := createHTTPClient(caCertPath)
+	if err != nil {
+		return fmt.Errorf("failed creating secure assisted service client: %w", err)
+	}
+
+	if err := download(httpClient, path.Join(hostArtifactsFolder, kernelFile), *req.KernelURL); err != nil {
 		return fmt.Errorf("failed downloading kernel to host: %w", err)
 	}
 
-	if err := download(path.Join(hostArtifactsFolder, initrdFile), *req.InitrdURL); err != nil {
+	if err := download(httpClient, path.Join(hostArtifactsFolder, initrdFile), *req.InitrdURL); err != nil {
 		return fmt.Errorf("failed downloading initrd to host: %w", err)
 	}
 
@@ -86,8 +93,31 @@ func run(infraEnvId, downloaderRequestStr string) error {
 	return nil
 }
 
-func download(filePath, url string) error {
-	res, err := http.Get(url)
+func createHTTPClient(caCertPath string) (*http.Client, error) {
+	client := &http.Client{}
+	if caCertPath != "" {
+		caCert, err := os.ReadFile(caCertPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open cert file %s, %s", caCertPath, err)
+		}
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return nil, fmt.Errorf("failed to append cert %s, %s", caCertPath, err)
+		}
+
+		t := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs:    caCertPool,
+				MinVersion: tls.VersionTLS12,
+			},
+		}
+		client.Transport = t
+	}
+	return client, nil
+}
+
+func download(httpClient *http.Client, filePath, url string) error {
+	res, err := httpClient.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed getting %s: %w", url, err)
 	}

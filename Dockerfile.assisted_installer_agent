@@ -1,4 +1,5 @@
 FROM registry.ci.openshift.org/openshift/release:golang-1.17 AS builder
+ARG TARGETPLATFORM
 ENV GO111MODULE=on
 ENV GOFLAGS=""
 
@@ -9,15 +10,17 @@ RUN go mod download
 
 COPY . .
 
-RUN make build
+RUN TARGETPLATFORM=$TARGETPLATFORM make build
 
 FROM quay.io/centos/centos:stream8
+ARG TARGETPLATFORM
+RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y biosdevname ; fi
 
 RUN dnf install -y \
 		findutils iputils \
 		podman \
 		# inventory
-		dmidecode ipmitool biosdevname file fio \
+		dmidecode ipmitool file fio \
 		smartmontools \
 		sg3_utils \
 		# free_addresses

@@ -7,6 +7,10 @@ ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/edge-infras
 export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BIN = $(ROOT_DIR)/build
 
+# Multiarch support.  Transform argument passed from docker buidx tool to go build arguments to support cross compiling
+GO_BUILD_ARCHITECTURE_VARS := $(if ${TARGETPLATFORM},$(shell echo ${TARGETPLATFORM} | awk -F / '{printf("GOOS=%s GOARCH=%s", $$1, $$2)}'),)
+GO_BUILD_VARS := CGO_ENABLED=0 $(GO_BUILD_ARCHITECTURE_VARS)
+
 REPORTS ?= $(ROOT_DIR)/reports
 CI ?= false
 TEST_FORMAT ?= standard-verbose
@@ -36,7 +40,7 @@ build: build-agent build-connectivity_check build-inventory build-free_addresses
 	   build-container_image_availability build-domain_resolution build-disk_speed_check
 
 build-%: $(BIN) src/$* #lint
-	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
+	$(GO_BUILD_VARS) go build -o $(BIN)/$* src/$*/main/main.go
 
 build-image:
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)

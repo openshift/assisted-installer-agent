@@ -18,9 +18,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func getOutgoingNics(dryRunConfig *config.DryRunConfig) []string {
+func getOutgoingNics(dryRunConfig *config.DryRunConfig, d util.IDependencies) []string {
 	ret := make([]string, 0)
-	d := util.NewDependencies(dryRunConfig, "")
+	if d == nil {
+		d = util.NewDependencies(dryRunConfig, "")
+	}
 	interfaces, err := d.Interfaces()
 	if err != nil {
 		log.WithError(err).Warnf("Get outgoing nics")
@@ -28,6 +30,15 @@ func getOutgoingNics(dryRunConfig *config.DryRunConfig) []string {
 	}
 	for _, intf := range interfaces {
 		if !(intf.IsPhysical() || intf.IsBonding() || intf.IsVlan()) {
+			continue
+		}
+
+		// In order to remediate issue with polluting ARP table by using enslaved interfaces
+		// (https://bugzilla.redhat.com/show_bug.cgi?id=2105358) we are only using as outgoing
+		// NICs those interfaces that have at least one IP address assigned.
+		addrs, _ := intf.Addrs()
+		if len(addrs) == 0 {
+			log.Infof("Skipping NIC %s (MAC %s) because of no addresses", intf.Name(), intf.HardwareAddr().String())
 			continue
 		}
 		ret = append(ret, intf.Name())
@@ -389,7 +400,7 @@ func (c *connectivity) connectivityCheck(_ string, args ...string) (stdout strin
 		log.Warnf("Error unmarshalling json %s: %s", args[0], err.Error())
 		return "", err.Error(), -1
 	}
-	nics := getOutgoingNics(c.dryRunConfig)
+	nics := getOutgoingNics(c.dryRunConfig, nil)
 	hostChan := make(chan *models.ConnectivityRemoteHost)
 	for _, host := range params {
 		h := hostChecker{outgoingNICS: nics, host: host}

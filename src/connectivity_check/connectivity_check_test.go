@@ -33,7 +33,7 @@ var _ = Describe("nmap analysis test", func() {
 		srcNIC     string
 		allDstMACs []string
 		output     func() ([]byte, error)
-		expected   *models.L2Connectivity
+		expected   models.L2Connectivity
 	}{
 		{name: "Happy flow",
 			dstAddr:    "2001:db8::2",
@@ -42,7 +42,7 @@ var _ = Describe("nmap analysis test", func() {
 			output: func() ([]byte, error) {
 				return []byte(nmapOut), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
@@ -56,7 +56,7 @@ var _ = Describe("nmap analysis test", func() {
 			output: func() ([]byte, error) {
 				return []byte(nmapOut), fmt.Errorf("nmap command failed")
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 			}},
@@ -67,7 +67,7 @@ var _ = Describe("nmap analysis test", func() {
 			output: func() ([]byte, error) {
 				return []byte("plain text"), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 			}},
@@ -86,7 +86,7 @@ var _ = Describe("nmap analysis test", func() {
 					</host>
 				</nmaprun>`), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				Successful:      false,
@@ -99,7 +99,7 @@ var _ = Describe("nmap analysis test", func() {
 			output: func() ([]byte, error) {
 				return []byte(nmapOut), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
@@ -120,7 +120,7 @@ var _ = Describe("nmap analysis test", func() {
 					</host>
 				</nmaprun>`), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
@@ -140,7 +140,7 @@ var _ = Describe("nmap analysis test", func() {
 					</host>
 				</nmaprun>`), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 			},
@@ -152,7 +152,7 @@ var _ = Describe("nmap analysis test", func() {
 			output: func() ([]byte, error) {
 				return []byte("<nmaprun />"), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 			},
@@ -176,7 +176,7 @@ var _ = Describe("nmap analysis test", func() {
 					</host>
 				</nmaprun>`), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:aa:00:02",
@@ -202,7 +202,7 @@ var _ = Describe("nmap analysis test", func() {
 					</host>
 				</nmaprun>`), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
@@ -227,7 +227,7 @@ var _ = Describe("nmap analysis test", func() {
 					</host>
 				</nmaprun>`), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
@@ -241,7 +241,7 @@ var _ = Describe("nmap analysis test", func() {
 			output: func() ([]byte, error) {
 				return []byte(nmapOut), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
@@ -254,7 +254,7 @@ var _ = Describe("nmap analysis test", func() {
 			output: func() ([]byte, error) {
 				return []byte(nmapOut), nil
 			},
-			expected: &models.L2Connectivity{
+			expected: models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
@@ -368,10 +368,10 @@ var _ = Describe("parse ping command", func() {
 var _ = Describe("check host parallel validation", func() {
 
 	var (
-		hostChan chan *models.ConnectivityRemoteHost
+		hostChan chan models.ConnectivityRemoteHost
 	)
 	BeforeEach(func() {
-		hostChan = make(chan *models.ConnectivityRemoteHost)
+		hostChan = make(chan models.ConnectivityRemoteHost)
 	})
 
 	AfterEach(func() {
@@ -379,13 +379,15 @@ var _ = Describe("check host parallel validation", func() {
 	})
 
 	tests := []struct {
-		name     string
-		nics     []string
-		hosts    *models.ConnectivityCheckHost
-		expected *models.ConnectivityRemoteHost
-		success  bool
-		l2Conn   []*models.L2Connectivity
-		l3Conn   []*models.L3Connectivity
+		name                 string
+		nics                 []string
+		hosts                *models.ConnectivityCheckHost
+		expected             *models.ConnectivityRemoteHost
+		success              bool
+		l2Conn               []*models.L2Connectivity
+		l3Conn               []*models.L3Connectivity
+		simulateL2IPConflict bool
+		strictMatchingL2       bool
 	}{
 		{
 			name:    "Nominal: IPv4 with 2 addresses",
@@ -423,6 +425,8 @@ var _ = Describe("check host parallel validation", func() {
 					},
 				},
 			},
+			simulateL2IPConflict: false,
+			strictMatchingL2: false,
 		},
 		{name: "Nominal: IPv6",
 			success: true,
@@ -446,6 +450,8 @@ var _ = Describe("check host parallel validation", func() {
 					},
 				},
 			},
+			simulateL2IPConflict: false,
+			strictMatchingL2: false,
 		},
 		{name: "KO: IPv4 unable to connect via ping or arp",
 			success: false,
@@ -465,6 +471,8 @@ var _ = Describe("check host parallel validation", func() {
 					},
 				},
 			},
+			simulateL2IPConflict: false,
+			strictMatchingL2: false,
 		},
 		{name: "KO: IPv6 unable to connect via ping or nmap",
 			success: false,
@@ -483,17 +491,79 @@ var _ = Describe("check host parallel validation", func() {
 					},
 				},
 			},
+			simulateL2IPConflict: false,
+			strictMatchingL2: false,
+		},
+		{name: "Should correctly report on L2 IP conflicts",
+			success: true,
+			nics:    []string{"nic_ipv4"},
+			hosts: &models.ConnectivityCheckHost{Nics: []*models.ConnectivityCheckNic{
+				{IPAddresses: []string{"192.168.1.1"}, Mac: "74:d0:2b:1c:c6:42"},
+			}},
+			expected: &models.ConnectivityRemoteHost{
+				L2Connectivity: []*models.L2Connectivity{
+					{OutgoingNic: "nic_ipv4",
+						RemoteIPAddress:   "192.168.1.1",
+						OutgoingIPAddress: "192.168.1.133",
+						Successful:        false,
+						RemoteMac:         "00:50:56:95:ba:55"},
+					{OutgoingNic: "nic_ipv4",
+						RemoteIPAddress:   "192.168.1.1",
+						OutgoingIPAddress: "192.168.1.133",
+						Successful:        true,
+						RemoteMac:         "74:d0:2b:1c:c6:42"},
+				},
+				L3Connectivity: []*models.L3Connectivity{
+					{AverageRTTMs: 2.871,
+						OutgoingNic:          "nic_ipv4",
+						PacketLossPercentage: 60,
+						RemoteIPAddress:      "192.168.1.1",
+						Successful:           true,
+					},
+				},
+			},
+			simulateL2IPConflict: true,
+			strictMatchingL2: false,
+		},
+		{name: "Should deduplicate L2 entries and ensure consistent order of L2 entries",
+			success: true,
+			nics:    []string{"nic_ipv4"},
+			hosts: &models.ConnectivityCheckHost{Nics: []*models.ConnectivityCheckNic{
+				{IPAddresses: []string{"192.168.1.1"}, Mac: "74:d0:2b:1c:c6:42"},
+			}},
+			expected: &models.ConnectivityRemoteHost{
+				L2Connectivity: []*models.L2Connectivity{
+					{OutgoingNic: "nic_ipv4",
+						RemoteIPAddress:   "192.168.1.1",
+						OutgoingIPAddress: "192.168.1.133",
+						Successful:        false,
+						RemoteMac:         "00:50:56:95:ba:55"},
+					{OutgoingNic: "nic_ipv4",
+						RemoteIPAddress:   "192.168.1.1",
+						OutgoingIPAddress: "192.168.1.133",
+						Successful:        true,
+						RemoteMac:         "74:d0:2b:1c:c6:42"},
+				},
+				L3Connectivity: []*models.L3Connectivity{
+				},
+			},
+			simulateL2IPConflict: true,
+			strictMatchingL2: true,
 		},
 	}
 
 	for i := range tests {
 		t := tests[i]
 		It(t.name, func() {
-			h := testHostChecker{outgoingNICS: t.nics, host: t.hosts, success: t.success}
+			h := testHostChecker{outgoingNICS: t.nics, host: t.hosts, success: t.success, simulateL2IPConflict: t.simulateL2IPConflict}
 			c := connectivity{dryRunConfig: &config.DryRunConfig{}}
 			go c.checkHost(h, hostChan)
 			r := <-hostChan
-			Expect(r.L2Connectivity).Should(ContainElements(t.expected.L2Connectivity))
+			if !t.strictMatchingL2 {
+				Expect(r.L2Connectivity).Should(ContainElements(t.expected.L2Connectivity))
+			} else {
+				Expect(r.L2Connectivity).Should(BeEquivalentTo(t.expected.L2Connectivity))
+			}
 			Expect(r.L3Connectivity).Should(ContainElements(t.expected.L3Connectivity))
 		})
 	}
@@ -541,9 +611,10 @@ var _ = Describe("getOutgoingNics", func() {
 })
 
 type testHostChecker struct {
-	success      bool
-	outgoingNICS []string
-	host         *models.ConnectivityCheckHost
+	success              bool
+	outgoingNICS         []string
+	host                 *models.ConnectivityCheckHost
+	simulateL2IPConflict bool
 }
 
 func (t testHostChecker) command(name string, args []string) ([]byte, error) {
@@ -583,6 +654,17 @@ func (t testHostChecker) command(name string, args []string) ([]byte, error) {
 		}
 		return nil, errors.New("unable to connect via nmap")
 	case "arping":
+
+		if t.simulateL2IPConflict {
+			return []byte(fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
+Unicast reply from %[1]s [00:50:56:95:BA:55]  1.871ms
+Unicast reply from %[1]s [00:50:56:95:BA:55]  1.871ms
+Unicast reply from %[1]s [%[3]s]  3.137ms
+Sent 1 probes (1 broadcast(s))
+Received 1 response(s)
+						`, args[5], args[6], mac)), nil
+		}
+
 		if t.success {
 			return []byte(fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
 Unicast reply from %[1]s [%[3]s]  3.137ms

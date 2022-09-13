@@ -177,13 +177,13 @@ func Run(requestStr string, executer NtpSynchronizerDependencies, log logrus.Fie
 		names, err = executer.LookupAddr(source.SourceName)
 
 		if err != nil {
-			log.WithError(err).Warnf("Failed to reverse lookup server %s", source.SourceName)
+			log.WithError(err).Debugf("Failed to reverse lookup server %s", source.SourceName)
 			continue
 		}
 
 		// Sanity check
 		if len(names) == 0 {
-			log.WithError(err).Warnf("No returned hostnames nor an error was returned on reverse lookup for server %s", source.SourceName)
+			log.WithError(err).Debugf("No returned hostnames nor an error was returned on reverse lookup for server %s", source.SourceName)
 			continue
 		}
 

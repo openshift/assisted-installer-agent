@@ -37,7 +37,7 @@ var _ = Describe("Disk speed check test", func() {
 		durationInNS := durationInMS * int64(time.Millisecond)
 		dependencies.On("Execute", "fio", "--filename", file,
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return(fmt.Sprintf(
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Sprintf(
 			`{ "jobs": 
 					[{
 						"sync":
@@ -53,7 +53,7 @@ var _ = Describe("Disk speed check test", func() {
 	fioFailure := func(file string) {
 		dependencies.On("Execute", "fio", "--filename", file,
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-			mock.Anything, mock.Anything, mock.Anything).Return("", "failure", -1).Once()
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", "failure", -1).Once()
 	}
 
 	It("Check succeeded", func() {

@@ -241,18 +241,39 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 		notEligibleReasons = append(notEligibleReasons, "Disk is an LVM logical volume")
 	}
 
-	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
-		return p.Type == "iso9660"
-	}), true) {
-		notEligibleReasons = append(notEligibleReasons, "Disk appears to be an ISO installation media (has partition with type iso9660)")
-		isInstallationMedia = true
-	}
+	// Check disk partitions for type, name, and mount points:
+	for _, partition := range disk.Partitions {
+		if partition.Type == "iso9660" {
+			notEligibleReasons = append(
+				notEligibleReasons,
+				"Disk appears to be an ISO installation media (has partition with "+
+					"type iso9660)",
+			)
+			isInstallationMedia = true
+		}
 
-	if funk.Contains(funk.Map(disk.Partitions, func(p *ghw.Partition) bool {
-		return strings.HasSuffix(p.MountPoint, "iso")
-	}), true) {
-		notEligibleReasons = append(notEligibleReasons, "Disk appears to be an ISO installation media (has partition with mountpoint suffix iso)")
-		isInstallationMedia = true
+		if strings.HasSuffix(partition.MountPoint, "iso") {
+			notEligibleReasons = append(
+				notEligibleReasons,
+				"Disk appears to be an ISO installation media (has partition with "+
+					"mountpoint suffix iso)",
+			)
+			isInstallationMedia = true
+		}
+
+		if isInstallationMedia {
+			continue
+		}
+
+		if partition.MountPoint != "" {
+			notEligibleReasons = append(
+				notEligibleReasons,
+				fmt.Sprintf(
+					"Disk has partition '%s' mounted on '%s'",
+					partition.Name, partition.MountPoint,
+				),
+			)
+		}
 	}
 
 	return notEligibleReasons, isInstallationMedia

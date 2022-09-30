@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jaypipes/ghw"
+	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -1068,5 +1069,36 @@ var _ = Describe("Disks test", func() {
 			Ω(disk.ByID).Should(BeEmpty())
 			Ω(disk.ID).Should(Equal(disk.Path))
 		})
+	})
+
+	It("Marks disk with mounted partitions as ineligible for installation", func() {
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		disk := createSDADisk()
+		disk.Partitions = []*block.Partition{
+			{
+				Name:       "sda1",
+				MountPoint: "",
+			},
+			{
+				Name:       "sda2",
+				MountPoint: "",
+			},
+			{
+				Name:       "sda3",
+				MountPoint: "/boot",
+			},
+			{
+				Name:       "sda4",
+				MountPoint: "/sysroot",
+			},
+		}
+		mockAllForSuccess(dependencies, disk)
+		disks := GetDisks(&config.SubprocessConfig{}, dependencies)
+		Expect(disks).To(HaveLen(1))
+		Expect(disks[0].InstallationEligibility.Eligible).To(BeFalse())
+		Expect(disks[0].InstallationEligibility.NotEligibleReasons).To(ContainElements(
+			"Disk has partition 'sda3' mounted on '/boot'",
+			"Disk has partition 'sda4' mounted on '/sysroot'",
+		))
 	})
 })

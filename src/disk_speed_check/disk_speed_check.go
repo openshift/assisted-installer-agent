@@ -2,7 +2,6 @@ package disk_speed_check
 
 import (
 	"encoding/json"
-	"strings"
 	"sync"
 	"time"
 
@@ -101,9 +100,7 @@ func (p *DiskSpeedCheck) getDiskPerf(path string) fioCheckResponse {
 		return fioCheckResponse{latency: time.Duration(dryModeSyncDurationInNS).Milliseconds(), err: nil}
 	}
 
-	// FIO treats colons as multiple device separator, which breaks paths like /dev/disk/by-path/pci-0000:06:0000.0
-	escaped_path := strings.ReplaceAll(path, ":", "\\:")
-	args := []string{"--filename", escaped_path, "--name=test", "--rw=write", "--ioengine=sync",
+	args := []string{"--filename", path, "--name=test", "--rw=write", "--ioengine=sync",
 		"--size=22m", "-bs=2300", "--fdatasync=1", "--output-format=json"}
 	stdout, stderr, exitCode := p.dependecies.Execute("fio", args...)
 	if exitCode != 0 {

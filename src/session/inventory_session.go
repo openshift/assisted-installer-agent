@@ -148,14 +148,37 @@ func createBmInventoryClient(agentConfig *config.AgentConfig, inventoryUrl strin
 		},
 	})
 
+	// This function transforms a regular delay function into one that does the same thing but
+	// also writes a log message indicating that the request will be retried.
+	delayLog := func(delayFn rehttp.DelayFn) rehttp.DelayFn {
+		return func(attempt rehttp.Attempt) time.Duration {
+			delay := delayFn(attempt)
+			logrus.WithFields(logrus.Fields{
+				"method":  attempt.Request.Method,
+				"url":     attempt.Request.URL,
+				"status":  attempt.Response.StatusCode,
+				"error":   attempt.Error,
+				"attempt": fmt.Sprintf("%d of %d", attempt.Index+1, retries+1),
+				"delay":   delay,
+			}).Info("Request will be retried")
+			return delay
+		}
+	}
+
 	// Add retry settings
 	tr := rehttp.NewTransport(
 		transport,
 		rehttp.RetryAll(
 			rehttp.RetryMaxRetries(retries),
-			rehttp.RetryTemporaryErr(),
+			rehttp.RetryAny(
+				rehttp.RetryTemporaryErr(),
+				rehttp.RetryStatuses(
+					http.StatusServiceUnavailable,
+					http.StatusGatewayTimeout,
+				),
+			),
 		),
-		rehttp.ExpJitterDelay(minDelay, maxDelay),
+		delayLog(rehttp.ExpJitterDelay(minDelay, maxDelay)),
 	)
 
 	clientConfig.Transport = tr

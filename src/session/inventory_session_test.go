@@ -16,6 +16,7 @@ import (
 	"github.com/openshift/assisted-service/models"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 )
@@ -100,6 +101,21 @@ var _ = Describe("inventory_client_tests", func() {
 			_, err := client.Installer.V2UpdateHostInstallProgress(context.Background(), params)
 			Expect(err).Should(HaveOccurred())
 		})
+
+		DescribeTable(
+			"Retries when server sends error code",
+			func(code int) {
+				server.Start()
+				server.AppendHandlers(
+					ghttp.RespondWith(http.StatusServiceUnavailable, nil),
+					ghttp.RespondWith(http.StatusOK, nil),
+				)
+				_, err := client.Installer.V2UpdateHostInstallProgress(context.Background(), params)
+				Expect(err).ShouldNot(HaveOccurred())
+			},
+			Entry("Service unavailable (503)", http.StatusServiceUnavailable),
+			Entry("Gateway timeout (504)", http.StatusGatewayTimeout),
+		)
 	})
 })
 

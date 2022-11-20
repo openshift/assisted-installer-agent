@@ -15,7 +15,7 @@ func IsIPv4Addr(ip string) bool {
 }
 
 //RouteFinder defines functions needed to find routes by link
-//go:generate mockery -name RouteFinder -inpkg
+//go:generate mockery --name RouteFinder --inpackage
 type RouteFinder interface {
 	LinkByName(name string) (netlink.Link, error)
 	RouteList(link netlink.Link, family int) ([]netlink.Route, error)

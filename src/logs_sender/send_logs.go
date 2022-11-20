@@ -37,7 +37,7 @@ const (
 	lvdisplay                    = "/usr/sbin/lvdisplay"
 )
 
-//go:generate mockery -name LogsSender -inpkg
+//go:generate mockery --name LogsSender --inpackage
 type LogsSender interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
@@ -405,7 +405,7 @@ func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, stri
 	var report = ""
 	if result != nil {
 		report = result.Error()
-		_ = os.WriteFile(path.Join(logsTmpFilesDir, "report.logs"), []byte(report), 0755)
+		_ = os.WriteFile(path.Join(logsTmpFilesDir, "report.logs"), []byte(report), 0755) //nolint:gosec
 	}
 
 	err := uploadLogs(l, logsTmpFilesDir, archivePath)

@@ -79,7 +79,6 @@ subsystem: build-image
 	exit $$rc;
 
 generate:
-	find "${ROOT_DIR}" -name 'mock_*.go' -type f -delete
 	go generate $(shell go list ./...)
 
 go-import:

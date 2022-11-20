@@ -2,7 +2,6 @@ package dhcp_lease_allocate
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -19,7 +18,7 @@ import (
 
 const configPath string = "/etc/keepalived"
 
-//go:generate mockery -name Dependencies -inpkg
+//go:generate mockery --name Dependencies --inpackage
 type Dependencies interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 	WriteFile(filename string, data []byte, perm os.FileMode) error
@@ -38,11 +37,11 @@ func (*LeaserDependencies) Execute(command string, args ...string) (stdout strin
 }
 
 func (*LeaserDependencies) WriteFile(filename string, data []byte, perm os.FileMode) error {
-	return ioutil.WriteFile(filename, data, perm)
+	return os.WriteFile(filename, data, perm)
 }
 
 func (*LeaserDependencies) ReadFile(filename string) ([]byte, error) {
-	return ioutil.ReadFile(filename)
+	return os.ReadFile(filename)
 }
 
 func (*LeaserDependencies) GetLastLeaseFromFile(log logrus.FieldLogger, fileName string) (string, string, error) {

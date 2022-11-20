@@ -2,7 +2,6 @@ package util
 
 import (
 	"io"
-	"io/ioutil"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -38,7 +37,7 @@ var _ = Describe("Logging test", func() {
 		writer = new(WriterMock)
 		journalWriter = new(journalLogger.MockIJournalWriter)
 		discard = new(WriterMock)
-		ioutil.Discard = discard
+		io.Discard = discard
 		getLogFileWriter = func(name string) (io.Writer, error) {
 			return writer, nil
 		}

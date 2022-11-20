@@ -2,7 +2,7 @@ package subsystem
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -171,7 +171,7 @@ var _ = Describe("Agent tests", func() {
 			resp, err := http.Get(RequestsURL)
 			Expect(err).ShouldNot(HaveOccurred())
 			requests := &Requests{}
-			b, err := ioutil.ReadAll(resp.Body)
+			b, err := io.ReadAll(resp.Body)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
 			req := make([]*RequestOccurrence, 0, len(requests.Requests))
@@ -197,7 +197,7 @@ var _ = Describe("Agent tests", func() {
 		resp, err := http.Get(RequestsURL)
 		Expect(err).ShouldNot(HaveOccurred())
 		requests := &Requests{}
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(json.Unmarshal(b, &requests)).ShouldNot(HaveOccurred())
 		req := make([]*RequestOccurrence, 0, len(requests.Requests))

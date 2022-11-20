@@ -130,7 +130,7 @@ func download(httpClient *http.Client, filePath, url string) error {
 		return fmt.Errorf("failed getting %s, status code received: %d\nBody received: %s", url, res.StatusCode, body)
 	}
 
-	err = os.WriteFile(filePath, body, 0644)
+	err = os.WriteFile(filePath, body, 0644) //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("failed writing file %s: %w", filePath, err)
 	}
@@ -143,7 +143,7 @@ func createBootLoaderConfig(rootfsUrl, artifactsPath, bootLoaderPath string) err
 	bootLoaderConfigFile := path.Join(bootLoaderPath, bootLoaderConfigFileName)
 	bootLoaderConfig := fmt.Sprintf(bootLoaderConfigTemplate, rootfsUrl, kernelPath, initrdPath)
 
-	if err := os.WriteFile(bootLoaderConfigFile, []byte(bootLoaderConfig), 0644); err != nil {
+	if err := os.WriteFile(bootLoaderConfigFile, []byte(bootLoaderConfig), 0644); err != nil { //nolint:gosec
 		return fmt.Errorf("failed writing bootloader config content to %s: %w", bootLoaderConfigFile, err)
 	}
 	return nil

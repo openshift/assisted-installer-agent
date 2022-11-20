@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -182,7 +182,7 @@ func addStub(stub *StubDefinition) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		return "", err
@@ -408,7 +408,7 @@ func findMatchingRequests(url, method string, matcher func(url, method string, r
 	}
 
 	requests := &Requests{}
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

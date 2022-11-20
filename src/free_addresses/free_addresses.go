@@ -20,7 +20,7 @@ const (
 	MinSubnetMaskSize = 22
 )
 
-//go:generate mockery -name Executer -inpkg
+//go:generate mockery --name Executer --inpackage
 type Executer interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 }

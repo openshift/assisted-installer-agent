@@ -1,7 +1,6 @@
 package util
 
 import (
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -11,7 +10,7 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-//go:generate mockery -name IDependencies -inpkg
+//go:generate mockery --name IDependencies --inpackage
 type IDependencies interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ReadFile(fname string) ([]byte, error)
@@ -45,7 +44,7 @@ func (d *Dependencies) Execute(command string, args ...string) (stdout string, s
 }
 
 func (d *Dependencies) ReadFile(fname string) ([]byte, error) {
-	return ioutil.ReadFile(fname)
+	return os.ReadFile(fname)
 }
 
 func (d *Dependencies) Stat(fname string) (os.FileInfo, error) {
@@ -81,7 +80,16 @@ func (d *Dependencies) Product(opts ...*ghw.WithOption) (*ghw.ProductInfo, error
 }
 
 func (d *Dependencies) ReadDir(dirname string) ([]os.FileInfo, error) {
-	return ioutil.ReadDir(dirname)
+	dirEntry, err := os.ReadDir(dirname)
+	if dirEntry != nil {
+		var filesInfo []os.FileInfo
+		for _, entry := range dirEntry {
+			info, _ := entry.Info()
+			filesInfo = append(filesInfo, info)
+		}
+		return filesInfo, err
+	}
+	return nil, err
 }
 
 func (d *Dependencies) Abs(path string) (string, error) {

@@ -81,8 +81,8 @@ type connectivity struct {
 	dryRunConfig *config.DryRunConfig
 }
 
-func (c *connectivity) l3CheckAddressOnNic(address string, outgoingNic string, innerChan chan *models.L3Connectivity, conCheck connectivityCmd) {
-	ret := &models.L3Connectivity{
+func (c *connectivity) l3CheckAddressOnNic(address string, outgoingNic string, innerChan chan models.L3Connectivity, conCheck connectivityCmd) {
+	ret := models.L3Connectivity{
 		OutgoingNic:     outgoingNic,
 		RemoteIPAddress: address,
 	}
@@ -101,7 +101,7 @@ func (c *connectivity) l3CheckAddressOnNic(address string, outgoingNic string, i
 		innerChan <- ret
 		return
 	}
-	err = parsePingCmd(ret, string(b))
+	err = parsePingCmd(&ret, string(b))
 	if err != nil {
 		log.Error(err)
 		innerChan <- ret
@@ -156,7 +156,7 @@ func (c *connectivity) l3CheckConnectivity(addresses []string, dataCh chan any, 
 
 func (c *connectivity) l3CheckAddress(address string, outgoingNics []string, dataCh chan any, wg *sync.WaitGroup, conCheck connectivityCmd) {
 	defer wg.Done()
-	innerChan := make(chan *models.L3Connectivity)
+	innerChan := make(chan models.L3Connectivity)
 	for _, nic := range outgoingNics {
 		go c.l3CheckAddressOnNic(address, nic, innerChan, conCheck)
 	}
@@ -169,7 +169,7 @@ func (c *connectivity) l3CheckAddress(address string, outgoingNics []string, dat
 		}
 	}
 	if !successful {
-		ret := &models.L3Connectivity{
+		ret := models.L3Connectivity{
 			RemoteIPAddress: address,
 		}
 		dataCh <- ret
@@ -197,7 +197,7 @@ func (c *connectivity) l2CheckAddressOnNic(dstAddr string, dstMAC string, allDst
 
 func analyzeNmap(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd, dryRunEnabled bool) {
 
-	ret := &models.L2Connectivity{
+	ret := models.L2Connectivity{
 		OutgoingNic:     srcNIC,
 		RemoteIPAddress: dstAddr,
 	}
@@ -256,7 +256,7 @@ func (c *connectivity) l2CheckAddress(dstAddr string, dstMAC string, allDstMACs 
 	for numDone := 0; numDone != len(conCheck.getOutgoingNICs()); {
 		iret := <-innerChan
 		switch ret := iret.(type) {
-		case *models.L2Connectivity:
+		case models.L2Connectivity:
 			received = true
 			dataCh <- ret
 		case done:
@@ -264,7 +264,7 @@ func (c *connectivity) l2CheckAddress(dstAddr string, dstMAC string, allDstMACs 
 		}
 	}
 	if !received {
-		dataCh <- &models.L2Connectivity{
+		dataCh <- models.L2Connectivity{
 			RemoteIPAddress: dstAddr,
 		}
 	}
@@ -291,7 +291,7 @@ func (c *connectivity) l2CheckConnectivity(dataCh chan any, conCheck connectivit
 }
 
 func (c *connectivity) l2IPv4Cmd(dstAddr string, dstMAC string, allDstMACs []string, srcNIC string, dataCh chan any, conCheck connectivityCmd) {
-	ret := &models.L2Connectivity{
+	ret := models.L2Connectivity{
 		OutgoingNic:     srcNIC,
 		RemoteIPAddress: dstAddr,
 	}
@@ -302,7 +302,7 @@ func (c *connectivity) l2IPv4Cmd(dstAddr string, dstMAC string, allDstMACs []str
 		return
 	}
 
-	bytes, err := conCheck.command("arping", []string{"-c", "1", "-w", "2", "-I", srcNIC, dstAddr})
+	bytes, err := conCheck.command("arping", []string{"-c", "10", "-w", "5", "-I", srcNIC, dstAddr})
 	if err != nil {
 		log.Errorf("Error while processing 'arping' command: %s", err)
 		dataCh <- ret
@@ -339,11 +339,12 @@ func (c *connectivity) l2IPv4Cmd(dstAddr string, dstMAC string, allDstMACs []str
 		if strings.ToLower(dstMAC) != remoteMAC {
 			log.Infof("Received remote mac %s different then expected mac %s", remoteMAC, dstMAC)
 		}
+
 		dataCh <- ret
 	}
 }
 
-func (c *connectivity) checkHost(conCheck connectivityCmd, outCh chan *models.ConnectivityRemoteHost) {
+func (c *connectivity) checkHost(conCheck connectivityCmd, outCh chan models.ConnectivityRemoteHost) {
 	ret := &models.ConnectivityRemoteHost{
 		HostID:         conCheck.getHost().HostID,
 		L2Connectivity: []*models.L2Connectivity{},
@@ -353,19 +354,31 @@ func (c *connectivity) checkHost(conCheck connectivityCmd, outCh chan *models.Co
 	dataCh := make(chan any)
 	go c.l3CheckConnectivity(addresses, dataCh, conCheck)
 	go c.l2CheckConnectivity(dataCh, conCheck)
+	// We use a map to de-duplicate arping responses from the same mac. They are redundant
+	// because the reason we're reporting more than one line of arping in the first place is to allow
+	// the service to also detect devices in the network that have IP conflict with cluster hosts
+	l2C := make(map[string]models.L2Connectivity)
 	for numDone := 0; numDone != 2; {
 		v := <-dataCh
 		switch value := v.(type) {
-		case *models.L3Connectivity:
-			ret.L3Connectivity = append(ret.L3Connectivity, value)
-		case *models.L2Connectivity:
-			ret.L2Connectivity = append(ret.L2Connectivity, value)
+		case models.L3Connectivity:
+			ret.L3Connectivity = append(ret.L3Connectivity, &value)
+		case models.L2Connectivity:
+			l2C[value.RemoteMac] = value
 		case done:
 			numDone++
 		}
-
 	}
-	outCh <- ret
+	for _, value := range l2C {
+		v := value
+		ret.L2Connectivity = append(ret.L2Connectivity, &v)
+	}
+
+	sort.Slice(ret.L2Connectivity, func(i, j int) bool {
+		return ret.L2Connectivity[i].RemoteMac <= ret.L2Connectivity[j].RemoteMac
+	})
+
+	outCh <- *ret
 }
 
 func canonizeResult(connectivityReport *models.ConnectivityReport) {
@@ -401,14 +414,15 @@ func (c *connectivity) connectivityCheck(_ string, args ...string) (stdout strin
 		return "", err.Error(), -1
 	}
 	nics := getOutgoingNics(c.dryRunConfig, nil)
-	hostChan := make(chan *models.ConnectivityRemoteHost)
+	hostChan := make(chan models.ConnectivityRemoteHost)
 	for _, host := range params {
 		h := hostChecker{outgoingNICS: nics, host: host}
 		go c.checkHost(h, hostChan)
 	}
 	ret := models.ConnectivityReport{RemoteHosts: []*models.ConnectivityRemoteHost{}}
 	for i := 0; i != len(params); i++ {
-		ret.RemoteHosts = append(ret.RemoteHosts, <-hostChan)
+		h := <-hostChan
+		ret.RemoteHosts = append(ret.RemoteHosts, &h)
 	}
 	canonizeResult(&ret)
 	bytes, err := json.Marshal(&ret)

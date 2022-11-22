@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+	"github.com/go-openapi/swag"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -227,28 +229,27 @@ func (s *stepSession) getMountpointSourceDeviceFile() (string, error) {
 	return source, nil
 }
 
-func (s *stepSession) processSingleSession() (int64, string) {
+func (s *stepSession) processSingleSession() (delay time.Duration, exit bool, err error) {
 	s.Logger().Info("Query for next steps")
 	result, err := s.serviceAPI.GetNextSteps(&s.InventorySession)
 	if err != nil {
 		invalidateCache(s.stepCache)
 		switch err.(type) {
 		case *installer.V2GetNextStepsNotFound:
-			s.Logger().WithError(err).Errorf("Infra-env %s was not found in inventory or user is not authorized, going to sleep forever", s.agentConfig.InfraEnvID)
-			return -1, ""
+			err = errors.Wrapf(err, "infra-env %s was not found in inventory or user is not authorized", s.agentConfig.InfraEnvID)
 		case *installer.V2GetNextStepsUnauthorized:
-			s.Logger().WithError(err).Errorf("User is not authenticated to perform the operation, going to sleep forever")
-			return -1, ""
+			err = errors.Wrapf(err, "user is not authenticated to perform the operation")
 		case *installer.V2GetNextStepsForbidden:
-			s.Logger().WithError(err).Errorf("User is forbidden to perform the operation, going to sleep forever")
-			return -1, ""
+			err = errors.Wrapf(err, "user is forbidden to perform the operation")
 		default:
-			s.Logger().Warnf("Could not query next steps: %s", getErrorMessage(err))
+			err = fmt.Errorf("could not query next steps: %s", getErrorMessage(err))
 		}
-		return int64(s.agentConfig.IntervalSecs), ""
+		return
 	}
 	s.handleSteps(result)
-	return result.NextInstructionSeconds, *result.PostStepAction
+	delay = time.Duration(result.NextInstructionSeconds * int64(time.Second))
+	exit = swag.StringValue(result.PostStepAction) == models.StepsPostStepActionExit
+	return
 }
 
 // requiresRestart checks if the agent needs to be restarted after completing this step. Currently
@@ -276,20 +277,33 @@ func (s *stepSession) requiresRestart(reply models.StepReply) bool {
 func ProcessSteps(ctx context.Context, cancel context.CancelFunc, agentConfig *config.AgentConfig, toolRunnerFactory ToolRunnerFactory, wg *sync.WaitGroup, log log.FieldLogger) {
 	defer wg.Done()
 
-	var nextRunIn int64
 	c := newCache()
-	for afterStep := ""; afterStep != models.StepsPostStepActionExit; {
+
+	// We send requests to get next steps in a loop, and the server tells us when to exit and
+	// how long to wait before the next iteration of the loop. We also want to retry each
+	// iteration with an exponential back-off. But the contract of back-off library that we use
+	// is an operation function that returns only an error. We need these `delay` and `exit`
+	// variables to get those extra results from the operation function.
+	var exit bool
+	var delay time.Duration
+	operation := func() error {
+		s := newSession(cancel, agentConfig, toolRunnerFactory, c, log)
+		var err error
+		delay, exit, err = s.processSingleSession()
+		return err
+	}
+	notify := func(err error, delay time.Duration) {
+		log.Errorf("Step processing failed, will try again in %s: %v", delay, err)
+	}
+	for !exit {
+		backOff := backoff.NewExponentialBackOff()
+		err := backoff.RetryNotify(operation, backOff, notify)
+		if err != nil {
+			log.Errorf("Step processing failed, will exit: %v", err)
+		}
 		select {
 		case <-ctx.Done():
-			return
-		default:
-			s := newSession(cancel, agentConfig, toolRunnerFactory, c, log)
-			nextRunIn, afterStep = s.processSingleSession()
-			if nextRunIn == -1 {
-				// sleep forever
-				select {}
-			}
-			time.Sleep(time.Duration(nextRunIn) * time.Second)
+		case <-time.After(delay):
 		}
 	}
 }

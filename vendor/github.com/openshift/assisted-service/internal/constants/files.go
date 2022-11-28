@@ -16,3 +16,6 @@ const InternalAPIClusterSubdomain = "api-int"
 // domain *does* resolve then the validation failed, as it indicates a wildcard configuration that
 // is known to be problematic for OCP
 const DNSWildcardFalseDomainName = "validateNoWildcardDNS"
+
+// Plain http machine config server port
+const InsecureMCSPort = 22624

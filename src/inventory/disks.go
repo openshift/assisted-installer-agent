@@ -182,6 +182,10 @@ func isFCDisk(disk *ghw.Disk) bool {
 	return strings.Contains(disk.BusPath, "-fc-")
 }
 
+func isSoftwareRAID(disk *ghw.Disk) bool {
+	return strings.HasPrefix(disk.Name, "md")
+}
+
 func (d *disks) dmUUIDHasPrefix(disk *ghw.Disk, prefix string) bool {
 	if !isDeviceMapper(disk) {
 		return false
@@ -233,7 +237,7 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
 	}
 
-	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) {
+	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) && !isSoftwareRAID(disk) {
 		notEligibleReasons = append(notEligibleReasons, "Disk has unknown storage controller")
 	}
 
@@ -282,8 +286,7 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 func (d *disks) shouldReturnDisk(disk *block.Disk) bool {
 	return !((strings.HasPrefix(disk.Name, "dm-") && !(d.isMultipath(disk) || d.isLVM(disk))) || // Device mapper devices, except multipath/LVM
 		strings.HasPrefix(disk.Name, "loop") || // Loop devices (see `man loop`)
-		strings.HasPrefix(disk.Name, "zram") || // Default name usually assigned to "swap on ZRAM" block devices
-		strings.HasPrefix(disk.Name, "md")) // Linux multiple-device-driver block devices
+		strings.HasPrefix(disk.Name, "zram")) // Default name usually assigned to "swap on ZRAM" block devices
 }
 
 func (d *disks) getDriveType(disk *block.Disk) models.DriveType {
@@ -298,6 +301,8 @@ func (d *disks) getDriveType(disk *block.Disk) models.DriveType {
 		driveType = models.DriveTypeMultipath
 	} else if d.isLVM(disk) {
 		driveType = models.DriveTypeLVM
+	} else if isSoftwareRAID(disk) {
+		driveType = models.DriveTypeRAID
 	} else if diskString == ghw.DRIVE_TYPE_FDD.String() {
 		driveType = models.DriveTypeFDD
 	} else if diskString == ghw.DRIVE_TYPE_HDD.String() {

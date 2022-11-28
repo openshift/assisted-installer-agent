@@ -205,14 +205,14 @@ func createExpectedSDBModelDisk() *models.Disk {
 	}
 }
 
-/**
+/*
 SDA disk is real disk data from a bare metal machine.
 */
 func createSDADisk() *ghw.Disk {
 	return createDisk("sda", 0, "6141877064533b0020adf3bb03167694", "0x6141877064533b0020adf3bb03167694")
 }
 
-/**
+/*
 SDB disk is real disk data from a bare metal machine.
 */
 func createSDBDisk() *ghw.Disk {
@@ -456,11 +456,10 @@ var _ = Describe("Disks test", func() {
 
 	It("Invalid disks", func() {
 		zramDisk := createDisk("zram0", 4, "6141877064533b0020adf3bc0325d665", "0x6141877064533b0020adf3bc0325d665")
-		mdDisk := createDisk("md-1", 5, "6141877064533b0020adf3bc0325d667", "0x6141877064533b0020adf3bc0325d667")
 		loopDisk := createDisk("loop5", 6, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d668")
 
 		mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
-		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, mdDisk, loopDisk)
+		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, loopDisk)
 
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).Should(HaveLen(2))

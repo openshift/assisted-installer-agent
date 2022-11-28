@@ -350,6 +350,10 @@ func (c *connectivity) checkHost(conCheck connectivityCmd, outCh chan models.Con
 		L2Connectivity: []*models.L2Connectivity{},
 		L3Connectivity: []*models.L3Connectivity{},
 	}
+	l2Key := func(c *models.L2Connectivity) string {
+		return c.RemoteIPAddress + c.RemoteMac
+	}
+
 	addresses := getOutgoingAddresses(conCheck.getHost().Nics)
 	dataCh := make(chan any)
 	go c.l3CheckConnectivity(addresses, dataCh, conCheck)
@@ -364,7 +368,7 @@ func (c *connectivity) checkHost(conCheck connectivityCmd, outCh chan models.Con
 		case models.L3Connectivity:
 			ret.L3Connectivity = append(ret.L3Connectivity, &value)
 		case models.L2Connectivity:
-			l2C[value.RemoteMac] = value
+			l2C[l2Key(&value)] = value
 		case done:
 			numDone++
 		}
@@ -375,7 +379,7 @@ func (c *connectivity) checkHost(conCheck connectivityCmd, outCh chan models.Con
 	}
 
 	sort.Slice(ret.L2Connectivity, func(i, j int) bool {
-		return ret.L2Connectivity[i].RemoteMac <= ret.L2Connectivity[j].RemoteMac
+		return l2Key(ret.L2Connectivity[i]) <= l2Key(ret.L2Connectivity[j])
 	})
 
 	outCh <- *ret

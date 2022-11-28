@@ -387,7 +387,7 @@ var _ = Describe("check host parallel validation", func() {
 		l2Conn               []*models.L2Connectivity
 		l3Conn               []*models.L3Connectivity
 		simulateL2IPConflict bool
-		strictMatchingL2       bool
+		strictMatchingL2     bool
 	}{
 		{
 			name:    "Nominal: IPv4 with 2 addresses",
@@ -426,7 +426,7 @@ var _ = Describe("check host parallel validation", func() {
 				},
 			},
 			simulateL2IPConflict: false,
-			strictMatchingL2: false,
+			strictMatchingL2:     false,
 		},
 		{name: "Nominal: IPv6",
 			success: true,
@@ -451,7 +451,7 @@ var _ = Describe("check host parallel validation", func() {
 				},
 			},
 			simulateL2IPConflict: false,
-			strictMatchingL2: false,
+			strictMatchingL2:     false,
 		},
 		{name: "KO: IPv4 unable to connect via ping or arp",
 			success: false,
@@ -472,7 +472,7 @@ var _ = Describe("check host parallel validation", func() {
 				},
 			},
 			simulateL2IPConflict: false,
-			strictMatchingL2: false,
+			strictMatchingL2:     false,
 		},
 		{name: "KO: IPv6 unable to connect via ping or nmap",
 			success: false,
@@ -492,7 +492,7 @@ var _ = Describe("check host parallel validation", func() {
 				},
 			},
 			simulateL2IPConflict: false,
-			strictMatchingL2: false,
+			strictMatchingL2:     false,
 		},
 		{name: "Should correctly report on L2 IP conflicts",
 			success: true,
@@ -523,7 +523,7 @@ var _ = Describe("check host parallel validation", func() {
 				},
 			},
 			simulateL2IPConflict: true,
-			strictMatchingL2: false,
+			strictMatchingL2:     false,
 		},
 		{name: "Should deduplicate L2 entries and ensure consistent order of L2 entries",
 			success: true,
@@ -544,11 +544,34 @@ var _ = Describe("check host parallel validation", func() {
 						Successful:        true,
 						RemoteMac:         "74:d0:2b:1c:c6:42"},
 				},
-				L3Connectivity: []*models.L3Connectivity{
-				},
+				L3Connectivity: []*models.L3Connectivity{},
 			},
 			simulateL2IPConflict: true,
-			strictMatchingL2: true,
+			strictMatchingL2:     true,
+		},
+		{name: "Dual stack",
+			success: true,
+			nics:    []string{"nic"},
+			hosts: &models.ConnectivityCheckHost{Nics: []*models.ConnectivityCheckNic{
+				{IPAddresses: []string{"192.168.1.1", "fe80::d832:8def:dd51:3527"}, Mac: "74:d0:2b:1c:c6:42"},
+			}},
+			expected: &models.ConnectivityRemoteHost{
+				L2Connectivity: []*models.L2Connectivity{
+					{OutgoingNic: "nic",
+						RemoteIPAddress:   "192.168.1.1",
+						OutgoingIPAddress: "192.168.1.133",
+						Successful:        true,
+						RemoteMac:         "74:d0:2b:1c:c6:42"},
+					{OutgoingNic: "nic",
+						RemoteIPAddress:   "fe80::d832:8def:dd51:3527",
+						OutgoingIPAddress: "",
+						Successful:        true,
+						RemoteMac:         "74:d0:2b:1c:c6:42"},
+				},
+				L3Connectivity: []*models.L3Connectivity{},
+			},
+			simulateL2IPConflict: false,
+			strictMatchingL2:     true,
 		},
 	}
 

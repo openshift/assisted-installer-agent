@@ -17,7 +17,7 @@ import (
 
 const ChronyTimeoutSeconds = 30
 
-//go:generate mockery -name NtpSynchronizerDependencies -inpkg
+//go:generate mockery --name NtpSynchronizerDependencies --inpackage
 type NtpSynchronizerDependencies interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 	LookupHost(host string) (addrs []string, err error)

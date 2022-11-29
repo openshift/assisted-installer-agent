@@ -43,7 +43,7 @@ func disableGHWWarnings() {
 	}
 }
 
-//go:generate mockery -name SerialDiscovery -inpkg
+//go:generate mockery --name SerialDiscovery --inpackage
 type SerialDiscovery interface {
 	Product(opts ...*ghw.WithOption) (*ghw.ProductInfo, error)
 	Baseboard(opts ...*ghw.WithOption) (*ghw.BaseboardInfo, error)

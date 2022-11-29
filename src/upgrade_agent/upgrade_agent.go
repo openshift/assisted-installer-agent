@@ -13,7 +13,7 @@ import (
 // Dependencies represents the the dependencies of the upgrade agent command. It is intended to be
 // used in unit tests, where the implementation will be a mock.
 //
-//go:generate mockery -name Dependencies -inpkg
+//go:generate mockery --name Dependencies --inpackage
 type Dependencies interface {
 	ExecutePrivileged(command string, args ...string) (stdout, stderr string, exitCode int)
 }

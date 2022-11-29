@@ -3,7 +3,7 @@ package tang_connectivity_check
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -83,7 +83,7 @@ func TangRequest(tangServer tang.TangServer) (*models.TangServerResponse, error)
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("HTTP GET failure. Status Code: %v", res.StatusCode)
 	}
-	bytes, err := ioutil.ReadAll(res.Body)
+	bytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "response read failure")
 	}

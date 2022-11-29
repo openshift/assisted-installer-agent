@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name Interface -inpkg
+//go:generate mockery --name Interface --inpackage
 type Interface interface {
 	MTU() int
 	Name() string

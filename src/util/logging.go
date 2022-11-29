@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -50,7 +49,7 @@ func configureLogger(logger *logrus.Logger) {
 }
 
 func setNullWriter(logger *logrus.Logger) {
-	logger.SetOutput(ioutil.Discard)
+	logger.SetOutput(io.Discard)
 }
 
 func formatFilePath(path string) string {

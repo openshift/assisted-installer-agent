@@ -5,7 +5,7 @@ import (
 	"github.com/ssgreg/journald"
 )
 
-//go:generate mockery -name IJournalWriter -inpkg
+//go:generate mockery --name IJournalWriter --inpackage
 type IJournalWriter interface {
 	Send(msg string, p journald.Priority, fields map[string]interface{}) error
 }

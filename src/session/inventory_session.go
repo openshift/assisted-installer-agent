@@ -8,10 +8,10 @@ import (
 	"encoding"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"reflect"
 	"time"
@@ -196,7 +196,7 @@ func readCACertificate(agentConfig *config.AgentConfig) (*x509.CertPool, error) 
 		return nil, nil
 	}
 
-	caData, err := ioutil.ReadFile(agentConfig.CACertificatePath)
+	caData, err := os.ReadFile(agentConfig.CACertificatePath)
 	if err != nil {
 		return nil, err
 	}

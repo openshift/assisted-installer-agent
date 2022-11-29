@@ -614,12 +614,12 @@ var _ = Describe("getOutgoingNics", func() {
 	Context("for hosts with all types of interfaces", func() {
 		BeforeEach(func() {
 			interfaces = []util.Interface{
-				util.NewMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
-				util.NewMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{}, 10, "physical"),
-				util.NewMockInterface(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, nil, 5, "physical"),
-				util.NewMockInterface(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, -1, "bond"),
-				util.NewMockInterface(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, -1, "vlan"),
-				util.NewMockInterface(1400, "ib2", "f8:75:a4:a4:00:fa", net.FlagBroadcast|net.FlagUp, []string{"fe80:39:192:1::1193/64"}, -1, "some-strange-type"),
+				util.NewFilledMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
+				util.NewFilledMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{}, 10, "physical"),
+				util.NewFilledMockInterface(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, nil, 5, "physical"),
+				util.NewFilledMockInterface(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, -1, "bond"),
+				util.NewFilledMockInterface(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, -1, "vlan"),
+				util.NewFilledMockInterface(1400, "ib2", "f8:75:a4:a4:00:fa", net.FlagBroadcast|net.FlagUp, []string{"fe80:39:192:1::1193/64"}, -1, "some-strange-type"),
 			}
 			dependencies.On("Interfaces").Return(interfaces, nil).Once()
 		})

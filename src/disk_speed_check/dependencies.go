@@ -4,7 +4,7 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
-//go:generate mockery -name IDependencies -inpkg
+//go:generate mockery --name IDependencies --inpackage
 type IDependencies interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 }

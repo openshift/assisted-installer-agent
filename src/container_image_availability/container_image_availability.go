@@ -38,7 +38,7 @@ func getDryModeContainerImageAvailability(name string) *models.ContainerImageAva
 	}
 }
 
-//go:generate mockery -name ImageAvailabilityDependencies -inpkg
+//go:generate mockery --name ImageAvailabilityDependencies --inpackage
 type ImageAvailabilityDependencies interface {
 	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
 }

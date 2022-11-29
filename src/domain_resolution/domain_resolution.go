@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name DomainResolutionDependencies -inpkg
+//go:generate mockery --name DomainResolutionDependencies --inpackage
 type DomainResolutionDependencies interface {
 	Resolve(domain string) (ips []net.IP, err error)
 }

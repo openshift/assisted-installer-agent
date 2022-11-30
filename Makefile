@@ -29,7 +29,6 @@ vendor-diff:
 
 ci-lint: vendor-diff
 	${ROOT_DIR}/hack/sync-dockerfiles.sh
-	${ROOT_DIR}/hack/check-commits.sh
 
 lint: ci-lint
 	golangci-lint run -v --fix

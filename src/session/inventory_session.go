@@ -153,14 +153,17 @@ func createBmInventoryClient(agentConfig *config.AgentConfig, inventoryUrl strin
 	delayLog := func(delayFn rehttp.DelayFn) rehttp.DelayFn {
 		return func(attempt rehttp.Attempt) time.Duration {
 			delay := delayFn(attempt)
-			logrus.WithFields(logrus.Fields{
+			fields := logrus.Fields{
 				"method":  attempt.Request.Method,
 				"url":     attempt.Request.URL,
-				"status":  attempt.Response.StatusCode,
 				"error":   attempt.Error,
 				"attempt": fmt.Sprintf("%d of %d", attempt.Index+1, retries+1),
 				"delay":   delay,
-			}).Info("Request will be retried")
+			}
+			if attempt.Response != nil {
+				fields["status"] = attempt.Response.StatusCode
+			}
+			logrus.WithFields(fields).Info("Request will be retried")
 			return delay
 		}
 	}

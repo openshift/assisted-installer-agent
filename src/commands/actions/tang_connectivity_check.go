@@ -4,6 +4,7 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/tang_connectivity_check"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 type tangConnectivityCheck struct {
@@ -20,7 +21,8 @@ func (a *tangConnectivityCheck) Validate() error {
 }
 
 func (a *tangConnectivityCheck) Run() (stdout, stderr string, exitCode int) {
-	return tang_connectivity_check.CheckTangConnectivity(a.args[0], logrus.StandardLogger())
+	client := &http.Client{}
+	return tang_connectivity_check.CheckTangConnectivity(a.args[0], logrus.StandardLogger(), client)
 }
 
 func (a *tangConnectivityCheck) Command() string {

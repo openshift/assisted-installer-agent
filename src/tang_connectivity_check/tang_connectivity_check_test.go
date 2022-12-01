@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/coreos/ignition/v2/config/v3_2/types"
@@ -11,12 +12,28 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/models"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+type ClientMock struct {}
+
+func (c *ClientMock) Do(req *http.Request) (*http.Response, error) {
+	if strings.Contains(req.URL.String(), "127.0.0.1") {
+		client := &http.Client{}
+		return client.Do(req)
+	}
+
+	if strings.Contains(req.URL.String(), "www.example.com") {
+		return &http.Response{StatusCode: 404}, nil
+	}
+	return nil, errors.New("test client error, unexpected URL")
+}
 
 var _ = Describe("Tang connectivity check test", func() {
 	var log logrus.FieldLogger
 	var srv *httptest.Server
+	testClient := &ClientMock{}
 
 	BeforeEach(func() {
 		log = logrus.New()
@@ -31,7 +48,7 @@ var _ = Describe("Tang connectivity check test", func() {
 			srv = serverMock(tangServerMock)
 			tServers := []types.Tang{{URL: srv.URL, Thumbprint: swag.String("fake_thumbprint1")}}
 
-			stdout, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			stdout, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 			Expect(exitCode).Should(Equal(0))
 			Expect(stderr).Should(BeEmpty())
 			checkTangResponse(stdout, true)
@@ -46,7 +63,7 @@ var _ = Describe("Tang connectivity check test", func() {
 				{URL: srv2.URL, Thumbprint: swag.String("fake_thumbprint2")},
 			}
 
-			stdout, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			stdout, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 
 			Expect(exitCode).Should(Equal(0))
 			Expect(stderr).Should(BeEmpty())
@@ -57,7 +74,7 @@ var _ = Describe("Tang connectivity check test", func() {
 			srv = serverMock(tangServerMock)
 			tServers := []types.Tang{{URL: srv.URL, Thumbprint: swag.String("")}}
 
-			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 			Expect(exitCode).Should(Equal(-1))
 			Expect(stderr).Should(ContainSubstring("Tang thumbprint isn't set for server"))
 		})
@@ -66,7 +83,7 @@ var _ = Describe("Tang connectivity check test", func() {
 			srv = serverMock(tangServerMock)
 			tServers := []types.Tang{{URL: "", Thumbprint: swag.String("fake_thumbprint1")}}
 
-			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 			Expect(exitCode).Should(Equal(-1))
 			Expect(stderr).Should(ContainSubstring("empty url"))
 		})
@@ -75,7 +92,7 @@ var _ = Describe("Tang connectivity check test", func() {
 			srv = serverMock(tangServerMock)
 			tServers := []types.Tang{{URL: "foo", Thumbprint: swag.String("fake_thumbprint1")}}
 
-			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 			Expect(exitCode).Should(Equal(-1))
 			Expect(stderr).Should(ContainSubstring("invalid URI for request"))
 		})
@@ -84,7 +101,7 @@ var _ = Describe("Tang connectivity check test", func() {
 			srv = serverMock(tangServerMock)
 			tServers := []types.Tang{{URL: "http://www.example.com", Thumbprint: swag.String("fake_thumbprint1")}}
 
-			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 			Expect(exitCode).Should(Equal(-1))
 			Expect(stderr).Should(ContainSubstring("HTTP GET failure. Status Code: 404"))
 		})
@@ -96,7 +113,7 @@ var _ = Describe("Tang connectivity check test", func() {
 				{URL: "http://www.example.com", Thumbprint: swag.String("fake_thumbprint2")},
 			}
 
-			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 			Expect(exitCode).Should(Equal(-1))
 			Expect(stderr).Should(ContainSubstring("HTTP GET failure. Status Code: 404"))
 		})
@@ -108,14 +125,14 @@ var _ = Describe("Tang connectivity check test", func() {
 				{URL: "foo", Thumbprint: swag.String("fake_thumbprint2")},
 			}
 
-			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log)
+			_, stderr, exitCode := CheckTangConnectivity(getRequestStr(tServers), log, testClient)
 			Expect(exitCode).Should(Equal(-1))
 			Expect(stderr).Should(ContainSubstring("invalid URI for request"))
 		})
 
 		It("invalid request format", func() {
 			srv = serverMock(tangServerMock)
-			_, stderr, exitCode := CheckTangConnectivity("some invalid request", log)
+			_, stderr, exitCode := CheckTangConnectivity("some invalid request", log, testClient)
 			Expect(exitCode).Should(Equal(-1))
 			Expect(stderr).Should(ContainSubstring("Error unmarshaling TangConnectivityRequest"))
 		})

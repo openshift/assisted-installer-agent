@@ -16,7 +16,11 @@ import (
 
 const TangKeysPath = "/adv/"
 
-func CheckTangConnectivity(tangServersDetails string, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+func CheckTangConnectivity(tangServersDetails string, log logrus.FieldLogger, client HttpClient) (stdout string, stderr string, exitCode int) {
 	var (
 		multiErr                     error
 		responses                    []*models.TangServerResponse
@@ -55,7 +59,7 @@ func CheckTangConnectivity(tangServersDetails string, log logrus.FieldLogger) (s
 			continue
 		}
 		// Attempt a request
-		res, err1 := TangRequest(ts)
+		res, err1 := TangRequest(ts, client)
 		if err1 != nil {
 			multiErr = multierror.Append(multiErr, err1)
 		} else {
@@ -70,8 +74,7 @@ func CheckTangConnectivity(tangServersDetails string, log logrus.FieldLogger) (s
 	return createResponse(true, responses), "", 0
 }
 
-func TangRequest(tangServer tang.TangServer) (*models.TangServerResponse, error) {
-	client := &http.Client{}
+func TangRequest(tangServer tang.TangServer, client HttpClient) (*models.TangServerResponse, error) {
 
 	tangURL := fmt.Sprintf("%s%s%s", tangServer.Url, TangKeysPath, tangServer.Thumbprint)
 	req, _ := http.NewRequest("GET", tangURL, nil)

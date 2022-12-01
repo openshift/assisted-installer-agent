@@ -76,6 +76,7 @@ var _ = Describe("Interfaces", func() {
 			util.NewFilledMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
 			util.NewFilledMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, 10, "physical"),
 			util.NewFilledMockInterface(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/126", "de90::d832:8def:dd51:3529/126"}, 5, ""),
+			util.NewFilledMockInterface(1500, "eth3", "f8:75:a4:a4:00:f0", net.FlagBroadcast|net.FlagUp, []string{"169.254.10.10/16"}, 100, "physical"),
 			util.NewFilledMockInterface(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, -1, "bond"),
 			util.NewFilledMockInterface(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, -1, "vlan"),
 		}
@@ -92,6 +93,10 @@ var _ = Describe("Interfaces", func() {
 		dependencies.On("ReadFile", "/sys/class/net/eth2/carrier").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth2/device/device").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth2/device/vendor").Return([]byte("my-vendor2"), nil).Once()
+		dependencies.On("Execute", "biosdevname", "-i", "eth3").Return("em5", "", 0).Once()
+		dependencies.On("ReadFile", "/sys/class/net/eth3/carrier").Return(nil, errors.New("Blah")).Once()
+		dependencies.On("ReadFile", "/sys/class/net/eth3/device/device").Return(nil, errors.New("Blah")).Once()
+		dependencies.On("ReadFile", "/sys/class/net/eth3/device/vendor").Return([]byte("my-vendor2"), nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "bond0").Return("bond0", "", 0).Once()
 		dependencies.On("ReadFile", "/sys/class/net/bond0/carrier").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/bond0/device/device").Return(nil, errors.New("Blah")).Once()
@@ -108,7 +113,7 @@ var _ = Describe("Interfaces", func() {
 			},
 		}, nil)
 		ret := GetInterfaces(dependencies)
-		Expect(len(ret)).To(Equal(5))
+		Expect(len(ret)).To(Equal(6))
 		Expect(ret).To(Equal([]*models.Interface{
 			{
 				Biosdevname:   "em2",
@@ -153,6 +158,21 @@ var _ = Describe("Interfaces", func() {
 				Product:       "",
 				SpeedMbps:     5,
 				Type:          "",
+				Vendor:        "my-vendor2",
+			},
+			{
+				Biosdevname:   "em5",
+				ClientID:      "",
+				Flags:         []string{"up", "broadcast"},
+				HasCarrier:    false,
+				IPV4Addresses: []string{},
+				IPV6Addresses: []string{},
+				MacAddress:    "f8:75:a4:a4:00:f0",
+				Mtu:           1500,
+				Name:          "eth3",
+				Product:       "",
+				SpeedMbps:     100,
+				Type:          "physical",
 				Vendor:        "my-vendor2",
 			},
 			{

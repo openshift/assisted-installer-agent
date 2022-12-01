@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const ipv4LocalLinkCIDR = "169.254.0.0/16"
 const ipv6LocalLinkCIDR = "fe80::/10"
 
 type interfaces struct {
@@ -115,7 +116,9 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 				continue
 			}
 			if isIPv4 {
-				rec.IPV4Addresses = append(rec.IPV4Addresses, addrStr)
+				if !ipWithCidrInCidr(addrStr, ipv4LocalLinkCIDR) {
+					rec.IPV4Addresses = append(rec.IPV4Addresses, addrStr)
+				}
 			} else if !ipWithCidrInCidr(addrStr, ipv6LocalLinkCIDR) {
 				rec.IPV6Addresses = append(rec.IPV6Addresses, addrStr)
 			}

@@ -300,9 +300,12 @@ func ProcessSteps(ctx context.Context, cancel context.CancelFunc, agentConfig *c
 		err := backoff.RetryNotify(operation, backOff, notify)
 		if err != nil {
 			log.Errorf("Step processing failed, will exit: %v", err)
+			return
 		}
 		select {
 		case <-ctx.Done():
+			log.Infof("Step processing has been cancelled")
+			return
 		case <-time.After(delay):
 		}
 	}

@@ -79,7 +79,10 @@ var _ = Describe("Step processor", func() {
 		Entry("Unavailable (503)", http.StatusServiceUnavailable),
 	)
 
-	It("Increases delay after retry", func() {
+	// This test is disabled because it measures times between iterations of the retry loop. In
+	// environments with low load that works fine, but in environments with high load, like CI
+	// environments, it tends to fail.
+	XIt("Increases delay after retry", func() {
 		// Configure the server so that the first three times it responds with a 503 error
 		// and the fourth time it responds with the exit command, while checking that the
 		// delay is increased for each attempt.

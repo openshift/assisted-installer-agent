@@ -44,7 +44,7 @@ func (a *inventory) Args() []string {
 	mtabMount := fmt.Sprintf("%s:/host/etc/mtab:ro", mtabPath)
 
 	podmanRunCmd := strings.Join([]string{
-		podman, "run", "--privileged", "--net=host", "--rm", "--quiet",
+		podman, "run", "--privileged", "--pid=host", "--net=host", "--rm", "--quiet",
 		"-v", "/var/log:/var/log",
 		"-v", "/run/udev:/run/udev",
 		"-v", "/dev/disk:/dev/disk",

@@ -32,6 +32,7 @@ var _ = Describe("System vendor test", func() {
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
 
 		ret := GetVendor(dependencies)
 		Expect(ret).To(Equal(&models.SystemVendor{
@@ -40,27 +41,41 @@ var _ = Describe("System vendor test", func() {
 			Manufacturer: "A Vendor",
 		}))
 	})
+	It("Bare metal virtualization detection", func() {
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Name:         "A Name",
+			SerialNumber: "A Serial Number",
+			Vendor:       "A Vendor",
+		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
+		systemVendor := GetVendor(dependencies)
+		Expect(systemVendor.Virtual).ShouldNot(BeTrue())
+	})
 	It("Virtual machine detection", func() {
-		for _, test := range []struct {
-			Product string
-			IsVm    bool
-		}{
-			{"KVM", true},
-			{"VirtualBox ()", true},
-			{"VMware Virtual Platform ()", true},
-			{"Virtual Machine", true},
-			{"AHV", true},
-			{"HVM domU", true},
-			{"20T1S39D3N (LENOVO_MT_20T1_BU_Think_FM_ThinkPad T14s Gen 1)", false},
-			{"oVirt", true},
-		} {
-			Expect(isVirtual(test.Product)).Should(Equal(test.IsVm))
-		}
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Name:         "A Name",
+			SerialNumber: "A Serial Number",
+			Vendor:       "A Vendor",
+		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("anyvirt", "", 0).Once()
+		systemVendor := GetVendor(dependencies)
+		Expect(systemVendor.Virtual).Should(BeTrue())
+	})
+	It("Virtual machine error on detection", func() {
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Name:         "A Name",
+			SerialNumber: "A Serial Number",
+			Vendor:       "A Vendor",
+		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("", "an error", 1).Once()
+		systemVendor := GetVendor(dependencies)
+		Expect(systemVendor.Virtual).ShouldNot(BeTrue())
 	})
 	It("oVirt product detection", func() {
 		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
 			Family: "oVirt",
 		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("ovirt", "", 0).Once()
 
 		ret := GetVendor(dependencies)
 		Expect(ret).To(Equal(&models.SystemVendor{

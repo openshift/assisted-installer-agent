@@ -180,5 +180,23 @@ var _ = Describe("Hostname processing", func() {
 			},
 			"71-a0-a4-6f-be-c8",
 		),
+		Entry(
+			"Returns inventory hostname if there is no usable NIC",
+			"localhost",
+			[]*models.Interface{
+				{
+					Name:          "eth0",
+					Type:          "virtual",
+					MacAddress:    "42:5a:90:c8:24:dc",
+					IPV4Addresses: []string{"192.168.0.2/24"},
+				},
+				{
+					Name:       "eth1",
+					Type:       "physical",
+					MacAddress: "71:A0:A4:6F:BE:C8",
+				},
+			},
+			"localhost",
+		),
 	)
 })

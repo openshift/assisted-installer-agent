@@ -96,6 +96,10 @@ func calculateHostname(inventory *models.Inventory) (result string, err error) {
 	if err != nil {
 		return
 	}
+	if nic == nil {
+		result = inventory.Hostname
+		return
+	}
 	result = strings.ToLower(strings.ReplaceAll(nic.MacAddress, ":", "-"))
 	return
 }

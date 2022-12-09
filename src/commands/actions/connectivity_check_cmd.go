@@ -30,5 +30,5 @@ func (a *connectivityCheck) Args() []string {
 }
 
 func (a *connectivityCheck) Run() (stdout, stderr string, exitCode int) {
-	return connectivity_check.ConnectivityCheck(&a.agentConfig.DryRunConfig, "", a.args...)
+	return connectivity_check.ConnectivityCheck(&a.agentConfig.DryRunConfig, a.args...)
 }

@@ -89,7 +89,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
-	github.com/itchyny/timefmt-go v0.1.4 // indirect
+	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -163,7 +163,7 @@ require (
 )
 
 require (
-	github.com/itchyny/gojq v0.12.9
+	github.com/itchyny/gojq v0.12.11
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	golang.org/x/text v0.5.0 // indirect
 )

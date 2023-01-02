@@ -27,7 +27,7 @@ require (
 	github.com/spf13/afero v1.9.3
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.8.1
-	github.com/thoas/go-funk v0.9.2
+	github.com/thoas/go-funk v0.9.3
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/sys v0.3.0

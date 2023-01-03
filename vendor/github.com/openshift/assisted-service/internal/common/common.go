@@ -11,6 +11,7 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	yamlpatch "github.com/krishicks/yaml-patch"
 	"github.com/openshift/assisted-service/models"
 	"github.com/thoas/go-funk"
 	"gorm.io/gorm"
@@ -22,9 +23,10 @@ const (
 	MinMasterHostsNeededForInstallation    = 3
 	AllowedNumberOfMasterHostsInNoneHaMode = 1
 	AllowedNumberOfWorkersInNoneHaMode     = 0
-	IllegalWorkerHostsCount                = 1
 
 	HostCACertPath = "/etc/assisted-service/service-ca-cert.crt"
+
+	AdditionalTrustBundlePath = "/etc/pki/ca-trust/source/anchors/assisted-infraenv-additional-trust-bundle.pem"
 
 	consoleUrlPrefix = "https://console-openshift-console.apps"
 
@@ -43,6 +45,8 @@ const (
 	X86CPUArchitecture     = "x86_64"
 	DefaultCPUArchitecture = X86CPUArchitecture
 	ARM64CPUArchitecture   = "arm64"
+	// rchos is sending aarch64 and not arm as arm64 arch
+	AARCH64CPUArchitecture = "aarch64"
 	PowerCPUArchitecture   = "ppc64le"
 	MultiCPUArchitecture   = "multi"
 )
@@ -415,4 +419,18 @@ func GetAPIHostname(c *Cluster) string {
 	// connect to the API directly. The UI even has a special dialog to help users
 	// do that.
 	return swag.StringValue(c.APIVipDNSName)
+}
+
+func ApplyYamlPatch(src []byte, ops []byte) ([]byte, error) {
+	patch, err := yamlpatch.DecodePatch(ops)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	patched, err := patch.Apply(src)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return patched, nil
 }

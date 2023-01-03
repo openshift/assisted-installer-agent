@@ -516,18 +516,82 @@ func init() {
         }
       }
     },
-    "/v2/clusters/{cluster_id}/actions/allow-add-workers": {
+    "/v2/clusters/{cluster_id}/actions/allow-add-hosts": {
       "post": {
-        "description": "Transforming cluster to day2 and allowing adding hosts",
+        "description": "Transforms installed cluster to a state which allows adding hosts.",
         "tags": [
           "installer"
         ],
-        "operationId": "TransformClusterToDay2",
+        "operationId": "TransformClusterToAddingHosts",
         "parameters": [
           {
             "type": "string",
             "format": "uuid",
-            "description": "The cluster to transform to day2 and to allow adding hosts by this.",
+            "description": "The cluster to transform.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/cluster"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/v2/clusters/{cluster_id}/actions/allow-add-workers": {
+      "post": {
+        "description": "Deprecated, maintained for legacy purposes. Does the same thing as allow-add-hosts. Use allow-add-hosts instead.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "TransformClusterToDay2",
+        "deprecated": true,
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster to transform.",
             "name": "cluster_id",
             "in": "path",
             "required": true
@@ -2982,6 +3046,15 @@ func init() {
           },
           {
             "agentAuth": []
+          },
+          {
+            "urlAuth": []
+          },
+          {
+            "imageAuth": []
+          },
+          {
+            "imageURLAuth": []
           }
         ],
         "description": "Retrieves the details of the infra-env.",
@@ -3240,7 +3313,8 @@ func init() {
           {
             "enum": [
               "discovery.ign",
-              "ipxe-script"
+              "ipxe-script",
+              "static-network-config"
             ],
             "type": "string",
             "description": "The file to be downloaded.",
@@ -3263,6 +3337,16 @@ func init() {
             "type": "string",
             "description": "Specify the script type to be served for iPXE.",
             "name": "ipxe_script_type",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "full-iso",
+              "minimal-iso"
+            ],
+            "type": "string",
+            "description": "Overrides the ISO type for the disovery ignition, either 'full-iso' or 'minimal-iso'.",
+            "name": "discovery_iso_type",
             "in": "query"
           }
         ],
@@ -5194,6 +5278,26 @@ func init() {
     }
   },
   "definitions": {
+    "api_vip": {
+      "description": "The virtual IP used to reach the OpenShift cluster's API.",
+      "type": "object",
+      "properties": {
+        "cluster_id": {
+          "description": "The cluster that this VIP is associated with.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primaryKey\""
+        },
+        "ip": {
+          "description": "The IP address.",
+          "$ref": "#/definitions/ip"
+        },
+        "verification": {
+          "description": "API VIP verification result.",
+          "$ref": "#/definitions/vip_verification"
+        }
+      }
+    },
     "api_vip_connectivity_request": {
       "type": "object",
       "required": [
@@ -5285,13 +5389,22 @@ func init() {
           "format": "uuid"
         },
         "api_vip": {
-          "description": "The virtual IP used to reach the OpenShift cluster's API.",
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
         },
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
           "type": "string",
+          "x-nullable": true
+        },
+        "api_vips": {
+          "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/api_vip"
+          },
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
           "x-nullable": true
         },
         "base_dns_domain": {
@@ -5313,10 +5426,10 @@ func init() {
           "description": "Cluster networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "connectivity_majority_groups": {
           "description": "Json formatted string containing the majority groups for connectivity checks.",
@@ -5370,7 +5483,6 @@ func init() {
         },
         "disk_encryption": {
           "description": "Information regarding hosts' installation disks encryption.",
-          "type": "object",
           "$ref": "#/definitions/disk-encryption"
         },
         "email_domain": {
@@ -5402,13 +5514,13 @@ func init() {
           "items": {
             "$ref": "#/definitions/host_network"
           },
-          "x-go-custom-tag": "gorm:\"-\""
+          "x-go-custom-tag": "gorm:\"-\"",
+          "x-nullable": true
         },
         "hosts": {
           "description": "Hosts that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/host"
           },
           "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
@@ -5444,21 +5556,29 @@ func init() {
         },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
-          "type": "object",
           "$ref": "#/definitions/ignition-endpoint"
         },
         "image_info": {
           "$ref": "#/definitions/image_info"
         },
         "imported": {
-          "description": "Indicates whether this cluster is an imported day-2 cluster or a\nregular cluster. Clusters are considered imported when they are\ncreated via the ../clusters/import endpoint. Day-2 clusters converted\nfrom day-1 clusters by kube-api controllers or the\n../clusters/\u003ccluster_id\u003e/actions/allow-add-workers endpoint are not\nconsidered imported. Imported clusters usually lack a lot of\ninformation and are filled with default values that don't necessarily\nreflect the actual cluster they represent",
+          "description": "Indicates whether this cluster is an imported day-2 cluster or a\nregular cluster. Clusters are considered imported when they are\ncreated via the ../clusters/import endpoint. Day-2 clusters converted\nfrom day-1 clusters by kube-api controllers or the\n../clusters/\u003ccluster_id\u003e/actions/allow-add-hosts endpoint are not\nconsidered imported. Imported clusters usually lack a lot of\ninformation and are filled with default values that don't necessarily\nreflect the actual cluster they represent",
           "type": "boolean",
           "default": false
         },
         "ingress_vip": {
-          "description": "The virtual IP used for cluster ingress traffic.",
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
+        },
+        "ingress_vips": {
+          "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ingress_vip"
+          },
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "install_completed_at": {
           "description": "The time that this cluster completed installation.",
@@ -5477,6 +5597,11 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "ip_collisions": {
+          "description": "Json formatted string containing ip collisions detected in the cluster.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
         },
         "kind": {
           "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object,\n'AddHostsCluster' for cluster that add hosts to existing OCP cluster,\n",
@@ -5499,16 +5624,15 @@ func init() {
           "description": "Machine networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/machine_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "monitored_operators": {
           "description": "Operators that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/monitored-operator"
           },
           "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
@@ -5582,10 +5706,10 @@ func init() {
           "description": "Service networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
@@ -5678,9 +5802,16 @@ func init() {
           "x-nullable": true
         },
         "api_vip": {
-          "description": "The virtual IP used to reach the OpenShift cluster's API.",
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$"
+        },
+        "api_vips": {
+          "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/api_vip"
+          }
         },
         "base_dns_domain": {
           "description": "Base domain of the cluster. All DNS records must be sub-domains of this base and include the cluster name.",
@@ -5703,7 +5834,6 @@ func init() {
           "description": "Cluster networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
           "x-nullable": true
@@ -5716,7 +5846,6 @@ func init() {
         },
         "disk_encryption": {
           "description": "Installation disks encryption mode and host roles to be applied.",
-          "type": "object",
           "$ref": "#/definitions/disk-encryption"
         },
         "high_availability_mode": {
@@ -5751,19 +5880,24 @@ func init() {
         },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
-          "type": "object",
           "$ref": "#/definitions/ignition-endpoint"
         },
         "ingress_vip": {
-          "description": "The virtual IP used for cluster ingress traffic.",
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
+        },
+        "ingress_vips": {
+          "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ingress_vip"
+          }
         },
         "machine_networks": {
           "description": "Machine networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/machine_network"
           },
           "x-nullable": true
@@ -5777,11 +5911,11 @@ func init() {
         "network_type": {
           "description": "The desired network type used.",
           "type": "string",
-          "default": "OpenShiftSDN",
           "enum": [
             "OpenShiftSDN",
             "OVNKubernetes"
-          ]
+          ],
+          "x-nullable": true
         },
         "no_proxy": {
           "description": "An \"*\" or a comma-separated list of destination domain names, domains, IP addresses, or other network CIDRs to exclude from proxying.",
@@ -5804,7 +5938,6 @@ func init() {
           "type": "string"
         },
         "platform": {
-          "type": "object",
           "x-nullable": true,
           "$ref": "#/definitions/platform"
         },
@@ -5827,7 +5960,6 @@ func init() {
           "description": "Service networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           },
           "x-nullable": true
@@ -5957,10 +6089,10 @@ func init() {
         "networks-same-address-families",
         "network-prefix-valid",
         "machine-cidr-equals-to-calculated-cidr",
-        "api-vip-defined",
-        "api-vip-valid",
-        "ingress-vip-defined",
-        "ingress-vip-valid",
+        "api-vips-defined",
+        "api-vips-valid",
+        "ingress-vips-defined",
+        "ingress-vips-valid",
         "all-hosts-are-ready-to-install",
         "sufficient-masters-count",
         "dns-domain-defined",
@@ -5989,14 +6121,12 @@ func init() {
         "cluster_networks_dualstack": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           }
         },
         "cluster_networks_ipv4": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           }
         },
@@ -6021,14 +6151,12 @@ func init() {
         "service_networks_dualstack": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           }
         },
         "service_networks_ipv4": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           }
         }
@@ -6770,12 +6898,12 @@ func init() {
       "properties": {
         "features": {
           "type": "array",
-          "required": [
-            "feature_id",
-            "support_level"
-          ],
           "items": {
             "type": "object",
+            "required": [
+              "feature_id",
+              "support_level"
+            ],
             "properties": {
               "feature_id": {
                 "description": "The ID of the feature",
@@ -6798,7 +6926,13 @@ func init() {
                   "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
                   "ARM64_ARCHITECTURE",
                   "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING",
-                  "SINGLE_NODE_EXPANSION"
+                  "SINGLE_NODE_EXPANSION",
+                  "LVM",
+                  "DUAL_STACK_NETWORKING",
+                  "MULTIARCH_RELEASE_IMAGE",
+                  "NUTANIX_INTEGRATION",
+                  "DUAL_STACK_VIPS",
+                  "USER_MANAGED_NETWORKING_WITH_MULTI_NODE"
                 ]
               },
               "support_level": {
@@ -7032,7 +7166,7 @@ func init() {
         },
         "logs_collected_at": {
           "type": "string",
-          "format": "datetime",
+          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "logs_info": {
@@ -7041,7 +7175,7 @@ func init() {
         },
         "logs_started_at": {
           "type": "string",
-          "format": "datetime",
+          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "machine_config_pool_name": {
@@ -7074,7 +7208,8 @@ func init() {
           "items": {
             "$ref": "#/definitions/host-stage"
           },
-          "x-go-custom-tag": "gorm:\"-\""
+          "x-go-custom-tag": "gorm:\"-\"",
+          "x-nullable": true
         },
         "registered_at": {
           "description": "The last time the host's agent tried to register in the service.",
@@ -7383,6 +7518,7 @@ func init() {
         "belongs-to-majority-group",
         "valid-platform-network-settings",
         "ntp-synced",
+        "time-synced-between-host-and-service",
         "container-images-available",
         "lso-requirements-satisfied",
         "ocs-requirements-satisfied",
@@ -7404,7 +7540,7 @@ func init() {
         "compatible-agent",
         "no-skip-installation-disk",
         "no-skip-missing-disk",
-        "service-has-sufficient-spoke-kube-api-access"
+        "no-ip-collisions-in-network"
       ]
     },
     "host_network": {
@@ -7597,6 +7733,11 @@ func init() {
           "description": "A comma-separated list of NTP sources (name or IP) going to be added to all the hosts.",
           "type": "string"
         },
+        "additional_trust_bundle": {
+          "description": "PEM-encoded X.509 certificate bundle. Hosts discovered by this\ninfra-env will trust the certificates in this bundle. Clusters formed\nfrom the hosts discovered by this infra-env will also trust the\ncertificates in this bundle.",
+          "type": "string",
+          "x-nullable": false
+        },
         "cluster_id": {
           "description": "If set, all hosts that register will be associated with the specified cluster.",
           "type": "string",
@@ -7651,6 +7792,12 @@ func init() {
         "ignition_config_override": {
           "description": "Json formatted string containing the user overrides for the initial ignition config.",
           "type": "string"
+        },
+        "kernel_arguments": {
+          "description": "JSON formatted string array representing the discovery image kernel arguments.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\"",
+          "x-nullable": true
         },
         "kind": {
           "description": "Indicates the type of this object.",
@@ -7723,6 +7870,11 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "additional_trust_bundle": {
+          "description": "PEM-encoded X.509 certificate bundle. Hosts discovered by this\ninfra-env will trust the certificates in this bundle. Clusters formed\nfrom the hosts discovered by this infra-env will also trust the\ncertificates in this bundle.",
+          "type": "string",
+          "x-nullable": false
+        },
         "cluster_id": {
           "description": "If set, all hosts that register will be associated with the specified cluster.",
           "type": "string",
@@ -7741,6 +7893,9 @@ func init() {
         },
         "image_type": {
           "$ref": "#/definitions/image_type"
+        },
+        "kernel_arguments": {
+          "$ref": "#/definitions/kernel_arguments"
         },
         "name": {
           "description": "Name of the infra-env.",
@@ -7784,12 +7939,20 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "additional_trust_bundle": {
+          "description": "Allows users to change the additional_trust_bundle infra-env field",
+          "type": "string",
+          "x-nullable": true
+        },
         "ignition_config_override": {
           "description": "JSON formatted string containing the user overrides for the initial ignition config.",
           "type": "string"
         },
         "image_type": {
           "$ref": "#/definitions/image_type"
+        },
+        "kernel_arguments": {
+          "$ref": "#/definitions/kernel_arguments"
         },
         "proxy": {
           "$ref": "#/definitions/proxy"
@@ -7833,6 +7996,26 @@ func init() {
     },
     "ingress-cert-params": {
       "type": "string"
+    },
+    "ingress_vip": {
+      "description": "The virtual IP used for cluster ingress traffic.",
+      "type": "object",
+      "properties": {
+        "cluster_id": {
+          "description": "The cluster that this VIP is associated with.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primaryKey\""
+        },
+        "ip": {
+          "description": "The IP address.",
+          "$ref": "#/definitions/ip"
+        },
+        "verification": {
+          "description": "Ingress VIP verification result.",
+          "$ref": "#/definitions/vip_verification"
+        }
+      }
     },
     "install_cmd_request": {
       "type": "object",
@@ -8073,6 +8256,39 @@ func init() {
           "type": "integer"
         }
       }
+    },
+    "ip": {
+      "type": "string",
+      "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+      "x-go-custom-tag": "gorm:\"primaryKey\""
+    },
+    "kernel_argument": {
+      "description": "pair of [operation, argument] specifying the argument and what operation should be applied on it.",
+      "type": "object",
+      "properties": {
+        "operation": {
+          "description": "The operation to apply on the kernel argument.",
+          "type": "string",
+          "enum": [
+            "append",
+            "replace",
+            "delete"
+          ]
+        },
+        "value": {
+          "description": "Kernel argument can have the form \u003cparameter\u003e or \u003cparameter\u003e=\u003cvalue\u003e. The following examples should\nbe supported:\nrd.net.timeout.carrier=60\nisolcpus=1,2,10-20,100-2000:2/25\nquiet\nThe parsing by the command line parser in linux kernel is much looser and this pattern follows it.\n",
+          "type": "string",
+          "pattern": "^(?:(?:[^ \\t\\n\\r\"]+)|(?:\"[^\"]*\"))+$"
+        }
+      }
+    },
+    "kernel_arguments": {
+      "description": "List of kernel arugment objects that define the operations and values to be applied.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/kernel_argument"
+      },
+      "x-omitempty": false
     },
     "l2-connectivity": {
       "type": "object",
@@ -8616,8 +8832,9 @@ func init() {
           "x-go-custom-tag": "gorm:\"default:'x86_64'\""
         },
         "openshift_version": {
-          "description": "Version of the OpenShift cluster.",
-          "type": "string"
+          "description": "Version of the operating system image",
+          "type": "string",
+          "example": "4.12"
         },
         "url": {
           "description": "The base OS image used for the discovery iso.",
@@ -8652,8 +8869,8 @@ func init() {
       "type": "string",
       "enum": [
         "baremetal",
+        "nutanix",
         "vsphere",
-        "ovirt",
         "none"
       ]
     },
@@ -8891,7 +9108,8 @@ func init() {
         "next-step-runner",
         "upgrade-agent",
         "download-boot-artifacts",
-        "reboot-for-reclaim"
+        "reboot-for-reclaim",
+        "verify-vips"
       ]
     },
     "steps": {
@@ -9057,7 +9275,7 @@ func init() {
           "x-nullable": true
         },
         "api_vip": {
-          "description": "The virtual IP used to reach the OpenShift cluster's API.",
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
           "x-nullable": true
@@ -9065,6 +9283,14 @@ func init() {
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
           "type": "string",
+          "x-nullable": true
+        },
+        "api_vips": {
+          "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/api_vip"
+          },
           "x-nullable": true
         },
         "base_dns_domain": {
@@ -9089,14 +9315,12 @@ func init() {
           "description": "Cluster networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
           "x-nullable": true
         },
         "disk_encryption": {
           "description": "Installation disks encryption mode and host roles to be applied.",
-          "type": "object",
           "$ref": "#/definitions/disk-encryption"
         },
         "http_proxy": {
@@ -9122,13 +9346,20 @@ func init() {
         },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
-          "type": "object",
           "$ref": "#/definitions/ignition-endpoint"
         },
         "ingress_vip": {
-          "description": "The virtual IP used for cluster ingress traffic.",
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+          "x-nullable": true
+        },
+        "ingress_vips": {
+          "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ingress_vip"
+          },
           "x-nullable": true
         },
         "machine_network_cidr": {
@@ -9141,7 +9372,6 @@ func init() {
           "description": "Machine networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/machine_network"
           },
           "x-nullable": true
@@ -9175,7 +9405,6 @@ func init() {
           }
         },
         "platform": {
-          "type": "object",
           "$ref": "#/definitions/platform"
         },
         "pull_secret": {
@@ -9198,7 +9427,6 @@ func init() {
           "description": "Service networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           },
           "x-nullable": true
@@ -9225,9 +9453,55 @@ func init() {
         }
       }
     },
+    "verified_vip": {
+      "description": "Single VIP verification result.",
+      "type": "object",
+      "properties": {
+        "verification": {
+          "$ref": "#/definitions/vip_verification"
+        },
+        "vip": {
+          "$ref": "#/definitions/ip"
+        },
+        "vip_type": {
+          "$ref": "#/definitions/vip_type"
+        }
+      }
+    },
+    "verify_vip": {
+      "description": "Request to verify single vip.",
+      "type": "object",
+      "properties": {
+        "vip": {
+          "$ref": "#/definitions/ip"
+        },
+        "vip_type": {
+          "$ref": "#/definitions/vip_type"
+        }
+      }
+    },
+    "verify_vips_request": {
+      "description": "list of vips to be verified.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/verify_vip"
+      }
+    },
+    "verify_vips_response": {
+      "description": "list of verified vips.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/verified_vip"
+      }
+    },
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "edge-worker": {
+          "description": "Edge Worker OpenShift node requirements",
+          "x-go-name": "EdgeWorkerRequirements",
+          "$ref": "#/definitions/cluster-host-requirements-details"
+        },
         "master": {
           "description": "Master node requirements",
           "x-go-name": "MasterRequirements",
@@ -9254,6 +9528,24 @@ func init() {
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "vip_type": {
+      "description": "The vip type.",
+      "type": "string",
+      "enum": [
+        "api",
+        "ingress"
+      ]
+    },
+    "vip_verification": {
+      "description": "vip verification result.",
+      "type": "string",
+      "default": "unverified",
+      "enum": [
+        "unverified",
+        "failed",
+        "succeeded"
+      ]
     }
   },
   "securityDefinitions": {
@@ -9821,18 +10113,82 @@ func init() {
         }
       }
     },
-    "/v2/clusters/{cluster_id}/actions/allow-add-workers": {
+    "/v2/clusters/{cluster_id}/actions/allow-add-hosts": {
       "post": {
-        "description": "Transforming cluster to day2 and allowing adding hosts",
+        "description": "Transforms installed cluster to a state which allows adding hosts.",
         "tags": [
           "installer"
         ],
-        "operationId": "TransformClusterToDay2",
+        "operationId": "TransformClusterToAddingHosts",
         "parameters": [
           {
             "type": "string",
             "format": "uuid",
-            "description": "The cluster to transform to day2 and to allow adding hosts by this.",
+            "description": "The cluster to transform.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/cluster"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/v2/clusters/{cluster_id}/actions/allow-add-workers": {
+      "post": {
+        "description": "Deprecated, maintained for legacy purposes. Does the same thing as allow-add-hosts. Use allow-add-hosts instead.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "TransformClusterToDay2",
+        "deprecated": true,
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster to transform.",
             "name": "cluster_id",
             "in": "path",
             "required": true
@@ -12287,6 +12643,15 @@ func init() {
           },
           {
             "agentAuth": []
+          },
+          {
+            "urlAuth": []
+          },
+          {
+            "imageAuth": []
+          },
+          {
+            "imageURLAuth": []
           }
         ],
         "description": "Retrieves the details of the infra-env.",
@@ -12545,7 +12910,8 @@ func init() {
           {
             "enum": [
               "discovery.ign",
-              "ipxe-script"
+              "ipxe-script",
+              "static-network-config"
             ],
             "type": "string",
             "description": "The file to be downloaded.",
@@ -12568,6 +12934,16 @@ func init() {
             "type": "string",
             "description": "Specify the script type to be served for iPXE.",
             "name": "ipxe_script_type",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "full-iso",
+              "minimal-iso"
+            ],
+            "type": "string",
+            "description": "Overrides the ISO type for the disovery ignition, either 'full-iso' or 'minimal-iso'.",
+            "name": "discovery_iso_type",
             "in": "query"
           }
         ],
@@ -14561,6 +14937,10 @@ func init() {
     },
     "FeatureSupportLevelFeaturesItems0": {
       "type": "object",
+      "required": [
+        "feature_id",
+        "support_level"
+      ],
       "properties": {
         "feature_id": {
           "description": "The ID of the feature",
@@ -14583,7 +14963,13 @@ func init() {
             "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
             "ARM64_ARCHITECTURE",
             "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING",
-            "SINGLE_NODE_EXPANSION"
+            "SINGLE_NODE_EXPANSION",
+            "LVM",
+            "DUAL_STACK_NETWORKING",
+            "MULTIARCH_RELEASE_IMAGE",
+            "NUTANIX_INTEGRATION",
+            "DUAL_STACK_VIPS",
+            "USER_MANAGED_NETWORKING_WITH_MULTI_NODE"
           ]
         },
         "support_level": {
@@ -14661,6 +15047,26 @@ func init() {
         }
       },
       "x-go-name": "TangServerSignatures"
+    },
+    "api_vip": {
+      "description": "The virtual IP used to reach the OpenShift cluster's API.",
+      "type": "object",
+      "properties": {
+        "cluster_id": {
+          "description": "The cluster that this VIP is associated with.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primaryKey\""
+        },
+        "ip": {
+          "description": "The IP address.",
+          "$ref": "#/definitions/ip"
+        },
+        "verification": {
+          "description": "API VIP verification result.",
+          "$ref": "#/definitions/vip_verification"
+        }
+      }
     },
     "api_vip_connectivity_request": {
       "type": "object",
@@ -14753,13 +15159,22 @@ func init() {
           "format": "uuid"
         },
         "api_vip": {
-          "description": "The virtual IP used to reach the OpenShift cluster's API.",
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
         },
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
           "type": "string",
+          "x-nullable": true
+        },
+        "api_vips": {
+          "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/api_vip"
+          },
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
           "x-nullable": true
         },
         "base_dns_domain": {
@@ -14781,10 +15196,10 @@ func init() {
           "description": "Cluster networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "connectivity_majority_groups": {
           "description": "Json formatted string containing the majority groups for connectivity checks.",
@@ -14838,7 +15253,6 @@ func init() {
         },
         "disk_encryption": {
           "description": "Information regarding hosts' installation disks encryption.",
-          "type": "object",
           "$ref": "#/definitions/disk-encryption"
         },
         "email_domain": {
@@ -14870,13 +15284,13 @@ func init() {
           "items": {
             "$ref": "#/definitions/host_network"
           },
-          "x-go-custom-tag": "gorm:\"-\""
+          "x-go-custom-tag": "gorm:\"-\"",
+          "x-nullable": true
         },
         "hosts": {
           "description": "Hosts that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/host"
           },
           "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
@@ -14912,21 +15326,29 @@ func init() {
         },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
-          "type": "object",
           "$ref": "#/definitions/ignition-endpoint"
         },
         "image_info": {
           "$ref": "#/definitions/image_info"
         },
         "imported": {
-          "description": "Indicates whether this cluster is an imported day-2 cluster or a\nregular cluster. Clusters are considered imported when they are\ncreated via the ../clusters/import endpoint. Day-2 clusters converted\nfrom day-1 clusters by kube-api controllers or the\n../clusters/\u003ccluster_id\u003e/actions/allow-add-workers endpoint are not\nconsidered imported. Imported clusters usually lack a lot of\ninformation and are filled with default values that don't necessarily\nreflect the actual cluster they represent",
+          "description": "Indicates whether this cluster is an imported day-2 cluster or a\nregular cluster. Clusters are considered imported when they are\ncreated via the ../clusters/import endpoint. Day-2 clusters converted\nfrom day-1 clusters by kube-api controllers or the\n../clusters/\u003ccluster_id\u003e/actions/allow-add-hosts endpoint are not\nconsidered imported. Imported clusters usually lack a lot of\ninformation and are filled with default values that don't necessarily\nreflect the actual cluster they represent",
           "type": "boolean",
           "default": false
         },
         "ingress_vip": {
-          "description": "The virtual IP used for cluster ingress traffic.",
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
+        },
+        "ingress_vips": {
+          "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ingress_vip"
+          },
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "install_completed_at": {
           "description": "The time that this cluster completed installation.",
@@ -14945,6 +15367,11 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "ip_collisions": {
+          "description": "Json formatted string containing ip collisions detected in the cluster.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
         },
         "kind": {
           "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object,\n'AddHostsCluster' for cluster that add hosts to existing OCP cluster,\n",
@@ -14967,16 +15394,15 @@ func init() {
           "description": "Machine networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/machine_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "monitored_operators": {
           "description": "Operators that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/monitored-operator"
           },
           "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
@@ -15050,10 +15476,10 @@ func init() {
           "description": "Service networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\"",
+          "x-nullable": true
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
@@ -15146,9 +15572,16 @@ func init() {
           "x-nullable": true
         },
         "api_vip": {
-          "description": "The virtual IP used to reach the OpenShift cluster's API.",
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$"
+        },
+        "api_vips": {
+          "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/api_vip"
+          }
         },
         "base_dns_domain": {
           "description": "Base domain of the cluster. All DNS records must be sub-domains of this base and include the cluster name.",
@@ -15171,7 +15604,6 @@ func init() {
           "description": "Cluster networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
           "x-nullable": true
@@ -15184,7 +15616,6 @@ func init() {
         },
         "disk_encryption": {
           "description": "Installation disks encryption mode and host roles to be applied.",
-          "type": "object",
           "$ref": "#/definitions/disk-encryption"
         },
         "high_availability_mode": {
@@ -15219,19 +15650,24 @@ func init() {
         },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
-          "type": "object",
           "$ref": "#/definitions/ignition-endpoint"
         },
         "ingress_vip": {
-          "description": "The virtual IP used for cluster ingress traffic.",
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
+        },
+        "ingress_vips": {
+          "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ingress_vip"
+          }
         },
         "machine_networks": {
           "description": "Machine networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/machine_network"
           },
           "x-nullable": true
@@ -15245,11 +15681,11 @@ func init() {
         "network_type": {
           "description": "The desired network type used.",
           "type": "string",
-          "default": "OpenShiftSDN",
           "enum": [
             "OpenShiftSDN",
             "OVNKubernetes"
-          ]
+          ],
+          "x-nullable": true
         },
         "no_proxy": {
           "description": "An \"*\" or a comma-separated list of destination domain names, domains, IP addresses, or other network CIDRs to exclude from proxying.",
@@ -15272,7 +15708,6 @@ func init() {
           "type": "string"
         },
         "platform": {
-          "type": "object",
           "x-nullable": true,
           "$ref": "#/definitions/platform"
         },
@@ -15295,7 +15730,6 @@ func init() {
           "description": "Service networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           },
           "x-nullable": true
@@ -15425,10 +15859,10 @@ func init() {
         "networks-same-address-families",
         "network-prefix-valid",
         "machine-cidr-equals-to-calculated-cidr",
-        "api-vip-defined",
-        "api-vip-valid",
-        "ingress-vip-defined",
-        "ingress-vip-valid",
+        "api-vips-defined",
+        "api-vips-valid",
+        "ingress-vips-defined",
+        "ingress-vips-valid",
         "all-hosts-are-ready-to-install",
         "sufficient-masters-count",
         "dns-domain-defined",
@@ -15457,14 +15891,12 @@ func init() {
         "cluster_networks_dualstack": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           }
         },
         "cluster_networks_ipv4": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           }
         },
@@ -15489,14 +15921,12 @@ func init() {
         "service_networks_dualstack": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           }
         },
         "service_networks_ipv4": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           }
         }
@@ -16201,10 +16631,6 @@ func init() {
       "properties": {
         "features": {
           "type": "array",
-          "required": [
-            "feature_id",
-            "support_level"
-          ],
           "items": {
             "$ref": "#/definitions/FeatureSupportLevelFeaturesItems0"
           }
@@ -16428,7 +16854,7 @@ func init() {
         },
         "logs_collected_at": {
           "type": "string",
-          "format": "datetime",
+          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "logs_info": {
@@ -16437,7 +16863,7 @@ func init() {
         },
         "logs_started_at": {
           "type": "string",
-          "format": "datetime",
+          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "machine_config_pool_name": {
@@ -16470,7 +16896,8 @@ func init() {
           "items": {
             "$ref": "#/definitions/host-stage"
           },
-          "x-go-custom-tag": "gorm:\"-\""
+          "x-go-custom-tag": "gorm:\"-\"",
+          "x-nullable": true
         },
         "registered_at": {
           "description": "The last time the host's agent tried to register in the service.",
@@ -16779,6 +17206,7 @@ func init() {
         "belongs-to-majority-group",
         "valid-platform-network-settings",
         "ntp-synced",
+        "time-synced-between-host-and-service",
         "container-images-available",
         "lso-requirements-satisfied",
         "ocs-requirements-satisfied",
@@ -16800,7 +17228,7 @@ func init() {
         "compatible-agent",
         "no-skip-installation-disk",
         "no-skip-missing-disk",
-        "service-has-sufficient-spoke-kube-api-access"
+        "no-ip-collisions-in-network"
       ]
     },
     "host_network": {
@@ -16994,6 +17422,11 @@ func init() {
           "description": "A comma-separated list of NTP sources (name or IP) going to be added to all the hosts.",
           "type": "string"
         },
+        "additional_trust_bundle": {
+          "description": "PEM-encoded X.509 certificate bundle. Hosts discovered by this\ninfra-env will trust the certificates in this bundle. Clusters formed\nfrom the hosts discovered by this infra-env will also trust the\ncertificates in this bundle.",
+          "type": "string",
+          "x-nullable": false
+        },
         "cluster_id": {
           "description": "If set, all hosts that register will be associated with the specified cluster.",
           "type": "string",
@@ -17048,6 +17481,12 @@ func init() {
         "ignition_config_override": {
           "description": "Json formatted string containing the user overrides for the initial ignition config.",
           "type": "string"
+        },
+        "kernel_arguments": {
+          "description": "JSON formatted string array representing the discovery image kernel arguments.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\"",
+          "x-nullable": true
         },
         "kind": {
           "description": "Indicates the type of this object.",
@@ -17121,6 +17560,11 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "additional_trust_bundle": {
+          "description": "PEM-encoded X.509 certificate bundle. Hosts discovered by this\ninfra-env will trust the certificates in this bundle. Clusters formed\nfrom the hosts discovered by this infra-env will also trust the\ncertificates in this bundle.",
+          "type": "string",
+          "x-nullable": false
+        },
         "cluster_id": {
           "description": "If set, all hosts that register will be associated with the specified cluster.",
           "type": "string",
@@ -17139,6 +17583,9 @@ func init() {
         },
         "image_type": {
           "$ref": "#/definitions/image_type"
+        },
+        "kernel_arguments": {
+          "$ref": "#/definitions/kernel_arguments"
         },
         "name": {
           "description": "Name of the infra-env.",
@@ -17182,12 +17629,20 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "additional_trust_bundle": {
+          "description": "Allows users to change the additional_trust_bundle infra-env field",
+          "type": "string",
+          "x-nullable": true
+        },
         "ignition_config_override": {
           "description": "JSON formatted string containing the user overrides for the initial ignition config.",
           "type": "string"
         },
         "image_type": {
           "$ref": "#/definitions/image_type"
+        },
+        "kernel_arguments": {
+          "$ref": "#/definitions/kernel_arguments"
         },
         "proxy": {
           "$ref": "#/definitions/proxy"
@@ -17231,6 +17686,26 @@ func init() {
     },
     "ingress-cert-params": {
       "type": "string"
+    },
+    "ingress_vip": {
+      "description": "The virtual IP used for cluster ingress traffic.",
+      "type": "object",
+      "properties": {
+        "cluster_id": {
+          "description": "The cluster that this VIP is associated with.",
+          "type": "string",
+          "format": "uuid",
+          "x-go-custom-tag": "gorm:\"primaryKey\""
+        },
+        "ip": {
+          "description": "The IP address.",
+          "$ref": "#/definitions/ip"
+        },
+        "verification": {
+          "description": "Ingress VIP verification result.",
+          "$ref": "#/definitions/vip_verification"
+        }
+      }
     },
     "install_cmd_request": {
       "type": "object",
@@ -17471,6 +17946,39 @@ func init() {
           "type": "integer"
         }
       }
+    },
+    "ip": {
+      "type": "string",
+      "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+      "x-go-custom-tag": "gorm:\"primaryKey\""
+    },
+    "kernel_argument": {
+      "description": "pair of [operation, argument] specifying the argument and what operation should be applied on it.",
+      "type": "object",
+      "properties": {
+        "operation": {
+          "description": "The operation to apply on the kernel argument.",
+          "type": "string",
+          "enum": [
+            "append",
+            "replace",
+            "delete"
+          ]
+        },
+        "value": {
+          "description": "Kernel argument can have the form \u003cparameter\u003e or \u003cparameter\u003e=\u003cvalue\u003e. The following examples should\nbe supported:\nrd.net.timeout.carrier=60\nisolcpus=1,2,10-20,100-2000:2/25\nquiet\nThe parsing by the command line parser in linux kernel is much looser and this pattern follows it.\n",
+          "type": "string",
+          "pattern": "^(?:(?:[^ \\t\\n\\r\"]+)|(?:\"[^\"]*\"))+$"
+        }
+      }
+    },
+    "kernel_arguments": {
+      "description": "List of kernel arugment objects that define the operations and values to be applied.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/kernel_argument"
+      },
+      "x-omitempty": false
     },
     "l2-connectivity": {
       "type": "object",
@@ -18003,8 +18511,9 @@ func init() {
           "x-go-custom-tag": "gorm:\"default:'x86_64'\""
         },
         "openshift_version": {
-          "description": "Version of the OpenShift cluster.",
-          "type": "string"
+          "description": "Version of the operating system image",
+          "type": "string",
+          "example": "4.12"
         },
         "url": {
           "description": "The base OS image used for the discovery iso.",
@@ -18039,8 +18548,8 @@ func init() {
       "type": "string",
       "enum": [
         "baremetal",
+        "nutanix",
         "vsphere",
-        "ovirt",
         "none"
       ]
     },
@@ -18278,7 +18787,8 @@ func init() {
         "next-step-runner",
         "upgrade-agent",
         "download-boot-artifacts",
-        "reboot-for-reclaim"
+        "reboot-for-reclaim",
+        "verify-vips"
       ]
     },
     "steps": {
@@ -18418,7 +18928,7 @@ func init() {
           "x-nullable": true
         },
         "api_vip": {
-          "description": "The virtual IP used to reach the OpenShift cluster's API.",
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
           "x-nullable": true
@@ -18426,6 +18936,14 @@ func init() {
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
           "type": "string",
+          "x-nullable": true
+        },
+        "api_vips": {
+          "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/api_vip"
+          },
           "x-nullable": true
         },
         "base_dns_domain": {
@@ -18450,14 +18968,12 @@ func init() {
           "description": "Cluster networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
           "x-nullable": true
         },
         "disk_encryption": {
           "description": "Installation disks encryption mode and host roles to be applied.",
-          "type": "object",
           "$ref": "#/definitions/disk-encryption"
         },
         "http_proxy": {
@@ -18483,13 +18999,20 @@ func init() {
         },
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
-          "type": "object",
           "$ref": "#/definitions/ignition-endpoint"
         },
         "ingress_vip": {
-          "description": "The virtual IP used for cluster ingress traffic.",
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
           "type": "string",
           "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+          "x-nullable": true
+        },
+        "ingress_vips": {
+          "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ingress_vip"
+          },
           "x-nullable": true
         },
         "machine_network_cidr": {
@@ -18502,7 +19025,6 @@ func init() {
           "description": "Machine networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/machine_network"
           },
           "x-nullable": true
@@ -18536,7 +19058,6 @@ func init() {
           }
         },
         "platform": {
-          "type": "object",
           "$ref": "#/definitions/platform"
         },
         "pull_secret": {
@@ -18559,7 +19080,6 @@ func init() {
           "description": "Service networks that are associated with this cluster.",
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/service_network"
           },
           "x-nullable": true
@@ -18586,9 +19106,55 @@ func init() {
         }
       }
     },
+    "verified_vip": {
+      "description": "Single VIP verification result.",
+      "type": "object",
+      "properties": {
+        "verification": {
+          "$ref": "#/definitions/vip_verification"
+        },
+        "vip": {
+          "$ref": "#/definitions/ip"
+        },
+        "vip_type": {
+          "$ref": "#/definitions/vip_type"
+        }
+      }
+    },
+    "verify_vip": {
+      "description": "Request to verify single vip.",
+      "type": "object",
+      "properties": {
+        "vip": {
+          "$ref": "#/definitions/ip"
+        },
+        "vip_type": {
+          "$ref": "#/definitions/vip_type"
+        }
+      }
+    },
+    "verify_vips_request": {
+      "description": "list of vips to be verified.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/verify_vip"
+      }
+    },
+    "verify_vips_response": {
+      "description": "list of verified vips.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/verified_vip"
+      }
+    },
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "edge-worker": {
+          "description": "Edge Worker OpenShift node requirements",
+          "x-go-name": "EdgeWorkerRequirements",
+          "$ref": "#/definitions/cluster-host-requirements-details"
+        },
         "master": {
           "description": "Master node requirements",
           "x-go-name": "MasterRequirements",
@@ -18615,6 +19181,24 @@ func init() {
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "vip_type": {
+      "description": "The vip type.",
+      "type": "string",
+      "enum": [
+        "api",
+        "ingress"
+      ]
+    },
+    "vip_verification": {
+      "description": "vip verification result.",
+      "type": "string",
+      "default": "unverified",
+      "enum": [
+        "unverified",
+        "failed",
+        "succeeded"
+      ]
     }
   },
   "securityDefinitions": {

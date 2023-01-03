@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	baseDomainRegex          = "^([a-z0-9]+(-[a-z0-9]+)*)+$"
 	dnsNameRegex             = "^([a-z0-9]+(-[a-z0-9]+)*[.])+[a-z]{2,}$"
 	hostnameRegex            = `^[a-z0-9][a-z0-9\-\.]{0,61}[a-z0-9]$`
 	installerArgsValuesRegex = `^[A-Za-z0-9@!#$%*()_+-=//.,";':{}\[\]]+$`
@@ -42,7 +43,14 @@ func ValidateInstallerArgs(args []string) error {
 }
 
 func ValidateDomainNameFormat(dnsDomainName string) (int32, error) {
-	matched, err := regexp.MatchString(dnsNameRegex, dnsDomainName)
+	matched, err := regexp.MatchString(baseDomainRegex, dnsDomainName)
+	if err != nil {
+		return http.StatusInternalServerError, errors.Wrapf(err, "Single DNS base domain validation for %s", dnsDomainName)
+	}
+	if matched {
+		return 0, nil
+	}
+	matched, err = regexp.MatchString(dnsNameRegex, dnsDomainName)
 	if err != nil {
 		return http.StatusInternalServerError, errors.Wrapf(err, "DNS name validation for %s", dnsDomainName)
 	}
@@ -154,7 +162,9 @@ func ValidateTags(tags string) error {
 		return nil
 	}
 	if !AllStrings(strings.Split(tags, ","), IsValidTag) {
-		return errors.Errorf("Invalid format for Tags: %s. Tags should be a comma-separated list (e.g. tag1,tag2,tag3).", tags)
+		errMsg := "Invalid format for Tags: %s. Tags should be a comma-separated list (e.g. tag1,tag2,tag3). " +
+			"Each tag can consist of the following characters: Alphanumeric (aA-zZ, 0-9), underscore (_) and white-spaces."
+		return errors.Errorf(errMsg, tags)
 	}
 	return nil
 }

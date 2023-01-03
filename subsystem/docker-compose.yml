@@ -1,4 +1,4 @@
-version: "3"
+version: "2.3"
 services:
   agent:
     build:
@@ -46,6 +46,7 @@ services:
     command: ["-f", "-cf", "/etc/dhcp/dhcpd.conf", "-user", "root", "-group", "root", "--no-pid"]
 
   wiremock:
+    container_name: wiremock
     image: quay.io/ocpmetal/wiremock
     ports:
       - "${WIREMOCK_PORT}:${WIREMOCK_PORT}"
@@ -59,7 +60,10 @@ services:
 
 networks:
   agent_network:
+    enable_ipv6: true
+    driver: bridge
     ipam:
       driver: default
       config:
         - subnet: 172.100.0.0/16
+        - subnet: 2003:db8::/108

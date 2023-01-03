@@ -64,6 +64,7 @@ func New(agentConfig *config.AgentConfig, stepType models.StepType, args []strin
 		models.StepTypeUpgradeAgent:               {&upgradeAgent{args: args}},
 		models.StepTypeDownloadBootArtifacts:      {&downloadBootArtifacts{args: args, agentConfig: agentConfig}},
 		models.StepTypeRebootForReclaim:           {&rebootForReclaim{args: args}},
+		models.StepTypeVerifyVips:                 {&vipsVerifier{agentConfig: agentConfig, args: args}},
 	}
 
 	action, ok := stepActionMap[stepType]

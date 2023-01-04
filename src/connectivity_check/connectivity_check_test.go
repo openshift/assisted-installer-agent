@@ -3,11 +3,13 @@ package connectivity_check
 import (
 	"errors"
 	"fmt"
+	"net"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/openshift/assisted-service/models"
@@ -498,6 +500,46 @@ var _ = Describe("check host parallel validation", func() {
 
 })
 
+func newDependenciesMock() *util.MockIDependencies {
+	d := &util.MockIDependencies{}
+	mockGetGhwChrootRoot(d)
+	return d
+}
+
+func mockGetGhwChrootRoot(dependencies *util.MockIDependencies) {
+	dependencies.On("GetGhwChrootRoot").Return("/host").Maybe()
+}
+
+var _ = Describe("getOutgoingNics", func() {
+	var interfaces []util.Interface
+	var dependencies *util.MockIDependencies
+
+	BeforeEach(func() {
+		dependencies = newDependenciesMock()
+	})
+
+	Context("for hosts with all types of interfaces", func() {
+		BeforeEach(func() {
+			interfaces = []util.Interface{
+				util.NewMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
+				util.NewMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{}, 10, "physical"),
+				util.NewMockInterface(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, nil, 5, "physical"),
+				util.NewMockInterface(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, -1, "bond"),
+				util.NewMockInterface(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, -1, "vlan"),
+				util.NewMockInterface(1400, "ib2", "f8:75:a4:a4:00:fa", net.FlagBroadcast|net.FlagUp, []string{"fe80:39:192:1::1193/64"}, -1, "some-strange-type"),
+			}
+			dependencies.On("Interfaces").Return(interfaces, nil).Once()
+		})
+
+		It("returns only non-virtual interfaces with address", func() {
+			ret := getOutgoingNics(nil, dependencies)
+			Expect(len(ret)).To(Equal(3))
+			Expect(ret).ToNot(ContainElement("eth1"))
+			Expect(ret).ToNot(ContainElement("eth2"))
+		})
+	})
+})
+
 type testHostChecker struct {
 	success      bool
 	outgoingNICS []string
@@ -523,7 +565,7 @@ func (t testHostChecker) command(name string, args []string) ([]byte, error) {
 	case "ping":
 		if t.success {
 			return []byte(fmt.Sprintf(`PING %[1]s (%[1]s) 56(84) bytes of data.
-	
+
 		--- %[1]s ping statistics ---
 		10 packets transmitted, 4 received, 60%% packet loss, time 9164ms
 		rtt min/avg/max/mdev = 2.616/2.871/3.183/0.255 ms`, args[0])), nil

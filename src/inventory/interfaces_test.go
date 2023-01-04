@@ -39,7 +39,7 @@ var _ = Describe("Interfaces", func() {
 	})
 
 	It("Single result", func() {
-		interfaceMock := newMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 1000, "physical")
+		interfaceMock := util.NewMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 1000, "physical")
 		dependencies.On("Interfaces").Return([]util.Interface{interfaceMock}, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("1\n"), nil).Once()
@@ -73,11 +73,11 @@ var _ = Describe("Interfaces", func() {
 	})
 	It("Multiple results", func() {
 		rets := []util.Interface{
-			newMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
-			newMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, 10, "physical"),
-			newMockInterface(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/126", "de90::d832:8def:dd51:3529/126"}, 5, ""),
-			newMockInterface(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, -1, "bond"),
-			newMockInterface(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, -1, "vlan"),
+			util.NewMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.18/24", "192.168.6.7/20", "fe80::d832:8def:dd51:3527/128", "de90::d832:8def:dd51:3527/128"}, 100, "physical"),
+			util.NewMockInterface(1400, "eth1", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.19/24", "192.168.6.8/20", "fe80::d832:8def:dd51:3528/127", "de90::d832:8def:dd51:3528/127"}, 10, "physical"),
+			util.NewMockInterface(1400, "eth2", "f8:75:a4:a4:00:ff", net.FlagBroadcast|net.FlagLoopback, []string{"10.0.0.20/24", "192.168.6.9/20", "fe80::d832:8def:dd51:3529/126", "de90::d832:8def:dd51:3529/126"}, 5, ""),
+			util.NewMockInterface(1400, "bond0", "f8:75:a4:a4:00:fd", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.21/24", "192.168.6.10/20", "fe80::d832:8def:dd51:3529/125", "de90::d832:8def:dd51:3529/125"}, -1, "bond"),
+			util.NewMockInterface(1400, "eth2.10", "f8:75:a4:a4:00:fc", net.FlagBroadcast|net.FlagUp, []string{"10.0.0.25/24", "192.168.6.14/20", "fe80::d832:8def:dd51:3520/125", "de90::d832:8def:dd51:3520/125"}, -1, "vlan"),
 		}
 		dependencies.On("Interfaces").Return(rets, nil).Once()
 		dependencies.On("Execute", "biosdevname", "-i", "eth0").Return("em2", "", 0).Once()
@@ -195,9 +195,3 @@ var _ = Describe("Interfaces", func() {
 		}
 	})
 })
-
-func newMockInterface(mtu int, name string, macAddr string, flags net.Flags, addrs []string, speedMbps int64, interfaceType string) *util.MockInterface {
-	interfaceMock := util.MockInterface{}
-	util.FillInterfaceMock(&interfaceMock.Mock, mtu, name, macAddr, flags, addrs, speedMbps, interfaceType)
-	return &interfaceMock
-}

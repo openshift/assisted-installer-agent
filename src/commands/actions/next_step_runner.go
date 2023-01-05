@@ -61,7 +61,13 @@ func (a *nextStepRunnerAction) Args() []string {
 		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
 		"-v", "/var/log:/var/log:rw",
 		"-v", "/run/media:/run/media:rw",
-		"-v", "/etc/pki:/etc/pki"}
+		"-v", "/etc/pki:/etc/pki",
+
+		// This is needed to send requests to the host systemd, in particular the request
+		// to stop the agent when a `404 Not Found` error response is received from the
+		// service.
+		"-v", "/var/run/dbus:/var/run/dbus",
+	}
 
 	if a.agentConfig.CACertificatePath != "" {
 		arguments = append(arguments, "-v", fmt.Sprintf("%s:%s", a.agentConfig.CACertificatePath,

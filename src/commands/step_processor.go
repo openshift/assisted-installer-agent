@@ -236,7 +236,11 @@ func (s *stepSession) processSingleSession() (delay time.Duration, exit bool, er
 		invalidateCache(s.stepCache)
 		switch err.(type) {
 		case *installer.V2GetNextStepsNotFound:
-			err = errors.Wrapf(err, "infra-env %s was not found in inventory or user is not authorized", s.agentConfig.InfraEnvID)
+			s.Logger().WithError(err).Errorf(
+				"infra-env %s was not found in inventory, will freeze",
+				s.agentConfig.InfraEnvID,
+			)
+			select {}
 		case *installer.V2GetNextStepsUnauthorized:
 			err = errors.Wrapf(err, "user is not authenticated to perform the operation")
 		case *installer.V2GetNextStepsForbidden:

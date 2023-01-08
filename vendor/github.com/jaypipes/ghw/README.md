@@ -1,6 +1,11 @@
-# `ghw` - Golang HardWare discovery/inspection library [![Build Status](https://travis-ci.org/jaypipes/ghw.svg?branch=master)](https://travis-ci.org/jaypipes/ghw)
+# `ghw` - Golang HardWare discovery/inspection library
+
+[![Build Status](https://github.com/jaypipes/ghw/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/jaypipes/ghw/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jaypipes/ghw)](https://goreportcard.com/report/github.com/jaypipes/ghw)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+
 ![ghw mascot](images/ghw-gopher.png)
-<br /><br />
+
 `ghw` is a small Golang library providing hardware inspection and discovery
 for Linux and Windows. There currently exists partial support for MacOSX.
 
@@ -80,6 +85,34 @@ Alternately, you can use the `ghw.WithChroot()` function like so:
 ```go
 cpu, err := ghw.CPU(ghw.WithChroot("/host"))
 ```
+
+### Overriding the per-mountpoint `ghw` uses
+
+When running inside containers, it could be a bit cumbersome to just override
+the root mountpoint. Inside containers, when granting access to the host
+file systems, is more common to bind-mount them in non standard location,
+like `/sys` on `/host-sys` or `/proc` on `/host-proc`.
+Is rarer to mount them in a common subtree (e.g. `/sys` on `/host/sys` and
+ `/proc` on /host/proc...)
+
+To better cover this use case, `ghw` allows to *programmatically* override
+the initial component of filesystems subtrees, allowing to access `sysfs`
+(or `procfs` or...) mounted on non-standard locations.
+
+
+```go
+cpu, err := ghw.CPU(ghw.WithPathOverrides(ghw.PathOverrides{
+	"/proc": "/host-proc",
+	"/sys": "/host-sys",
+}))
+```
+
+Please note
+- this feature works in addition and is composable with the
+  `WithChroot`/`GHW_CHROOT` feature.
+- `ghw` doesn't support yet environs variable to override individual
+   mountpoints, because this could lead to significant environs variables
+   proliferation.
 
 ### Consuming snapshots
 
@@ -229,10 +262,24 @@ function.
 
 ### Memory
 
+The basic building block of the memory support in ghw is the `ghw.MemoryArea` struct.
+A "memory area" is a block of memory which share common properties. In the simplest
+case, the whole system memory fits in a single memory area; in more complex scenarios,
+like multi-NUMA systems, many memory areas may be present in the system (e.g. one for
+each NUMA cell).
+
+The `ghw.MemoryArea` struct contains the following fields:
+
+* `ghw.MemoryInfo.TotalPhysicalBytes` contains the amount of physical memory on
+  the host
+* `ghw.MemoryInfo.TotalUsableBytes` contains the amount of memory the
+  system can actually use. Usable memory accounts for things like the kernel's
+  resident memory size and some reserved system bits
+
 Information about the host computer's memory can be retrieved using the
 `ghw.Memory()` function which returns a pointer to a `ghw.MemoryInfo` struct.
-
-The `ghw.MemoryInfo` struct contains three fields:
+`ghw.MemoryInfo` is a superset of `ghw.MemoryArea`. Thus, it contains all the
+fields found in the `ghw.MemoryArea` (replicated for clarity) plus some:
 
 * `ghw.MemoryInfo.TotalPhysicalBytes` contains the amount of physical memory on
   the host
@@ -567,6 +614,8 @@ Each `ghw.TopologyNode` struct contains the following fields:
   system
 * `ghw.TopologyNode.Distance` is an array of distances between NUMA nodes as reported
   by the system.
+* `ghw.TopologyNode.Memory` is a struct describing the memory attached to this node.
+   Please refer to the documentation of `ghw.MemoryArea`.
 
 See above in the [CPU](#cpu) section for information about the
 `ghw.ProcessorCore` struct and how to use and query it.
@@ -808,11 +857,31 @@ The `ghw.PCIDevice` struct has the following fields:
 * `ghw.PCIDevice.ProgrammingInterface` is a pointer to a
   `pcidb.ProgrammingInterface` struct that describes the device subclass'
   programming interface. This will always be non-nil.
+* `ghw.PCIDevice.Driver` is a string representing the device driver the
+  system is using to handle this device. Can be empty string if this
+  information is not available. If the information is not available,
+  this doesn't mean at all the device is not functioning, but only the
+  fact `ghw` was not able to retrieve this information.
 
 The `ghw.PCIAddress` (which is an alias for the `ghw.pci.address.Address`
 struct) contains the PCI address fields. It has a `ghw.PCIAddress.String()`
-method that returns the canonical Domain:Bus:Slot.Function ([D]BSF)
-representation of this Address
+method that returns the canonical Domain:Bus:Device.Function ([D]BDF)
+representation of this Address.
+
+The `ghw.PCIAddress` struct has the following fields:
+
+* `ghw.PCIAddress.Domain` is a string representing the PCI domain component of
+  the address.
+* `ghw.PCIAddress.Bus` is a string representing the PCI bus component of
+  the address.
+* `ghw.PCIAddress.Device` is a string representing the PCI device component of
+  the address.
+* `ghw.PCIAddress.Function` is a string representing the PCI function component of
+  the address.
+
+**NOTE**: Older versions (pre-`v0.9.0`) erroneously referred to the `Device`
+field as the `Slot` field. As noted by [@pearsonk](https://github.com/pearsonk)
+in [#220](https://github.com/jaypipes/ghw/issues/220), this was a misnomer.
 
 #### Finding a PCI device by PCI address
 
@@ -1299,16 +1368,20 @@ To prevent ghw from calling external tools, set the environs variable `GHW_DISAB
 or, programmatically, check the `WithDisableTools` function.
 The default behaviour of ghw is to call external tools when available.
 
+**WARNING**:
+- on all platforms, disabling external tools make ghw return less data.
+  Unless noted otherwise, there is _no fallback flow_ if external tools are disabled.
+- on darwin, disabling external tools disable block support entirely
+
 ## Developers
 
-Contributions to `ghw` are welcomed! Fork the repo on GitHub and submit a pull
-request with your proposed changes. Or, feel free to log an issue for a feature
-request or bug report.
+[Contributions](CONTRIBUTING.md) to `ghw` are welcomed! Fork the repo on GitHub
+and submit a pull request with your proposed changes. Or, feel free to log an
+issue for a feature request or bug report.
 
 ### Running tests
 
 You can run unit tests easily using the `make test` command, like so:
-
 
 ```
 [jaypipes@uberbox ghw]$ make test

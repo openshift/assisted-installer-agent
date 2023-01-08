@@ -14,13 +14,15 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/google/uuid"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
 
 var (
 	nextHostIndex                = 0
-	WireMockURLFromSubsystemHost = fmt.Sprintf("http://127.0.0.1:%s", os.Getenv("WIREMOCK_PORT"))
+	WireMockURLFromSubsystemHost = fmt.Sprintf("http://localhost:%s", os.Getenv("WIREMOCK_PORT"))
 	AssistedServiceURLFromAgent  = fmt.Sprintf("http://wiremock:%s", os.Getenv("WIREMOCK_PORT"))
 	RequestsURL                  = fmt.Sprintf("%s/__admin/requests", WireMockURLFromSubsystemHost)
 	MappingsURL                  = fmt.Sprintf("%s/__admin/mappings", WireMockURLFromSubsystemHost)
@@ -538,4 +540,30 @@ func createContainerImageAvailabilityStep(request models.ContainerImageAvailabil
 func setImageAvailabilityStub(hostID string, request models.ContainerImageAvailabilityRequest) {
 	_, err := addNextStepStub(hostID, 10, "", createContainerImageAvailabilityStep(request))
 	Expect(err).NotTo(HaveOccurred())
+}
+
+type containerNodeIps struct {
+	ipv4Address string
+	ipv6Address string
+}
+
+func getAgentNetworkIps() map[string]*containerNodeIps {
+	o, e, exitCode := util.Execute(defaultContainerTool, "inspect", "subsystem_agent_network")
+	if exitCode != 0 {
+		Fail(e)
+	}
+	var networks []*struct {
+		Containers map[string]*struct {
+			Name        string `json:"Name"`
+			IPv4Address string `json:"IPv4Address"`
+			IPv6Address string `json:"IPv6Address"`
+		} `json:"Containers"`
+	}
+	Expect(json.Unmarshal([]byte(o), &networks)).ToNot(HaveOccurred())
+	Expect(networks).To(HaveLen(1))
+	ret := make(map[string]*containerNodeIps)
+	for _, cn := range networks[0].Containers {
+		ret[cn.Name] = &containerNodeIps{ipv4Address: cn.IPv4Address, ipv6Address: cn.IPv6Address}
+	}
+	return ret
 }

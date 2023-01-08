@@ -52,12 +52,20 @@ func NewV2DownloadInfraEnvFilesParamsWithHTTPClient(client *http.Client) *V2Down
 	}
 }
 
-/* V2DownloadInfraEnvFilesParams contains all the parameters to send to the API endpoint
-   for the v2 download infra env files operation.
+/*
+V2DownloadInfraEnvFilesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the v2 download infra env files operation.
+
+	Typically these are written to a http.Request.
 */
 type V2DownloadInfraEnvFilesParams struct {
+
+	/* DiscoveryIsoType.
+
+	   Overrides the ISO type for the disovery ignition, either 'full-iso' or 'minimal-iso'.
+	*/
+	DiscoveryIsoType *string
 
 	/* FileName.
 
@@ -140,6 +148,17 @@ func (o *V2DownloadInfraEnvFilesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDiscoveryIsoType adds the discoveryIsoType to the v2 download infra env files params
+func (o *V2DownloadInfraEnvFilesParams) WithDiscoveryIsoType(discoveryIsoType *string) *V2DownloadInfraEnvFilesParams {
+	o.SetDiscoveryIsoType(discoveryIsoType)
+	return o
+}
+
+// SetDiscoveryIsoType adds the discoveryIsoType to the v2 download infra env files params
+func (o *V2DownloadInfraEnvFilesParams) SetDiscoveryIsoType(discoveryIsoType *string) {
+	o.DiscoveryIsoType = discoveryIsoType
+}
+
 // WithFileName adds the fileName to the v2 download infra env files params
 func (o *V2DownloadInfraEnvFilesParams) WithFileName(fileName string) *V2DownloadInfraEnvFilesParams {
 	o.SetFileName(fileName)
@@ -191,6 +210,23 @@ func (o *V2DownloadInfraEnvFilesParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 	var res []error
+
+	if o.DiscoveryIsoType != nil {
+
+		// query param discovery_iso_type
+		var qrDiscoveryIsoType string
+
+		if o.DiscoveryIsoType != nil {
+			qrDiscoveryIsoType = *o.DiscoveryIsoType
+		}
+		qDiscoveryIsoType := qrDiscoveryIsoType
+		if qDiscoveryIsoType != "" {
+
+			if err := r.SetQueryParam("discovery_iso_type", qDiscoveryIsoType); err != nil {
+				return err
+			}
+		}
+	}
 
 	// query param file_name
 	qrFileName := o.FileName

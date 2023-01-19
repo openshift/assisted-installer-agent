@@ -125,6 +125,23 @@ func createFCDisk(name string) *ghw.Disk {
 	}
 }
 
+func createFCDiskPPC64LE(name string) *ghw.Disk {
+	return &ghw.Disk{
+		Name:                   name,
+		SizeBytes:              128849018880,
+		DriveType:              ghw.DRIVE_TYPE_HDD,
+		BusPath:                "fc-0x5005076802233f80-lun-0",
+		Vendor:                 "vendor",
+		Model:                  "model",
+		SerialNumber:           "6005076d0281005ef000000000028f3a",
+		WWN:                    "0x6005076d0281005ef000000000028f3a",
+		IsRemovable:            false,
+		NUMANodeID:             0,
+		PhysicalBlockSizeBytes: 512,
+		StorageController:      ghw.STORAGE_CONTROLLER_SCSI,
+	}
+}
+
 func createDeviceMapperDisk() *ghw.Disk {
 	return &ghw.Disk{
 		Name:                   "dm-2",
@@ -794,6 +811,52 @@ var _ = Describe("Disks test", func() {
 				Bootable:  true,
 				Smart:     `{"some": "json"}`,
 				Holders:   "dm-1",
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible: true,
+				},
+			},
+		}))
+	})
+
+	It("FC device for PPC64LE", func() {
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		path := "/dev/sda"
+		disk := createFCDiskPPC64LE("sda")
+		mockFetchDisks(dependencies, nil, disk)
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetHctl(dependencies, disk.Name, "error")
+		mockGetBootable(dependencies, path, true, "")
+		mockNoUUID(dependencies, path)
+		mockGetByPath(dependencies, disk.BusPath, "")
+		mockGetSMART(dependencies, path, "")
+
+		holders := map[string]string{"dm-0": ""}
+		holderInfos := funk.Map(holders, func(name string, _ string) os.FileInfo {
+			fileInfoMock := MockFileInfo{}
+			fileInfoMock.On("Name").Return(name)
+			fileInfoMock.On("Mode").Return(os.ModeDir)
+			return &fileInfoMock
+		})
+		dependencies.On("ReadDir", "/sys/block/sda/holders").Return(holderInfos, nil).Times(1)
+
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ID:        "/dev/disk/by-path/fc-0x5005076802233f80-lun-0",
+				ByPath:    "/dev/disk/by-path/fc-0x5005076802233f80-lun-0",
+				DriveType: models.DriveTypeFC,
+				Hctl:      "",
+				Model:     "model",
+				Name:      "sda",
+				Path:      "/dev/sda",
+				Serial:    "6005076d0281005ef000000000028f3a",
+				SizeBytes: 128849018880,
+				Vendor:    "vendor",
+				Wwn:       "0x6005076d0281005ef000000000028f3a",
+				Bootable:  true,
+				Smart:     `{"some": "json"}`,
+				Holders:   "dm-0",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
 				},

@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -11,6 +12,8 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-service/models"
 )
+
+const containerName = "next-step-runner"
 
 type nextStepRunnerAction struct {
 	args                 []string
@@ -38,7 +41,17 @@ func (a *nextStepRunnerAction) Command() string {
 	return podman
 }
 
+// Try to cleanup previous next-step-runner if it exists, best effort
+func (a *nextStepRunnerAction) cleanupPrevious() {
+	_, stderr, exitCode := util.ExecutePrivileged(a.Command(), "rm", "-i", containerName)
+	if exitCode != 0 {
+		log.Warnf("Failed to cleanup old %s container, stdErr %s, exitCode %d.", containerName, stderr, exitCode)
+	}
+}
+
 func (a *nextStepRunnerAction) Args() []string {
+	a.cleanupPrevious()
+
 	arguments := []string{"run", "--rm", "-ti", "--privileged", "--pid=host", "--net=host",
 
 		// unlimited number of processes in the container
@@ -62,7 +75,7 @@ func (a *nextStepRunnerAction) Args() []string {
 		"--env", "CONTAINERS_STORAGE_CONF",
 		"--env", "HTTP_PROXY", "--env", "HTTPS_PROXY", "--env", "NO_PROXY",
 		"--env", "http_proxy", "--env", "https_proxy", "--env", "no_proxy",
-		"--name", "next-step-runner", swag.StringValue(a.nextStepRunnerParams.AgentVersion), "next_step_runner",
+		"--name", containerName, swag.StringValue(a.nextStepRunnerParams.AgentVersion), "next_step_runner",
 		"--url", a.agentConfig.TargetURL,
 		"--infra-env-id", a.nextStepRunnerParams.InfraEnvID.String(),
 		"--host-id", a.nextStepRunnerParams.HostID.String(),

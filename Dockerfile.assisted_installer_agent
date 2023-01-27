@@ -14,13 +14,14 @@ RUN TARGETPLATFORM=$TARGETPLATFORM make build
 
 FROM quay.io/centos/centos:stream8
 ARG TARGETPLATFORM
-RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y biosdevname ; fi
+RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y biosdevname dmidecode ; fi
+RUN if [[ "$TARGETPLATFORM" == "linux/arm64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y dmidecode ; fi
 
 RUN dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
 		findutils iputils \
 		podman \
 		# inventory
-		dmidecode ipmitool file fio \
+		ipmitool file fio \
 		smartmontools \
 		sg3_utils \
 		# free_addresses

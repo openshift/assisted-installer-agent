@@ -179,7 +179,7 @@ func isISCSIDisk(disk *ghw.Disk) bool {
 }
 
 func isFCDisk(disk *ghw.Disk) bool {
-	return strings.Contains(disk.BusPath, "-fc-")
+	return strings.Contains(disk.BusPath, "-fc-") || strings.HasPrefix(disk.BusPath, "fc-")
 }
 
 func (d *disks) dmUUIDHasPrefix(disk *ghw.Disk, prefix string) bool {

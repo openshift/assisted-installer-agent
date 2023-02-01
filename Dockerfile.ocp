@@ -19,4 +19,4 @@ COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/script
 
 RUN if [ "$(arch)" -eq "x86_64" ]; then dnf install -y biosdevname dmidecode; fi
 RUN if [ "$(arch)" -eq "aarch64" ]; then dnf install -y dmidecode; fi
-RUN dnf install -y dhclient file findutils fio ipmitool iputils nmap openssh-clients podman chrony smartmontools && dnf clean all
+RUN dnf install -y dhclient file findutils fio ipmitool iputils nmap openssh-clients podman chrony && dnf clean all

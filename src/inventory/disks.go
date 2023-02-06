@@ -16,11 +16,6 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-const (
-	// Arbitrary SMART result to use in dry-run mode, the content doesn't really matter
-	dryRunSmart = `{"json_format_version":[1,0],"smartctl":{"version":[7,1],"svn_revision":"5022","platform_info":"x86_64-linux-5.14.0-60.fc35.x86_64","build_info":"(local build)","argv":["smartctl","--xall","--json=c","/dev/vda"],"messages":[{"string":"/dev/vda: Unable to detect device type","severity":"error"}],"exit_status":1}}`
-)
-
 type disks struct {
 	dependencies     util.IDependencies
 	subprocessConfig *config.SubprocessConfig
@@ -143,24 +138,6 @@ func (d *disks) hasUUID(path string) bool {
 	}
 
 	return true
-}
-
-func (d *disks) getSMART(path string) string {
-	if path == "" {
-		return ""
-	}
-
-	if d.subprocessConfig.DryRunEnabled {
-		// smartctl is rather slow, better to avoid it dry run mode
-		return dryRunSmart
-	}
-
-	// We ignore the exit code and stderr because stderr is empty and
-	// stdout contains the exit code in `--json=c` mode. Whatever the exit
-	// code is, we want to relay the information to the service
-	stdout, _, _ := d.dependencies.Execute("smartctl", "--all", "--quiet=errorsonly", path)
-
-	return stdout
 }
 
 func unknownToEmpty(value string) string {
@@ -367,7 +344,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Wwn:                     unknownToEmpty(disk.WWN),
 			Bootable:                d.getBootable(path),
 			Removable:               disk.IsRemovable,
-			Smart:                   d.getSMART(path),
+			Smart:                   "", // We no longer collect disk S.M.A.R.T. as it's not used and usually not interesting
 			IsInstallationMedia:     isInstallationMedia,
 			InstallationEligibility: eligibility,
 			HasUUID:                 d.hasUUID(path),

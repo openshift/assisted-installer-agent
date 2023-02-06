@@ -32,7 +32,7 @@ func createFakeModelDisk(num int) *models.Disk {
 		Vendor:    fmt.Sprintf("disk%d-vendor", num),
 		Wwn:       fmt.Sprintf("disk%d-wwn", num),
 		Bootable:  false,
-		Smart:     `{"some": "json"}`,
+		Smart:     "",
 		Holders:   "",
 		InstallationEligibility: models.DiskInstallationEligibility{
 			Eligible: true,
@@ -188,7 +188,7 @@ func createExpectedSDAModelDisk() *models.Disk {
 		Path:                sdaPath,
 		Serial:              "6141877064533b0020adf3bb03167694",
 		SizeBytes:           999653638144,
-		Smart:               "{\"some\": \"json\"}",
+		Smart:               "",
 		Vendor:              "DELL",
 		Wwn:                 "0x6141877064533b0020adf3bb03167694",
 		Holders:             "",
@@ -215,7 +215,7 @@ func createExpectedSDBModelDisk() *models.Disk {
 		Path:                sdbPath,
 		Serial:              "6141877064533b0020adf3bc0325d664",
 		SizeBytes:           999653638144,
-		Smart:               "{\"some\": \"json\"}",
+		Smart:               "",
 		Vendor:              "DELL",
 		Wwn:                 "0x6141877064533b0020adf3bc0325d664",
 		Holders:             "",
@@ -377,10 +377,6 @@ func mockGetBootable(dependencies *util.MockIDependencies, path string, bootable
 	return mockExecuteDependencyCall(dependencies, "file", result, err, "-s", path)
 }
 
-func mockGetSMART(dependencies *util.MockIDependencies, path string, err string) *mock.Call {
-	return mockExecuteDependencyCall(dependencies, "smartctl", `{"some": "json"}`, err, "--all", "--quiet=errorsonly", path)
-}
-
 func mockHasUUID(dependencies *util.MockIDependencies, path string, err string) *mock.Call {
 	return mockExecuteDependencyCall(dependencies, "sg_inq", "output", err, "-p", "0x83", path)
 }
@@ -405,7 +401,6 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		mockGetByPath(dependencies, busPath, "")
 		mockGetHctl(dependencies, name, "")
 		mockGetBootable(dependencies, path, true, "")
-		mockGetSMART(dependencies, path, "")
 
 		if disk.WWN == "" {
 			mockNoUUID(dependencies, path)
@@ -426,7 +421,6 @@ func prepareDiskObjects(dependencies *util.MockIDependencies, diskNum int) {
 	mockGetHctl(dependencies, name, "")
 	mockGetByPath(dependencies, disk.BusPath, "")
 	mockGetBootable(dependencies, path, false, "")
-	mockGetSMART(dependencies, path, "")
 	mockNoUUID(dependencies, path)
 	mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", name), "")
 
@@ -502,16 +496,6 @@ var _ = Describe("Disks test", func() {
 			// No need to change anything, default test disk already tests this.
 			// Just make sure that it's truly as we expect
 			Expect(expectation[0].Bootable).To(BeFalse())
-		})
-
-		It("Without a smartctl error", func() {
-			expectation[0].Smart = `{"some": "json"}`
-		})
-
-		It("With a smartctl error - make sure JSON is still transmitted", func() {
-			Expect(util.DeleteExpectedMethod(&dependencies.Mock, "Execute", "smartctl", "--all", "--quiet=errorsonly", "/dev/foo/disk1")).To(BeTrue())
-			dependencies.On("Execute", "smartctl", "--all", "--quiet=errorsonly", "/dev/foo/disk1").Return(`{"some": "json"}`, "", 1).Once()
-			expectation[0].Smart = `{"some": "json"}`
 		})
 
 		AfterEach(func() {
@@ -630,7 +614,6 @@ var _ = Describe("Disks test", func() {
 		mockGetPathFromDev(dependencies, disk.Name, "")
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, true, "")
-		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
@@ -649,7 +632,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "",
 				Wwn:       "",
 				Bootable:  true,
-				Smart:     `{"some": "json"}`,
+				Smart:     "",
 				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
@@ -693,7 +676,6 @@ var _ = Describe("Disks test", func() {
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, false, "")
 		mockGetByPath(dependencies, disk.BusPath, "")
-		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
@@ -711,7 +693,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "",
 				Wwn:       "eui.5cd2e42a91419c24",
 				Bootable:  false,
-				Smart:     `{"some": "json"}`,
+				Smart:     "",
 				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
@@ -744,7 +726,6 @@ var _ = Describe("Disks test", func() {
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, true, "")
 		mockGetByPath(dependencies, disk.BusPath, "")
-		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
@@ -763,7 +744,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "LIO-ORG",
 				Wwn:       "0x6001405961d8b6f55cf48beb0de296b2",
 				Bootable:  true,
-				Smart:     `{"some": "json"}`,
+				Smart:     "",
 				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
@@ -782,7 +763,6 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockNoUUID(dependencies, path)
 		mockGetByPath(dependencies, disk.BusPath, "")
-		mockGetSMART(dependencies, path, "")
 
 		holders := map[string]string{"dm-1": ""}
 		holderInfos := funk.Map(holders, func(name string, _ string) os.FileInfo {
@@ -809,7 +789,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "vendor",
 				Wwn:       "0x6001405961d8b6f55cf48beb0de296b2",
 				Bootable:  true,
-				Smart:     `{"some": "json"}`,
+				Smart:     "",
 				Holders:   "dm-1",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
@@ -828,7 +808,6 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockNoUUID(dependencies, path)
 		mockGetByPath(dependencies, disk.BusPath, "")
-		mockGetSMART(dependencies, path, "")
 
 		holders := map[string]string{"dm-0": ""}
 		holderInfos := funk.Map(holders, func(name string, _ string) os.FileInfo {
@@ -855,7 +834,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "vendor",
 				Wwn:       "0x6005076d0281005ef000000000028f3a",
 				Bootable:  true,
-				Smart:     `{"some": "json"}`,
+				Smart:     "",
 				Holders:   "dm-0",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
@@ -872,7 +851,6 @@ var _ = Describe("Disks test", func() {
 		mockGetPathFromDev(dependencies, disk.Name, "")
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, true, "")
-		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 
@@ -893,7 +871,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "",
 				Wwn:       "",
 				Bootable:  true,
-				Smart:     `{"some": "json"}`,
+				Smart:     "",
 				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
@@ -910,7 +888,6 @@ var _ = Describe("Disks test", func() {
 		mockGetPathFromDev(dependencies, disk.Name, "")
 		mockGetHctl(dependencies, disk.Name, "error")
 		mockGetBootable(dependencies, path, true, "")
-		mockGetSMART(dependencies, path, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 
@@ -931,7 +908,7 @@ var _ = Describe("Disks test", func() {
 				Vendor:    "",
 				Wwn:       "",
 				Bootable:  true,
-				Smart:     `{"some": "json"}`,
+				Smart:     "",
 				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible:           false,

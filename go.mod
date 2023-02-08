@@ -18,6 +18,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.1
+	github.com/openshift/agent-installer-utils v0.0.0-20230223084712-2eb1d99104de
 	github.com/openshift/assisted-service v1.0.10-0.20221227183914-58b7b4b0fd8e
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
@@ -35,8 +36,15 @@ require (
 )
 
 require (
+	github.com/gdamore/encoding v1.0.0 // indirect
+	github.com/gdamore/tcell/v2 v2.5.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/krishicks/yaml-patch v0.0.10 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/nmstate/nmstate/rust/src/go/nmstate/v2 v2.0.0-20230118143834-39a056947abc // indirect
+	github.com/rivo/tview v0.0.0-20230104153304-892d1a2eb0da // indirect
+	github.com/rivo/uniseg v0.4.2 // indirect
 	go.opentelemetry.io/otel v1.11.1 // indirect
 	go.opentelemetry.io/otel/trace v1.11.1 // indirect
 )

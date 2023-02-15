@@ -28,7 +28,7 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	loggingConfig := &LogsSenderConfig{}
 	flag.BoolVar(&loggingConfig.JournalLogging, "with-journal-logging", defaultJournalLogging, "Use journal logging")
 	flag.BoolVar(&loggingConfig.TextLogging, "with-text-logging", defaultTextLogging, "Use text logging")
-	flag.StringVar(&loggingConfig.Since, "since", "5 hours ago", "Journalctl since flag, same format")
+	flag.StringVar(&loggingConfig.Since, "since", "", "Journalctl since flag, same format")
 	flag.StringVar(&loggingConfig.TargetURL, "url", "", "The target URL, including a scheme and optionally a port (overrides the host and port arguments")
 	flag.StringVar(&loggingConfig.ClusterID, "cluster-id", "", "The value of the cluster-id, required")
 	flag.StringVar(&loggingConfig.InfraEnvID, "infra-env-id", "", "The value of the infra-env-id")

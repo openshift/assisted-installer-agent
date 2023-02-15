@@ -308,7 +308,11 @@ func getCoreDumps(l LogsSender, targetDir string) error {
 
 func getJournalLogs(l LogsSender, since string, outputFilePath string, journalFilterParams []string) error {
 	log.Infof("Running journalctl %s", journalFilterParams)
-	args := []string{"-D", "/var/log/journal/", "--since", since, "--all"}
+	args := []string{"-D", "/var/log/journal/", "--all"}
+	if since != "" {
+		args = append(args, "--since", since)
+	}
+
 	args = append(args, journalFilterParams...)
 	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "journalctl", args...)
 	if exitCode != 0 {

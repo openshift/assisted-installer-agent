@@ -52,14 +52,14 @@ var _ = Describe("logs sender", func() {
 	executeOutputToFileSuccess := func(retVal int) {
 		for _, tag := range loggingConfig.Tags {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
-			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-				"--since", loggingConfig.Since, "--all", fmt.Sprintf("TAG=%s", tag)).
+			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
+				"--since", loggingConfig.Since, fmt.Sprintf("TAG=%s", tag)).
 				Return("Dummy", retVal)
 		}
 		for _, service := range loggingConfig.Services {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
-			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-				"--since", loggingConfig.Since, "--all", "-u", service).
+			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
+				"--since", loggingConfig.Since, "-u", service).
 				Return("Dummy", retVal)
 		}
 	}
@@ -188,10 +188,19 @@ var _ = Describe("logs sender", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	It("journal logs with since", func() {
+		outputPath := path.Join(logsTmpFilesDir, "journal.logs")
+		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
+			"--since", loggingConfig.Since).Return("Dummy", 0)
+		err := getJournalLogs(logsSenderMock, loggingConfig.Since, outputPath, []string{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("full journal logs", func() {
 		outputPath := path.Join(logsTmpFilesDir, "journal.logs")
+		loggingConfig.Since = ""
 		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
-			"--since", loggingConfig.Since, "--all").Return("Dummy", 0)
+			"--all").Return("Dummy", 0)
 		err := getJournalLogs(logsSenderMock, loggingConfig.Since, outputPath, []string{})
 		Expect(err).NotTo(HaveOccurred())
 	})

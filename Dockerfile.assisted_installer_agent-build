@@ -1,8 +1,8 @@
-FROM registry.ci.openshift.org/openshift/release:golang-1.18
+FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.19-openshift-4.13
 ENV GO111MODULE=on
 ENV GOFLAGS=""
 
-RUN yum install -y docker docker-compose && \
+RUN yum install -y docker docker-compose gcc nmstate-devel nmstate-libs && \
     yum clean all
 COPY --from=quay.io/app-sre/golangci-lint:v1.46.0 /usr/bin/golangci-lint /usr/bin/golangci-lint
 RUN go install golang.org/x/tools/cmd/goimports@v0.1.0 && \

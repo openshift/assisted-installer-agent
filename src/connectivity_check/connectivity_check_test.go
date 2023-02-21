@@ -61,7 +61,7 @@ var _ = Describe("check host parallel validation", func() {
 			expected: &models.ConnectivityRemoteHost{
 				L2Connectivity: []*models.L2Connectivity{
 					{OutgoingNic: "nic_ipv4",
-						RemoteIPAddress:   "192.168.1.1",
+						RemoteIPAddress:   "192.168.1.2",
 						OutgoingIPAddress: "192.168.1.133",
 						Successful:        true,
 						RemoteMac:         "74:d0:2b:1c:c6:42"},

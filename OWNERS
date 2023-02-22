@@ -8,6 +8,9 @@ filters:
       - emeritus_approvers
     reviewers:
       - approvers
-  ^Dockerfile\..*:
+  ^Dockerfile\.(?!ocp).*:
     labels:
       - downstream-change-needed
+  ^Dockerfile\.ocp:
+    approvers:
+      - agent_team

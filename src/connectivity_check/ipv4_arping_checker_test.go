@@ -55,7 +55,7 @@ Received 0 response(s)
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        outgoingNIC,
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockFullReply(remoteIPAddress, remoteMACAddress)
@@ -70,11 +70,21 @@ Received 0 response(s)
 		Expect(resultingHost.L2Connectivity[0].OutgoingIPAddress).To(Equal(outgoingIPAddress))
 		Expect(resultingHost.L2Connectivity[0].Successful).To(BeTrue())
 	})
+	It("no ipv4 addresses", func() {
+		attributes := Attributes{
+			RemoteIPAddress:    remoteIPAddress,
+			RemoteMACAddress:   remoteMACAddress,
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv6Addresses: true},
+			RemoteMACAddresses: remoteMACAddresses,
+		}
+		reporter := checker.Check(attributes)
+		Expect(reporter).To(BeNil())
+	})
 	It("happy flow with secondary mac", func() {
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        outgoingNIC,
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockFullReply(remoteIPAddress, secondaryMACAddress)
@@ -93,7 +103,7 @@ Received 0 response(s)
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        outgoingNIC,
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockFullReply(remoteIPAddress, additionalMACAddress)
@@ -112,7 +122,7 @@ Received 0 response(s)
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        outgoingNIC,
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockEmptyReply(remoteIPAddress)

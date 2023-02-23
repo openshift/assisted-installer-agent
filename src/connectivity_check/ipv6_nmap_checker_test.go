@@ -21,9 +21,11 @@ const nmapOut = `
 
 var _ = Describe("nmap analysis test", func() {
 	DescribeTable("nmap test cases",
-		func(remoteIPAddress, remoteMACAddress, outgoingNIC string, remoteMACAddresses []string, output string, err error, expected *models.L2Connectivity) {
+		func(remoteIPAddress, remoteMACAddress string, outgoingNIC OutgoingNic, remoteMACAddresses []string, output string, err error, expected *models.L2Connectivity, executionExpected bool) {
 			e := &MockExecuter{}
-			e.On("Execute", "nmap", "-6", "-sn", "-n", "-oX", "-", "-e", outgoingNIC, remoteIPAddress).Return(output, err).Once()
+			if executionExpected {
+				e.On("Execute", "nmap", "-6", "-sn", "-n", "-oX", "-", "-e", outgoingNIC.Name, remoteIPAddress).Return(output, err)
+			}
 			checker := &nmapChecker{
 				executer: e,
 			}
@@ -45,19 +47,18 @@ var _ = Describe("nmap analysis test", func() {
 			}
 			e.AssertExpectations(GinkgoT())
 		},
-		Entry("Happy flow", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, nil,
+		Entry("Happy flow", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, nil,
 			&models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
 				Successful:      true,
-			},
-		),
-		Entry("Command error", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, errors.New("nmap command failed"),
-			nil),
-		Entry("Invalid XML", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, "plain text", nil,
-			nil),
-		Entry("Host down", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
+			}, true),
+		Entry("Command error", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, errors.New("nmap command failed"),
+			nil, true),
+		Entry("Invalid XML", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, "plain text", nil,
+			nil, true),
+		Entry("Host down", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
 			`<nmaprun>
 					<host>
 						<status state="down" />
@@ -65,16 +66,15 @@ var _ = Describe("nmap analysis test", func() {
 						<address addr="02:42:AC:12:00:02" addrtype="mac" />
 					</host>
 				</nmaprun>`, nil,
-			nil),
-		Entry("Lower-case destination MAC address", "2001:db8::2", "02:42:ac:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, nil,
+			nil, true),
+		Entry("Lower-case destination MAC address", "2001:db8::2", "02:42:ac:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, nil,
 			&models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
 				Successful:      true,
-			},
-		),
-		Entry("Lower-case discovered MAC address", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
+			}, true),
+		Entry("Lower-case discovered MAC address", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
 			`
 				<nmaprun>
 					<host>
@@ -89,9 +89,8 @@ var _ = Describe("nmap analysis test", func() {
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
 				Successful:      true,
-			},
-		),
-		Entry("No MAC address", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
+			}, true),
+		Entry("No MAC address", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
 			`
 				<nmaprun>
 					<host>
@@ -99,11 +98,11 @@ var _ = Describe("nmap analysis test", func() {
 						<address addr="2001:db8::2" addrtype="ipv6" />
 					</host>
 				</nmaprun>`, nil,
-			nil),
-		Entry("No hosts", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
+			nil, true),
+		Entry("No hosts", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
 			`<nmaprun />`, nil,
-			nil),
-		Entry("First matching host", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
+			nil, true),
+		Entry("First matching host", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
 			`<nmaprun>
 					<host>
 						<status state="up" />
@@ -121,8 +120,8 @@ var _ = Describe("nmap analysis test", func() {
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:aa:00:02",
 				Successful:      false,
-			}),
-		Entry("Multiple hosts, only one up", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
+			}, true),
+		Entry("Multiple hosts, only one up", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
 			`
 				<nmaprun>
 					<host>
@@ -141,8 +140,8 @@ var _ = Describe("nmap analysis test", func() {
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
 				Successful:      true,
-			}),
-		Entry("Multiple hosts, only one has a MAC address", "2001:db8::2", "02:42:AC:12:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
+			}, true),
+		Entry("Multiple hosts, only one has a MAC address", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
 			`
 				<nmaprun>
 					<host>
@@ -160,21 +159,21 @@ var _ = Describe("nmap analysis test", func() {
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
 				Successful:      true,
-			}),
-		Entry("Unexpected MAC address", "2001:db8::2", "02:42:CC:14:00:02", "eth0", []string{"02:42:B:14:00:02", "02:42:C:14:00:02"},
+			}, true),
+		Entry("Unexpected MAC address", "2001:db8::2", "02:42:CC:14:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:B:14:00:02", "02:42:C:14:00:02"},
 			nmapOut, nil,
 			&models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
-			}),
-		Entry("MAC different than tried", "2001:db8::2", "02:42:CC:10:00:02", "eth0", []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, nil,
+			}, true),
+		Entry("MAC different than tried", "2001:db8::2", "02:42:CC:10:00:02", OutgoingNic{Name: "eth0", HasIpv6Addresses: true}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, nil,
 			&models.L2Connectivity{
 				OutgoingNic:     "eth0",
 				RemoteIPAddress: "2001:db8::2",
 				RemoteMac:       "02:42:ac:12:00:02",
 				Successful:      true,
-			},
-		),
+			}, true),
+		Entry("No IPv6 addresses", "2001:db8::2", "02:42:AC:12:00:02", OutgoingNic{Name: "eth0"}, []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"}, nmapOut, nil, nil, false),
 	)
 })

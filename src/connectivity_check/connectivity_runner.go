@@ -17,6 +17,12 @@ const (
 	RemoteMACFeature
 )
 
+type OutgoingNic struct {
+	Name             string
+	HasIpv4Addresses bool
+	HasIpv6Addresses bool
+}
+
 // Attributes to be sent to a checker in order to perform a single checking operation
 type Attributes struct {
 	// The IP address of the remote host to check
@@ -26,7 +32,7 @@ type Attributes struct {
 	RemoteMACAddress string
 
 	// Request to perform the test on a specific outgoing (local) NIC
-	OutgoingNIC string
+	OutgoingNIC OutgoingNic
 
 	// All the MAC addresses of the remote host
 	RemoteMACAddresses []string
@@ -76,7 +82,7 @@ func spawnChecker(attributes Attributes, reporterChan chan ResultReporter, wg *s
 	}
 }
 
-func (d *connectivityRunner) ProcessHost(checkHost *models.ConnectivityCheckHost, outgoingNics []string, resultChan chan checkedHostResult) {
+func (d *connectivityRunner) ProcessHost(checkHost *models.ConnectivityCheckHost, outgoingNics []OutgoingNic, resultChan chan checkedHostResult) {
 	var (
 		resultingHost models.ConnectivityRemoteHost
 		wg            sync.WaitGroup
@@ -129,7 +135,7 @@ func (d *connectivityRunner) ProcessHost(checkHost *models.ConnectivityCheckHost
 	funk.ForEach(d.checkers, func(c Checker) { c.Finalize(&resultingHost) })
 }
 
-func (d *connectivityRunner) Run(params models.ConnectivityCheckParams, outgoingNics []string) (models.ConnectivityReport, error) {
+func (d *connectivityRunner) Run(params models.ConnectivityCheckParams, outgoingNics []OutgoingNic) (models.ConnectivityReport, error) {
 	var (
 		ret models.ConnectivityReport
 		err error

@@ -1070,10 +1070,6 @@ github.com/opencontainers/selinux v1.8.2/go.mod h1:MUIHuUEvKB1wtJjQdOyYRgOnLD2xA
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
 github.com/openshift-online/ocm-sdk-go v0.1.205 h1:DhvfTf55jpQsTFpI283/z3b0Tab8x26oelPDuao7IiM=
 github.com/openshift-online/ocm-sdk-go v0.1.205/go.mod h1:iOhkt/6nFp9v7hasdmGbYlR/YKeUoaZKq5ZBrtyKwKg=
-github.com/openshift/agent-installer-utils v0.0.0-20230207142407-d71f424091e7 h1:rx5v/4dVMXJCjUXjwJk2JhZmIbiNkSuatHe9JM4khGA=
-github.com/openshift/agent-installer-utils v0.0.0-20230207142407-d71f424091e7/go.mod h1:YRyVyk9CnAfeF3lp6oeRcW6CsJKO2usEcLej8UaZaXA=
-github.com/openshift/agent-installer-utils v0.0.0-20230222080657-61d59e366127 h1:lACPJn/gi74WxLs00EtYzemnpzDM8E/hMmY2Q8KVTPE=
-github.com/openshift/agent-installer-utils v0.0.0-20230222080657-61d59e366127/go.mod h1:NQY4g4PCOiK/M3p/N1iJHDk8snbISaLHBRgKeCJW73Y=
 github.com/openshift/agent-installer-utils v0.0.0-20230223084712-2eb1d99104de h1:d/aaV2vHyHtuQxS+6Y2kc4iTv8KTMoEWu/6qi5LAy8k=
 github.com/openshift/agent-installer-utils v0.0.0-20230223084712-2eb1d99104de/go.mod h1:NQY4g4PCOiK/M3p/N1iJHDk8snbISaLHBRgKeCJW73Y=
 github.com/openshift/assisted-service v1.0.10-0.20221227183914-58b7b4b0fd8e h1:5Iebch6U5GGT++Xy3o5EFDm/P7ym0BOzQKrkqcFHCQs=
@@ -1280,8 +1276,8 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
-github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
-github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
+github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
+github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/sylabs/release-tools v0.1.0/go.mod h1:pqP/z/11/rYMQ0OM/Nn7TxGijw7KfZwW9UolD/J1TUo=
 github.com/sylabs/sif/v2 v2.3.2/go.mod h1:IrLX2pzmQ2O4qgv5iy3HdKJcBNYds9DTMd9Je8A9tX4=

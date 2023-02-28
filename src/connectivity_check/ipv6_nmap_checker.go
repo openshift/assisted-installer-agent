@@ -19,10 +19,10 @@ func (p *nmapChecker) Features() Features {
 }
 
 func (p *nmapChecker) Check(attributes Attributes) ResultReporter {
-	if util.IsIPv4Addr(attributes.RemoteIPAddress) {
+	if util.IsIPv4Addr(attributes.RemoteIPAddress) || !attributes.OutgoingNIC.HasIpv6Addresses {
 		return nil
 	}
-	result, err := p.executer.Execute("nmap", "-6", "-sn", "-n", "-oX", "-", "-e", attributes.OutgoingNIC, attributes.RemoteIPAddress)
+	result, err := p.executer.Execute("nmap", "-6", "-sn", "-n", "-oX", "-", "-e", attributes.OutgoingNIC.Name, attributes.RemoteIPAddress)
 	if err != nil {
 		log.WithError(err).Error("Error while processing 'nmap' command")
 		return nil
@@ -34,7 +34,7 @@ func (p *nmapChecker) Check(attributes Attributes) ResultReporter {
 	}
 
 	ret := models.L2Connectivity{
-		OutgoingNic:     attributes.OutgoingNIC,
+		OutgoingNic:     attributes.OutgoingNIC.Name,
 		RemoteIPAddress: attributes.RemoteIPAddress,
 	}
 
@@ -50,7 +50,7 @@ func (p *nmapChecker) Check(attributes Attributes) ResultReporter {
 			ret.RemoteMac = remoteMAC
 			ret.Successful = macInDstMacs(remoteMAC, attributes.RemoteMACAddresses)
 			if !ret.Successful {
-				log.Warnf("Unexpected MAC address for nmap %s on NIC %s: %s", attributes.RemoteIPAddress, attributes.OutgoingNIC, remoteMAC)
+				log.Warnf("Unexpected MAC address for nmap %s on NIC %s: %s", attributes.RemoteIPAddress, attributes.OutgoingNIC.Name, remoteMAC)
 			} else if strings.ToLower(attributes.RemoteMACAddress) != remoteMAC {
 				log.Infof("Received remote MAC %s different then expected MAC %s", remoteMAC, attributes.RemoteMACAddress)
 			}

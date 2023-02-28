@@ -19,11 +19,11 @@ func (p *arpingChecker) Features() Features {
 }
 
 func (p *arpingChecker) Check(attributes Attributes) ResultReporter {
-	if !util.IsIPv4Addr(attributes.RemoteIPAddress) {
+	if !util.IsIPv4Addr(attributes.RemoteIPAddress) || !attributes.OutgoingNIC.HasIpv4Addresses {
 		return nil
 	}
 
-	result, err := p.executer.Execute("arping", "-c", "10", "-w", "5", "-I", attributes.OutgoingNIC, attributes.RemoteIPAddress)
+	result, err := p.executer.Execute("arping", "-c", "10", "-w", "5", "-I", attributes.OutgoingNIC.Name, attributes.RemoteIPAddress)
 	if err != nil {
 		log.WithError(err).Error("Error while processing 'arping' command")
 		return nil
@@ -56,7 +56,7 @@ func (p *arpingChecker) Check(attributes Attributes) ResultReporter {
 		remoteMAC := strings.ToLower(parts[2])
 		successful := macInDstMacs(remoteMAC, attributes.RemoteMACAddresses)
 		if !successful {
-			log.Warnf("Unexpected mac address for arping %s on nic %s: %s", attributes.RemoteIPAddress, attributes.OutgoingNIC, remoteMAC)
+			log.Warnf("Unexpected mac address for arping %s on nic %s: %s", attributes.RemoteIPAddress, attributes.OutgoingNIC.Name, remoteMAC)
 		}
 		if strings.ToLower(attributes.RemoteMACAddress) != remoteMAC {
 			log.Infof("Received remote mac %s different then expected mac %s", remoteMAC, attributes.RemoteMACAddress)
@@ -64,7 +64,7 @@ func (p *arpingChecker) Check(attributes Attributes) ResultReporter {
 
 		returnValues[remoteMAC] = &models.L2Connectivity{
 			OutgoingIPAddress: outgoingIpAddress,
-			OutgoingNic:       attributes.OutgoingNIC,
+			OutgoingNic:       attributes.OutgoingNIC.Name,
 			RemoteIPAddress:   attributes.RemoteIPAddress,
 			RemoteMac:         remoteMAC,
 			Successful:        successful,

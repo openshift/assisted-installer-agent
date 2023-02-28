@@ -14,7 +14,7 @@ func (d *dryL2Checker) Features() Features {
 
 func (d *dryL2Checker) Check(attributes Attributes) ResultReporter {
 	return newL2ResultReporter(&models.L2Connectivity{
-		OutgoingNic:     attributes.OutgoingNIC,
+		OutgoingNic:     attributes.OutgoingNIC.Name,
 		RemoteIPAddress: attributes.RemoteIPAddress,
 		RemoteMac:       attributes.RemoteMACAddress,
 		Successful:      true,

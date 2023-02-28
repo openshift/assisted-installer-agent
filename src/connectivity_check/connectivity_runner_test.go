@@ -14,13 +14,17 @@ var _ = Describe("connectivity dispatcher", func() {
 	var (
 		mockCheckers []*MockChecker
 		mockReporter *MockResultReporter
-		nics         []string
+		nics         []OutgoingNic
 		params       models.ConnectivityCheckParams
 	)
 	BeforeEach(func() {
-		nics = []string{
-			"eth0",
-			"eth1",
+		nics = []OutgoingNic{
+			{
+				Name: "eth0",
+			},
+			{
+				Name: "eth1",
+			},
 		}
 		params = models.ConnectivityCheckParams{
 			{
@@ -95,7 +99,7 @@ var _ = Describe("connectivity dispatcher", func() {
 			Run(func(args mock.Arguments) {
 				attributes, ok := args.Get(0).(Attributes)
 				Expect(ok).To(BeTrue())
-				Expect(attributes.OutgoingNIC).To(BeEmpty())
+				Expect(attributes.OutgoingNIC).To(Equal(OutgoingNic{}))
 				Expect(attributes.RemoteIPAddress).To(BeElementOf([]string{"10.1.2.3", "10.1.2.4", "de::1", "de::2"}))
 				Expect(attributes.RemoteMACAddress).To(BeElementOf([]string{"f8:75:a4:a4:00:fe", "f8:75:a4:a4:00:ff"}))
 				Expect(attributes.RemoteMACAddresses).To(ConsistOf([]string{"f8:75:a4:a4:00:fe", "f8:75:a4:a4:00:ff"}))
@@ -124,7 +128,7 @@ var _ = Describe("connectivity dispatcher", func() {
 			Run(func(args mock.Arguments) {
 				attributes, ok := args.Get(0).(Attributes)
 				Expect(ok).To(BeTrue())
-				Expect(attributes.OutgoingNIC).To(BeElementOf([]string{"eth0", "eth1"}))
+				Expect(attributes.OutgoingNIC.Name).To(BeElementOf([]string{"eth0", "eth1"}))
 				Expect(attributes.RemoteIPAddress).To(BeElementOf([]string{"10.1.2.3", "10.1.2.4", "de::1", "de::2"}))
 				Expect(attributes.RemoteMACAddress).To(BeElementOf([]string{"f8:75:a4:a4:00:fe", "f8:75:a4:a4:00:ff"}))
 				Expect(attributes.RemoteMACAddresses).To(ConsistOf([]string{"f8:75:a4:a4:00:fe", "f8:75:a4:a4:00:ff"}))

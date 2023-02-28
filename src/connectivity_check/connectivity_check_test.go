@@ -11,6 +11,7 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
+	"github.com/thoas/go-funk"
 )
 
 var _ = Describe("check host parallel validation", func() {
@@ -216,7 +217,9 @@ var _ = Describe("check host parallel validation", func() {
 		t := tests[i]
 		It(t.name, func() {
 			d := setupDispather(t.simulateL2IPConflict, t.success, t.hosts.Nics)
-			ret, err := d.Run(models.ConnectivityCheckParams{t.hosts}, t.nics)
+			ret, err := d.Run(models.ConnectivityCheckParams{t.hosts}, funk.Map(t.nics, func(s string) OutgoingNic {
+				return OutgoingNic{Name: s, HasIpv4Addresses: true, HasIpv6Addresses: true}
+			}).([]OutgoingNic))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ret.RemoteHosts).To(HaveLen(1))
 			if !t.strictMatchingL2 {

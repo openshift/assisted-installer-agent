@@ -1,6 +1,8 @@
 package connectivity_check
 
 import (
+	"fmt"
+	"net"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -11,6 +13,9 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
+
+const ipv4LocalLinkCIDR = "169.254.0.0/16"
+const ipv6LocalLinkCIDR = "fe80::/10"
 
 //go:generate mockery --name Executer --inpackage
 type Executer interface {
@@ -31,8 +36,25 @@ func newExecuter() Executer {
 	return &executer{}
 }
 
-func getOutgoingNics(dryRunConfig *config.DryRunConfig, d util.IDependencies) []string {
-	ret := make([]string, 0)
+func analyzeAddress(addr net.Addr) (isIpv4 bool, isLinkLocal bool, err error) {
+	ipNet, ok := addr.(*net.IPNet)
+	if !ok {
+		return false, false, fmt.Errorf("could not cast to *net.IPNet")
+	}
+	_, bits := ipNet.Mask.Size()
+	isIpv4 = bits == 32
+	var linkLocalNet *net.IPNet
+	if isIpv4 {
+		_, linkLocalNet, err = net.ParseCIDR(ipv4LocalLinkCIDR)
+	} else {
+		_, linkLocalNet, err = net.ParseCIDR(ipv6LocalLinkCIDR)
+	}
+	isLinkLocal = linkLocalNet.Contains(ipNet.IP)
+	return
+}
+
+func getOutgoingNics(dryRunConfig *config.DryRunConfig, d util.IDependencies) []OutgoingNic {
+	ret := make([]OutgoingNic, 0)
 	if d == nil {
 		d = util.NewDependencies(dryRunConfig, "")
 	}
@@ -50,11 +72,28 @@ func getOutgoingNics(dryRunConfig *config.DryRunConfig, d util.IDependencies) []
 		// (https://bugzilla.redhat.com/show_bug.cgi?id=2105358) we are only using as outgoing
 		// NICs those interfaces that have at least one IP address assigned.
 		addrs, _ := intf.Addrs()
-		if len(addrs) == 0 {
-			log.Infof("Skipping NIC %s (MAC %s) because of no addresses", intf.Name(), intf.HardwareAddr().String())
+
+		outgoingNic := OutgoingNic{Name: intf.Name()}
+		for _, addr := range addrs {
+			isIpv4, isLinkLocal, err := analyzeAddress(addr)
+			if err != nil {
+				log.Warnf("failed analizing address %s", addr.String())
+				continue
+			}
+			if isLinkLocal {
+				continue
+			}
+			if isIpv4 {
+				outgoingNic.HasIpv4Addresses = true
+			} else {
+				outgoingNic.HasIpv6Addresses = true
+			}
+		}
+		if !outgoingNic.HasIpv4Addresses && !outgoingNic.HasIpv6Addresses {
+			log.Infof("Skipping NIC %s (MAC %s) because of no valid addresses", intf.Name(), intf.HardwareAddr().String())
 			continue
 		}
-		ret = append(ret, intf.Name())
+		ret = append(ret, outgoingNic)
 	}
 	return ret
 }

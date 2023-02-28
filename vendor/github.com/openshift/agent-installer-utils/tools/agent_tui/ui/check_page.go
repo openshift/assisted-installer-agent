@@ -2,10 +2,10 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/checks"
-	"github.com/openshift/agent-installer-utils/tools/agent_tui/dialogs"
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/newt"
 	"github.com/rivo/tview"
 )
@@ -59,6 +59,22 @@ func (u *UI) appendToDetails(newLines string) {
 	u.details.SetText(current + newLines)
 }
 
+func (u *UI) setCheckWidget(row int, checkType string, desc string, config checks.Config) {
+	u.markCheckUnknown(row, 0)
+
+	if skipReason, skipped := config.SkippedChecks[checkType]; skipped {
+		u.setCheckDescription(row, 1, skipReason)
+		return
+	}
+
+	checkDesc := desc
+	if strings.Contains(desc, "%s") {
+		checkDesc = fmt.Sprintf(desc, config.ReleaseImageHostname)
+	}
+	u.setCheckDescription(row, 1, checkDesc)
+
+}
+
 func (u *UI) createCheckPage(config checks.Config) {
 	u.envVars = tview.NewTextView()
 	u.envVars.SetBorder(true)
@@ -69,29 +85,17 @@ func (u *UI) createCheckPage(config checks.Config) {
 	u.envVars.SetText("\n" + config.ReleaseImageURL)
 	u.envVars.SetTextColor(newt.ColorBlack)
 
-	releaseImageHostName, err := checks.ParseHostnameFromURL(config.ReleaseImageURL)
-	if err != nil {
-		dialogs.PanicDialog(u.app, err)
-	}
-
 	u.checks = tview.NewTable()
 	u.checks.SetBorder(true)
 	u.checks.SetTitle("  Checks  ")
 	u.checks.SetBorderColor(newt.ColorBlack)
 	u.checks.SetBackgroundColor(newt.ColorGray)
 	u.checks.SetTitleColor(newt.ColorBlack)
-	u.markCheckUnknown(0, 0)
-	u.setCheckDescription(0, 1, "podman pull release image")
-	u.markCheckUnknown(1, 0)
-	u.setCheckDescription(1, 1, "nslookup "+releaseImageHostName)
-	u.markCheckUnknown(2, 0)
-	if releaseImageHostName == "quay.io" {
-		u.setCheckDescription(2, 1, "quay.io does not respond to ping, ping skipped")
-	} else {
-		u.setCheckDescription(2, 1, "ping "+releaseImageHostName)
-	}
-	u.markCheckUnknown(3, 0)
-	u.setCheckDescription(3, 1, releaseImageHostName+" responds to http GET")
+
+	u.setCheckWidget(0, checks.CheckTypeReleaseImagePull, "podman pull release image", config)
+	u.setCheckWidget(1, checks.CheckTypeReleaseImageHostDNS, "nslookup %s", config)
+	u.setCheckWidget(2, checks.CheckTypeReleaseImageHostPing, "ping %s", config)
+	u.setCheckWidget(3, checks.CheckTypeReleaseImageHttp, "%s responds to http GET", config)
 
 	u.details = tview.NewTextView()
 	u.details.SetBorder(true)

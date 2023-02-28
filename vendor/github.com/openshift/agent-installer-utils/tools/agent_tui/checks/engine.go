@@ -21,6 +21,10 @@ const (
 type Config struct {
 	ReleaseImageURL string
 	LogPath         string
+
+	SkippedChecks                  map[string]string
+	ReleaseImageHostname           string
+	ReleaseImageSchemeHostnamePort string
 }
 
 // ChecksEngine is the model part, and is composed by a number
@@ -63,7 +67,7 @@ func (e *Engine) createCheckResult(f checkFunction, checkType string) CheckResul
 	return result
 }
 
-func (e *Engine) newRegistryImagePullCheck(releaseImageURL string) *Check {
+func (e *Engine) newRegistryImagePullCheck(config Config) *Check {
 	ctype := CheckTypeReleaseImagePull
 	return &Check{
 		Type: ctype,
@@ -71,7 +75,7 @@ func (e *Engine) newRegistryImagePullCheck(releaseImageURL string) *Check {
 		Run: func(c chan CheckResult, freq time.Duration) {
 			for {
 				checkFunction := func() ([]byte, error) {
-					return exec.Command("podman", "pull", releaseImageURL).CombinedOutput()
+					return exec.Command("podman", "pull", config.ReleaseImageURL).CombinedOutput()
 				}
 				c <- e.createCheckResult(checkFunction, ctype)
 				time.Sleep(freq)
@@ -80,7 +84,7 @@ func (e *Engine) newRegistryImagePullCheck(releaseImageURL string) *Check {
 	}
 }
 
-func (e *Engine) newReleaseImageHostDNSCheck(hostname string) *Check {
+func (e *Engine) newReleaseImageHostDNSCheck(config Config) *Check {
 	ctype := CheckTypeReleaseImageHostDNS
 	return &Check{
 		Type: ctype,
@@ -88,7 +92,7 @@ func (e *Engine) newReleaseImageHostDNSCheck(hostname string) *Check {
 		Run: func(c chan CheckResult, freq time.Duration) {
 			for {
 				checkFunction := func() ([]byte, error) {
-					return exec.Command("nslookup", hostname).CombinedOutput()
+					return exec.Command("nslookup", config.ReleaseImageHostname).CombinedOutput()
 				}
 				c <- e.createCheckResult(checkFunction, ctype)
 				time.Sleep(freq)
@@ -97,23 +101,15 @@ func (e *Engine) newReleaseImageHostDNSCheck(hostname string) *Check {
 	}
 }
 
-func (e *Engine) newReleaseImageHostPingCheck(hostname string) *Check {
+func (e *Engine) newReleaseImageHostPingCheck(config Config) *Check {
 	ctype := CheckTypeReleaseImageHostPing
 	return &Check{
 		Type: ctype,
 		Freq: 5 * time.Second,
 		Run: func(c chan CheckResult, freq time.Duration) {
 			for {
-				var checkFunction func() ([]byte, error)
-				if hostname == "quay.io" {
-					// quay.io does not respond to ping
-					checkFunction = func() ([]byte, error) {
-						return nil, nil
-					}
-				} else {
-					checkFunction = func() ([]byte, error) {
-						return exec.Command("ping", "-c", "4", hostname).CombinedOutput()
-					}
+				checkFunction := func() ([]byte, error) {
+					return exec.Command("ping", "-c", "4", config.ReleaseImageHostname).CombinedOutput()
 				}
 				c <- e.createCheckResult(checkFunction, ctype)
 				time.Sleep(freq)
@@ -125,7 +121,8 @@ func (e *Engine) newReleaseImageHostPingCheck(hostname string) *Check {
 // This check verifies whether there is a http server response
 // when schemeHostnamePort is queried. This does not check
 // if the release image exists.
-func (e *Engine) newReleaseImageHttpCheck(schemeHostnamePort string) *Check {
+func (e *Engine) newReleaseImageHttpCheck(config Config) *Check {
+
 	ctype := CheckTypeReleaseImageHttp
 	return &Check{
 		Type: ctype,
@@ -133,7 +130,7 @@ func (e *Engine) newReleaseImageHttpCheck(schemeHostnamePort string) *Check {
 		Run: func(c chan CheckResult, freq time.Duration) {
 			for {
 				checkFunction := func() ([]byte, error) {
-					resp, err := http.Get(schemeHostnamePort)
+					resp, err := http.Get(config.ReleaseImageSchemeHostnamePort)
 					if err != nil {
 						return []byte(err.Error()), err
 					} else {
@@ -164,27 +161,24 @@ func NewEngine(c chan CheckResult, config Config) *Engine {
 
 	logger.Infof("Release Image URL: %s", config.ReleaseImageURL)
 
-	hostname, err := ParseHostnameFromURL(config.ReleaseImageURL)
-	if err != nil {
-		logger.Fatalf("Error parsing hostname from releaseImageURL: %s\n", config.ReleaseImageURL)
-	}
-
-	schemeHostnamePort, err := ParseSchemeHostnamePortFromURL(config.ReleaseImageURL, "https://")
-	if err != nil {
-		logger.Fatalf("Error creating <scheme>://<hostname>:<port> from releaseImageURL: %s\n", config.ReleaseImageURL)
-	}
-
 	e := &Engine{
 		checks:  checks,
 		channel: c,
 		logger:  logger,
 	}
 
-	e.checks = append(e.checks,
-		e.newRegistryImagePullCheck(config.ReleaseImageURL),
-		e.newReleaseImageHostDNSCheck(hostname),
-		e.newReleaseImageHostPingCheck(hostname),
-		e.newReleaseImageHttpCheck(schemeHostnamePort))
+	for _, c := range []*Check{
+		e.newRegistryImagePullCheck(config),
+		e.newReleaseImageHostDNSCheck(config),
+		e.newReleaseImageHostPingCheck(config),
+		e.newReleaseImageHttpCheck(config),
+	} {
+		if reason, skipped := config.SkippedChecks[c.Type]; skipped {
+			logger.Infof(reason)
+			continue
+		}
+		e.checks = append(e.checks, c)
+	}
 
 	return e
 }

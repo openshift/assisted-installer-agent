@@ -3,6 +3,7 @@ package agent_tui
 import (
 	"fmt"
 	"log"
+	"regexp"
 
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/checks"
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/dialogs"
@@ -48,13 +49,19 @@ func prepareConfig(config *checks.Config) error {
 
 	// Set skipped checks
 	skippedPingUrls := []string{
-		"quay.io",
-		"registry.ci.openshift.org",
+		`quay\.io`,
+		`registry\..*ci\.openshift\.org`,
 	}
 
 	config.SkippedChecks = map[string]string{}
 	for _, s := range skippedPingUrls {
-		if s == hostname {
+
+		matched, err := regexp.MatchString(s, hostname)
+		if err != nil {
+			return err
+		}
+
+		if matched {
 			config.SkippedChecks[checks.CheckTypeReleaseImageHostPing] = fmt.Sprintf("%s does not respond to ping, ping skipped", hostname)
 		}
 	}

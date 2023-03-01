@@ -8,362 +8,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/openshift/assisted-service/models"
+	log "github.com/sirupsen/logrus"
+	"github.com/thoas/go-funk"
 )
-
-const nmapOut = `
-<nmaprun>
-	<host>
-		<status state="up" />
-		<address addr="2001:db8::2" addrtype="ipv6" />
-		<address addr="02:42:AC:12:00:02" addrtype="mac" />
-	</host>
-</nmaprun>`
-
-var _ = Describe("nmap analysis test", func() {
-
-	tests := []struct {
-		name       string
-		dstAddr    string
-		dstMAC     string
-		srcNIC     string
-		allDstMACs []string
-		output     func() ([]byte, error)
-		expected   models.L2Connectivity
-	}{
-		{name: "Happy flow",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(nmapOut), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:12:00:02",
-				Successful:      true,
-			},
-		},
-		{name: "Command error",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(nmapOut), fmt.Errorf("nmap command failed")
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-			}},
-		{name: "Invalid XML",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte("plain text"), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-			}},
-
-		{name: "Host down",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(`
-				<nmaprun>
-					<host>
-						<status state="down" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-						<address addr="02:42:AC:12:00:02" addrtype="mac" />
-					</host>
-				</nmaprun>`), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				Successful:      false,
-			},
-		},
-		{name: "Lower-case destination MAC address",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:ac:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(nmapOut), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:12:00:02",
-				Successful:      true,
-			},
-		},
-		{name: "Lower-case discovered MAC address",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(`
-				<nmaprun>
-					<host>
-						<status state="up" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-						<address addr="02:42:ac:12:00:02" addrtype="mac" />
-					</host>
-				</nmaprun>`), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:12:00:02",
-				Successful:      true,
-			},
-		},
-		{name: "No MAC address",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(`
-				<nmaprun>
-					<host>
-						<status state="up" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-					</host>
-				</nmaprun>`), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-			},
-		},
-		{name: "No hosts",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte("<nmaprun />"), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-			},
-		},
-		{name: "First matching host",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(`
-				<nmaprun>
-					<host>
-						<status state="up" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-						<address addr="02:42:AC:AA:00:02" addrtype="mac" />
-					</host>
-					<host>
-						<status state="up" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-						<address addr="02:42:AC:12:00:02" addrtype="mac" />
-					</host>
-				</nmaprun>`), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:aa:00:02",
-				Successful:      false,
-			},
-		},
-		{name: "Multiple hosts, only one up",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(`
-				<nmaprun>
-					<host>
-						<status state="down" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-						<address addr="02:42:AC:AA:00:02" addrtype="mac" />
-					</host>
-					<host>
-						<status state="up" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-						<address addr="02:42:AC:12:00:02" addrtype="mac" />
-					</host>
-				</nmaprun>`), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:12:00:02",
-				Successful:      true,
-			},
-		},
-		{name: "Multiple hosts, only one has a MAC address",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:AC:12:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(`
-				<nmaprun>
-					<host>
-						<status state="up" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-					</host>
-					<host>
-						<status state="up" />
-						<address addr="2001:db8::2" addrtype="ipv6" />
-						<address addr="02:42:AC:12:00:02" addrtype="mac" />
-					</host>
-				</nmaprun>`), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:12:00:02",
-				Successful:      true,
-			},
-		},
-		{name: "Unexpected MAC address",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:CC:14:00:02",
-			allDstMACs: []string{"02:42:B:14:00:02", "02:42:C:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(nmapOut), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:12:00:02",
-			},
-		},
-		{name: "MAC different than tried",
-			dstAddr:    "2001:db8::2",
-			dstMAC:     "02:42:CC:10:00:02",
-			allDstMACs: []string{"02:42:AC:12:00:02", "02:42:AC:14:00:02"},
-			output: func() ([]byte, error) {
-				return []byte(nmapOut), nil
-			},
-			expected: models.L2Connectivity{
-				OutgoingNic:     "eth0",
-				RemoteIPAddress: "2001:db8::2",
-				RemoteMac:       "02:42:ac:12:00:02",
-				Successful:      true,
-			},
-		},
-	}
-	for i := range tests {
-		t := tests[i]
-		It(t.name, func() {
-			out := make(chan any)
-			go analyzeNmap(t.dstAddr, t.dstMAC, t.allDstMACs, "eth0", out, testNmap{t.output}, false)
-			Expect(<-out).To(Equal(t.expected))
-		})
-	}
-
-})
-
-type testNmap struct {
-	output func() ([]byte, error)
-}
-
-func (tn testNmap) command(name string, args []string) ([]byte, error) {
-	return tn.output()
-}
-
-func (tn testNmap) getHost() *models.ConnectivityCheckHost {
-	return nil
-}
-func (tn testNmap) getOutgoingNICs() []string {
-
-	return nil
-}
-
-var _ = Describe("parse ping command", func() {
-
-	tests := []struct {
-		name         string
-		cmdOutput    string
-		averageRTTMs float64
-		packetLoss   float64
-		errFunc      func(string) string
-	}{
-		{name: "Nominal: no packet loss",
-			cmdOutput: `PING www.acme.com (127.0.0.1) 56(84) bytes of data.
-
-		--- www.acme.com ping statistics ---
-		10 packets transmitted, 10 received, 0% packet loss, time 9011ms
-		rtt min/avg/max/mdev = 14.278/17.099/19.136/1.876 ms`,
-			averageRTTMs: 17.099,
-			packetLoss:   0,
-		},
-		{name: "Nominal: with packet loss",
-			cmdOutput: `PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
-
-		--- 192.168.1.1 ping statistics ---
-		10 packets transmitted, 4 received, 60% packet loss, time 9164ms
-		rtt min/avg/max/mdev = 2.616/2.871/3.183/0.255 ms`,
-			averageRTTMs: 2.871,
-			packetLoss:   60,
-		},
-		{name: "Nominal: with packet loss with decimals",
-			cmdOutput: `PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
-
-		--- 192.168.1.1 ping statistics ---
-		10 packets transmitted, 4 received, 23.33% packet loss, time 9164ms
-		rtt min/avg/max/mdev = 2.616/2.871/3.183/0.255 ms`,
-			averageRTTMs: 2.871,
-			packetLoss:   23.33,
-		},
-		{name: "KO: unable to parse average RTT",
-			cmdOutput: `PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
-
-			--- 192.168.1.1 ping statistics ---
-			10 packets transmitted, 4 received, 60% packet loss, time 9164ms
-			rtt min/average/max/mdev = 2.616/2.871/3.183/0.255 ms`,
-			averageRTTMs: 0,
-			packetLoss:   60,
-			errFunc: func(s string) string {
-				return fmt.Sprintf(`Unable to retrieve the average RTT for ping: unable to parse %s with regex rtt min\/avg\/max\/mdev = .*\/([^\/]+)\/.*\/.* ms`, s)
-			},
-		},
-		{name: "KO: unable to parse packets loss percentage",
-			cmdOutput: `PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
-
-			--- 192.168.1.1 ping statistics ---
-			10 packets transmitted, 4 received, 60%  packet loss, time 9164ms
-			rtt min/avg/max/mdev = 2.616/2.871/3.183/0.255 ms`,
-			errFunc: func(s string) string {
-				return fmt.Sprintf(`Unable to retrieve packet loss percentage: unable to parse %s with regex [\d]+ packets transmitted, [\d]+ received, (([\d]*[.])?[\d]+)%% packet loss, time [\d]+ms`, s)
-			},
-		},
-	}
-	for i := range tests {
-		t := tests[i]
-		It(t.name, func() {
-			conn := models.L3Connectivity{}
-			err := parsePingCmd(&conn, t.cmdOutput)
-			if t.errFunc != nil {
-				Expect(err.Error()).To(BeEquivalentTo(t.errFunc(t.cmdOutput)))
-			} else {
-				Expect(err).To(BeNil())
-			}
-			Expect(conn.AverageRTTMs).Should(Equal(t.averageRTTMs))
-			Expect(conn.PacketLossPercentage).Should(Equal(t.packetLoss))
-		})
-	}
-
-})
 
 var _ = Describe("check host parallel validation", func() {
 
@@ -377,6 +26,19 @@ var _ = Describe("check host parallel validation", func() {
 	AfterEach(func() {
 		close(hostChan)
 	})
+
+	setupDispather := func(simulateL2IPConflict, success bool, nics []*models.ConnectivityCheckNic) *connectivityRunner {
+		e := &executerMock{
+			success:              success,
+			simulateL2IPConflict: simulateL2IPConflict,
+			nics:                 nics,
+		}
+		return &connectivityRunner{
+			checkers: []Checker{
+				&pingChecker{executer: e}, &arpingChecker{executer: e}, &nmapChecker{executer: e},
+			},
+		}
+	}
 
 	tests := []struct {
 		name                 string
@@ -412,13 +74,11 @@ var _ = Describe("check host parallel validation", func() {
 				},
 				L3Connectivity: []*models.L3Connectivity{
 					{AverageRTTMs: 2.871,
-						OutgoingNic:          "nic_ipv4",
 						PacketLossPercentage: 60,
 						RemoteIPAddress:      "192.168.1.1",
 						Successful:           true,
 					},
 					{AverageRTTMs: 2.871,
-						OutgoingNic:          "nic_ipv4",
 						PacketLossPercentage: 60,
 						RemoteIPAddress:      "192.168.1.2",
 						Successful:           true,
@@ -443,7 +103,7 @@ var _ = Describe("check host parallel validation", func() {
 				},
 				L3Connectivity: []*models.L3Connectivity{
 					{AverageRTTMs: 2.871,
-						OutgoingNic:          "nic_ipv6",
+
 						PacketLossPercentage: 60,
 						RemoteIPAddress:      "fe80::acae:f113:f40:cfe1",
 						Successful:           true,
@@ -459,18 +119,7 @@ var _ = Describe("check host parallel validation", func() {
 			hosts: &models.ConnectivityCheckHost{Nics: []*models.ConnectivityCheckNic{
 				{IPAddresses: []string{"192.168.1.1"}, Mac: "4c:1d:96:af:22:65"},
 			}},
-			expected: &models.ConnectivityRemoteHost{
-				L2Connectivity: []*models.L2Connectivity{
-					{OutgoingNic: "",
-						RemoteIPAddress: "192.168.1.1",
-					},
-				},
-				L3Connectivity: []*models.L3Connectivity{
-					{OutgoingNic: "",
-						RemoteIPAddress: "192.168.1.1",
-					},
-				},
-			},
+			expected:             &models.ConnectivityRemoteHost{},
 			simulateL2IPConflict: false,
 			strictMatchingL2:     false,
 		},
@@ -480,17 +129,7 @@ var _ = Describe("check host parallel validation", func() {
 			hosts: &models.ConnectivityCheckHost{Nics: []*models.ConnectivityCheckNic{
 				{IPAddresses: []string{"fe80::acae:f113:f40:cfe1"}, Mac: "4c:1d:96:af:22:65"},
 			}},
-			expected: &models.ConnectivityRemoteHost{
-				L2Connectivity: []*models.L2Connectivity{
-					{OutgoingNic: "nic_ipv6",
-						RemoteIPAddress: "fe80::acae:f113:f40:cfe1",
-					}},
-				L3Connectivity: []*models.L3Connectivity{
-					{OutgoingNic: "",
-						RemoteIPAddress: "fe80::acae:f113:f40:cfe1",
-					},
-				},
-			},
+			expected:             &models.ConnectivityRemoteHost{},
 			simulateL2IPConflict: false,
 			strictMatchingL2:     false,
 		},
@@ -515,7 +154,6 @@ var _ = Describe("check host parallel validation", func() {
 				},
 				L3Connectivity: []*models.L3Connectivity{
 					{AverageRTTMs: 2.871,
-						OutgoingNic:          "nic_ipv4",
 						PacketLossPercentage: 60,
 						RemoteIPAddress:      "192.168.1.1",
 						Successful:           true,
@@ -578,19 +216,20 @@ var _ = Describe("check host parallel validation", func() {
 	for i := range tests {
 		t := tests[i]
 		It(t.name, func() {
-			h := testHostChecker{outgoingNICS: t.nics, host: t.hosts, success: t.success, simulateL2IPConflict: t.simulateL2IPConflict}
-			c := connectivity{dryRunConfig: &config.DryRunConfig{}}
-			go c.checkHost(h, hostChan)
-			r := <-hostChan
+			d := setupDispather(t.simulateL2IPConflict, t.success, t.hosts.Nics)
+			ret, err := d.Run(models.ConnectivityCheckParams{t.hosts}, funk.Map(t.nics, func(s string) OutgoingNic {
+				return OutgoingNic{Name: s, HasIpv4Addresses: true, HasIpv6Addresses: true}
+			}).([]OutgoingNic))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ret.RemoteHosts).To(HaveLen(1))
 			if !t.strictMatchingL2 {
-				Expect(r.L2Connectivity).Should(ContainElements(t.expected.L2Connectivity))
+				Expect(ret.RemoteHosts[0].L2Connectivity).Should(ContainElements(t.expected.L2Connectivity))
 			} else {
-				Expect(r.L2Connectivity).Should(BeEquivalentTo(t.expected.L2Connectivity))
+				Expect(ret.RemoteHosts[0].L2Connectivity).Should(BeEquivalentTo(t.expected.L2Connectivity))
 			}
-			Expect(r.L3Connectivity).Should(ContainElements(t.expected.L3Connectivity))
+			Expect(ret.RemoteHosts[0].L3Connectivity).Should(ContainElements(t.expected.L3Connectivity))
 		})
 	}
-
 })
 
 func newDependenciesMock() *util.MockIDependencies {
@@ -633,17 +272,16 @@ var _ = Describe("getOutgoingNics", func() {
 	})
 })
 
-type testHostChecker struct {
+type executerMock struct {
 	success              bool
-	outgoingNICS         []string
-	host                 *models.ConnectivityCheckHost
 	simulateL2IPConflict bool
+	nics                 []*models.ConnectivityCheckNic
 }
 
-func (t testHostChecker) command(name string, args []string) ([]byte, error) {
+func (f *executerMock) Execute(command string, args ...string) (string, error) {
 	var mac string
-	if t.success {
-		for _, h := range t.host.Nics {
+	if f.success {
+		for _, h := range f.nics {
 			for _, ip := range h.IPAddresses {
 				if ip == args[len(args)-1] {
 					mac = h.Mac.String()
@@ -655,61 +293,53 @@ func (t testHostChecker) command(name string, args []string) ([]byte, error) {
 			}
 		}
 	}
-	switch name {
+	switch command {
 	case "ping":
-		if t.success {
-			return []byte(fmt.Sprintf(`PING %[1]s (%[1]s) 56(84) bytes of data.
+		if f.success {
+			return fmt.Sprintf(`PING %[1]s (%[1]s) 56(84) bytes of data.
 
 		--- %[1]s ping statistics ---
 		10 packets transmitted, 4 received, 60%% packet loss, time 9164ms
-		rtt min/avg/max/mdev = 2.616/2.871/3.183/0.255 ms`, args[0])), nil
+		rtt min/avg/max/mdev = 2.616/2.871/3.183/0.255 ms`, args[0]), nil
 		}
-		return nil, errors.New("unable to connect")
+		return "", errors.New("unable to connect")
 	case "nmap":
-		if t.success {
-			return []byte(fmt.Sprintf(`<nmaprun>
+		if f.success {
+			return fmt.Sprintf(`<nmaprun>
 						<host>
 						<status state="up" />
 						<address addr="%s" addrtype="ipv6" />
 						<address addr="%s" addrtype="mac" />
 						</host>
-						</nmaprun>`, args[7], mac)), nil
+						</nmaprun>`, args[7], mac), nil
 		}
-		return nil, errors.New("unable to connect via nmap")
+		return "", errors.New("unable to connect via nmap")
 	case "arping":
 
-		if t.simulateL2IPConflict {
-			return []byte(fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
+		if f.simulateL2IPConflict {
+			return fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
 Unicast reply from %[1]s [00:50:56:95:BA:55]  1.871ms
 Unicast reply from %[1]s [00:50:56:95:BA:55]  1.871ms
 Unicast reply from %[1]s [%[3]s]  3.137ms
 Sent 1 probes (1 broadcast(s))
 Received 1 response(s)
-						`, args[5], args[6], mac)), nil
+						`, args[5], args[6], mac), nil
 		}
 
-		if t.success {
-			return []byte(fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
+		if f.success {
+			return fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
 Unicast reply from %[1]s [%[3]s]  3.137ms
 Sent 1 probes (1 broadcast(s))
 Received 1 response(s)
-			`, args[5], args[6], mac)), nil
+			`, args[5], args[6], mac), nil
 		}
-		return []byte(fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
+		return fmt.Sprintf(`ARPING %[1]s from 192.168.1.133 %[2]s
 Sent 1 probes (1 broadcast(s))
-Received 0 response(s)`, args[5], args[6])), nil
+Received 0 response(s)`, args[5], args[6]), nil
 	default:
-		log.Errorf("failed to process unknown command %s with arguments %+v", name, args)
-		return nil, fmt.Errorf("unknown command %s", name)
+		log.Errorf("failed to process unknown command %s with arguments %+v", command, args)
+		return "", fmt.Errorf("unknown command %s", command)
 	}
-}
-
-func (t testHostChecker) getHost() *models.ConnectivityCheckHost {
-	return t.host
-}
-
-func (t testHostChecker) getOutgoingNICs() []string {
-	return t.outgoingNICS
 }
 
 func TestConnectivityCheck(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 type UI struct {
 	app                 *tview.Application
 	pages               *tview.Pages
-	grid                *tview.Grid     // layout for the checks page
-	envVars             *tview.TextView // displays release image URL
+	grid                *tview.Grid // layout for the checks page
+	primaryCheck        *tview.Table
 	checks              *tview.Table    // summary of all checks
 	details             *tview.TextView // where errors from checks are displayed
 	form                *tview.Form     // contains "Configure network" button

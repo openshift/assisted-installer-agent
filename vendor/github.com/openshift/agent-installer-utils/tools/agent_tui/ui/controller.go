@@ -27,13 +27,10 @@ func (c *Controller) GetChan() chan checks.CheckResult {
 
 func (c *Controller) updateState(cr checks.CheckResult) {
 	c.checks[cr.Type] = cr
-	c.state = true
 
-	for _, res := range c.checks {
-		if !res.Success {
-			c.state = false
-			break
-		}
+	switch cr.Type {
+	case checks.CheckTypeReleaseImagePull:
+		c.state = cr.Success
 	}
 }
 
@@ -94,40 +91,12 @@ func (c *Controller) updateCheckWidgets(res checks.CheckResult) {
 	// Update the widgets
 	switch res.Type {
 	case checks.CheckTypeReleaseImagePull:
-		c.ui.app.QueueUpdateDraw(func() {
-			if res.Success {
-				c.ui.markCheckSuccess(0, 0)
-			} else {
-				c.ui.markCheckFail(0, 0)
-				c.ui.appendNewErrorToDetails("Release image pull error", res.Details)
-			}
-		})
+		c.ui.SetPullCheck(res)
 	case checks.CheckTypeReleaseImageHostDNS:
-		c.ui.app.QueueUpdateDraw(func() {
-			if res.Success {
-				c.ui.markCheckSuccess(1, 0)
-			} else {
-				c.ui.markCheckFail(1, 0)
-				c.ui.appendNewErrorToDetails("nslookup failure", res.Details)
-			}
-		})
+		c.ui.SetDNSCheck(res)
 	case checks.CheckTypeReleaseImageHostPing:
-		c.ui.app.QueueUpdateDraw(func() {
-			if res.Success {
-				c.ui.markCheckSuccess(2, 0)
-			} else {
-				c.ui.markCheckFail(2, 0)
-				c.ui.appendNewErrorToDetails("ping failure", res.Details)
-			}
-		})
+		c.ui.SetPingCheck(res)
 	case checks.CheckTypeReleaseImageHttp:
-		c.ui.app.QueueUpdateDraw(func() {
-			if res.Success {
-				c.ui.markCheckSuccess(3, 0)
-			} else {
-				c.ui.markCheckFail(3, 0)
-				c.ui.appendNewErrorToDetails("http server not responding", res.Details)
-			}
-		})
+		c.ui.SetHttpGetCheck(res)
 	}
 }

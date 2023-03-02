@@ -3,7 +3,6 @@ package agent_tui
 import (
 	"fmt"
 	"log"
-	"regexp"
 
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/checks"
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/dialogs"
@@ -36,35 +35,16 @@ func prepareConfig(config *checks.Config) error {
 	// Set hostname
 	hostname, err := checks.ParseHostnameFromURL(config.ReleaseImageURL)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	config.ReleaseImageHostname = hostname
 
 	// Set scheme
 	schemeHostnamePort, err := checks.ParseSchemeHostnamePortFromURL(config.ReleaseImageURL, "https://")
 	if err != nil {
-		log.Fatalf("Error creating <scheme>://<hostname>:<port> from releaseImageURL: %s\n", config.ReleaseImageURL)
+		return fmt.Errorf("Error creating <scheme>://<hostname>:<port> from releaseImageURL: %s\n", config.ReleaseImageURL)
 	}
 	config.ReleaseImageSchemeHostnamePort = schemeHostnamePort
-
-	// Set skipped checks
-	skippedPingUrls := []string{
-		`quay\.io`,
-		`registry\..*ci\.openshift\.org`,
-	}
-
-	config.SkippedChecks = map[string]string{}
-	for _, s := range skippedPingUrls {
-
-		matched, err := regexp.MatchString(s, hostname)
-		if err != nil {
-			return err
-		}
-
-		if matched {
-			config.SkippedChecks[checks.CheckTypeReleaseImageHostPing] = fmt.Sprintf("%s does not respond to ping, ping skipped", hostname)
-		}
-	}
 
 	return nil
 }

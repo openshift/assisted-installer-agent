@@ -22,7 +22,6 @@ type Config struct {
 	ReleaseImageURL string
 	LogPath         string
 
-	SkippedChecks                  map[string]string
 	ReleaseImageHostname           string
 	ReleaseImageSchemeHostnamePort string
 }
@@ -167,17 +166,11 @@ func NewEngine(c chan CheckResult, config Config) *Engine {
 		logger:  logger,
 	}
 
-	for _, c := range []*Check{
+	e.checks = []*Check{
 		e.newRegistryImagePullCheck(config),
 		e.newReleaseImageHostDNSCheck(config),
 		e.newReleaseImageHostPingCheck(config),
 		e.newReleaseImageHttpCheck(config),
-	} {
-		if reason, skipped := config.SkippedChecks[c.Type]; skipped {
-			logger.Infof(reason)
-			continue
-		}
-		e.checks = append(e.checks, c)
 	}
 
 	return e

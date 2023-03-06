@@ -44,7 +44,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/nmstate/nmstate/rust/src/go/nmstate/v2 v2.0.0-20230118143834-39a056947abc // indirect
 	github.com/rivo/tview v0.0.0-20230104153304-892d1a2eb0da // indirect
-	github.com/rivo/uniseg v0.4.2 // indirect
+	github.com/rivo/uniseg v0.4.4 // indirect
 	go.opentelemetry.io/otel v1.11.1 // indirect
 	go.opentelemetry.io/otel/trace v1.11.1 // indirect
 )
@@ -168,7 +168,7 @@ require (
 )
 
 require (
-	github.com/itchyny/gojq v0.12.11
+	github.com/itchyny/gojq v0.12.12
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	golang.org/x/text v0.7.0 // indirect
 )

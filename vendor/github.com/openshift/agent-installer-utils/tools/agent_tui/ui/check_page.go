@@ -16,6 +16,9 @@ const (
 	CONFIGURE_BUTTON        string = "<Configure network>"
 	QUIT_BUTTON             string = "<Quit>"
 	PAGE_CHECKSCREEN        string = "checkScreen"
+
+	mainFlexHeight            = 10
+	mainFlexWithDetailsHeight = 30
 )
 
 func (u *UI) SetPullCheck(cr checks.CheckResult) {
@@ -164,32 +167,52 @@ func (u *UI) createCheckPage(config checks.Config) {
 		return
 	})
 
-	// SetRows(number-of-lines-to-give-1st-row,
-	//         number-of-lines-to-give-2nd-row,..etc)
-	// 0 means fill
-	u.grid = tview.NewGrid().SetRows(5, 6, 0, 3).SetColumns(0).
-		AddItem(u.primaryCheck, 0, 0, 1, 1, 0, 0, false).
-		AddItem(u.checks, 1, 0, 1, 1, 0, 0, false).
-		AddItem(u.details, 2, 0, 1, 1, 0, 0, false).
-		AddItem(u.form, 3, 0, 1, 1, 0, 0, false)
-	u.grid.SetTitle("  Agent installer network boot setup  ")
-	u.grid.SetTitleColor(newt.ColorRed)
-	u.grid.SetBorder(true)
-	u.grid.SetBackgroundColor(newt.ColorGray)
-	u.grid.SetBorderColor(tcell.ColorBlack)
+	u.mainFlex = tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(u.primaryCheck, 5, 0, false).
+		AddItem(u.form, 3, 0, false)
+	u.mainFlex.SetTitle("  Agent installer network boot setup  ").
+		SetTitleColor(newt.ColorRed).
+		SetBorder(true).
+		SetBackgroundColor(newt.ColorGray).
+		SetBorderColor(tcell.ColorBlack)
+
+	u.innerFlex = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(u.mainFlex, mainFlexHeight, 0, false).
+		AddItem(nil, 0, 1, false)
 
 	width := 80
 	flex := tview.NewFlex().
 		AddItem(nil, 0, 1, false).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(nil, 0, 1, false).
-			AddItem(u.grid, 0, 8, true).
-			AddItem(nil, 0, 1, false), width, 1, true).
+		AddItem(u.innerFlex, width, 1, false).
 		AddItem(nil, 0, 1, false)
 
 	u.pages.SetBackgroundColor(newt.ColorBlue)
-
 	u.pages.AddPage(PAGE_CHECKSCREEN, flex, true, true)
-
 	u.app.SetRoot(u.pages, true).SetFocus(u.form)
+}
+
+func (u *UI) HideAdditionalChecks() {
+	if u.mainFlex.GetItemCount() <= 2 {
+		return
+	}
+
+	u.mainFlex.
+		RemoveItem(u.checks).
+		RemoveItem(u.details)
+	u.innerFlex.ResizeItem(u.mainFlex, mainFlexHeight, 0)
+}
+
+func (u *UI) ShowAdditionalChecks() {
+	if u.mainFlex.GetItemCount() > 2 {
+		return
+	}
+
+	u.mainFlex.
+		RemoveItem(u.form).
+		AddItem(u.checks, 5, 0, false).
+		AddItem(u.details, 15, 0, false).
+		AddItem(u.form, 3, 0, false)
+	u.innerFlex.ResizeItem(u.mainFlex, mainFlexWithDetailsHeight, 0)
 }

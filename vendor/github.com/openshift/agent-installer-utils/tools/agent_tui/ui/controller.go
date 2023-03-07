@@ -34,8 +34,9 @@ func (c *Controller) updateState(cr checks.CheckResult) {
 	}
 }
 
-func (c *Controller) receivedAllCheckResults(numChecks int) bool {
-	return len(c.checks) >= numChecks
+func (c *Controller) receivedPrimaryCheck(numChecks int) bool {
+	_, found := c.checks[checks.CheckTypeReleaseImagePull]
+	return found
 }
 
 func (c *Controller) Init(numChecks int) {
@@ -47,19 +48,21 @@ func (c *Controller) Init(numChecks int) {
 			res := <-c.channel
 			c.updateState(res)
 
+			// Warming up, wait for at least
+			// for the primary check
+			if !c.receivedPrimaryCheck(numChecks) {
+				continue
+			}
+
 			// When nmtui is shown the UI is suspended, so
 			// let's skip any update
 			if c.ui.IsNMTuiActive() {
 				continue
 			}
 
-			// Keep the checks page continuously updated
-			c.updateCheckWidgets(res)
-
-			// Warming up, wait for at least the first
-			// set of check results
-			if !c.receivedAllCheckResults(numChecks) {
-				continue
+			// Pull check is always updated
+			if res.Type == checks.CheckTypeReleaseImagePull {
+				c.ui.SetPullCheck(res)
 			}
 
 			// After receiving the initial results, let's
@@ -76,6 +79,8 @@ func (c *Controller) Init(numChecks int) {
 				continue
 			}
 
+			c.updateCheckWidgets(res)
+
 			// A check failed while waiting for the countdown. Timeout dialog must be stopped
 			if !c.state && c.ui.IsTimeoutDialogActive() {
 				c.ui.app.QueueUpdate(func() {
@@ -88,10 +93,22 @@ func (c *Controller) Init(numChecks int) {
 }
 
 func (c *Controller) updateCheckWidgets(res checks.CheckResult) {
-	// Update the widgets
+
+	// If everything is fine, clean additional checks
+	// and details section, and skip the update
+	if c.state {
+		c.ui.app.QueueUpdateDraw(func() {
+			c.ui.HideAdditionalChecks()
+		})
+		return
+	} else {
+		c.ui.app.QueueUpdateDraw(func() {
+			c.ui.ShowAdditionalChecks()
+		})
+	}
+
+	// Update the additional check widgets
 	switch res.Type {
-	case checks.CheckTypeReleaseImagePull:
-		c.ui.SetPullCheck(res)
 	case checks.CheckTypeReleaseImageHostDNS:
 		c.ui.SetDNSCheck(res)
 	case checks.CheckTypeReleaseImageHostPing:

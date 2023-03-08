@@ -18,7 +18,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.1
-	github.com/openshift/agent-installer-utils v0.0.0-20230307094740-57807526b660
+	github.com/openshift/agent-installer-utils v0.0.0-20230308101916-306b7995977e
 	github.com/openshift/assisted-service v1.0.10-0.20221227183914-58b7b4b0fd8e
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec

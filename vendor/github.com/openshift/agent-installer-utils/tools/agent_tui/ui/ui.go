@@ -20,6 +20,9 @@ type UI struct {
 	nmtuiActive         atomic.Value
 	timeoutDialogActive atomic.Value
 	timeoutDialogCancel chan bool
+
+	focusableItems []tview.Primitive // the list of widgets that can be focused
+	focusedItem    int               // the current focused widget
 }
 
 func NewUI(app *tview.Application, config checks.Config) *UI {

@@ -141,31 +141,6 @@ func (u *UI) createCheckPage(config checks.Config) {
 		Foreground(newt.ColorGray))
 	u.form.SetButtonStyle(tcell.StyleDefault.Background(newt.ColorGray).
 		Foreground(newt.ColorBlack))
-	u.form.SetInputCapture(func(event *tcell.EventKey) (eventKey *tcell.EventKey) {
-		switch event.Key() {
-		case tcell.KeyTab, tcell.KeyRight:
-			if _, index := u.form.GetFocusedItemIndex(); index == (u.form.GetButtonCount() - 1) {
-				u.app.SetFocus(u.form.GetButton(0))
-				eventKey = nil
-			} else {
-				u.app.SetFocus(u.form.GetButton(index + 1))
-				eventKey = event
-			}
-		case tcell.KeyBacktab, tcell.KeyLeft:
-			if _, index := u.form.GetFocusedItemIndex(); index == 0 {
-				u.app.SetFocus(u.form.GetButton(1))
-				eventKey = nil
-			} else {
-				u.app.SetFocus(u.form.GetButton((index) - 1))
-				eventKey = event
-			}
-		case tcell.KeyEsc:
-			u.app.Stop()
-		default:
-			eventKey = event
-		}
-		return
-	})
 
 	u.mainFlex = tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -182,6 +157,35 @@ func (u *UI) createCheckPage(config checks.Config) {
 		AddItem(u.mainFlex, mainFlexHeight, 0, false).
 		AddItem(nil, 0, 1, false)
 
+	// Initially, only the form buttons can receive the focus
+	u.focusableItems = []tview.Primitive{
+		u.form.GetButton(0),
+		u.form.GetButton(1),
+	}
+	// Allow the user to cycle the focus only over the configured items
+	u.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyTab, tcell.KeyRight:
+			u.focusedItem++
+			if u.focusedItem > len(u.focusableItems)-1 {
+				u.focusedItem = 0
+			}
+
+		case tcell.KeyBacktab, tcell.KeyLeft:
+			u.focusedItem--
+			if u.focusedItem < 0 {
+				u.focusedItem = len(u.focusableItems) - 1
+			}
+
+		default:
+			// forward the event to the default handler
+			return event
+		}
+
+		u.app.SetFocus(u.focusableItems[u.focusedItem])
+		return nil
+	})
+
 	width := 80
 	flex := tview.NewFlex().
 		AddItem(nil, 0, 1, false).
@@ -193,8 +197,12 @@ func (u *UI) createCheckPage(config checks.Config) {
 	u.app.SetRoot(u.pages, true).SetFocus(u.form)
 }
 
+func (u *UI) additionalChecksVisible() bool {
+	return u.mainFlex.GetItemCount() > 2
+}
+
 func (u *UI) HideAdditionalChecks() {
-	if u.mainFlex.GetItemCount() <= 2 {
+	if !u.additionalChecksVisible() {
 		return
 	}
 
@@ -202,10 +210,18 @@ func (u *UI) HideAdditionalChecks() {
 		RemoveItem(u.checks).
 		RemoveItem(u.details)
 	u.innerFlex.ResizeItem(u.mainFlex, mainFlexHeight, 0)
+
+	// Switch focus if the details pane was previously focused
+	if u.focusableItems[u.focusedItem] == u.details {
+		u.focusedItem = 0
+		u.app.SetFocus(u.focusableItems[u.focusedItem])
+	}
+	// Remove the details from the focusable list
+	u.focusableItems = u.focusableItems[:len(u.focusableItems)-1]
 }
 
 func (u *UI) ShowAdditionalChecks() {
-	if u.mainFlex.GetItemCount() > 2 {
+	if u.additionalChecksVisible() {
 		return
 	}
 
@@ -215,4 +231,7 @@ func (u *UI) ShowAdditionalChecks() {
 		AddItem(u.details, 15, 0, false).
 		AddItem(u.form, 3, 0, false)
 	u.innerFlex.ResizeItem(u.mainFlex, mainFlexWithDetailsHeight, 0)
+
+	// Details can be focused again
+	u.focusableItems = append(u.focusableItems, u.details)
 }

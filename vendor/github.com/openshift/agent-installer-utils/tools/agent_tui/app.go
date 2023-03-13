@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/checks"
-	"github.com/openshift/agent-installer-utils/tools/agent_tui/dialogs"
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/ui"
 	"github.com/rivo/tview"
 )
@@ -27,7 +26,7 @@ func App(app *tview.Application, config checks.Config) {
 	controller.Init(engine.Size())
 	engine.Init()
 	if err := app.Run(); err != nil {
-		dialogs.PanicDialog(app, err)
+		log.Fatal(err)
 	}
 }
 
@@ -42,7 +41,7 @@ func prepareConfig(config *checks.Config) error {
 	// Set scheme
 	schemeHostnamePort, err := checks.ParseSchemeHostnamePortFromURL(config.ReleaseImageURL, "https://")
 	if err != nil {
-		return fmt.Errorf("Error creating <scheme>://<hostname>:<port> from releaseImageURL: %s\n", config.ReleaseImageURL)
+		return fmt.Errorf("error creating <scheme>://<hostname>:<port> from releaseImageURL: %s", config.ReleaseImageURL)
 	}
 	config.ReleaseImageSchemeHostnamePort = schemeHostnamePort
 

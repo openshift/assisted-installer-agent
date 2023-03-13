@@ -132,7 +132,16 @@ func (u *UI) createCheckPage(config checks.Config) {
 	u.form.SetBackgroundColor(newt.ColorGray)
 	u.form.SetButtonsAlign(tview.AlignCenter)
 	u.form.AddButton(CONFIGURE_BUTTON, func() {
-		u.ShowNMTUI(nil)
+		if err := u.ShowNMTUI(); err != nil {
+			errorDialog := tview.NewModal().
+				SetBackgroundColor(newt.ColorBlack).
+				SetText(err.Error()).
+				AddButtons([]string{"Ok"}).
+				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					u.returnFocusToChecks()
+				})
+			u.pages.AddPage("error", errorDialog, false, true)
+		}
 	})
 	u.form.AddButton(QUIT_BUTTON, func() {
 		u.app.Stop()

@@ -1065,10 +1065,8 @@ github.com/opencontainers/selinux v1.8.2/go.mod h1:MUIHuUEvKB1wtJjQdOyYRgOnLD2xA
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
 github.com/openshift-online/ocm-sdk-go v0.1.205 h1:DhvfTf55jpQsTFpI283/z3b0Tab8x26oelPDuao7IiM=
 github.com/openshift-online/ocm-sdk-go v0.1.205/go.mod h1:iOhkt/6nFp9v7hasdmGbYlR/YKeUoaZKq5ZBrtyKwKg=
-github.com/openshift/agent-installer-utils v0.0.0-20230307094740-57807526b660 h1:RiDskVQrPeKOIaEOUuJpy+L77EQf0P683trLJV8pD/Y=
-github.com/openshift/agent-installer-utils v0.0.0-20230307094740-57807526b660/go.mod h1:NQY4g4PCOiK/M3p/N1iJHDk8snbISaLHBRgKeCJW73Y=
-github.com/openshift/agent-installer-utils v0.0.0-20230308101916-306b7995977e h1:JIHVHyMFtYfHTKV5LoV8qVwbu93Y9Ms1KFE8s+OP1OI=
-github.com/openshift/agent-installer-utils v0.0.0-20230308101916-306b7995977e/go.mod h1:NQY4g4PCOiK/M3p/N1iJHDk8snbISaLHBRgKeCJW73Y=
+github.com/openshift/agent-installer-utils v0.0.0-20230310220517-8506fbb6a346 h1:gE1r+olT53NyRDzsYCVutqw67EbyPgwFAasjKxeyKeA=
+github.com/openshift/agent-installer-utils v0.0.0-20230310220517-8506fbb6a346/go.mod h1:NQY4g4PCOiK/M3p/N1iJHDk8snbISaLHBRgKeCJW73Y=
 github.com/openshift/assisted-service v1.0.10-0.20221227183914-58b7b4b0fd8e h1:5Iebch6U5GGT++Xy3o5EFDm/P7ym0BOzQKrkqcFHCQs=
 github.com/openshift/assisted-service v1.0.10-0.20221227183914-58b7b4b0fd8e/go.mod h1:dvRhb37B13cwo3jDDUl/PNSAiIr8WKhywP/3cIAxJPo=
 github.com/openshift/assisted-service/models v0.0.0-20221227183914-58b7b4b0fd8e h1:10vOkWKegftWJRiuHRIC/U/3ucaaa4m+7i9gvXUnwzw=

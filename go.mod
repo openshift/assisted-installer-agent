@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.3
+	github.com/onsi/gomega v1.27.4
 	github.com/openshift/agent-installer-utils v0.0.0-20230310220517-8506fbb6a346
 	github.com/openshift/assisted-service v1.0.10-0.20221227183914-58b7b4b0fd8e
 	github.com/openshift/assisted-service/models v0.0.0
@@ -142,9 +142,9 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
@@ -170,7 +170,7 @@ require (
 require (
 	github.com/itchyny/gojq v0.12.12
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 )
 
 replace (

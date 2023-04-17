@@ -68,3 +68,4 @@ To run selected system tests use a [regular expression](https://onsi.github.io/g
 
 To publish the container image run `skipper make push`.
 You can override the image name and tag via the `ASSISTED_INSTALLER_AGENT` variable.
+

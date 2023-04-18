@@ -61,7 +61,6 @@ var _ = Describe("next step runner", func() {
 			"/dev",
 			"/etc/pki",
 			"/run/media",
-			"/usr/bin/chronyc",
 		}
 		argsAsString := strings.Join(args, " ")
 		verifyPaths(argsAsString, paths)

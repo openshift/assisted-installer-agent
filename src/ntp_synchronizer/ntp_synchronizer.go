@@ -19,15 +19,15 @@ const ChronyTimeoutSeconds = 30
 
 //go:generate mockery --name NtpSynchronizerDependencies --inpackage
 type NtpSynchronizerDependencies interface {
-	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
+	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
 	LookupHost(host string) (addrs []string, err error)
 	LookupAddr(addr string) (names []string, err error)
 }
 
 type ProcessExecuter struct{}
 
-func (e *ProcessExecuter) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
-	return util.Execute(command, args...)
+func (e *ProcessExecuter) ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
+	return util.ExecutePrivileged(command, args...)
 }
 
 func (e *ProcessExecuter) LookupHost(host string) (addrs []string, err error) {
@@ -58,7 +58,7 @@ func convertSourceState(val string) models.SourceState {
 }
 
 func addServer(e NtpSynchronizerDependencies, ntpSource string) error {
-	stdout, stderr, exitCode := e.Execute("chronyc", "add", "server", ntpSource, "iburst")
+	stdout, stderr, exitCode := e.ExecutePrivileged("chronyc", "add", "server", ntpSource, "iburst")
 
 	if exitCode == 0 {
 		return nil
@@ -91,7 +91,7 @@ func formatChronySourcesOutput(output string) []*models.NtpSource {
 
 func getNTPSources(e NtpSynchronizerDependencies) ([]*models.NtpSource, error) {
 	/* If available we would like to resolve ntp sources hostnames */
-	stdout, stderr, exitCode := e.Execute("timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources")
+	stdout, stderr, exitCode := e.ExecutePrivileged("timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources")
 
 	switch exitCode {
 	case 0:

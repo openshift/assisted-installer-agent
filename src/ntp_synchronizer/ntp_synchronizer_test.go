@@ -32,7 +32,7 @@ var _ = Describe("NTP synchronizer", func() {
 
 	Context("getNTPSources", func() {
 		It("no_sources", func() {
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", 0)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", 0)
 
 			sources, err := getNTPSources(ntpDependencies)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -40,7 +40,7 @@ var _ = Describe("NTP synchronizer", func() {
 		})
 
 		It("timeout", func() {
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", util.TimeoutExitCode)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", util.TimeoutExitCode)
 
 			sources, err := getNTPSources(ntpDependencies)
 			Expect(err).Should(HaveOccurred())
@@ -48,7 +48,7 @@ var _ = Describe("NTP synchronizer", func() {
 		})
 
 		It("error", func() {
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", -1)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", -1)
 
 			sources, err := getNTPSources(ntpDependencies)
 			Expect(err).Should(HaveOccurred())
@@ -60,7 +60,7 @@ var _ = Describe("NTP synchronizer", func() {
 			state := "+"
 			output := fmt.Sprintf("^%s %s     2  10   377   268    +12ms[  +12ms] +/-  132ms", state, name)
 
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0)
 
 			sources, err := getNTPSources(ntpDependencies)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -79,7 +79,7 @@ var _ = Describe("NTP synchronizer", func() {
 				^? time.cloudflare.com           0   6     0     -     +0ns[   +0ns] +/-    0ns
 			`
 
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0)
 
 			sources, err := getNTPSources(ntpDependencies)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -106,7 +106,7 @@ var _ = Describe("NTP synchronizer", func() {
 			^- 10.18.100.10                  2  10   377   557    +79us[  +81us] +/-   45ms
 		`
 
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0)
 		})
 
 		It("unknown_server", func() {
@@ -143,10 +143,10 @@ var _ = Describe("NTP synchronizer", func() {
 			state := "+"
 			output := fmt.Sprintf("^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns", state, name)
 
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", 0).Once()
 			ntpDependencies.On("LookupHost", name).Return([]string{}, nil).Once()
-			ntpDependencies.On("Execute", "chronyc", "add", "server", name, "iburst").Return("", "", 0).Once()
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "chronyc", "add", "server", name, "iburst").Return("", "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Once()
 			ntpDependencies.On("LookupAddr", name).Return([]string{}, errors.Errorf("error")).Once()
 
 			request := &models.NtpSynchronizationRequest{NtpSource: &name}
@@ -172,10 +172,10 @@ var _ = Describe("NTP synchronizer", func() {
 			state := "+"
 			output := fmt.Sprintf("^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns", state, name)
 
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return("", "", 0).Once()
 			ntpDependencies.On("LookupHost", name).Return([]string{}, nil).Once()
-			ntpDependencies.On("Execute", "chronyc", "add", "server", name, "iburst").Return("", "", 0).Once()
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "chronyc", "add", "server", name, "iburst").Return("", "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Once()
 			ntpDependencies.On("LookupAddr", name).Return([]string{fmt.Sprintf("%s.", resolved_name)}, nil).Once()
 
 			request := &models.NtpSynchronizationRequest{NtpSource: &name}
@@ -208,16 +208,16 @@ var _ = Describe("NTP synchronizer", func() {
 			^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns
 		`, len(names), state, names[0], state, names[1], state, names[2])
 
-			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return("", "", 0).Times(len(names))
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return("", "", 0).Times(len(names))
 
 			for _, currName := range names {
 				ntpDependencies.On("LookupHost", currName).Return([]string{}, nil).Once()
-				ntpDependencies.On("Execute", "chronyc", "add", "server", currName, "iburst").Return("", "", 0).Once()
+				ntpDependencies.On("ExecutePrivileged", "chronyc", "add", "server", currName, "iburst").Return("", "", 0).Once()
 				ntpDependencies.On("LookupAddr", currName).Return([]string{}, errors.Errorf("error")).Once()
 			}
 
 			// Last call
-			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return(output, "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return(output, "", 0).Once()
 
 			request := &models.NtpSynchronizationRequest{NtpSource: &name}
 			b, err := json.Marshal(request)
@@ -244,7 +244,7 @@ var _ = Describe("NTP synchronizer", func() {
 			state := "+"
 			output := fmt.Sprintf("^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns", state, name)
 
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Times(2)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Times(2)
 			ntpDependencies.On("LookupAddr", name).Return([]string{}, errors.Errorf("error")).Once()
 
 			request := &models.NtpSynchronizationRequest{NtpSource: &name}
@@ -271,7 +271,7 @@ var _ = Describe("NTP synchronizer", func() {
 			output := fmt.Sprintf("^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns", state, serverName)
 
 			ntpDependencies.On("LookupHost", poolName).Return([]string{serverName}, nil).Once()
-			ntpDependencies.On("Execute", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Times(2)
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.Itoa(ChronyTimeoutSeconds), "chronyc", "-n", "sources").Return(output, "", 0).Times(2)
 			ntpDependencies.On("LookupAddr", serverName).Return([]string{}, errors.Errorf("error")).Once()
 
 			request := &models.NtpSynchronizationRequest{NtpSource: &poolName}
@@ -296,10 +296,10 @@ var _ = Describe("NTP synchronizer", func() {
 			state := "+"
 			output := fmt.Sprintf("^%s %s           0   6     0     -     +0ns[   +0ns] +/-    0ns", state, name)
 
-			ntpDependencies.On("Execute", "chronyc", "add", "server", name, "iburst").Return("", "", 0).Once()
-			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return("", "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "chronyc", "add", "server", name, "iburst").Return("", "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return("", "", 0).Once()
 			ntpDependencies.On("LookupHost", name).Return([]string{}, errors.New("error")).Once()
-			ntpDependencies.On("Execute", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return(output, "", 0).Once()
+			ntpDependencies.On("ExecutePrivileged", "timeout", strconv.FormatInt(ChronyTimeoutSeconds, 10), "chronyc", "-n", "sources").Return(output, "", 0).Once()
 			ntpDependencies.On("LookupAddr", name).Return([]string{}, errors.Errorf("error")).Once()
 
 			request := &models.NtpSynchronizationRequest{NtpSource: &name}

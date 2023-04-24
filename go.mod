@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/alessio/shellescape v1.4.1
 	github.com/coreos/ignition/v2 v2.15.0
-	github.com/go-openapi/runtime v0.25.0
+	github.com/go-openapi/runtime v0.26.0
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/go-openapi/swag v0.22.3
 	github.com/google/uuid v1.3.0
@@ -45,8 +45,8 @@ require (
 	github.com/nmstate/nmstate/rust/src/go/nmstate/v2 v2.0.0-20230118143834-39a056947abc // indirect
 	github.com/rivo/tview v0.0.0-20230104153304-892d1a2eb0da // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
-	go.opentelemetry.io/otel v1.11.1 // indirect
-	go.opentelemetry.io/otel/trace v1.11.1 // indirect
+	go.opentelemetry.io/otel v1.14.0 // indirect
+	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 )
 
 require (
@@ -71,19 +71,19 @@ require (
 	github.com/docker/cli v20.10.14+incompatible // indirect
 	github.com/docker/docker v20.10.12+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/go-restful v2.15.0+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/go-openapi/analysis v0.21.2 // indirect
+	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
-	github.com/go-openapi/loads v0.21.1 // indirect
-	github.com/go-openapi/spec v0.20.6 // indirect
-	github.com/go-openapi/validate v0.22.0 // indirect
+	github.com/go-openapi/loads v0.21.2 // indirect
+	github.com/go-openapi/spec v0.20.8 // indirect
+	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.3 // indirect

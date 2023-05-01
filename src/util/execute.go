@@ -49,24 +49,20 @@ func LogPrivilegedCommandOutput(logfile *os.File, result error, commandDescripti
 	log.Infof(commandDescription)
 	loglnToFile(logfile, commandDescription)
 
-	if err := ExecutePrivilegedToFile(logfile, command, args...); err != nil {
-		result = multierror.Append(result, err)
-	}
-
-	return result
-}
-
-func ExecutePrivilegedToFile(logfile *os.File, command string, args ...string) error {
 	loglnToFile(logfile, fmt.Sprintf("%s %s", command, strings.Join(args[:], " ")))
-
 	stdout, stderr, exitcode := ExecutePrivileged(command, args...)
 	if stderr != "" || exitcode != 0 {
 		loglnToFile(logfile, stderr)
-		return fmt.Errorf("%s failed: %d %s\n", command, exitcode, stderr)
+		result = multierror.Append(result, fmt.Errorf("%s failed: %d %s\n", command, exitcode, stderr))
 	}
 
 	loglnToFile(logfile, stdout)
-	return nil
+	return result
+}
+
+func ExecutePrivilegedToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {
+	command, arguments := buildPrivilegedCommand(command, args...)
+	return ExecuteOutputToFile(outputFilePath, command, arguments...)
 }
 
 func ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {
@@ -90,6 +86,11 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
 }
 
 func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
+	command, arguments := buildPrivilegedCommand(command, args...)
+	return Execute(command, arguments...)
+}
+
+func buildPrivilegedCommand(command string, args ...string) (string, []string) {
 	// nsenter is used here to launch processes inside the container in a way that makes said processes feel
 	// and behave as if they're running on the host directly rather than inside the container
 	commandBase := "nsenter"
@@ -114,7 +115,7 @@ func ExecutePrivileged(command string, args ...string) (stdout string, stderr st
 		command,
 	}
 	arguments = append(arguments, args...)
-	return Execute(commandBase, arguments...)
+	return commandBase, arguments
 }
 
 func loglnToFile(logfile *os.File, message string) {

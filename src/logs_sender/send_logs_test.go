@@ -52,13 +52,13 @@ var _ = Describe("logs sender", func() {
 	executeOutputToFileSuccess := func(retVal int) {
 		for _, tag := range loggingConfig.Tags {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", tag))
-			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
+			logsSenderMock.On("ExecutePrivilegedToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
 				"--since", loggingConfig.Since, fmt.Sprintf("TAG=%s", tag)).
 				Return("Dummy", retVal)
 		}
 		for _, service := range loggingConfig.Services {
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
-			logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
+			logsSenderMock.On("ExecutePrivilegedToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
 				"--since", loggingConfig.Since, "-u", service).
 				Return("Dummy", retVal)
 		}
@@ -190,7 +190,7 @@ var _ = Describe("logs sender", func() {
 
 	It("journal logs with since", func() {
 		outputPath := path.Join(logsTmpFilesDir, "journal.logs")
-		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
+		logsSenderMock.On("ExecutePrivilegedToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",
 			"--since", loggingConfig.Since).Return("Dummy", 0)
 		err := getJournalLogs(logsSenderMock, loggingConfig.Since, outputPath, []string{})
 		Expect(err).NotTo(HaveOccurred())
@@ -199,7 +199,7 @@ var _ = Describe("logs sender", func() {
 	It("full journal logs", func() {
 		outputPath := path.Join(logsTmpFilesDir, "journal.logs")
 		loggingConfig.Since = ""
-		logsSenderMock.On("ExecuteOutputToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
+		logsSenderMock.On("ExecutePrivilegedToFile", outputPath, "journalctl", "-D", "/var/log/journal/",
 			"--all").Return("Dummy", 0)
 		err := getJournalLogs(logsSenderMock, loggingConfig.Since, outputPath, []string{})
 		Expect(err).NotTo(HaveOccurred())

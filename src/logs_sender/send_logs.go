@@ -42,6 +42,7 @@ type LogsSender interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int)
+	ExecutePrivilegedToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int)
 	CreateFolderIfNotExist(folder string) error
 	FileUploader(filePath string) error
 	LogProgressReport(progress models.LogsState) error
@@ -77,6 +78,10 @@ func (e *LogsSenderExecuter) ExecutePrivileged(command string, args ...string) (
 
 func (e *LogsSenderExecuter) ExecuteOutputToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {
 	return util.ExecuteOutputToFile(outputFilePath, command, args...)
+}
+
+func (e *LogsSenderExecuter) ExecutePrivilegedToFile(outputFilePath string, command string, args ...string) (stderr string, exitCode int) {
+	return util.ExecutePrivilegedToFile(outputFilePath, command, args...)
 }
 
 func (e *LogsSenderExecuter) CreateFolderIfNotExist(folder string) error {
@@ -314,7 +319,7 @@ func getJournalLogs(l LogsSender, since string, outputFilePath string, journalFi
 	}
 
 	args = append(args, journalFilterParams...)
-	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "journalctl", args...)
+	stderr, exitCode := l.ExecutePrivilegedToFile(outputFilePath, "journalctl", args...)
 	if exitCode != 0 {
 		err := errors.Errorf(stderr)
 		log.WithError(err).Errorf("Failed to run journalctl command")

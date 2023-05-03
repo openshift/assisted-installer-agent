@@ -9,8 +9,8 @@ type MockNtpSynchronizerDependencies struct {
 	mock.Mock
 }
 
-// Execute provides a mock function with given fields: command, args
-func (_m *MockNtpSynchronizerDependencies) Execute(command string, args ...string) (string, string, int) {
+// ExecutePrivileged provides a mock function with given fields: command, args
+func (_m *MockNtpSynchronizerDependencies) ExecutePrivileged(command string, args ...string) (string, string, int) {
 	_va := make([]interface{}, len(args))
 	for _i := range args {
 		_va[_i] = args[_i]

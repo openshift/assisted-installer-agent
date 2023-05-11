@@ -25,15 +25,18 @@ package constants
 //    matching host's mac addresses with those in mac_interface.ini.
 // 2. Replace logical interface name in nmconnection files with the interface name as set on the host
 // 3. Rename nmconnection files to start with the interface name (instead of the logical interface name)
-// 4. Copy the nmconnection files to /NetworkManager/system-connections/
+// 4. Copy the nmconnection files to the target directory. That will be
+//    '/etc/NetworkManager/system-connections' when the script is part of the full ISO and
+//    '/etc/coreos-firstboot-network' when the script is part of the minimal ISO.
 const PreNetworkConfigScript = `#!/bin/bash
 
 # The directory that contains nmconnection files of all nodes
 NMCONNECTIONS_DIR=/etc/assisted/network
 MAC_NIC_MAPPING_FILE=mac_interface.ini
 
-if [ ! -d "$NMCONNECTIONS_DIR" ]
+if [[ ! -d "$NMCONNECTIONS_DIR" ]]
 then
+  echo "Error (exiting): Expected to find the directory $NMCONNECTIONS_DIR on the host but this was not present."
   exit 0
 fi
 
@@ -51,14 +54,11 @@ declare -A logical_nic_mac_map
 
 # Find destination directory based on ISO mode
 if [[ -f /etc/initrd-release ]]; then
-  ETC_NETWORK_MANAGER="/run/NetworkManager/system-connections"
+  ETC_NETWORK_MANAGER="/etc/coreos-firstboot-network"
 else
   ETC_NETWORK_MANAGER="/etc/NetworkManager/system-connections"
 fi
-
-# remove default connection file create by NM(nm-initrd-generator). This is a WA until
-# NM is back to supporting priority between nmconnections
-rm -f ${ETC_NETWORK_MANAGER}/*
+echo "Info: ETC_NETWORK_MANAGER was set to $ETC_NETWORK_MANAGER"
 
 # Create a map of host mac addresses to their network interfaces
 function map_host_macs_to_interfaces() {
@@ -73,10 +73,17 @@ function map_host_macs_to_interfaces() {
 function find_host_directory_by_mac_address() {
   for d in $(ls -d ${NMCONNECTIONS_DIR}/host*)
   do
+
     mapping_file="${d}/${MAC_NIC_MAPPING_FILE}"
-    if [ ! -f $mapping_file ]
+    if [[ ! -f "$mapping_file" ]]
     then
-      echo "Mapping file '$mapping_file' is missing. Skipping on directory '$d'"
+      echo "Warning: Mapping file $mapping_file is missing. Skipping on directory $d"
+      continue
+    fi
+
+    if [[ -z "$(ls -A $d/*.nmconnection)" ]]
+    then
+      echo "Warning: Host directory does not contain any nmconnection files, skipping"
       continue
     fi
 
@@ -87,19 +94,22 @@ function find_host_directory_by_mac_address() {
       then
         host_dir=$(mktemp -d)
         cp ${d}/* $host_dir
+        echo "Info: Found host directory: $d, configuration copied to $host_dir"
         return
       fi
+      echo "Info: No match found in host macs for '$mac_address'"
     done
   done
 
   if [ -z "$host_dir" ]
   then
-    echo "None of host directories are a match for the current host"
-    exit 0
+    echo "Error: None of the host directories contained a mac-address to host mapping for the current host"
+    // We should not exit the script here in any fashion as the Dracut initqueue handler will not run any subsequent scripts if there is an exit.
   fi
 }
 
 function set_logical_nic_mac_mapping() {
+  echo "Info: Checking '$mapping_file' for logical nic to mac mappings"
   # initialize logical_nic_mac_map with mapping file entries
   readarray -t lines < "${mapping_file}"
   for line in "${lines[@]}"
@@ -113,10 +123,12 @@ function set_logical_nic_mac_mapping() {
 # Replace logical interface name in nmconnection files with the interface name from the mapping file
 # of host's directory. Replacement is done based on mac-address matching
 function update_interface_names_by_mapping_file() {
+  echo "Info: Updaing logical interface names in nmconnection files with interface name from mapping files"
 
   # iterate over host's nmconnection files and replace logical interface name with host's nic name
   for nmconn_file in $(ls -1 ${host_dir}/*.nmconnection)
   do
+    echo "Info: Updaing logical interface name in nmconnection files with interface name from mapping file $host_dir/$nmconn_file"
     # iterate over mapping to find nmconnection files with logical interface name
     for nic in "${!logical_nic_mac_map[@]}"
     do
@@ -129,18 +141,20 @@ function update_interface_names_by_mapping_file() {
         host_iface=${host_macs_to_hw_iface[$mac]}
         if [ -z "$host_iface" ]
         then
-          echo "Mapping file contains MAC Address '$mac' (for logical interface name '$nic') that doesn't exist on the host"
+          echo "Warning: Mapping file contains MAC Address '$mac' (for logical interface name '$nic') that doesn't exist on the host"
           continue
         fi
 
         # replace logical interface name with host interface name
         sed -i -e "s/=$nic$/=$host_iface/g" -e "s/=$nic\./=$host_iface\./g" $nmconn_file
+        echo "Info: Using logical interface name '$nic' for interface with Mac address '$mac', updated $nmconn_file)"
       fi
     done
   done
 }
 
 function copy_nmconnection_files_to_nm_config_dir() {
+  echo "Info: Copying nmconnection files to $ETC_NETWORK_MANAGER"
   for nmconn_file in $(ls -1 ${host_dir}/*.nmconnection)
   do
     # rename nmconnection files based on the actual interface name
@@ -155,16 +169,55 @@ function copy_nmconnection_files_to_nm_config_dir() {
       if [ ! -z "$host_iface" ]
       then
         mv $nmconn_file "${dir_path}/${host_iface}.${extension}"
+        echo "Info: Copied $nmconn_file to $dir_path/$host_iface/$extension"
+        continue
       fi
+      echo "Warning: Mapping for '$mac_address' was not present while attempting to copy $nmconn_file to $dir_path/$host_iface/$extension"
     fi
   done
 
+  mkdir -p "${ETC_NETWORK_MANAGER}"
   cp ${host_dir}/*.nmconnection ${ETC_NETWORK_MANAGER}/
+  echo "Info: Copied all nmconnection files from $host_dir to $ETC_NETWORK_MANAGER"
 }
 
+echo "PreNetworkConfig Start"
 map_host_macs_to_interfaces
 find_host_directory_by_mac_address
-set_logical_nic_mac_mapping
-update_interface_names_by_mapping_file
-copy_nmconnection_files_to_nm_config_dir
+
+// Make sure we do not run any of the following functions if there was no matching config.
+if [ "$host_dir" ]
+  then
+    # Remove default connection file create by NM(nm-initrd-generator). This is a WA until
+    # NM is back to supporting priority between nmconnections.
+    #
+    # Note that when this is intended mostly for the full ISO scenario. In the minimal ISO scenario
+    # this script runs before the 'coreos-coreos-copy-firstboot-network' service, and that script
+    # already removes the connection files, but it doesn't hurt to do it again.
+    rm -f ${ETC_NETWORK_MANAGER}/*
+    echo "Removing default connection files in '$ETC_NETWORK_MANAGER'"
+    set_logical_nic_mac_mapping
+    update_interface_names_by_mapping_file
+    copy_nmconnection_files_to_nm_config_dir
+fi
+echo "PreNetworkConfig End"
+`
+
+const MinimalISONetworkConfigService = `
+[Unit]
+Description=Assisted static network config
+DefaultDependencies=no
+
+# We need to run after the kernel and udev have detected all the network interface devices,
+# otherwise the mechanism that we use to find the MAC addresses will not work and the configuration
+# will not be applied.
+After=systemd-udev-settle.service
+
+# We need to run before the service that installs the network connection files that we generate.
+Before=coreos-copy-firstboot-network.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/pre-network-manager-config.sh
 `

@@ -2,6 +2,7 @@ package common
 
 import (
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -42,13 +43,20 @@ const (
 	FamilyIPv4 int32 = 4
 	FamilyIPv6 int32 = 6
 
+	AMD64CPUArchitecture   = "amd64"
 	X86CPUArchitecture     = "x86_64"
 	DefaultCPUArchitecture = X86CPUArchitecture
 	ARM64CPUArchitecture   = "arm64"
 	// rchos is sending aarch64 and not arm as arm64 arch
 	AARCH64CPUArchitecture = "aarch64"
 	PowerCPUArchitecture   = "ppc64le"
+	S390xCPUArchitecture   = "s390x"
 	MultiCPUArchitecture   = "multi"
+)
+
+var (
+	UnlimitedEvents *int64 = swag.Int64(-1)
+	NoOffsetEvents  *int64 = swag.Int64(0)
 )
 
 // Configuration to be injected by discovery ignition.  It will cause IPv6 DHCP client identifier to be the same
@@ -91,6 +99,47 @@ const NMDebugModeConf = `
 [logging]
 domains=ALL:DEBUG
 `
+
+const ValidationTypeHost = "host"
+const ValidationTypeCluster = "cluster"
+
+func GetIgnoredValidations(validationsJSON string, clusterID string) ([]string, bool) {
+	ignoredValidations := []string{}
+	if validationsJSON != "" {
+		var err error
+		ignoredValidations, err = DeserializeJSONList(validationsJSON)
+		if err != nil {
+			return nil, false
+		}
+	}
+	return ignoredValidations, true
+}
+
+func IgnoredValidationsAreSet(cluster *Cluster) bool {
+	return cluster.IgnoredClusterValidations != "" || cluster.IgnoredHostValidations != ""
+}
+
+func DeserializeJSONList(jsonString string) ([]string, error) {
+	var list []string
+	if jsonString != "" {
+		err := json.Unmarshal([]byte(jsonString), &list)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return list, nil
+}
+
+func NormalizeCPUArchitecture(arch string) string {
+	switch arch {
+	case AMD64CPUArchitecture:
+		return X86CPUArchitecture
+	case AARCH64CPUArchitecture:
+		return ARM64CPUArchitecture
+	default:
+		return arch
+	}
+}
 
 func AllStrings(vs []string, f func(string) bool) bool {
 	for _, v := range vs {
@@ -196,18 +245,18 @@ func GetNetworkCidrAttr(obj interface{}, fieldName string) []*string {
 // IsSliceNonEmpty checks whether the provided slice is non-empty. The slice is assumed to be
 // non-empty if at least one of its elements contains a non-zero value for its respective type.
 // Examples:
-// - `[]*models.MachineNetwork{{Cidr: "5.5.0.0/24"}, {Cidr: "6.6.0.0/24"}}` - valid, as we are
-//   configuring two machine networks
-// - `[]*models.ClusterNetwork{}` - valid, as it means we are removing all the cluster networks
-//   that may have been currently configured
-// - `[]*models.MachineNetwork{{}}` - invalid, as it means that we are trying to configure
-//    a single machine network that is empty; a valid network contains at least a CIDR which is
-//    missing in this case
-// - `[]*models.MachineNetwork{{Cidr: ""}}` - invalid, as it means we are trying to configure
-//   a single machine network that has empty CIDR; a valid network should contain a non-empty
-//   CIDR
-// - `[]*models.ClusterNetwork{{HostPrefix: 0}}` - invalid, as it means we are trying to configure
-//   a single cluster network with host prefix with a value 0; this is not a valid subnet lenght
+//   - `[]*models.MachineNetwork{{Cidr: "5.5.0.0/24"}, {Cidr: "6.6.0.0/24"}}` - valid, as we are
+//     configuring two machine networks
+//   - `[]*models.ClusterNetwork{}` - valid, as it means we are removing all the cluster networks
+//     that may have been currently configured
+//   - `[]*models.MachineNetwork{{}}` - invalid, as it means that we are trying to configure
+//     a single machine network that is empty; a valid network contains at least a CIDR which is
+//     missing in this case
+//   - `[]*models.MachineNetwork{{Cidr: ""}}` - invalid, as it means we are trying to configure
+//     a single machine network that has empty CIDR; a valid network should contain a non-empty
+//     CIDR
+//   - `[]*models.ClusterNetwork{{HostPrefix: 0}}` - invalid, as it means we are trying to configure
+//     a single cluster network with host prefix with a value 0; this is not a valid subnet lenght
 func IsSliceNonEmpty(arg interface{}) bool {
 	res := false
 	if reflect.ValueOf(arg).Kind() == reflect.Slice {
@@ -433,4 +482,92 @@ func ApplyYamlPatch(src []byte, ops []byte) ([]byte, error) {
 	}
 
 	return patched, nil
+}
+
+/*Count of events of each severity*/
+type EventSeverityCount map[string]int64
+
+type V2GetEventsParams struct {
+	/*
+	   A comma-separated list of event categories.
+	*/
+	Categories []string
+	/*
+	   The cluster to return events for.
+	   Format: uuid
+	*/
+	ClusterID *strfmt.UUID
+	/*
+	   Cluster level events flag.
+	*/
+	ClusterLevel *bool
+	/*
+	   Deleted hosts flag.
+	*/
+	DeletedHosts *bool
+	/*
+	   Hosts in the specified cluster to return events for.
+	*/
+	HostIds []strfmt.UUID
+	/*
+	   The infra-env to return events for.
+	   Format: uuid
+	*/
+	InfraEnvID *strfmt.UUID
+	/*
+	   The maximum number of records to retrieve.
+	*/
+	Limit *int64
+	/*
+	   Retrieved events message pattern.
+	*/
+	Message *string
+	/*
+	   Number of records to skip before starting to return the records.
+	*/
+	Offset *int64
+
+	/*
+	   Order by event_time of events retrieved.
+	   Default: "ascending"
+	*/
+	Order *string
+	/*
+	   Retrieved events severities.
+	*/
+	Severities []string
+}
+
+type V2GetEventsResponse struct {
+	/*Retrieved events*/
+	Events             []*Event
+	EventSeverityCount *EventSeverityCount
+	EventCount         *int64
+}
+
+func (r V2GetEventsResponse) GetEvents() []*Event {
+	return r.Events
+}
+
+func (r V2GetEventsResponse) GetEventSeverityCount() *EventSeverityCount {
+	return r.EventSeverityCount
+}
+
+func (r V2GetEventsResponse) GetEventCount() *int64 {
+	return r.EventCount
+}
+
+func GetDefaultV2GetEventsParams(clusterID *strfmt.UUID, hostIds []strfmt.UUID, infraEnvID *strfmt.UUID, categories ...string) *V2GetEventsParams {
+	selectedCategories := make([]string, 0)
+	if len(categories) > 0 {
+		selectedCategories = categories[:]
+	}
+	return &V2GetEventsParams{
+		ClusterID:  clusterID,
+		HostIds:    hostIds,
+		InfraEnvID: infraEnvID,
+		Limit:      UnlimitedEvents,
+		Offset:     NoOffsetEvents,
+		Categories: selectedCategories,
+	}
 }

@@ -200,6 +200,47 @@ func (d *disks) getHolders(diskName string) string {
 	return strings.Join(holders, ",")
 }
 
+func (d *disks) isDASD(disk *ghw.Disk) bool {
+	return strings.HasPrefix(disk.Name, "dasd")
+}
+
+func (d *disks) getDASDType(disk *ghw.Disk) models.DriveType {
+	sysBlockPath := filepath.Join("/sys", "block", disk.Name)
+	sysDevicesPath, err := d.dependencies.EvalSymlinks(sysBlockPath)
+	if err != nil {
+		logrus.WithError(err).Errorf("Failed to evaluate symlink for DASD device")
+		return models.DriveTypeUnknown
+	}
+	splitPath := strings.Split(sysDevicesPath, "/")
+
+	disciplinePath := strings.Join(append(splitPath[:len(splitPath)-2], "discipline"), "/")
+	data, err := d.dependencies.ReadFile(disciplinePath)
+	if err != nil {
+		logrus.WithError(err).Errorf("Failed to read discipline for DASD device")
+		return models.DriveTypeUnknown
+	}
+	discipline := strings.TrimSpace(string(data))
+
+	if discipline == "ECKD" {
+		esePath := strings.Join(append(splitPath[:len(splitPath)-2], "ese"), "/")
+		data, err = d.dependencies.ReadFile(esePath)
+		if err != nil {
+			logrus.WithError(err).Errorf("Failed to read ESE for DASD device")
+			return models.DriveTypeUnknown
+		}
+		ese := strings.TrimSpace(string(data))
+
+		if ese == "1" {
+			return models.DriveTypeECKDESE
+		} else {
+			return models.DriveTypeECKD
+		}
+	} else if discipline == "FBA" {
+		return models.DriveTypeFBA
+	}
+	return models.DriveTypeUnknown
+}
+
 // checkEligibility checks if a disk is eligible for installation by testing
 // it against a list of predicates. Returns all the reasons the disk
 // was found to be not eligible, or an empty slice if it was found to
@@ -210,7 +251,7 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
 	}
 
-	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) {
+	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) && !d.isDASD(disk) {
 		notEligibleReasons = append(notEligibleReasons, "Disk has unknown storage controller")
 	}
 
@@ -267,7 +308,9 @@ func (d *disks) getDriveType(disk *block.Disk) models.DriveType {
 	diskString := disk.DriveType.String()
 	var driveType models.DriveType
 
-	if isISCSIDisk(disk) {
+	if d.isDASD(disk) {
+		driveType = d.getDASDType(disk)
+	} else if isISCSIDisk(disk) {
 		driveType = models.DriveTypeISCSI
 	} else if isFCDisk(disk) {
 		driveType = models.DriveTypeFC

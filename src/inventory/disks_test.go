@@ -918,6 +918,52 @@ var _ = Describe("Disks test", func() {
 		}))
 	})
 
+	It("IBM DASD drives", func() {
+		// dasda is ECKD
+		dasdaDisk := createDisk("dasda", 1, "1", "0x1")
+		dependencies.On("EvalSymlinks", "/sys/block/dasda").Return("/sys/devices/css0/0.0.000f/0.0.5236/block/dasda", nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5236/discipline").Return([]byte("ECKD\n"), nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5236/ese").Return([]byte("0\n"), nil)
+		// dasdb is ECKD (ESE)
+		dasdbDisk := createDisk("dasdb", 2, "2", "0x2")
+		dependencies.On("EvalSymlinks", "/sys/block/dasdb").Return("/sys/devices/css0/0.0.000f/0.0.5237/block/dasdb", nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5237/discipline").Return([]byte("ECKD\n"), nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5237/ese").Return([]byte("1\n"), nil)
+		// dasdc is FBA
+		dasdcDisk := createDisk("dasdc", 3, "3", "0x3")
+		dependencies.On("EvalSymlinks", "/sys/block/dasdc").Return("/sys/devices/css0/0.0.000f/0.0.5238/block/dasdc", nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5238/discipline").Return([]byte("FBA\n"), nil)
+		// dasdd has an error reading the symlink
+		dasddDisk := createDisk("dasdd", 4, "4", "0x4")
+		dependencies.On("EvalSymlinks", "/sys/block/dasdd").Return("", errors.New("Error"))
+		// dasde has an error reading the discipline file
+		dasdeDisk := createDisk("dasde", 5, "5", "0x5")
+		dependencies.On("EvalSymlinks", "/sys/block/dasde").Return("/sys/devices/css0/0.0.000f/0.0.5240/block/dasde", nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5240/discipline").Return([]byte(""), errors.New("Error"))
+		// dasdf has an error reading the ESE file
+		dasdfDisk := createDisk("dasdf", 6, "6", "0x6")
+		dependencies.On("EvalSymlinks", "/sys/block/dasdf").Return("/sys/devices/css0/0.0.000f/0.0.5241/block/dasdf", nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5241/discipline").Return([]byte("ECKD\n"), nil)
+		dependencies.On("ReadFile", "/sys/devices/css0/0.0.000f/0.0.5241/ese").Return([]byte(""), errors.New("Error"))
+
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		mockAllForSuccess(dependencies, dasdaDisk, dasdbDisk, dasdcDisk, dasddDisk, dasdeDisk, dasdfDisk)
+
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		Expect(ret).Should(HaveLen(6))
+		for _, disk := range ret {
+			if disk.Name == "dasda" {
+				Expect(disk.DriveType).Should(Equal(models.DriveTypeECKD))
+			} else if disk.Name == "dasdb" {
+				Expect(disk.DriveType).Should(Equal(models.DriveTypeECKDESE))
+			} else if disk.Name == "dasdc" {
+				Expect(disk.DriveType).Should(Equal(models.DriveTypeFBA))
+			} else {
+				Expect(disk.DriveType).Should(Equal(models.DriveTypeUnknown))
+			}
+		}
+	})
+
 	Describe("By-Id", func() {
 		Specify("GetDisk does not affect from failures while fetching the disk WWN - Read dir failed", func() {
 			mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")

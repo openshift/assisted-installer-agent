@@ -19,7 +19,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.7
 	github.com/openshift/agent-installer-utils v0.0.0-20230310220517-8506fbb6a346
-	github.com/openshift/assisted-service v1.0.10-0.20230511160941-2c19235a9494
+	github.com/openshift/assisted-service v1.0.10-0.20230601170008-628d8f2efb3a
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -177,8 +177,8 @@ replace (
 	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
-	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20230511160941-2c19235a9494
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20230511160941-2c19235a9494
+	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20230601170008-628d8f2efb3a
+	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20230601170008-628d8f2efb3a
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

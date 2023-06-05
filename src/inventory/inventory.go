@@ -119,6 +119,7 @@ func findUsableNIC(inventory *models.Inventory) (result *models.Interface, err e
 	// Find the first NIC that has a MAC address an a global IP address:
 	for _, nic := range nics {
 		isPhysical := nic.Type == "physical"
+		isVLAN := nic.Type == "vlan"
 		hasMAC := nic.MacAddress != ""
 		hasV4 := false
 		for _, ip := range nic.IPV4Addresses {
@@ -140,7 +141,7 @@ func findUsableNIC(inventory *models.Inventory) (result *models.Interface, err e
 				break
 			}
 		}
-		if isPhysical && hasMAC && (hasV4 || hasV6) {
+		if (isPhysical || isVLAN) && hasMAC && (hasV4 || hasV6) {
 			result = nic
 			return
 		}

@@ -6569,6 +6569,7 @@ func init() {
         "odf-requirements-satisfied",
         "cnv-requirements-satisfied",
         "lvm-requirements-satisfied",
+        "mce-requirements-satisfied",
         "network-type-valid"
       ]
     },
@@ -7249,7 +7250,10 @@ func init() {
         "iSCSI",
         "FC",
         "LVM",
-        "RAID"
+        "RAID",
+        "ECKD",
+        "ECKD (ESE)",
+        "FBA"
       ]
     },
     "error": {
@@ -7433,13 +7437,17 @@ func init() {
         "SINGLE_NODE_EXPANSION",
         "LVM",
         "ODF",
+        "LSO",
         "CNV",
+        "MCE",
         "NUTANIX_INTEGRATION",
         "VSPHERE_INTEGRATION",
         "DUAL_STACK_VIPS",
         "CLUSTER_MANAGED_NETWORKING",
         "USER_MANAGED_NETWORKING",
-        "MINIMAL_ISO"
+        "MINIMAL_ISO",
+        "FULL_ISO",
+        "EXTERNAL_PLATFORM_OCI"
       ]
     },
     "feature-support-levels": {
@@ -8014,6 +8022,7 @@ func init() {
         "ocs-requirements-satisfied",
         "odf-requirements-satisfied",
         "lvm-requirements-satisfied",
+        "mce-requirements-satisfied",
         "sufficient-installation-disk-speed",
         "cnv-requirements-satisfied",
         "sufficient-network-latency-requirement-for-role",
@@ -8386,6 +8395,7 @@ func init() {
         "additional_trust_bundle": {
           "description": "PEM-encoded X.509 certificate bundle. Hosts discovered by this\ninfra-env will trust the certificates in this bundle. Clusters formed\nfrom the hosts discovered by this infra-env will also trust the\ncertificates in this bundle.",
           "type": "string",
+          "maxLength": 65535,
           "x-nullable": false
         },
         "cluster_id": {
@@ -8462,6 +8472,7 @@ func init() {
         "additional_trust_bundle": {
           "description": "Allows users to change the additional_trust_bundle infra-env field",
           "type": "string",
+          "maxLength": 65535,
           "x-nullable": true
         },
         "ignition_config_override": {
@@ -9394,6 +9405,11 @@ func init() {
         "type"
       ],
       "properties": {
+        "is_external": {
+          "description": "Indicates if the underlying platform type is external.",
+          "type": "boolean",
+          "readOnly": true
+        },
         "type": {
           "$ref": "#/definitions/platform_type"
         }
@@ -9406,7 +9422,8 @@ func init() {
         "baremetal",
         "nutanix",
         "vsphere",
-        "none"
+        "none",
+        "oci"
       ]
     },
     "preflight-hardware-requirements": {
@@ -16946,6 +16963,7 @@ func init() {
         "odf-requirements-satisfied",
         "cnv-requirements-satisfied",
         "lvm-requirements-satisfied",
+        "mce-requirements-satisfied",
         "network-type-valid"
       ]
     },
@@ -17589,7 +17607,10 @@ func init() {
         "iSCSI",
         "FC",
         "LVM",
-        "RAID"
+        "RAID",
+        "ECKD",
+        "ECKD (ESE)",
+        "FBA"
       ]
     },
     "error": {
@@ -17732,13 +17753,17 @@ func init() {
         "SINGLE_NODE_EXPANSION",
         "LVM",
         "ODF",
+        "LSO",
         "CNV",
+        "MCE",
         "NUTANIX_INTEGRATION",
         "VSPHERE_INTEGRATION",
         "DUAL_STACK_VIPS",
         "CLUSTER_MANAGED_NETWORKING",
         "USER_MANAGED_NETWORKING",
-        "MINIMAL_ISO"
+        "MINIMAL_ISO",
+        "FULL_ISO",
+        "EXTERNAL_PLATFORM_OCI"
       ]
     },
     "feature-support-levels": {
@@ -18313,6 +18338,7 @@ func init() {
         "ocs-requirements-satisfied",
         "odf-requirements-satisfied",
         "lvm-requirements-satisfied",
+        "mce-requirements-satisfied",
         "sufficient-installation-disk-speed",
         "cnv-requirements-satisfied",
         "sufficient-network-latency-requirement-for-role",
@@ -18687,6 +18713,7 @@ func init() {
         "additional_trust_bundle": {
           "description": "PEM-encoded X.509 certificate bundle. Hosts discovered by this\ninfra-env will trust the certificates in this bundle. Clusters formed\nfrom the hosts discovered by this infra-env will also trust the\ncertificates in this bundle.",
           "type": "string",
+          "maxLength": 65535,
           "x-nullable": false
         },
         "cluster_id": {
@@ -18763,6 +18790,7 @@ func init() {
         "additional_trust_bundle": {
           "description": "Allows users to change the additional_trust_bundle infra-env field",
           "type": "string",
+          "maxLength": 65535,
           "x-nullable": true
         },
         "ignition_config_override": {
@@ -19684,6 +19712,11 @@ func init() {
         "type"
       ],
       "properties": {
+        "is_external": {
+          "description": "Indicates if the underlying platform type is external.",
+          "type": "boolean",
+          "readOnly": true
+        },
         "type": {
           "$ref": "#/definitions/platform_type"
         }
@@ -19696,7 +19729,8 @@ func init() {
         "baremetal",
         "nutanix",
         "vsphere",
-        "none"
+        "none",
+        "oci"
       ]
     },
     "preflight-hardware-requirements": {

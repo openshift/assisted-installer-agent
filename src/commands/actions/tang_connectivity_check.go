@@ -1,10 +1,11 @@
 package actions
 
 import (
+	"net/http"
+
 	"github.com/openshift/assisted-installer-agent/src/tang_connectivity_check"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type tangConnectivityCheck struct {

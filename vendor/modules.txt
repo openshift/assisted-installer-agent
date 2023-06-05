@@ -280,7 +280,7 @@ github.com/hashicorp/go-version
 # github.com/imdario/mergo v0.3.12
 ## explicit; go 1.13
 github.com/imdario/mergo
-# github.com/itchyny/gojq v0.12.12
+# github.com/itchyny/gojq v0.12.13
 ## explicit; go 1.18
 github.com/itchyny/gojq
 # github.com/itchyny/timefmt-go v0.1.5

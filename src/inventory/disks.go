@@ -16,6 +16,8 @@ import (
 	"github.com/thoas/go-funk"
 )
 
+const applianceAgentPartitionNamePrefix = "agent"
+
 type disks struct {
 	dependencies     util.IDependencies
 	subprocessConfig *config.SubprocessConfig
@@ -257,6 +259,13 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 
 	if d.isLVM(disk) {
 		notEligibleReasons = append(notEligibleReasons, "Disk is an LVM logical volume")
+	}
+
+	// Don't check partitions if this is an appliance disk, as those disks should be marked as eligible for installation.
+	for _, partition := range disk.Partitions {
+		if strings.HasPrefix(partition.Label, applianceAgentPartitionNamePrefix) {
+			return notEligibleReasons, false
+		}
 	}
 
 	// Check disk partitions for type, name, and mount points:

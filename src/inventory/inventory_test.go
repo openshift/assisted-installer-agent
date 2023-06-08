@@ -198,5 +198,23 @@ var _ = Describe("Hostname processing", func() {
 			},
 			"localhost",
 		),
+		Entry(
+			"Renames with VLAN",
+			"localhost",
+			[]*models.Interface{
+				{
+					Name:       "eth0",
+					Type:       "physical",
+					MacAddress: "71:A0:A4:6F:BE:C8",
+				},
+				{
+					Name:          "eth0.42",
+					Type:          "vlan",
+					MacAddress:    "71:A0:A4:6F:BE:C8",
+					IPV4Addresses: []string{"192.168.0.2/24"},
+				},
+			},
+			"71-a0-a4-6f-be-c8",
+		),
 	)
 })

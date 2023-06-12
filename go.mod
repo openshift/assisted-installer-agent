@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.7
+	github.com/onsi/gomega v1.27.8
 	github.com/openshift/agent-installer-utils v0.0.0-20230310220517-8506fbb6a346
 	github.com/openshift/assisted-service v1.0.10-0.20230601170008-628d8f2efb3a
 	github.com/openshift/assisted-service/models v0.0.0

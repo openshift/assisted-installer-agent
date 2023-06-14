@@ -580,6 +580,51 @@ var _ = Describe("Disks test", func() {
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
+	It("Allows appliance disk", func() {
+		disksAmount := 4
+		regularDiskIndex := 3
+
+		partitionNameSuffix := [...]string{"boot", "data", "foo", "bar"}
+
+		blockInfo, expectedDisks := prepareDisksTest(dependencies, disksAmount)
+
+		for i := 0; i < disksAmount; i++ {
+			if i == regularDiskIndex {
+				// Make sure regular disks don't get marked as installation media
+				expectedDisks[i].InstallationEligibility.Eligible = true
+				expectedDisks[i].IsInstallationMedia = false
+				continue
+			}
+			blockInfo.Disks[i].Partitions = []*ghw.Partition{
+				{
+					Disk:       nil,
+					Name:       "partition1",
+					Label:      "partition1-label",
+					MountPoint: "/media/iso",
+					SizeBytes:  5555,
+					Type:       "ext4",
+					IsReadOnly: false,
+				},
+				{
+					Disk:       nil,
+					Name:       "partition2",
+					Label:      fmt.Sprintf("%s%s",applianceAgentPartitionNamePrefix, partitionNameSuffix[i]),
+					MountPoint: "",
+					SizeBytes:  5555,
+					Type:       "ext4",
+					IsReadOnly: false,
+				},
+			}
+			expectedDisks[i].InstallationEligibility.Eligible = true
+			expectedDisks[i].InstallationEligibility.NotEligibleReasons = nil
+			expectedDisks[i].IsInstallationMedia = false
+		}
+
+		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		Expect(ret).To(Equal(expectedDisks))
+	})
+
 	It("ODD marked as installation media, HDD is not", func() {
 		blockInfo, expectedDisks := prepareDisksTest(dependencies, 2)
 

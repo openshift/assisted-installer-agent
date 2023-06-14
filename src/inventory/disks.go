@@ -241,6 +241,16 @@ func (d *disks) getDASDType(disk *ghw.Disk) models.DriveType {
 	return models.DriveTypeUnknown
 }
 
+func (d *disks) isHiddenDevice(disk *ghw.Disk) bool {
+	path := filepath.Join("/sys", "block", disk.Name, "hidden")
+	b, err := d.dependencies.ReadFile(path)
+	if err != nil {
+		logrus.WithError(err).Warnf("Failed reading hidden file %s", path)
+		return false
+	}
+	return strings.TrimSpace(string(b)) == "1"
+}
+
 // checkEligibility checks if a disk is eligible for installation by testing
 // it against a list of predicates. Returns all the reasons the disk
 // was found to be not eligible, or an empty slice if it was found to
@@ -298,7 +308,8 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 }
 
 func (d *disks) shouldReturnDisk(disk *block.Disk) bool {
-	return !((strings.HasPrefix(disk.Name, "dm-") && !(d.isMultipath(disk) || d.isLVM(disk))) || // Device mapper devices, except multipath/LVM
+	return !(d.isHiddenDevice(disk) || // Disk is marked as hidden by sysfs
+		(strings.HasPrefix(disk.Name, "dm-") && !(d.isMultipath(disk) || d.isLVM(disk))) || // Device mapper devices, except multipath/LVM
 		strings.HasPrefix(disk.Name, "loop") || // Loop devices (see `man loop`)
 		strings.HasPrefix(disk.Name, "zram") || // Default name usually assigned to "swap on ZRAM" block devices
 		strings.HasPrefix(disk.Name, "md")) // Linux multiple-device-driver block devices

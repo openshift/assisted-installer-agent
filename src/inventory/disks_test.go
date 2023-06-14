@@ -393,6 +393,11 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 		busPath := disk.BusPath
 		path := fmt.Sprintf("/dev/%s", name)
 
+		hiddenText := "0\n"
+		if name == "hidden" {
+			hiddenText = "1\n"
+		}
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", name)).Return([]byte(hiddenText), nil)
 		if !newDisks(&config.SubprocessConfig{}, dependencies).shouldReturnDisk(disk) {
 			continue
 		}
@@ -426,6 +431,7 @@ func prepareDiskObjects(dependencies *util.MockIDependencies, diskNum int) {
 
 	dependencies.On("EvalSymlinks", fmt.Sprintf("/dev/disk/by-path/bus-path%d", diskNum)).Return(fmt.Sprintf("/dev/disk/by-path/../../foo/disk%d", diskNum), nil).Once()
 	dependencies.On("Abs", fmt.Sprintf("/dev/disk/by-path/../../foo/disk%d", diskNum)).Return(path, nil).Once()
+	dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", name)).Return([]byte("0\n"), nil)
 }
 
 func prepareDisksTest(dependencies *util.MockIDependencies, numDisks int) (*ghw.BlockInfo, []*models.Disk) {
@@ -469,9 +475,10 @@ var _ = Describe("Disks test", func() {
 		zramDisk := createDisk("zram0", 4, "6141877064533b0020adf3bc0325d665", "0x6141877064533b0020adf3bc0325d665")
 		mdDisk := createDisk("md-1", 5, "6141877064533b0020adf3bc0325d667", "0x6141877064533b0020adf3bc0325d667")
 		loopDisk := createDisk("loop5", 6, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d668")
+		hiddenDisk := createDisk("hidden", 7, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d669")
 
 		mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
-		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, mdDisk, loopDisk)
+		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, mdDisk, loopDisk, hiddenDisk)
 
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).Should(HaveLen(2))
@@ -616,6 +623,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
@@ -678,6 +686,7 @@ var _ = Describe("Disks test", func() {
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -728,6 +737,7 @@ var _ = Describe("Disks test", func() {
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
@@ -772,6 +782,7 @@ var _ = Describe("Disks test", func() {
 			return &fileInfoMock
 		})
 		dependencies.On("ReadDir", "/sys/block/sda/holders").Return(holderInfos, nil).Times(1)
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
@@ -817,6 +828,7 @@ var _ = Describe("Disks test", func() {
 			return &fileInfoMock
 		})
 		dependencies.On("ReadDir", "/sys/block/sda/holders").Return(holderInfos, nil).Times(1)
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
@@ -853,6 +865,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
@@ -890,6 +903,7 @@ var _ = Describe("Disks test", func() {
 		mockGetBootable(dependencies, path, true, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("LVM-Uq2y4MzaRpGE1XwVHSYDU5VAuHXXOA4gCkn9flYIZlS7UEfwlYPMyzHwx2R6VQoJ2\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)

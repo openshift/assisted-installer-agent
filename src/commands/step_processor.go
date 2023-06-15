@@ -296,7 +296,12 @@ func ProcessSteps(ctx context.Context, cancel context.CancelFunc, agentConfig *c
 		log.Errorf("Step processing failed, will try again in %s: %v", delay, err)
 	}
 	for !exit {
+		// Note that this back-off configuration, with the max elapsed time set to zero,
+		// means that there is no limit; after reaching the five minute interval we will
+		// keep retrying every five minutes for ever.
 		backOff := backoff.NewExponentialBackOff()
+		backOff.MaxInterval = 5 * time.Minute
+		backOff.MaxElapsedTime = 0
 		err := backoff.RetryNotify(operation, backOff, notify)
 		if err != nil {
 			log.Errorf("Step processing failed, will exit: %v", err)

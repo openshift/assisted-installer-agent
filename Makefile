@@ -31,7 +31,7 @@ ci-lint: vendor-diff
 	${ROOT_DIR}/hack/sync-dockerfiles.sh
 
 lint: ci-lint
-	golangci-lint run -v --fix --skip-dirs='(src/agent_tui|vendor/github.com/nmstate)'  # TODO: Fix once golangci-lint image supports importing C
+	golangci-lint run -v --fix
 
 .PHONY: build clean build-image push subsystem
 build: build-agent build-inventory build-free_addresses build-logs_sender \
@@ -39,9 +39,6 @@ build: build-agent build-inventory build-free_addresses build-logs_sender \
 
 build-%: $(BIN) src/$* #lint
 	$(GO_BUILD_VARS) go build -o $(BIN)/$* src/$*/main/main.go
-
-build-agent-tui: $(BIN) src/agent_tui
-	GO_ENABLED=1 CGO_CFLAGS="`pkg-config nmstate --cflags`" CGO_LDFLAGS="`pkg-config nmstate --libs`" go build -o $(BIN)/agent-tui src/agent_tui/main/main.go
 
 build-image:
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)

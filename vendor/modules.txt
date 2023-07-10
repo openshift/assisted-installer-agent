@@ -480,7 +480,7 @@ github.com/openshift-online/ocm-sdk-go/metrics
 github.com/openshift-online/ocm-sdk-go/retry
 github.com/openshift-online/ocm-sdk-go/servicelogs
 github.com/openshift-online/ocm-sdk-go/servicelogs/v1
-# github.com/openshift/agent-installer-utils v0.0.0-20230310220517-8506fbb6a346
+# github.com/openshift/agent-installer-utils v0.0.0-20230707155933-79b142ede77d
 ## explicit; go 1.18
 github.com/openshift/agent-installer-utils/tools/agent_tui
 github.com/openshift/agent-installer-utils/tools/agent_tui/checks

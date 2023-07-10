@@ -3,6 +3,7 @@ package ui
 import (
 	"sync/atomic"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/openshift/agent-installer-utils/tools/agent_tui/checks"
 	"github.com/rivo/tview"
 )
@@ -20,6 +21,7 @@ type UI struct {
 	nmtuiActive         atomic.Value
 	timeoutDialogActive atomic.Value
 	timeoutDialogCancel chan bool
+	dirty               atomic.Value // dirty flag set if the user interacts with the ui
 
 	focusableItems []tview.Primitive // the list of widgets that can be focused
 	focusedItem    int               // the current focused widget
@@ -32,6 +34,7 @@ func NewUI(app *tview.Application, config checks.Config) *UI {
 	}
 	ui.nmtuiActive.Store(false)
 	ui.timeoutDialogActive.Store(false)
+	ui.dirty.Store(false)
 	ui.create(config)
 	return ui
 }
@@ -65,9 +68,17 @@ func (u *UI) IsTimeoutDialogActive() bool {
 	return u.timeoutDialogActive.Load().(bool)
 }
 
+func (u *UI) IsDirty() bool {
+	return u.dirty.Load().(bool)
+}
+
 func (u *UI) create(config checks.Config) {
 	u.pages = tview.NewPages()
 	u.createCheckPage(config)
 	u.createTimeoutModal(config)
 	u.createSplashScreen()
+	u.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		u.dirty.Store(true)
+		return event
+	})
 }

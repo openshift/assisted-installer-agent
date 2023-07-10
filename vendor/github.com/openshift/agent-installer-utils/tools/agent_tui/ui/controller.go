@@ -88,6 +88,14 @@ func (c *Controller) Init(numChecks int) {
 				})
 			}
 
+			// A previously failed checked passed, so if the user never interacted with the ui
+			// then it's safe to display the timeout dialog
+			if c.state && !c.ui.IsTimeoutDialogActive() && !c.ui.IsDirty() {
+				c.ui.app.QueueUpdateDraw(func() {
+					c.ui.ShowTimeoutDialog()
+				})
+			}
+
 		}
 	}()
 }

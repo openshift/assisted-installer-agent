@@ -9,7 +9,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func App(app *tview.Application, config checks.Config) {
+func App(app *tview.Application, config checks.Config, checkFuncs ...checks.CheckFunctions) {
 
 	if err := prepareConfig(&config); err != nil {
 		log.Fatal(err)
@@ -21,7 +21,7 @@ func App(app *tview.Application, config checks.Config) {
 	}
 	appUI = ui.NewUI(app, config)
 	controller := ui.NewController(appUI)
-	engine := checks.NewEngine(controller.GetChan(), config)
+	engine := checks.NewEngine(controller.GetChan(), config, checkFuncs...)
 
 	controller.Init(engine.Size())
 	engine.Init()

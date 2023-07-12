@@ -3,7 +3,7 @@ module github.com/openshift/assisted-installer-agent
 go 1.18
 
 require (
-	github.com/PuerkitoBio/rehttp v1.1.0
+	github.com/PuerkitoBio/rehttp v1.2.0
 	github.com/alessio/shellescape v1.4.1
 	github.com/coreos/ignition/v2 v2.16.0
 	github.com/go-openapi/runtime v0.26.0

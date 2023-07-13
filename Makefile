@@ -36,7 +36,7 @@ build: build-agent build-connectivity_check build-inventory build-free_addresses
 	   build-container_image_availability build-domain_resolution build-disk_speed_check
 
 build-%: $(BIN) src/$* #lint
-	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
+	CGO_ENABLED=1 go build -o $(BIN)/$* src/$*/main/main.go
 
 build-image:
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)

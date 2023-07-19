@@ -1,6 +1,7 @@
 package connectivity_check
 
 import (
+	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
@@ -25,8 +26,11 @@ func (p *arpingChecker) Check(attributes Attributes) ResultReporter {
 
 	result, err := p.executer.Execute("arping", "-c", "10", "-w", "5", "-I", attributes.OutgoingNIC.Name, attributes.RemoteIPAddress)
 	if err != nil {
-		log.WithError(err).Error("Error while processing 'arping' command")
-		return nil
+		// Ignore exit code of 1; only 2 or -1 are actual errors
+		if exitErr, ok := err.(*exec.ExitError); !ok || exitErr.ExitCode() != 1 {
+			log.WithError(err).Error("Error while processing 'arping' command")
+			return nil
+		}
 	}
 	lines := strings.Split(result, "\n")
 	if len(lines) == 0 {

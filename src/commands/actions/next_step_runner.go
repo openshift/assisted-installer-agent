@@ -53,12 +53,12 @@ func (a *nextStepRunnerAction) cleanupPrevious() {
 func (a *nextStepRunnerAction) Args() []string {
 	a.cleanupPrevious()
 
-	arguments := []string{"run", "--rm", "-ti", "--privileged", "--pid=host", "--net=host",
+	arguments := []string{"run", "--rm", "--log-driver=passthrough", "--cgroups=no-conmon", "--privileged", "--pid=host", "--net=host",
 
 		// unlimited number of processes in the container
 		"--pids-limit=0",
 		"-v", "/dev:/dev:rw", "-v", "/opt:/opt:rw",
-		"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
+		"-v", "/run/systemd/journal:/run/systemd/journal:rw",
 		"-v", "/var/log:/var/log:rw",
 		"-v", "/run/media:/run/media:rw",
 		"-v", "/etc/pki:/etc/pki"}

@@ -13,6 +13,7 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
+	"github.com/openshift/assisted-service/pkg/conversions"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/thoas/go-funk"
@@ -222,14 +223,16 @@ func createExpectedSDBModelDisk() *models.Disk {
 	}
 }
 
-/**
+/*
+*
 SDA disk is real disk data from a bare metal machine.
 */
 func createSDADisk() *ghw.Disk {
 	return createDisk("sda", 0, "6141877064533b0020adf3bb03167694", "0x6141877064533b0020adf3bb03167694")
 }
 
-/**
+/*
+*
 SDB disk is real disk data from a bare metal machine.
 */
 func createSDBDisk() *ghw.Disk {
@@ -608,7 +611,7 @@ var _ = Describe("Disks test", func() {
 				{
 					Disk:       nil,
 					Name:       "partition2",
-					Label:      fmt.Sprintf("%s%s",applianceAgentPartitionNamePrefix, partitionNameSuffix[i]),
+					Label:      fmt.Sprintf("%s%s", applianceAgentPrefix, partitionNameSuffix[i]),
 					MountPoint: "",
 					SizeBytes:  5555,
 					Type:       "ext4",
@@ -911,6 +914,7 @@ var _ = Describe("Disks test", func() {
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(""), nil)
 
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
@@ -938,6 +942,37 @@ var _ = Describe("Disks test", func() {
 		}))
 	})
 
+	It("Appliance multipath virtual device", func() {
+		disk := createDeviceMapperDisk()
+		disk.Name = "dm-0"
+		mockFetchDisks(dependencies, nil, disk)
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(applianceAgentPrefix), nil)
+
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ByPath:    "",
+				DriveType: models.DriveTypeSSD,
+				Hctl:      "",
+				Model:     "",
+				Name:      "dm-0",
+				Path:      "/dev/dm-0",
+				Serial:    "",
+				SizeBytes: conversions.GibToBytes(100),
+				Vendor:    "",
+				Wwn:       "",
+				Bootable:  false,
+				Smart:     "",
+				Holders:   "",
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible: true,
+				},
+			},
+		}))
+	})
+
 	It("LVM device", func() {
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
 		path := "/dev/dm-2"
@@ -949,6 +984,7 @@ var _ = Describe("Disks test", func() {
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(""), nil)
 
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("LVM-Uq2y4MzaRpGE1XwVHSYDU5VAuHXXOA4gCkn9flYIZlS7UEfwlYPMyzHwx2R6VQoJ2\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)

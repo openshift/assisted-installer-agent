@@ -13,22 +13,40 @@ func isOVirtPlatform(family string) bool {
 	return family == "oVirt" || family == "RHV"
 }
 
+// Detect if the machine running in Oracle Cloud Infrastructure
+// this function is used to check that and update the manufaturer accordingly.
+func isOciPlatform(chassisAssetTag string) bool {
+	return chassisAssetTag == "OracleCloud.com"
+}
+
 func GetVendor(dependencies util.IDependencies) *models.SystemVendor {
 	var ret models.SystemVendor
 	var product *ghw.ProductInfo
+	var chassis *ghw.ChassisInfo
 	var err error
-	product, err = dependencies.Product(ghw.WithChroot(dependencies.GetGhwChrootRoot()))
 
+	product, err = dependencies.Product(ghw.WithChroot(dependencies.GetGhwChrootRoot()))
 	if err != nil {
 		logrus.Errorf("Error running ghw.Product with /host chroot:: %s", err)
+		return &ret
+	}
+
+	chassis, err = dependencies.Chassis(ghw.WithChroot(dependencies.GetGhwChrootRoot()))
+	if err != nil {
+		logrus.Errorf("Error running ghw.Chassis with /host chroot:: %s", err)
 		return &ret
 	}
 
 	ret.SerialNumber = product.SerialNumber
 	ret.ProductName = product.Name
 	ret.Manufacturer = product.Vendor
+
 	if isOVirtPlatform(product.Family) {
 		ret.ProductName = "oVirt"
+	}
+
+	if isOciPlatform(chassis.AssetTag) {
+		ret.Manufacturer = chassis.AssetTag
 	}
 
 	stdout, stderr, exitCode := dependencies.Execute("systemd-detect-virt", "--vm")

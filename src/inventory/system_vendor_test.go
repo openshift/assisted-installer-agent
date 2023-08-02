@@ -32,6 +32,9 @@ var _ = Describe("System vendor test", func() {
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "An Asset Tag",
+		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
 
 		ret := GetVendor(dependencies)
@@ -47,6 +50,9 @@ var _ = Describe("System vendor test", func() {
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "An Asset Tag",
+		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
 		systemVendor := GetVendor(dependencies)
 		Expect(systemVendor.Virtual).ShouldNot(BeTrue())
@@ -56,6 +62,9 @@ var _ = Describe("System vendor test", func() {
 			Name:         "A Name",
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
+		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("anyvirt", "", 0).Once()
 		systemVendor := GetVendor(dependencies)
@@ -67,6 +76,9 @@ var _ = Describe("System vendor test", func() {
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "An Asset Tag",
+		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("", "an error", 1).Once()
 		systemVendor := GetVendor(dependencies)
 		Expect(systemVendor.Virtual).ShouldNot(BeTrue())
@@ -75,6 +87,9 @@ var _ = Describe("System vendor test", func() {
 		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
 			Family: "oVirt",
 		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "An Asset Tag",
+		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("ovirt", "", 0).Once()
 
 		ret := GetVendor(dependencies)
@@ -82,5 +97,28 @@ var _ = Describe("System vendor test", func() {
 			ProductName: "oVirt",
 			Virtual:     true,
 		}))
+	})
+	It("Chassis error", func() {
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Name:         "A Name",
+			SerialNumber: "A Serial Number",
+			Vendor:       "A Vendor",
+		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(nil, fmt.Errorf("Just an error")).Once()
+		ret := GetVendor(dependencies)
+		Expect(ret).To(Equal(&models.SystemVendor{}))
+	})
+	It("Oracle Cloud detection", func() {
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Name:         "A Name",
+			SerialNumber: "A Serial Number",
+			Vendor:       "A Vendor",
+		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "OracleCloud.com",
+		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
+		systemVendor := GetVendor(dependencies)
+		Expect(systemVendor.Manufacturer).Should(Equal("OracleCloud.com"))
 	})
 })

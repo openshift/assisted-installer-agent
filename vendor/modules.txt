@@ -12,13 +12,13 @@ github.com/Nvveen/Gotty
 # github.com/PuerkitoBio/rehttp v1.2.0
 ## explicit; go 1.16
 github.com/PuerkitoBio/rehttp
-# github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
-## explicit
+# github.com/StackExchange/wmi v1.2.1
+## explicit; go 1.13
 github.com/StackExchange/wmi
 # github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d
 ## explicit
 github.com/alecthomas/units
-# github.com/alessio/shellescape v1.4.1
+# github.com/alessio/shellescape v1.4.2
 ## explicit; go 1.14
 github.com/alessio/shellescape
 # github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
@@ -270,8 +270,8 @@ github.com/jackc/pgtype
 github.com/jackc/pgx/v4
 github.com/jackc/pgx/v4/internal/sanitize
 github.com/jackc/pgx/v4/stdlib
-# github.com/jaypipes/ghw v0.8.0
-## explicit; go 1.12
+# github.com/jaypipes/ghw v0.12.0
+## explicit; go 1.18
 github.com/jaypipes/ghw
 github.com/jaypipes/ghw/pkg/baseboard
 github.com/jaypipes/ghw/pkg/bios
@@ -381,7 +381,7 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.27.8
+# github.com/onsi/gomega v1.27.10
 ## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -534,7 +534,7 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/sirupsen/logrus v1.9.2
+# github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/slok/go-http-metrics v0.10.0
@@ -738,8 +738,8 @@ gorm.io/gorm/logger
 gorm.io/gorm/migrator
 gorm.io/gorm/schema
 gorm.io/gorm/utils
-# howett.net/plist v0.0.0-20181124034731-591f970eefbb
-## explicit
+# howett.net/plist v1.0.0
+## explicit; go 1.12
 howett.net/plist
 # k8s.io/api v0.25.4
 ## explicit; go 1.19

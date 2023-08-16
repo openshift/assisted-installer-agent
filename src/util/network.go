@@ -14,22 +14,23 @@ func IsIPv4Addr(ip string) bool {
 	return strings.Contains(ip, ".") && net.ParseIP(ip) != nil
 }
 
-//RouteFinder defines functions needed to find routes by link
+// RouteFinder defines functions needed to find routes by link
+//
 //go:generate mockery --name RouteFinder --inpackage
 type RouteFinder interface {
 	LinkByName(name string) (netlink.Link, error)
 	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
 }
 
-//NetlinkRouteFinder implements RouteFinder using netling library
+// NetlinkRouteFinder implements RouteFinder using netling library
 type NetlinkRouteFinder struct{}
 
-//LinkByName returns a link by a network interface name, it such interface exists
+// LinkByName returns a link by a network interface name, it such interface exists
 func (f *NetlinkRouteFinder) LinkByName(name string) (netlink.Link, error) {
 	return netlink.LinkByName(name)
 }
 
-//RouteList returns a list of routes filtered by a link and IP family (IPv4/IPv6)
+// RouteList returns a list of routes filtered by a link and IP family (IPv4/IPv6)
 func (f *NetlinkRouteFinder) RouteList(link netlink.Link, family int) ([]netlink.Route, error) {
 	return netlink.RouteList(link, family)
 }

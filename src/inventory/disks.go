@@ -221,7 +221,7 @@ func (d *disks) getApplianceDisks(blockDisks []*block.Disk) []*models.Disk {
 
 	// Return a disk with some mock data to skip all validations
 	return []*models.Disk{
-		&models.Disk{
+		{
 			ByID:                    d.getDisksWWNs()[path],
 			ByPath:                  d.getByPath(dmDevice.BusPath),
 			Hctl:                    "",

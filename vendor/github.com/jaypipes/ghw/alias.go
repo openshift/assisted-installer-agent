@@ -25,16 +25,19 @@ import (
 type WithOption = option.Option
 
 var (
-	WithChroot       = option.WithChroot
-	WithSnapshot     = option.WithSnapshot
-	WithAlterter     = option.WithAlerter
-	WithNullAlterter = option.WithNullAlerter
+	WithChroot      = option.WithChroot
+	WithSnapshot    = option.WithSnapshot
+	WithAlerter     = option.WithAlerter
+	WithNullAlerter = option.WithNullAlerter
 	// match the existing environ variable to minimize surprises
 	WithDisableWarnings = option.WithNullAlerter
 	WithDisableTools    = option.WithDisableTools
+	WithPathOverrides   = option.WithPathOverrides
 )
 
 type SnapshotOptions = option.SnapshotOptions
+
+type PathOverrides = option.PathOverrides
 
 type CPUInfo = cpu.Info
 
@@ -42,6 +45,7 @@ var (
 	CPU = cpu.New
 )
 
+type MemoryArea = memory.Area
 type MemoryInfo = memory.Info
 type MemoryCacheType = memory.CacheType
 type MemoryModule = memory.Module

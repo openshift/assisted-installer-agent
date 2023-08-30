@@ -4,26 +4,26 @@ go 1.18
 
 require (
 	github.com/PuerkitoBio/rehttp v1.2.0
-	github.com/alessio/shellescape v1.4.1
+	github.com/alessio/shellescape v1.4.2
 	github.com/coreos/ignition/v2 v2.16.2
 	github.com/go-openapi/runtime v0.26.0
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/go-openapi/swag v0.22.4
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/jaypipes/ghw v0.12.1-0.20230829170642-835f6a233b6d
 	github.com/jaypipes/pcidb v1.0.0
-	github.com/jinzhu/copier v0.3.5
+	github.com/jinzhu/copier v0.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.8
+	github.com/onsi/gomega v1.27.10
 	github.com/openshift/assisted-service v1.0.10-0.20230601170008-628d8f2efb3a
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.9.2
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.9.5
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.8.4

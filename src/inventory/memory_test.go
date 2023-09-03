@@ -83,17 +83,21 @@ Cached:         12556080 kB
 
 var (
 	mem1 = ghw.MemoryInfo{
-		TotalPhysicalBytes: 0,
-		TotalUsableBytes:   0,
-		SupportedPageSizes: nil,
-		Modules:            nil,
+		Area: ghw.MemoryArea{
+			TotalPhysicalBytes: 0,
+			TotalUsableBytes:   0,
+			SupportedPageSizes: nil,
+			Modules:            nil,
+		},
 	}
 
 	mem2 = ghw.MemoryInfo{
-		TotalPhysicalBytes: 35184372088832,
-		TotalUsableBytes:   34244109795328,
-		SupportedPageSizes: nil,
-		Modules:            nil,
+		Area: ghw.MemoryArea{
+			TotalPhysicalBytes: 35184372088832,
+			TotalUsableBytes:   34244109795328,
+			SupportedPageSizes: nil,
+			Modules:            nil,
+		},
 	}
 )
 

@@ -123,6 +123,9 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		InstallerV2GetClusterDefaultConfigHandler: installer.V2GetClusterDefaultConfigHandlerFunc(func(params installer.V2GetClusterDefaultConfigParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.V2GetClusterDefaultConfig has not yet been implemented")
 		}),
+		InstallerV2GetClusterUISettingsHandler: installer.V2GetClusterUISettingsHandlerFunc(func(params installer.V2GetClusterUISettingsParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation installer.V2GetClusterUISettings has not yet been implemented")
+		}),
 		InstallerV2GetCredentialsHandler: installer.V2GetCredentialsHandlerFunc(func(params installer.V2GetCredentialsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.V2GetCredentials has not yet been implemented")
 		}),
@@ -152,6 +155,9 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		}),
 		ManifestsV2UpdateClusterManifestHandler: manifests.V2UpdateClusterManifestHandlerFunc(func(params manifests.V2UpdateClusterManifestParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation manifests.V2UpdateClusterManifest has not yet been implemented")
+		}),
+		InstallerV2UpdateClusterUISettingsHandler: installer.V2UpdateClusterUISettingsHandlerFunc(func(params installer.V2UpdateClusterUISettingsParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation installer.V2UpdateClusterUISettings has not yet been implemented")
 		}),
 		InstallerV2UploadLogsHandler: installer.V2UploadLogsHandlerFunc(func(params installer.V2UploadLogsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.V2UploadLogs has not yet been implemented")
@@ -212,9 +218,6 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		}),
 		EventsV2ListEventsHandler: events.V2ListEventsHandlerFunc(func(params events.V2ListEventsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation events.V2ListEvents has not yet been implemented")
-		}),
-		InstallerV2ListFeatureSupportLevelsHandler: installer.V2ListFeatureSupportLevelsHandlerFunc(func(params installer.V2ListFeatureSupportLevelsParams, principal interface{}) middleware.Responder {
-			return middleware.NotImplemented("operation installer.V2ListFeatureSupportLevels has not yet been implemented")
 		}),
 		InstallerV2ListHostsHandler: installer.V2ListHostsHandlerFunc(func(params installer.V2ListHostsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.V2ListHosts has not yet been implemented")
@@ -406,6 +409,8 @@ type AssistedInstallAPI struct {
 	InstallerV2DownloadClusterLogsHandler installer.V2DownloadClusterLogsHandler
 	// InstallerV2GetClusterDefaultConfigHandler sets the operation handler for the v2 get cluster default config operation
 	InstallerV2GetClusterDefaultConfigHandler installer.V2GetClusterDefaultConfigHandler
+	// InstallerV2GetClusterUISettingsHandler sets the operation handler for the v2 get cluster UI settings operation
+	InstallerV2GetClusterUISettingsHandler installer.V2GetClusterUISettingsHandler
 	// InstallerV2GetCredentialsHandler sets the operation handler for the v2 get credentials operation
 	InstallerV2GetCredentialsHandler installer.V2GetCredentialsHandler
 	// InstallerV2GetPresignedForClusterCredentialsHandler sets the operation handler for the v2 get presigned for cluster credentials operation
@@ -426,6 +431,8 @@ type AssistedInstallAPI struct {
 	InstallerV2UpdateClusterHandler installer.V2UpdateClusterHandler
 	// ManifestsV2UpdateClusterManifestHandler sets the operation handler for the v2 update cluster manifest operation
 	ManifestsV2UpdateClusterManifestHandler manifests.V2UpdateClusterManifestHandler
+	// InstallerV2UpdateClusterUISettingsHandler sets the operation handler for the v2 update cluster UI settings operation
+	InstallerV2UpdateClusterUISettingsHandler installer.V2UpdateClusterUISettingsHandler
 	// InstallerV2UploadLogsHandler sets the operation handler for the v2 upload logs operation
 	InstallerV2UploadLogsHandler installer.V2UploadLogsHandler
 	// InstallerV2CompleteInstallationHandler sets the operation handler for the v2 complete installation operation
@@ -466,8 +473,6 @@ type AssistedInstallAPI struct {
 	VersionsV2ListComponentVersionsHandler versions.V2ListComponentVersionsHandler
 	// EventsV2ListEventsHandler sets the operation handler for the v2 list events operation
 	EventsV2ListEventsHandler events.V2ListEventsHandler
-	// InstallerV2ListFeatureSupportLevelsHandler sets the operation handler for the v2 list feature support levels operation
-	InstallerV2ListFeatureSupportLevelsHandler installer.V2ListFeatureSupportLevelsHandler
 	// InstallerV2ListHostsHandler sets the operation handler for the v2 list hosts operation
 	InstallerV2ListHostsHandler installer.V2ListHostsHandler
 	// VersionsV2ListSupportedOpenshiftVersionsHandler sets the operation handler for the v2 list supported openshift versions operation
@@ -675,6 +680,9 @@ func (o *AssistedInstallAPI) Validate() error {
 	if o.InstallerV2GetClusterDefaultConfigHandler == nil {
 		unregistered = append(unregistered, "installer.V2GetClusterDefaultConfigHandler")
 	}
+	if o.InstallerV2GetClusterUISettingsHandler == nil {
+		unregistered = append(unregistered, "installer.V2GetClusterUISettingsHandler")
+	}
 	if o.InstallerV2GetCredentialsHandler == nil {
 		unregistered = append(unregistered, "installer.V2GetCredentialsHandler")
 	}
@@ -704,6 +712,9 @@ func (o *AssistedInstallAPI) Validate() error {
 	}
 	if o.ManifestsV2UpdateClusterManifestHandler == nil {
 		unregistered = append(unregistered, "manifests.V2UpdateClusterManifestHandler")
+	}
+	if o.InstallerV2UpdateClusterUISettingsHandler == nil {
+		unregistered = append(unregistered, "installer.V2UpdateClusterUISettingsHandler")
 	}
 	if o.InstallerV2UploadLogsHandler == nil {
 		unregistered = append(unregistered, "installer.V2UploadLogsHandler")
@@ -764,9 +775,6 @@ func (o *AssistedInstallAPI) Validate() error {
 	}
 	if o.EventsV2ListEventsHandler == nil {
 		unregistered = append(unregistered, "events.V2ListEventsHandler")
-	}
-	if o.InstallerV2ListFeatureSupportLevelsHandler == nil {
-		unregistered = append(unregistered, "installer.V2ListFeatureSupportLevelsHandler")
 	}
 	if o.InstallerV2ListHostsHandler == nil {
 		unregistered = append(unregistered, "installer.V2ListHostsHandler")
@@ -1038,6 +1046,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
+	o.handlers["GET"]["/v2/clusters/{cluster_id}/ui-settings"] = installer.NewV2GetClusterUISettings(o.context, o.InstallerV2GetClusterUISettingsHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
 	o.handlers["GET"]["/v2/clusters/{cluster_id}/credentials"] = installer.NewV2GetCredentials(o.context, o.InstallerV2GetCredentialsHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
@@ -1075,6 +1087,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 		o.handlers["PATCH"] = make(map[string]http.Handler)
 	}
 	o.handlers["PATCH"]["/v2/clusters/{cluster_id}/manifests"] = manifests.NewV2UpdateClusterManifest(o.context, o.ManifestsV2UpdateClusterManifestHandler)
+	if o.handlers["PUT"] == nil {
+		o.handlers["PUT"] = make(map[string]http.Handler)
+	}
+	o.handlers["PUT"]["/v2/clusters/{cluster_id}/ui-settings"] = installer.NewV2UpdateClusterUISettings(o.context, o.InstallerV2UpdateClusterUISettingsHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
@@ -1155,10 +1171,6 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/v2/events"] = events.NewV2ListEvents(o.context, o.EventsV2ListEventsHandler)
-	if o.handlers["GET"] == nil {
-		o.handlers["GET"] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/v2/feature-support-levels"] = installer.NewV2ListFeatureSupportLevels(o.context, o.InstallerV2ListFeatureSupportLevelsHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

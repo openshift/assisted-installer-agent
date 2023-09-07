@@ -86,7 +86,7 @@ var _ = Describe("Domain resolution", func() {
 		It("No domains", func() {
 			// Request resolution for an empty list of domains
 			request := models.DomainResolutionRequest{
-				Domains: []*models.DomainResolutionRequestDomain{},
+				Domains: []models.DomainResolutionRequestDomain{},
 			}
 			b, err := json.Marshal(request)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -108,7 +108,7 @@ var _ = Describe("Domain resolution", func() {
 			// Request resolution for 3 arbitrary domains
 			domains := []string{"example.com", "example.net", "example.org"}
 			request := models.DomainResolutionRequest{
-				Domains: []*models.DomainResolutionRequestDomain{
+				Domains: []models.DomainResolutionRequestDomain{
 					{DomainName: &domains[0]},
 					{DomainName: &domains[1]},
 					{DomainName: &domains[2]},

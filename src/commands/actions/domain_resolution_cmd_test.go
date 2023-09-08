@@ -22,7 +22,7 @@ var _ = Describe("domain resolution", func() {
 	})
 
 	It("domain resolution - bad domain name", func() {
-		param = "{\"domains\":[{\"domain_name\":\"aaaaaa\"}]}"
+		param = "{\"domains\":[{\"domain_name\":\"a\"}]}"
 		_, err := New(&config.AgentConfig{}, models.StepTypeDomainResolution, []string{param})
 		Expect(err).To(HaveOccurred())
 

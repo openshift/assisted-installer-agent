@@ -18,7 +18,8 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.10
-	github.com/openshift/assisted-service v1.0.10-0.20230601170008-628d8f2efb3a
+	github.com/openshift/assisted-service v1.0.10-0.20230907015646-e235675d0a1c
+	github.com/openshift/assisted-service/client v0.0.0
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -38,8 +39,12 @@ require (
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/krishicks/yaml-patch v0.0.10 // indirect
+	github.com/openshift/api v0.0.0-20220831183848-09c070622e2c // indirect
+	github.com/openshift/assisted-service/api v0.0.0 // indirect
+	github.com/openshift/hive/apis v0.0.0-20220222213051-def9088fdb5a // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	sigs.k8s.io/controller-runtime v0.13.1 // indirect
 )
 
 require (
@@ -151,7 +156,7 @@ require (
 	k8s.io/api v0.25.4 // indirect
 	k8s.io/apimachinery v0.25.4 // indirect
 	k8s.io/client-go v0.25.4 // indirect
-	k8s.io/klog/v2 v2.70.1 // indirect
+	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
@@ -169,8 +174,9 @@ replace (
 	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
-	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20230601170008-628d8f2efb3a
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20230601170008-628d8f2efb3a
+	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20230907015646-e235675d0a1c
+	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20230907015646-e235675d0a1c
+	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20230907015646-e235675d0a1c
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

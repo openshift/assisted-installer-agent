@@ -2696,6 +2696,127 @@ func init() {
         }
       }
     },
+    "/v2/clusters/{cluster_id}/ui-settings": {
+      "get": {
+        "description": "Fetch cluster specific UI settings.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "V2GetClusterUISettings",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster for which UI settings should be retrieved.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update cluster specific UI settings.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "V2UpdateClusterUISettings",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster for which UI settings should be updated.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Settings for the installer UI.",
+            "name": "ui-settings",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/clusters/{cluster_id}/uploads/ingress-cert": {
       "post": {
         "security": [
@@ -3012,51 +3133,6 @@ func init() {
           },
           "500": {
             "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/v2/feature-support-levels": {
-      "get": {
-        "security": [
-          {
-            "userAuth": [
-              "admin",
-              "read-only-admin",
-              "user"
-            ]
-          }
-        ],
-        "description": "(DEPRECATED) Retrieves the support levels for features for each OpenShift version.",
-        "tags": [
-          "installer"
-        ],
-        "operationId": "v2ListFeatureSupportLevels",
-        "deprecated": true,
-        "responses": {
-          "200": {
-            "description": "Success.",
-            "schema": {
-              "$ref": "#/definitions/feature-support-levels"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "503": {
-            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -5561,6 +5637,19 @@ func init() {
             "description": "The CPU architecture of the image (x86_64/arm64/etc).",
             "name": "cpu_architecture",
             "in": "query"
+          },
+          {
+            "enum": [
+              "baremetal",
+              "none",
+              "nutanix",
+              "vsphere",
+              "oci"
+            ],
+            "type": "string",
+            "description": "The provider platform type.",
+            "name": "platform_type",
+            "in": "query"
           }
         ],
         "responses": {
@@ -6227,7 +6316,7 @@ func init() {
           }
         },
         "user_managed_networking": {
-          "description": "Indicate if the networking is managed by the user.",
+          "description": "(DEPRECATED) Indicate if the networking is managed by the user.",
           "type": "boolean",
           "x-nullable": true
         },
@@ -6440,7 +6529,7 @@ func init() {
           "x-nullable": true
         },
         "user_managed_networking": {
-          "description": "Indicate if the networking is managed by the user.",
+          "description": "(DEPRECATED) Indicate if the networking is managed by the user.",
           "type": "boolean",
           "default": false,
           "x-nullable": true
@@ -6570,7 +6659,8 @@ func init() {
         "cnv-requirements-satisfied",
         "lvm-requirements-satisfied",
         "mce-requirements-satisfied",
-        "network-type-valid"
+        "network-type-valid",
+        "platform-requirements-satisfied"
       ]
     },
     "cluster_default_config": {
@@ -7154,17 +7244,12 @@ func init() {
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "domain_name"
-            ],
-            "properties": {
-              "domain_name": {
-                "description": "The domain name that should be resolved",
-                "type": "string",
-                "pattern": "^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*[.])+[a-zA-Z]{2,}[.]?$"
-              }
-            },
-            "x-go-name": "DomainResolutionRequestDomain"
+            "x-go-type": {
+              "import": {
+                "path": "github.com/openshift/assisted-service/models"
+              },
+              "type": "DomainResolutionRequestDomain"
+            }
           }
         }
       }
@@ -7371,63 +7456,6 @@ func init() {
         "$ref": "#/definitions/event"
       }
     },
-    "feature-support-level": {
-      "description": "(DEPRECATED) List of features attached to openshift version",
-      "type": "object",
-      "properties": {
-        "features": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "feature_id",
-              "support_level"
-            ],
-            "properties": {
-              "feature_id": {
-                "description": "(DEPRECATED) The ID of the feature",
-                "type": "string",
-                "enum": [
-                  "ADDITIONAL_NTP_SOURCE",
-                  "REQUESTED_HOSTNAME",
-                  "PROXY",
-                  "SNO",
-                  "DAY2_HOSTS",
-                  "VIP_AUTO_ALLOC",
-                  "DISK_SELECTION",
-                  "OVN_NETWORK_TYPE",
-                  "SDN_NETWORK_TYPE",
-                  "PLATFORM_SELECTION",
-                  "SCHEDULABLE_MASTERS",
-                  "AUTO_ASSIGN_ROLE",
-                  "CUSTOM_MANIFEST",
-                  "DISK_ENCRYPTION",
-                  "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
-                  "ARM64_ARCHITECTURE",
-                  "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING",
-                  "PPC64LE_ARCHITECTURE",
-                  "S390X_ARCHITECTURE",
-                  "SINGLE_NODE_EXPANSION",
-                  "LVM",
-                  "DUAL_STACK_NETWORKING",
-                  "MULTIARCH_RELEASE_IMAGE",
-                  "NUTANIX_INTEGRATION",
-                  "DUAL_STACK_VIPS",
-                  "USER_MANAGED_NETWORKING_WITH_MULTI_NODE"
-                ]
-              },
-              "support_level": {
-                "$ref": "#/definitions/support-level"
-              }
-            }
-          }
-        },
-        "openshift_version": {
-          "description": "Version of the OpenShift cluster.",
-          "type": "string"
-        }
-      }
-    },
     "feature-support-level-id": {
       "type": "string",
       "enum": [
@@ -7441,21 +7469,18 @@ func init() {
         "CNV",
         "MCE",
         "NUTANIX_INTEGRATION",
+        "BAREMETAL_PLATFORM",
+        "NONE_PLATFORM",
         "VSPHERE_INTEGRATION",
         "DUAL_STACK_VIPS",
         "CLUSTER_MANAGED_NETWORKING",
         "USER_MANAGED_NETWORKING",
         "MINIMAL_ISO",
         "FULL_ISO",
-        "EXTERNAL_PLATFORM_OCI"
+        "EXTERNAL_PLATFORM_OCI",
+        "DUAL_STACK",
+        "PLATFORM_MANAGED_NETWORKING"
       ]
-    },
-    "feature-support-levels": {
-      "description": "(DEPRECATED) List of objects that containing a list of feature-support level and attached to openshift-version",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/feature-support-level"
-      }
     },
     "free-addresses-list": {
       "type": "array",
@@ -9406,7 +9431,7 @@ func init() {
       ],
       "properties": {
         "is_external": {
-          "description": "Indicates if the underlying platform type is external.",
+          "description": "Used by the service to indicate that the platform-specific components are not included in\nOpenShift and must be provided as manifests separately.",
           "type": "boolean",
           "readOnly": true
         },
@@ -10065,7 +10090,7 @@ func init() {
           "x-nullable": true
         },
         "user_managed_networking": {
-          "description": "Indicate if the networking is managed by the user.",
+          "description": "(DEPRECATED) Indicate if the networking is managed by the user.",
           "type": "boolean",
           "x-nullable": true
         },
@@ -12916,6 +12941,127 @@ func init() {
         }
       }
     },
+    "/v2/clusters/{cluster_id}/ui-settings": {
+      "get": {
+        "description": "Fetch cluster specific UI settings.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "V2GetClusterUISettings",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster for which UI settings should be retrieved.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update cluster specific UI settings.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "V2UpdateClusterUISettings",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster for which UI settings should be updated.",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Settings for the installer UI.",
+            "name": "ui-settings",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/clusters/{cluster_id}/uploads/ingress-cert": {
       "post": {
         "security": [
@@ -13237,51 +13383,6 @@ func init() {
           },
           "500": {
             "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/v2/feature-support-levels": {
-      "get": {
-        "security": [
-          {
-            "userAuth": [
-              "admin",
-              "read-only-admin",
-              "user"
-            ]
-          }
-        ],
-        "description": "(DEPRECATED) Retrieves the support levels for features for each OpenShift version.",
-        "tags": [
-          "installer"
-        ],
-        "operationId": "v2ListFeatureSupportLevels",
-        "deprecated": true,
-        "responses": {
-          "200": {
-            "description": "Success.",
-            "schema": {
-              "$ref": "#/definitions/feature-support-levels"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "503": {
-            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -15786,6 +15887,19 @@ func init() {
             "description": "The CPU architecture of the image (x86_64/arm64/etc).",
             "name": "cpu_architecture",
             "in": "query"
+          },
+          {
+            "enum": [
+              "baremetal",
+              "none",
+              "nutanix",
+              "vsphere",
+              "oci"
+            ],
+            "type": "string",
+            "description": "The provider platform type.",
+            "name": "platform_type",
+            "in": "query"
           }
         ],
         "responses": {
@@ -15950,20 +16064,6 @@ func init() {
       },
       "x-nullable": false
     },
-    "DomainResolutionRequestDomainsItems0": {
-      "type": "object",
-      "required": [
-        "domain_name"
-      ],
-      "properties": {
-        "domain_name": {
-          "description": "The domain name that should be resolved",
-          "type": "string",
-          "pattern": "^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*[.])+[a-zA-Z]{2,}[.]?$"
-        }
-      },
-      "x-go-name": "DomainResolutionRequestDomain"
-    },
     "DomainResolutionResponseResolutionsItems0": {
       "type": "object",
       "required": [
@@ -15992,50 +16092,6 @@ func init() {
         }
       },
       "x-go-name": "DomainResolutionResponseDomain"
-    },
-    "FeatureSupportLevelFeaturesItems0": {
-      "type": "object",
-      "required": [
-        "feature_id",
-        "support_level"
-      ],
-      "properties": {
-        "feature_id": {
-          "description": "(DEPRECATED) The ID of the feature",
-          "type": "string",
-          "enum": [
-            "ADDITIONAL_NTP_SOURCE",
-            "REQUESTED_HOSTNAME",
-            "PROXY",
-            "SNO",
-            "DAY2_HOSTS",
-            "VIP_AUTO_ALLOC",
-            "DISK_SELECTION",
-            "OVN_NETWORK_TYPE",
-            "SDN_NETWORK_TYPE",
-            "PLATFORM_SELECTION",
-            "SCHEDULABLE_MASTERS",
-            "AUTO_ASSIGN_ROLE",
-            "CUSTOM_MANIFEST",
-            "DISK_ENCRYPTION",
-            "CLUSTER_MANAGED_NETWORKING_WITH_VMS",
-            "ARM64_ARCHITECTURE",
-            "ARM64_ARCHITECTURE_WITH_CLUSTER_MANAGED_NETWORKING",
-            "PPC64LE_ARCHITECTURE",
-            "S390X_ARCHITECTURE",
-            "SINGLE_NODE_EXPANSION",
-            "LVM",
-            "DUAL_STACK_NETWORKING",
-            "MULTIARCH_RELEASE_IMAGE",
-            "NUTANIX_INTEGRATION",
-            "DUAL_STACK_VIPS",
-            "USER_MANAGED_NETWORKING_WITH_MULTI_NODE"
-          ]
-        },
-        "support_level": {
-          "$ref": "#/definitions/support-level"
-        }
-      }
     },
     "HostRegistrationResponseAO1NextStepRunnerCommand": {
       "description": "Command for starting the next step runner",
@@ -16621,7 +16677,7 @@ func init() {
           }
         },
         "user_managed_networking": {
-          "description": "Indicate if the networking is managed by the user.",
+          "description": "(DEPRECATED) Indicate if the networking is managed by the user.",
           "type": "boolean",
           "x-nullable": true
         },
@@ -16834,7 +16890,7 @@ func init() {
           "x-nullable": true
         },
         "user_managed_networking": {
-          "description": "Indicate if the networking is managed by the user.",
+          "description": "(DEPRECATED) Indicate if the networking is managed by the user.",
           "type": "boolean",
           "default": false,
           "x-nullable": true
@@ -16964,7 +17020,8 @@ func init() {
         "cnv-requirements-satisfied",
         "lvm-requirements-satisfied",
         "mce-requirements-satisfied",
-        "network-type-valid"
+        "network-type-valid",
+        "platform-requirements-satisfied"
       ]
     },
     "cluster_default_config": {
@@ -17547,7 +17604,13 @@ func init() {
         "domains": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/DomainResolutionRequestDomainsItems0"
+            "type": "object",
+            "x-go-type": {
+              "import": {
+                "path": "github.com/openshift/assisted-service/models"
+              },
+              "type": "DomainResolutionRequestDomain"
+            }
           }
         }
       }
@@ -17728,22 +17791,6 @@ func init() {
         "$ref": "#/definitions/event"
       }
     },
-    "feature-support-level": {
-      "description": "(DEPRECATED) List of features attached to openshift version",
-      "type": "object",
-      "properties": {
-        "features": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FeatureSupportLevelFeaturesItems0"
-          }
-        },
-        "openshift_version": {
-          "description": "Version of the OpenShift cluster.",
-          "type": "string"
-        }
-      }
-    },
     "feature-support-level-id": {
       "type": "string",
       "enum": [
@@ -17757,21 +17804,18 @@ func init() {
         "CNV",
         "MCE",
         "NUTANIX_INTEGRATION",
+        "BAREMETAL_PLATFORM",
+        "NONE_PLATFORM",
         "VSPHERE_INTEGRATION",
         "DUAL_STACK_VIPS",
         "CLUSTER_MANAGED_NETWORKING",
         "USER_MANAGED_NETWORKING",
         "MINIMAL_ISO",
         "FULL_ISO",
-        "EXTERNAL_PLATFORM_OCI"
+        "EXTERNAL_PLATFORM_OCI",
+        "DUAL_STACK",
+        "PLATFORM_MANAGED_NETWORKING"
       ]
-    },
-    "feature-support-levels": {
-      "description": "(DEPRECATED) List of objects that containing a list of feature-support level and attached to openshift-version",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/feature-support-level"
-      }
     },
     "free-addresses-list": {
       "type": "array",
@@ -19713,7 +19757,7 @@ func init() {
       ],
       "properties": {
         "is_external": {
-          "description": "Indicates if the underlying platform type is external.",
+          "description": "Used by the service to indicate that the platform-specific components are not included in\nOpenShift and must be provided as manifests separately.",
           "type": "boolean",
           "readOnly": true
         },
@@ -20346,7 +20390,7 @@ func init() {
           "x-nullable": true
         },
         "user_managed_networking": {
-          "description": "Indicate if the networking is managed by the user.",
+          "description": "(DEPRECATED) Indicate if the networking is managed by the user.",
           "type": "boolean",
           "x-nullable": true
         },

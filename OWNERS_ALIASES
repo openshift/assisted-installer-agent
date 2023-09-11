@@ -2,33 +2,9 @@
 
 aliases:
   approvers:
-    - avishayt
-    - eranco74
+    - romfreiman
+    - oourfali
     - filanov
     - gamli75
-    - ori-amizur
-    - romfreiman
-    - tsorya
-    - nmagnezi
-    - carbonin
-    - danielerez
-    - osherdp
-    - omertuc
-    - mkowalski
     - eliorerz
-    - flaper87
-    - paul-maidment
-    - rccrdpccl
-    - jhernand
-    - vrutkovs
-  emeritus_approvers:
-    - empovit
-    - yevgeny-shnaidman
-    - lranjbar
-    - ybettan
-  agent_team:
-    - andfasano
-    - bfournie
-    - pawanpinjarkar
-    - rwsu
-    - zaneb
+    - osherdp

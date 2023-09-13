@@ -1,5 +1,7 @@
 # Assisted Installer Agent
 
+Runs on a host being installed with [OpenShift Assisted Installer Service](https://github.com/openshift/assisted-service).
+
 ## Contents
 
 This project contains several executables that are intended to work with the

@@ -12,3 +12,6 @@ RUN go install golang.org/x/tools/cmd/goimports@v0.1.0 && \
     go install gotest.tools/gotestsum@v1.6.3 && \
     go install github.com/axw/gocov/gocov@latest && \
     go install github.com/AlekSi/gocov-xml@latest
+
+# required due to issue https://github.com/docker/compose/issues/4060
+ENV LANG=en_US.UTF-8

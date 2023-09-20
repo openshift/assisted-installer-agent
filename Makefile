@@ -35,7 +35,7 @@ ci-lint: vendor-diff
 	${ROOT_DIR}/hack/sync-dockerfiles.sh
 
 lint: ci-lint
-	golangci-lint run -v --fix
+	golangci-lint run -v
 
 .PHONY: build clean build-image push subsystem
 build: build-agent build-inventory build-free_addresses build-logs_sender \

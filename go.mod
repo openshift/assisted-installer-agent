@@ -3,7 +3,7 @@ module github.com/openshift/assisted-installer-agent
 go 1.18
 
 require (
-	github.com/PuerkitoBio/rehttp v1.2.0
+	github.com/PuerkitoBio/rehttp v1.3.0
 	github.com/alessio/shellescape v1.4.2
 	github.com/coreos/ignition/v2 v2.16.2
 	github.com/go-openapi/runtime v0.26.0
@@ -30,8 +30,8 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/thoas/go-funk v0.9.3
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.12.0
+	golang.org/x/sync v0.4.0
+	golang.org/x/sys v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

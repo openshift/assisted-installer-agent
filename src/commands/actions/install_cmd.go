@@ -7,17 +7,19 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/openshift/assisted-installer-agent/src/util"
+
 	"github.com/alessio/shellescape"
 	"github.com/go-openapi/swag"
 	"github.com/hashicorp/go-version"
-	"github.com/openshift/assisted-installer-agent/src/config"
-	"github.com/openshift/assisted-installer-agent/src/util"
-	"github.com/openshift/assisted-service/models"
-	"github.com/openshift/assisted-service/pkg/validations"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/thoas/go-funk"
+
+	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-service/models"
+	"github.com/openshift/assisted-service/pkg/validations"
 )
 
 var podmanBaseCmd = [...]string{
@@ -27,7 +29,6 @@ var podmanBaseCmd = [...]string{
 	"-v", "/var/log:/var/log:rw",
 	"-v", "/run/systemd/journal/socket:/run/systemd/journal/socket",
 	"-v", "/etc/pki:/etc/pki",
-	"-v", "/tmp:/tmp",
 	"--env=PULL_SECRET_TOKEN",
 }
 
@@ -142,10 +143,6 @@ func (a *install) getFullInstallerCommand() string {
 
 	if a.installParams.InstallerArgs != "" {
 		installerCmdArgs = append(installerCmdArgs, "--installer-args", a.installParams.InstallerArgs)
-	}
-
-	if a.installParams.EnableSkipMcoReboot {
-		installerCmdArgs = append(installerCmdArgs, "--enable-skip-mco-reboot", "true")
 	}
 
 	proxyArgs := getProxyArguments(a.installParams.Proxy)

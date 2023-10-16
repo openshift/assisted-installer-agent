@@ -236,19 +236,6 @@ var _ = Describe("installer test", func() {
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--skip-installation-disk-cleanup"))
 	})
 
-	It("install without enable skip MCO reboot", func() {
-		action := getInstall(installCommandRequest, filesystem, false)
-		args := action.Args()
-		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("--enable-skip-mco-reboot true"))
-	})
-
-	It("install with enable skip MCO reboot", func() {
-		installCommandRequest.EnableSkipMcoReboot = true
-		action := getInstall(installCommandRequest, filesystem, false)
-		args := action.Args()
-		Expect(strings.Join(args, " ")).To(ContainSubstring("--enable-skip-mco-reboot true"))
-	})
-
 	It("install no installer args", func() {
 		installCommandRequest.InstallerArgs = ""
 		action := getInstall(installCommandRequest, filesystem, false)

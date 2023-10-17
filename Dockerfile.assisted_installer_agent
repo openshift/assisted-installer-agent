@@ -1,4 +1,8 @@
-FROM registry.ci.openshift.org/openshift/release:golang-1.18 AS builder
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.20-openshift-4.15 AS builder
+
+ENV GOEXPERIMENT="strictfipsruntime"
+ENV BUILD_TAGS=strictfipsruntime
+
 ARG TARGETPLATFORM
 ENV GO111MODULE=on
 ENV GOFLAGS=""

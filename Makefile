@@ -42,7 +42,7 @@ build: build-agent build-inventory build-free_addresses build-logs_sender \
 	   build-next_step_runner build-disk_speed_check
 
 build-%: $(BIN) src/$* #lint
-	$(GO_BUILD_VARS) go build -o $(BIN)/$* src/$*/main/main.go
+	$(GO_BUILD_VARS) go build -tags "${BUILD_TAGS}" -o $(BIN)/$* src/$*/main/main.go
 
 build-image:
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)

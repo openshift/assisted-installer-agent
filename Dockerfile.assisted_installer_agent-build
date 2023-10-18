@@ -1,9 +1,17 @@
-FROM registry.ci.openshift.org/openshift/release:golang-1.20
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.20-openshift-4.15
+
 ENV GO111MODULE=on
 ENV GOFLAGS=""
 
-RUN yum install -y docker docker-compose && \
-    yum clean all
+ENV DOCKER_CONFIG=/root/.docker
+ENV DOCKER_VERSION=24.0.6
+RUN curl -sSL https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz --output docker-${DOCKER_VERSION}.tgz &&\
+    tar -xzvf docker-${DOCKER_VERSION}.tgz &&\
+    cp docker/* /usr/bin/ &&\
+    rm -rf docker/ docker-${DOCKER_VERSION}
+RUN curl -SL https://github.com/docker/compose/releases/download/v2.20.3/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose &&\
+    chmod +x /usr/local/bin/docker-compose
+
 COPY --from=quay.io/app-sre/golangci-lint:v1.53.1 /usr/bin/golangci-lint /usr/bin/golangci-lint
 RUN go install golang.org/x/tools/cmd/goimports@v0.1.0 && \
     go install github.com/onsi/ginkgo/ginkgo@v1.16.1 && \

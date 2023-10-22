@@ -10,36 +10,48 @@ RUN go mod download
 
 COPY . .
 
-RUN TARGETPLATFORM=$TARGETPLATFORM make build
+RUN TARGETPLATFORM=$TARGETPLATFORM make build-release
 
 FROM quay.io/centos/centos:stream9
 ARG TARGETPLATFORM
-RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y biosdevname dmidecode ; fi
-RUN if [[ "$TARGETPLATFORM" == "linux/arm64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y dmidecode ; fi
 
-RUN dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
-		findutils iputils \
-		podman \
-		# inventory
-		ipmitool file fio \
-		sg3_utils \
-		# free_addresses
-		nmap \
-		# dhcp_lease_allocate
-		dhclient \
-		# logs_sender
-		tar openssh-clients \
-		# ntp_synchronizer
-		chrony \
-		# for the 'nsenter' executable
-		util-linux-core \
-		&& dnf update --setopt=install_weak_deps=False --setopt=tsdocs=False -y systemd && dnf clean all && rm -rf /var/cache
+RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then dnf install -y biosdevname dmidecode ; fi ; \
+    if [[ "$TARGETPLATFORM" == "linux/arm64" || -z "$TARGETPLATFORM" ]] ; then dnf install -y dmidecode ; fi ; \
+    dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
+            findutils iputils \
+            podman \
+            # inventory
+            ipmitool file \
+            sg3_utils \
+            # disk_speed_check
+            fio \
+            # free_addresses
+            nmap \
+            # dhcp_lease_allocate
+            dhclient \
+            # logs_sender
+            tar openssh-clients \
+            # ntp_synchronizer
+            chrony \
+            # for the 'nsenter' executable
+            util-linux-core \
+            && dnf update --setopt=install_weak_deps=False --setopt=tsdocs=False -y systemd && dnf clean all && rm -rf /var/cache \
+            # Clean unnecessary nmap files to reduce image size
+            && find /usr/share/nmap/ -mindepth 1 -maxdepth 1 | grep -v nmap-payloads | xargs rm -rf \
+            # Remove cracklib installed as part of systemd to reduce image size
+            && rm -rf /usr/share/cracklib \
+            # Remove manpages && docs to reduce image size
+            && rm -rf /usr/share/man /usr/share/doc \
+            # Remove RPM/DNF files to reduce image size
+            && rm -rf /var/lib/rpm/rpmdb.sqlite /var/lib/dnf
 
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/free_addresses /usr/bin/free_addresses
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/inventory /usr/bin/inventory
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/logs_sender /usr/bin/logs_sender
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/next_step_runner /usr/bin/next_step_runner
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/disk_speed_check /usr/bin/disk_speed_check
+
+# The step binaries are all symlinks to /usr/bin/agent
+RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \
+    ln -s /usr/bin/agent /usr/bin/inventory && \
+    ln -s /usr/bin/agent /usr/bin/logs_sender && \
+    ln -s /usr/bin/agent /usr/bin/next_step_runner && \
+    ln -s /usr/bin/agent /usr/bin/disk_speed_check
 
 COPY scripts/installer/* /usr/local/bin/

@@ -1,20 +1,18 @@
-package main
+package logs_sender
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/openshift/assisted-installer-agent/src/logs_sender"
-
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 )
 
-func main() {
+func Main() {
 	loggingConfig := config.ProcessLogsSenderConfigArgs(true, true)
 	config.ProcessDryRunArgs(&loggingConfig.DryRunConfig)
 	util.SetLogging("logs-sender", loggingConfig.TextLogging, loggingConfig.JournalLogging, loggingConfig.StdoutLogging, loggingConfig.ForcedHostID)
-	err, report := logs_sender.SendLogs(loggingConfig, logs_sender.NewLogsSenderExecuter(loggingConfig, loggingConfig.TargetURL,
+	err, report := SendLogs(loggingConfig, NewLogsSenderExecuter(loggingConfig, loggingConfig.TargetURL,
 		loggingConfig.PullSecretToken,
 		loggingConfig.AgentVersion))
 	if err != nil {

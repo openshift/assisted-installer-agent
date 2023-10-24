@@ -10,12 +10,11 @@ FROM registry.ci.openshift.org/ocp/4.15:base-rhel9
 LABEL io.openshift.release.operator=true
 
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/inventory /usr/bin/inventory
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/free_addresses /usr/bin/free_addresses
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/logs_sender /usr/bin/logs_sender
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/next_step_runner /usr/bin/next_step_runner
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/disk_speed_check /usr/bin/disk_speed_check
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/scripts/installer/* /usr/local/bin/
+RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \
+    ln -s /usr/bin/agent /usr/bin/inventory && \
+    ln -s /usr/bin/agent /usr/bin/logs_sender && \
+    ln -s /usr/bin/agent /usr/bin/next_step_runner && \
+    ln -s /usr/bin/agent /usr/bin/disk_speed_check
 
 RUN if [ "$(arch)" -eq "x86_64" ]; then dnf install -y biosdevname dmidecode; fi
 RUN if [ "$(arch)" -eq "aarch64" ]; then dnf install -y dmidecode; fi

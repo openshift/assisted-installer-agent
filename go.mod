@@ -9,7 +9,7 @@ require (
 	github.com/go-openapi/runtime v0.26.0
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/go-openapi/swag v0.22.4
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/jaypipes/ghw v0.12.1-0.20230829170642-835f6a233b6d
@@ -17,10 +17,10 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.28.1
-	github.com/openshift/assisted-service v1.0.10-0.20231102123309-91b2f5ef1d69 
+	github.com/onsi/gomega v1.29.0
+	github.com/openshift/assisted-service v1.0.10-0.20231102123309-91b2f5ef1d69
 	github.com/openshift/assisted-service/client v0.0.0
-        github.com/openshift/assisted-service/models v0.0.0-20231102123309-91b2f5ef1d69
+	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -109,7 +109,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.26 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -177,7 +176,7 @@ replace (
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20231010223859-e350e5ce7b20
 	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20231010223859-e350e5ce7b20
-        github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20231102123309-91b2f5ef1d69
+	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20231102123309-91b2f5ef1d69
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

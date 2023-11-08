@@ -41,10 +41,19 @@ func (b *boot) getCurrentBootMode() (ret string) {
 	return
 }
 
+func (b *boot) getCommandLine() string {
+	cmdline, err := b.dependencies.ReadFile("/proc/cmdline")
+	if err != nil {
+		return ""
+	}
+	return string(cmdline)
+}
+
 func (b *boot) getBoot() *models.Boot {
 	ret := models.Boot{
 		CurrentBootMode: b.getCurrentBootMode(),
 		PxeInterface:    b.getPxeInterface(),
+		CommandLine:     b.getCommandLine(),
 	}
 	return &ret
 }

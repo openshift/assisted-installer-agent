@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jaypipes/ghw"
+	ghwutil "github.com/jaypipes/ghw/pkg/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -120,5 +121,37 @@ var _ = Describe("System vendor test", func() {
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
 		systemVendor := GetVendor(dependencies)
 		Expect(systemVendor.Manufacturer).Should(Equal("OracleCloud.com"))
+	})
+	It("s390x zVM node detection", func() {
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Name:         ghwutil.UNKNOWN,
+			SerialNumber: ghwutil.UNKNOWN,
+			Vendor:       ghwutil.UNKNOWN,
+		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "An Asset Tag",
+		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("zvm", "", 0).Once()
+		dependencies.On("Execute", "grep", "-m1", VENDOR_ID, "/proc/cpuinfo").Return("vendor_id       : IBM/S390", "", 0).Once()
+		dependencies.On("Execute", "grep", VM_CTRL_PRG, "/proc/sysinfo").Return("VM00 Control Program: z/VM    7.2.0", "", 0).Once()
+		systemVendor := GetVendor(dependencies)
+		Expect(systemVendor.Manufacturer).Should(Equal(VENDOR_IBM_ID))
+		Expect(systemVendor.ProductName).Should(Equal("z/VM    7.2.0"))
+	})
+	It("s390x KVM node detection", func() {
+		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+			Name:         ghwutil.UNKNOWN,
+			SerialNumber: ghwutil.UNKNOWN,
+			Vendor:       ghwutil.UNKNOWN,
+		}, nil).Once()
+		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+			AssetTag: "An Asset Tag",
+		}, nil).Once()
+		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("kvm", "", 0).Once()
+		dependencies.On("Execute", "grep", "-m1", VENDOR_ID, "/proc/cpuinfo").Return("vendor_id       : IBM/S390", "", 0).Once()
+		dependencies.On("Execute", "grep", VM_CTRL_PRG, "/proc/sysinfo").Return("VM00 Control Program: KVM/Linux", "", 0).Once()
+		systemVendor := GetVendor(dependencies)
+		Expect(systemVendor.Manufacturer).Should(Equal(VENDOR_IBM_ID))
+		Expect(systemVendor.ProductName).Should(Equal("KVM/Linux"))
 	})
 })

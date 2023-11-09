@@ -3145,6 +3145,88 @@ func init() {
             }
           }
         }
+      },
+      "post": {
+        "security": [
+          {
+            "agentAuth": []
+          }
+        ],
+        "description": "Add new assisted installer event.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2TriggerEvent",
+        "parameters": [
+          {
+            "description": "The event to be created.",
+            "name": "trigger-event-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/event"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success."
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Cluster cannot accept new agents due to its current state.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "501": {
+            "description": "Not implemented.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
       }
     },
     "/v2/infra-env/{infra_env_id}/hosts/{host_id}/downloads/ignition": {
@@ -5896,6 +5978,9 @@ func init() {
     "boot": {
       "type": "object",
       "properties": {
+        "command_line": {
+          "type": "string"
+        },
         "current_boot_mode": {
           "type": "string"
         },
@@ -6164,6 +6249,9 @@ func init() {
             "Cluster",
             "AddHostsCluster"
           ]
+        },
+        "last-installation-preparation": {
+          "$ref": "#/definitions/last-installation-preparation"
         },
         "logs_info": {
           "description": "The progress of log collection or empty if logs are not applicable",
@@ -8901,6 +8989,29 @@ func init() {
           "type": "boolean"
         }
       }
+    },
+    "last-installation-preparation": {
+      "description": "Gives the status of the last installation preparation (if any)",
+      "type": "object",
+      "properties": {
+        "reason": {
+          "description": "The reason for the preparation status if applicable",
+          "type": "string"
+        },
+        "status": {
+          "description": "The last installation preparation status",
+          "type": "string",
+          "default": "preparation_never_performed",
+          "enum": [
+            "preparation_never_performed",
+            "failed",
+            "success"
+          ],
+          "x-nullable": false
+        }
+      },
+      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:last_installation_preparation_\"",
+      "x-nullable": false
     },
     "list-managed-domains": {
       "type": "array",
@@ -13406,6 +13517,88 @@ func init() {
             }
           }
         }
+      },
+      "post": {
+        "security": [
+          {
+            "agentAuth": []
+          }
+        ],
+        "description": "Add new assisted installer event.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2TriggerEvent",
+        "parameters": [
+          {
+            "description": "The event to be created.",
+            "name": "trigger-event-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/event"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success."
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Cluster cannot accept new agents due to its current state.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "501": {
+            "description": "Not implemented.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "503": {
+            "description": "Unavailable.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
       }
     },
     "/v2/infra-env/{infra_env_id}/hosts/{host_id}/downloads/ignition": {
@@ -16268,6 +16461,9 @@ func init() {
     "boot": {
       "type": "object",
       "properties": {
+        "command_line": {
+          "type": "string"
+        },
         "current_boot_mode": {
           "type": "string"
         },
@@ -16536,6 +16732,9 @@ func init() {
             "Cluster",
             "AddHostsCluster"
           ]
+        },
+        "last-installation-preparation": {
+          "$ref": "#/definitions/last-installation-preparation"
         },
         "logs_info": {
           "description": "The progress of log collection or empty if logs are not applicable",
@@ -19249,6 +19448,29 @@ func init() {
           "type": "boolean"
         }
       }
+    },
+    "last-installation-preparation": {
+      "description": "Gives the status of the last installation preparation (if any)",
+      "type": "object",
+      "properties": {
+        "reason": {
+          "description": "The reason for the preparation status if applicable",
+          "type": "string"
+        },
+        "status": {
+          "description": "The last installation preparation status",
+          "type": "string",
+          "default": "preparation_never_performed",
+          "enum": [
+            "preparation_never_performed",
+            "failed",
+            "success"
+          ],
+          "x-nullable": false
+        }
+      },
+      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:last_installation_preparation_\"",
+      "x-nullable": false
     },
     "list-managed-domains": {
       "type": "array",

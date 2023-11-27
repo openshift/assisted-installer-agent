@@ -14,6 +14,7 @@ ifeq ($(TARGETPLATFORM),linux/amd64)
 	CGO_FLAG=1
 endif
 GO_BUILD_VARS := CGO_ENABLED=$(CGO_FLAG) $(GO_BUILD_ARCHITECTURE_VARS)
+GO_BUILD_TAGS = $(or ${BUILD_TAGS}, "strictfipsruntime")
 
 REPORTS ?= $(ROOT_DIR)/reports
 CI ?= false
@@ -41,12 +42,12 @@ lint: ci-lint
 build: build-agent
 
 build-agent: $(BIN) src/agent #lint
-	$(GO_BUILD_VARS) go build -o $(BIN)/agent src/agent/main/main.go 
+	$(GO_BUILD_VARS) go build -tags $(GO_BUILD_TAGS) -o $(BIN)/agent src/agent/main/main.go
 
 build-release: build-agent-release
 
 build-agent-release: $(BIN) src/agent #lint
-	$(GO_BUILD_VARS) go build -o $(BIN)/agent -ldflags "-s -w" src/agent/main/main.go
+	$(GO_BUILD_VARS) go build -tags $(GO_BUILD_TAGS) -o $(BIN)/agent -ldflags "-s -w" src/agent/main/main.go
 
 build-image:
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)

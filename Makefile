@@ -9,7 +9,11 @@ BIN = $(ROOT_DIR)/build
 
 # Multiarch support.  Transform argument passed from docker buidx tool to go build arguments to support cross compiling
 GO_BUILD_ARCHITECTURE_VARS := $(if ${TARGETPLATFORM},$(shell echo ${TARGETPLATFORM} | awk -F / '{printf("GOOS=%s GOARCH=%s", $$1, $$2)}'),)
-GO_BUILD_VARS := CGO_ENABLED=0 $(GO_BUILD_ARCHITECTURE_VARS)
+CGO_FLAG := $(or $(CGO_FLAG),0)
+ifeq ($(TARGETPLATFORM),linux/amd64)
+	CGO_FLAG=1
+endif
+GO_BUILD_VARS := CGO_ENABLED=$(CGO_FLAG) $(GO_BUILD_ARCHITECTURE_VARS)
 
 REPORTS ?= $(ROOT_DIR)/reports
 CI ?= false

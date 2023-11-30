@@ -3,9 +3,10 @@
 package util
 
 import (
-	fs "io/fs"
-
 	block "github.com/jaypipes/ghw/pkg/block"
+	chassis "github.com/jaypipes/ghw/pkg/chassis"
+
+	fs "io/fs"
 
 	gpu "github.com/jaypipes/ghw/pkg/gpu"
 
@@ -62,6 +63,35 @@ func (_m *MockIDependencies) Block(opts ...*option.Option) (*block.Info, error) 
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*block.Info)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+		r1 = rf(opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Chassis provides a mock function with given fields: opts
+func (_m *MockIDependencies) Chassis(opts ...*option.Option) (*chassis.Info, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *chassis.Info
+	if rf, ok := ret.Get(0).(func(...*option.Option) *chassis.Info); ok {
+		r0 = rf(opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*chassis.Info)
 		}
 	}
 

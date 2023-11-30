@@ -12,11 +12,14 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
+	"github.com/openshift/assisted-service/pkg/conversions"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 )
 
-const applianceAgentPartitionNamePrefix = "agent"
+const (
+	applianceAgentPrefix = "agent"
+)
 
 type disks struct {
 	dependencies     util.IDependencies
@@ -185,6 +188,62 @@ func (d *disks) isLVM(disk *ghw.Disk) bool {
 	return d.dmUUIDHasPrefix(disk, "LVM-")
 }
 
+// Return true if the specified disk belongs
+// to an openshift-appliance node
+func (d *disks) isAppliance(disk *ghw.Disk) bool {
+	if strings.HasPrefix(disk.Name, "dm-") {
+		path := filepath.Join("/sys", "block", disk.Name, "dm", "name")
+		dmName, err := d.dependencies.ReadFile(path)
+		if err != nil {
+			return false
+		}
+		return strings.HasPrefix(string(dmName), applianceAgentPrefix)
+	}
+
+	return false
+}
+
+func (d *disks) getApplianceDisks(blockDisks []*block.Disk) []*models.Disk {
+	// Fetch appliance virtual device if exists
+	result := funk.Find(blockDisks, func(blockDisk *block.Disk) bool {
+		return d.isAppliance(blockDisk)
+	})
+	if result == nil {
+		return make([]*models.Disk, 0)
+	}
+	dmDevice := result.(*block.Disk)
+
+	// Get dm device path
+	path := d.getPath(dmDevice.BusPath, dmDevice.Name)
+
+	// Set size to 100GiB to avoid validation
+	sizeBytes := conversions.GibToBytes(100)
+
+	// Return a disk with some mock data to skip all validations
+	return []*models.Disk{
+		&models.Disk{
+			ByID:                    d.getDisksWWNs()[path],
+			ByPath:                  d.getByPath(dmDevice.BusPath),
+			Hctl:                    "",
+			Model:                   "",
+			Name:                    dmDevice.Name,
+			Path:                    path,
+			DriveType:               models.DriveTypeSSD,
+			Serial:                  "",
+			SizeBytes:               sizeBytes,
+			Vendor:                  "",
+			Wwn:                     "",
+			Bootable:                false,
+			Removable:               false,
+			Smart:                   "",
+			IsInstallationMedia:     false,
+			InstallationEligibility: models.DiskInstallationEligibility{Eligible: true},
+			HasUUID:                 false,
+			Holders:                 "",
+		},
+	}
+}
+
 func (d *disks) getHolders(diskName string) string {
 	dir := fmt.Sprintf("/sys/block/%s/holders", diskName)
 	files, err := d.dependencies.ReadDir(dir)
@@ -273,7 +332,7 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 
 	// Don't check partitions if this is an appliance disk, as those disks should be marked as eligible for installation.
 	for _, partition := range disk.Partitions {
-		if strings.HasPrefix(partition.Label, applianceAgentPartitionNamePrefix) {
+		if strings.HasPrefix(partition.Label, applianceAgentPrefix) {
 			return notEligibleReasons, false
 		}
 	}
@@ -365,6 +424,10 @@ func (d *disks) getDisks() []*models.Disk {
 
 	if len(blockInfo.Disks) == 0 {
 		return ret
+	}
+
+	if disks := d.getApplianceDisks(blockInfo.Disks); len(disks) != 0 {
+		return disks
 	}
 
 	diskPath2diskWWN := d.getDisksWWNs()

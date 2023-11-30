@@ -26,6 +26,7 @@ type IDependencies interface {
 	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
 	GPU(opts ...*ghw.WithOption) (*ghw.GPUInfo, error)
 	Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error)
+	Chassis(opts ...*ghw.WithOption) (*ghw.ChassisInfo, error)
 	GetGhwChrootRoot() string
 }
 
@@ -106,6 +107,10 @@ func (d *Dependencies) GPU(opts ...*ghw.WithOption) (*ghw.GPUInfo, error) {
 
 func (d *Dependencies) Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error) {
 	return ghw.Memory(opts...)
+}
+
+func (d *Dependencies) Chassis(opts ...*ghw.WithOption) (*ghw.ChassisInfo, error) {
+	return ghw.Chassis(opts...)
 }
 
 func NewDependencies(dryRunConfig *config.DryRunConfig, ghwChrootRoot string) IDependencies {

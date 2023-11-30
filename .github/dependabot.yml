@@ -13,11 +13,11 @@ updates:
       - "approved"
       - "lgtm"
       - "go"
-      - "dependencies"
+      - "dependabot"
     commit-message:
       prefix: "NO-ISSUE"
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
 
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"

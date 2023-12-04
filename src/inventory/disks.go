@@ -219,6 +219,11 @@ func (d *disks) getApplianceDisks(blockDisks []*block.Disk) []*models.Disk {
 	// Set size to 100GiB to avoid validation
 	sizeBytes := conversions.GibToBytes(100)
 
+	// Determine whether any device has UUID (implies that the appliance device has one)
+	hasUUID := funk.Any(funk.Filter(blockDisks, func(blockDisk *block.Disk) bool {
+		return d.hasUUID(d.getPath(blockDisk.BusPath, blockDisk.Name))
+	}))
+
 	// Return a disk with some mock data to skip all validations
 	return []*models.Disk{
 		{
@@ -238,7 +243,7 @@ func (d *disks) getApplianceDisks(blockDisks []*block.Disk) []*models.Disk {
 			Smart:                   "",
 			IsInstallationMedia:     false,
 			InstallationEligibility: models.DiskInstallationEligibility{Eligible: true},
-			HasUUID:                 false,
+			HasUUID:                 hasUUID,
 			Holders:                 "",
 		},
 	}

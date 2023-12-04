@@ -946,8 +946,9 @@ var _ = Describe("Disks test", func() {
 		disk := createDeviceMapperDisk()
 		disk.Name = "dm-0"
 		mockFetchDisks(dependencies, nil, disk)
-		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetPathFromDev(dependencies, disk.Name, "").Twice()
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		mockHasUUID(dependencies, "/dev/dm-0", "")
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(applianceAgentPrefix), nil)
 
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
@@ -966,6 +967,7 @@ var _ = Describe("Disks test", func() {
 				Bootable:  false,
 				Smart:     "",
 				Holders:   "",
+				HasUUID:   true,
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
 				},

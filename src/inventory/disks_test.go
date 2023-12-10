@@ -608,7 +608,7 @@ var _ = Describe("Disks test", func() {
 				{
 					Disk:       nil,
 					Name:       "partition2",
-					Label:      fmt.Sprintf("%s%s",applianceAgentPartitionNamePrefix, partitionNameSuffix[i]),
+					Label:      fmt.Sprintf("%s%s", applianceAgentPartitionNamePrefix, partitionNameSuffix[i]),
 					MountPoint: "",
 					SizeBytes:  5555,
 					Type:       "ext4",

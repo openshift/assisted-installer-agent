@@ -16,7 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ClientMock struct {}
+type ClientMock struct{}
 
 func (c *ClientMock) Do(req *http.Request) (*http.Response, error) {
 	if strings.Contains(req.URL.String(), "127.0.0.1") {

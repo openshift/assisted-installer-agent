@@ -203,8 +203,16 @@ func downloadIgnition(connectivityReq models.APIVipConnectivityRequest) (string,
 	}
 
 	if connectivityReq.IgnitionEndpointToken != nil {
+		// Kept for backwards compatibility, in case an older assisted-service is used,
+		// should be removed once this field has been fully removed
 		bearerToken := fmt.Sprintf("Bearer %s", *connectivityReq.IgnitionEndpointToken)
 		req.Header.Set("Authorization", bearerToken)
+	}
+
+	if connectivityReq.RequestHeaders != nil {
+		for _, hdr := range connectivityReq.RequestHeaders {
+			req.Header.Set(hdr.Key, hdr.Value)
+		}
 	}
 
 	res, err := client.Do(req)

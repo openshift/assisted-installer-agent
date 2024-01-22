@@ -16,6 +16,7 @@ const (
 	CTRL_PRG      = "Control Program"
 	KVM_VIRT      = "KVM/Linux"
 	VENDOR_IBM_ID = "IBM/S390"
+	LPAR          = "LPAR"
 )
 
 // For oVirt VMs the correct platform can be detected only by the Family value,
@@ -51,7 +52,10 @@ func GetVendorFors390x(dependencies util.IDependencies, ret *models.SystemVendor
 		}
 	}
 
-	// get virtualization type
+	// get virtualization type but set Product to LPAR (will be overwritten with zVM or KVM if sysinfo contains virt entry)
+	ret.ProductName = LPAR
+	// make sure that Virtual is set to false
+	ret.Virtual = false
 	stdout, stderr, exitCode = dependencies.Execute("grep", VM_CTRL_PRG, "/proc/sysinfo")
 
 	// it makes no sense to continue in case of an error ... same as above
@@ -60,12 +64,15 @@ func GetVendorFors390x(dependencies util.IDependencies, ret *models.SystemVendor
 		return
 	}
 
-	for _, part := range strings.Split(strings.TrimSpace(stdout), ":") {
-		if !(strings.HasPrefix(part, CTRL_PRG)) {
-			ret.ProductName = strings.TrimSpace(part)
-			// LPAR and zVM are baremetal systems
-			if ret.ProductName != KVM_VIRT {
-				ret.Virtual = false
+	// LPAR do not contain an ctrl program entry
+	if strings.TrimSpace(stdout) != "" {
+		for _, part := range strings.Split(strings.TrimSpace(stdout), ":") {
+			if !(strings.HasPrefix(part, CTRL_PRG)) {
+				ret.ProductName = strings.TrimSpace(part)
+				// LPAR and zVM are baremetal systems
+				if ret.ProductName == KVM_VIRT {
+					ret.Virtual = true
+				}
 			}
 		}
 	}
@@ -101,6 +108,11 @@ func GetVendor(dependencies util.IDependencies) *models.SystemVendor {
 		ret.Manufacturer = chassis.AssetTag
 	}
 
+	// Check if Manufacturer is unknown (valid for s390x)
+	if product.Vendor == ghwutil.UNKNOWN {
+		GetVendorFors390x(dependencies, &ret)
+	}
+
 	stdout, stderr, exitCode := dependencies.Execute("systemd-detect-virt", "--vm")
 
 	if stderr != "" {
@@ -113,11 +125,6 @@ func GetVendor(dependencies util.IDependencies) *models.SystemVendor {
 
 	if exitCode == 0 && stdout != "none" {
 		ret.Virtual = true
-	}
-
-	// Check if Manufacturer is unknown (valid for s390x)
-	if product.Vendor == ghwutil.UNKNOWN {
-		GetVendorFors390x(dependencies, &ret)
 	}
 
 	return &ret

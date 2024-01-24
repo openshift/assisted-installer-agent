@@ -40,11 +40,11 @@ github.com/cespare/xxhash/v2
 # github.com/containerd/continuity v0.3.0
 ## explicit; go 1.17
 github.com/containerd/continuity/pathdriver
-# github.com/containers/image/v5 v5.20.0
-## explicit; go 1.13
+# github.com/containers/image/v5 v5.21.1
+## explicit; go 1.16
 github.com/containers/image/v5/docker/reference
-# github.com/coreos/go-iptables v0.5.0
-## explicit
+# github.com/coreos/go-iptables v0.6.0
+## explicit; go 1.16
 github.com/coreos/go-iptables/iptables
 # github.com/coreos/go-json v0.0.0-20230131223807-18775e0fb4fb
 ## explicit; go 1.18
@@ -90,7 +90,7 @@ github.com/docker/cli/cli/compose/schema
 github.com/docker/cli/cli/compose/template
 github.com/docker/cli/cli/compose/types
 github.com/docker/cli/opts
-# github.com/docker/docker v20.10.12+incompatible
+# github.com/docker/docker v20.10.14+incompatible
 ## explicit
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev

@@ -4,17 +4,12 @@ FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.19-openshift-4.13 AS 
 WORKDIR /go/src/github.com/openshift/assisted-installer-agent
 COPY . . 
 RUN make build
-RUN dnf install -y gcc nmstate-devel nmstate-libs git && dnf clean all
-RUN make build-agent-tui
 
 FROM registry.ci.openshift.org/ocp/4.13:base
 
 LABEL io.openshift.release.operator=true
 
-RUN dnf install -y nmstate-libs && dnf clean all
-
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent-tui /usr/bin/agent-tui
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/inventory /usr/bin/inventory
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/free_addresses /usr/bin/free_addresses
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/logs_sender /usr/bin/logs_sender

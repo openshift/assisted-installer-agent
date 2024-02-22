@@ -145,7 +145,7 @@ func (a *install) getFullInstallerCommand() string {
 	}
 
 	if a.installParams.EnableSkipMcoReboot {
-		installerCmdArgs = append(installerCmdArgs, "--enable-skip-mco-reboot", "true")
+		installerCmdArgs = append(installerCmdArgs, "--enable-skip-mco-reboot")
 	}
 
 	proxyArgs := getProxyArguments(a.installParams.Proxy)

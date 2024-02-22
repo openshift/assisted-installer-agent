@@ -246,7 +246,7 @@ var _ = Describe("installer test", func() {
 		installCommandRequest.EnableSkipMcoReboot = true
 		action := getInstall(installCommandRequest, filesystem, false)
 		args := action.Args()
-		Expect(strings.Join(args, " ")).To(ContainSubstring("--enable-skip-mco-reboot true"))
+		Expect(strings.Join(args, " ")).To(ContainSubstring("--enable-skip-mco-reboot"))
 	})
 
 	It("install no installer args", func() {

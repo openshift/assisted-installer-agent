@@ -1,4 +1,4 @@
-# Assisted Installer Agent
+# Assisted Installer Agent.
 
 ## Contents
 

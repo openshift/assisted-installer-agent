@@ -222,14 +222,16 @@ func createExpectedSDBModelDisk() *models.Disk {
 	}
 }
 
-/**
+/*
+*
 SDA disk is real disk data from a bare metal machine.
 */
 func createSDADisk() *ghw.Disk {
 	return createDisk("sda", 0, "6141877064533b0020adf3bb03167694", "0x6141877064533b0020adf3bb03167694")
 }
 
-/**
+/*
+*
 SDB disk is real disk data from a bare metal machine.
 */
 func createSDBDisk() *ghw.Disk {

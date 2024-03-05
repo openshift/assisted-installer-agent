@@ -125,6 +125,7 @@ var DomainAPI = "api.test-cluster.example.com"
 var DomainAPIInternal = "api-int.test-cluster.example.com"
 var DomainApps = fmt.Sprintf("%s.apps.test-cluster.example.com", constants.AppsSubDomainNameHostDNSValidation)
 var WildcardDomain = fmt.Sprintf("%s.test-cluster.example.com", constants.DNSWildcardFalseDomainName)
+var ReleaseDomain = "quay.io"
 
 var DomainResolutions = []*models.DomainResolutionResponseDomain{
 	{
@@ -141,6 +142,11 @@ var DomainResolutions = []*models.DomainResolutionResponseDomain{
 		DomainName:    &DomainApps,
 		IPV4Addresses: []strfmt.IPv4{"7.8.9.10/24"},
 		IPV6Addresses: []strfmt.IPv6{"1003:db8::40/120"},
+	},
+	{
+		DomainName:    &ReleaseDomain,
+		IPV4Addresses: []strfmt.IPv4{"7.8.9.11/24"},
+		IPV6Addresses: []strfmt.IPv6{"1003:db8::41/120"},
 	},
 	{
 		DomainName:    &WildcardDomain,
@@ -167,6 +173,11 @@ var DomainResolutionNoAPI = []*models.DomainResolutionResponseDomain{
 		DomainName:    &WildcardDomain,
 		IPV4Addresses: []strfmt.IPv4{},
 		IPV6Addresses: []strfmt.IPv6{},
+	},
+	{
+		DomainName:    &ReleaseDomain,
+		IPV4Addresses: []strfmt.IPv4{"7.8.9.11/24"},
+		IPV6Addresses: []strfmt.IPv6{"1003:db8::41/120"},
 	},
 }
 
@@ -198,16 +209,16 @@ var TestDomainResolutionsNoAPI = &models.DomainResolutionResponse{Resolutions: D
 var TestDomainResolutionsAllEmpty = &models.DomainResolutionResponse{Resolutions: DomainResolutionAllEmpty}
 var TestDomainNameResolutionsWildcardResolved = &models.DomainResolutionResponse{Resolutions: WildcardResolved}
 
-var TestDefaultRouteConfiguration = []*models.Route{{Family: FamilyIPv4, Interface: "eth0", Gateway: "192.168.1.1", Destination: "0.0.0.0"}}
+var TestDefaultRouteConfiguration = []*models.Route{{Family: FamilyIPv4, Interface: "eth0", Gateway: "1.2.3.10", Destination: "0.0.0.0", Metric: 600}}
 
 var TestIPv4Networking = TestNetworking{
 	ClusterNetworks: []*models.ClusterNetwork{{Cidr: "1.3.0.0/16", HostPrefix: 24}},
 	ServiceNetworks: []*models.ServiceNetwork{{Cidr: "1.2.5.0/24"}},
 	MachineNetworks: []*models.MachineNetwork{{Cidr: "1.2.3.0/24"}},
 	APIVip:          "1.2.3.5",
-	APIVips:         []*models.APIVip{{IP: "1.2.3.5"}},
+	APIVips:         []*models.APIVip{{IP: "1.2.3.5", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
 	IngressVip:      "1.2.3.6",
-	IngressVips:     []*models.IngressVip{{IP: "1.2.3.6"}},
+	IngressVips:     []*models.IngressVip{{IP: "1.2.3.6", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
 }
 
 // TestIPv6Networking The values of TestIPv6Networking and TestEquivalentIPv6Networking are not equal, but are equivalent
@@ -218,9 +229,9 @@ var TestIPv6Networking = TestNetworking{
 	ServiceNetworks: []*models.ServiceNetwork{{Cidr: "1002:db8::/119"}},
 	MachineNetworks: []*models.MachineNetwork{{Cidr: "1001:db8::/120"}},
 	APIVip:          "1001:db8::64",
-	APIVips:         []*models.APIVip{{IP: "1001:db8::64"}},
+	APIVips:         []*models.APIVip{{IP: "1001:db8::64", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
 	IngressVip:      "1001:db8::65",
-	IngressVips:     []*models.IngressVip{{IP: "1001:db8::65"}},
+	IngressVips:     []*models.IngressVip{{IP: "1001:db8::65", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
 }
 
 var TestEquivalentIPv6Networking = TestNetworking{

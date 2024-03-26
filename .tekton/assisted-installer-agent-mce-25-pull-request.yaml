@@ -19,7 +19,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: Dockerfile
+    value: Dockerfile.assisted-installer-agent
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after

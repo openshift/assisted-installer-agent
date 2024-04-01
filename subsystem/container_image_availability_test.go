@@ -39,7 +39,7 @@ var _ = Describe("Image availability tests", func() {
 	})
 
 	It("Valid new images", func() {
-		images = []string{"quay.io/ibm/hello-world", "quay.io/coreos/etcd:latest"}
+		images = []string{"quay.io/ibm/hello-world", "quay.io/coreos/etcd:v3.5.13"}
 
 		for _, image := range images {
 			deleteImage(image)

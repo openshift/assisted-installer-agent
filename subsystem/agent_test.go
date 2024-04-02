@@ -301,7 +301,7 @@ var _ = Describe("Agent tests", func() {
 		hostID := nextHostID()
 		registerStubID, err := addRegisterStub(hostID, http.StatusCreated, InfraEnvID)
 		Expect(err).NotTo(HaveOccurred())
-		images := []string{"quay.io/coreos/etcd:latest"}
+		images := []string{"quay.io/coreos/etcd:v3.5.13"}
 		removeImage(defaultContainerTool, images[0])
 		url := WireMockURLFromSubsystemHost + TestWorkerIgnitionPath
 		_, err = addWorkerIgnitionStub()

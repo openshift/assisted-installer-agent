@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/alessio/shellescape"
@@ -18,6 +19,15 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/thoas/go-funk"
+)
+
+const (
+	templatePull              = "podman pull %s"
+	templateTimeout           = "timeout %s %s"
+	templateGetImage          = "podman images --quiet %s"
+	failedToPullImageExitCode = 2
+	defaultImagePullRetries   = 3
+	defaultImagePullTimeout   = 30
 )
 
 var podmanBaseCmd = [...]string{
@@ -74,7 +84,6 @@ func (a *install) Validate() error {
 	if a.installParams.OpenshiftVersion != "" {
 		_, err := version.NewVersion(a.installParams.OpenshiftVersion)
 		if err != nil {
-
 			return errors.Wrapf(err, "Failed to parse OCP version %s", a.installParams.OpenshiftVersion)
 		}
 	}
@@ -266,6 +275,10 @@ func (a *install) pathExists(path string) bool {
 }
 
 func (a *install) Run() (stdout, stderr string, exitCode int) {
+	if err := downloadInstallerImage(*a.installParams.InstallerImage); err != nil {
+		return "", err.Error(), failedToPullImageExitCode
+	}
+
 	return util.ExecutePrivileged(a.Command(), a.Args()...)
 }
 
@@ -275,4 +288,46 @@ func (a *install) Command() string {
 
 func (a *install) Args() []string {
 	return []string{"-c", a.getFullInstallerCommand()}
+}
+
+func downloadInstallerImage(image string) error {
+	if !isImageAvailable(image) {
+		if err := pullImageWithRetry(defaultImagePullTimeout, image, defaultImagePullRetries); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isImageAvailable(image string) bool {
+	cmd := fmt.Sprintf(templateGetImage, image)
+	args := strings.Split(cmd, " ")
+	stdout, _, exitCode := util.ExecutePrivileged(args[0], args[1:]...)
+	return exitCode == 0 && stdout != ""
+}
+
+func pullImageWithRetry(pullTimeoutSeconds int64, image string, retry int) error {
+	var err error
+	for attempts := 0; attempts < retry; attempts++ {
+		if err = pullImage(pullTimeoutSeconds, image); err == nil {
+			break
+		}
+	}
+	return err
+}
+
+func pullImage(pullTimeoutSeconds int64, image string) error {
+	cmd := fmt.Sprintf(templatePull, image)
+	cmd = fmt.Sprintf(templateTimeout, strconv.FormatInt(pullTimeoutSeconds, 10), cmd)
+	args := strings.Split(cmd, " ")
+	stdout, stderr, exitCode := util.ExecutePrivileged(args[0], args[1:]...)
+
+	switch exitCode {
+	case 0:
+		return nil
+	case util.TimeoutExitCode:
+		return errors.Errorf("podman pull was timed out after %d seconds", pullTimeoutSeconds)
+	default:
+		return errors.Errorf("podman pull exited with non-zero exit code %d: %s\n %s", exitCode, stdout, stderr)
+	}
 }

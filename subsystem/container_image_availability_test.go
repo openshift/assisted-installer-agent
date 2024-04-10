@@ -39,7 +39,7 @@ var _ = Describe("Image availability tests", func() {
 	})
 
 	It("Valid new images", func() {
-		images = []string{"quay.io/aptible/hello-world", "quay.io/coreos/etcd:latest"}
+		images = []string{"quay.io/ibm/hello-world", "quay.io/coreos/etcd:v3.5.13"}
 
 		for _, image := range images {
 			deleteImage(image)
@@ -50,7 +50,7 @@ var _ = Describe("Image availability tests", func() {
 	})
 
 	It("Already downloaded image", func() {
-		images = []string{"quay.io/aptible/hello-world"}
+		images = []string{"quay.io/ibm/hello-world"}
 
 		for _, image := range images {
 			deleteImage(image)

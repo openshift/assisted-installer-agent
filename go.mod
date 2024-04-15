@@ -173,6 +173,7 @@ replace (
 	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20240212213843-c61a94b6a45d
 	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20240212213843-c61a94b6a45d
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820

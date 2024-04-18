@@ -174,7 +174,7 @@ parse error is: invalid config version (couldn't parse)`
 			wrongCert := b64.StdEncoding.EncodeToString(cert)
 			newResponseChecker(CheckAPIConnectivity(getRequestStr(&srv.URL, false, &wrongCert, nil), log)).
 				withExpectedFailure().
-				withExpectedErrorRegex(`ignition file download failed: request failed: Get "https://127.0.0.1:[0-9]*/config/worker": x509: certificate signed by unknown authority \(possibly because of "x509: invalid signature: parent certificate cannot sign this kind of certificate" while trying to verify candidate authority certificate "Company, INC."\)`).
+				withExpectedErrorRegex(`ignition file download failed: request failed: Get "https://127.0.0.1:[0-9]*/config/worker": tls: failed to verify certificate: x509: certificate signed by unknown authority \(possibly because of "x509: invalid signature: parent certificate cannot sign this kind of certificate" while trying to verify candidate authority certificate "Company, INC."\)`).
 				checkResponse()
 		})
 	})

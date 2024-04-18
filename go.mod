@@ -30,8 +30,8 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/thoas/go-funk v0.9.3
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
-	golang.org/x/sys v0.5.0
+	golang.org/x/sync v0.1.0
+	golang.org/x/sys v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -142,9 +142,9 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
@@ -170,13 +170,14 @@ require (
 require (
 	github.com/itchyny/gojq v0.12.11
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 )
 
 replace (
 	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20221227183914-58b7b4b0fd8e
 	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20221227183914-58b7b4b0fd8e
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820

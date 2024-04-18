@@ -31,7 +31,7 @@ require (
 	github.com/thoas/go-funk v0.9.3
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	golang.org/x/sync v0.1.0
-	golang.org/x/sys v0.6.0
+	golang.org/x/sys v0.19.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -141,10 +141,10 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
-	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
@@ -170,7 +170,7 @@ require (
 require (
 	github.com/itchyny/gojq v0.12.11
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 )
 
 replace (
@@ -180,6 +180,7 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20221227183914-58b7b4b0fd8e
 	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20221227183914-58b7b4b0fd8e
+	golang.org/x/net => golang.org/x/net v0.24.0
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

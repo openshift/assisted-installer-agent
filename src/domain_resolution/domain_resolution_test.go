@@ -67,17 +67,31 @@ var _ = Describe("Domain resolution", func() {
 
 			It(fmt.Sprintf("Test with %d IPv4 addresses and %d IPv6 addresses",
 				test.ipv4Count, test.ipv6Count), func() {
-				domainResolutionDependencies.On("Resolve", testDomain).Return(
+				domainResolutionDependencies.On("ResolveIPs", testDomain).Return(
 					generateResolution(test.ipv4Count, test.ipv6Count), nil).Once()
+				domainResolutionDependencies.On("ResolveCNAME", testDomain).Return(
+					"", nil).Once()
 				resolution := handleDomainResolution(domainResolutionDependencies, log, testDomain)
 				testResolution(testDomain, test.ipv4Count, test.ipv6Count, resolution)
+				Expect(resolution.Cnames).To(HaveLen(0))
 			})
 		}
+		It("Resolve with CNAME", func() {
+			cname := "a.b.c.com"
+			domainResolutionDependencies.On("ResolveIPs", testDomain).Return(
+				generateResolution(1, 1), nil).Once()
+			domainResolutionDependencies.On("ResolveCNAME", testDomain).Return(
+				cname, nil).Once()
+			resolution := handleDomainResolution(domainResolutionDependencies, log, testDomain)
+			testResolution(testDomain, 1, 1, resolution)
+			Expect(resolution.Cnames).To(HaveLen(1))
+			Expect(resolution.Cnames[0]).To(Equal(cname))
+		})
 	})
 
 	Context("Resolution error", func() {
 		dm := DomainResolver{}
-		ips, err := dm.Resolve("faillallthetimeigal-blbl.com")
+		ips, err := dm.ResolveIPs("faillallthetimeigal-blbl.com")
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(ips).Should(BeEmpty())
 	})
@@ -123,8 +137,10 @@ var _ = Describe("Domain resolution", func() {
 
 			// Prepare mock to return ip4Count IPv4 addresses and ip6Count IPv6 addresses for each domain
 			for _, domain := range domains {
-				domainResolutionDependencies.On("Resolve", domain).Return(
+				domainResolutionDependencies.On("ResolveIPs", domain).Return(
 					generateResolution(ipv4Count, ipv6Count), nil).Once()
+				domainResolutionDependencies.On("ResolveCNAME", domain).Return(
+					"", nil).Once()
 			}
 
 			// Run tool

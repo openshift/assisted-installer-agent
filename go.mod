@@ -11,7 +11,7 @@ require (
 	github.com/go-openapi/swag v0.23.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.6.0
+	github.com/hashicorp/go-version v1.7.0
 	github.com/jaypipes/ghw v0.12.1-0.20230829170642-835f6a233b6d
 	github.com/jaypipes/pcidb v1.0.0
 	github.com/jinzhu/copier v0.4.0

@@ -11,12 +11,13 @@ import (
 
 //go:generate mockery --name DomainResolutionDependencies --inpackage
 type DomainResolutionDependencies interface {
-	Resolve(domain string) (ips []net.IP, err error)
+	ResolveIPs(domain string) (ips []net.IP, err error)
+	ResolveCNAME(domain string) (string, error)
 }
 
 type DomainResolver struct{}
 
-func (e *DomainResolver) Resolve(domain string) (ips []net.IP, err error) {
+func (e *DomainResolver) ResolveIPs(domain string) (ips []net.IP, err error) {
 	ips, err = net.LookupIP(domain)
 
 	// No need to return error in case domain was not found
@@ -29,6 +30,19 @@ func (e *DomainResolver) Resolve(domain string) (ips []net.IP, err error) {
 	return ips, err
 }
 
+func (e *DomainResolver) ResolveCNAME(domain string) (string, error) {
+	cname, err := net.LookupCNAME(domain)
+	// No need to return error in case domain was not found
+	// It is expected answer and service will handle it
+	if err != nil {
+		if e, ok := err.(*net.DNSError); ok && e.IsNotFound {
+			err = nil
+		}
+		cname = ""
+	}
+	return cname, err
+}
+
 func handleDomainResolution(resolver DomainResolutionDependencies, log logrus.FieldLogger, domain string) models.DomainResolutionResponseDomain {
 	result := models.DomainResolutionResponseDomain{
 		DomainName:    &domain,
@@ -36,7 +50,7 @@ func handleDomainResolution(resolver DomainResolutionDependencies, log logrus.Fi
 		IPV6Addresses: make([]strfmt.IPv6, 0),
 	}
 
-	ips, err := resolver.Resolve(domain)
+	ips, err := resolver.ResolveIPs(domain)
 	if err != nil {
 		log.WithError(err).Errorf("error occurred during domain resolution of %s", domain)
 		return result
@@ -50,6 +64,15 @@ func handleDomainResolution(resolver DomainResolutionDependencies, log logrus.Fi
 		} else {
 			log.Errorf("IP address %v of %s is neither IPv4 nor IPv6, ignoring", ip, domain)
 		}
+	}
+
+	cname, err := resolver.ResolveCNAME(domain)
+	if err != nil {
+		log.WithError(err).Errorf("error occurred during domain CNAME resolution of %s", domain)
+		return result
+	}
+	if cname != "" {
+		result.Cnames = append(result.Cnames, cname)
 	}
 
 	return result

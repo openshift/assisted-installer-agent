@@ -7179,7 +7179,7 @@ func init() {
         "file_name": {
           "description": "The name of the manifest to customize the installed OCP cluster.",
           "type": "string",
-          "pattern": "^[^/]*\\.(yaml|yml|json|yaml.patch.*|yml.patch.*)$"
+          "pattern": "^[^\\/]*\\.(json|ya?ml(\\.patch_?[a-zA-Z0-9_]*)?)$"
         },
         "folder": {
           "description": "The folder that contains the files. Manifests can be placed in 'manifests' or 'openshift' directories.",
@@ -7508,6 +7508,13 @@ func init() {
               "domain_name"
             ],
             "properties": {
+              "cnames": {
+                "description": "The cnames that were resolved for the domain, empty if none",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
               "domain_name": {
                 "description": "The domain that was resolved",
                 "type": "string"
@@ -10231,7 +10238,7 @@ func init() {
         "file_name": {
           "description": "The file name for the manifest to modify.",
           "type": "string",
-          "pattern": "^[^/]*\\.(yaml|yml|json|yaml.patch.*|yml.patch.*)$",
+          "pattern": "^[^\\/]*\\.(json|ya?ml(\\.patch_?[a-zA-Z0-9_]*)?)$",
           "x-nullable": false
         },
         "folder": {
@@ -10252,7 +10259,7 @@ func init() {
         "updated_file_name": {
           "description": "The new file name for the manifest.",
           "type": "string",
-          "pattern": "^[^/]*\\.(yaml|yml|json|yaml.patch.*|yml.patch.*)$",
+          "pattern": "^[^\\/]*\\.(json|ya?ml(\\.patch_?[a-zA-Z0-9_]*)?)$",
           "x-nullable": true
         },
         "updated_folder": {
@@ -16696,6 +16703,13 @@ func init() {
         "domain_name"
       ],
       "properties": {
+        "cnames": {
+          "description": "The cnames that were resolved for the domain, empty if none",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "domain_name": {
           "description": "The domain that was resolved",
           "type": "string"
@@ -17957,7 +17971,7 @@ func init() {
         "file_name": {
           "description": "The name of the manifest to customize the installed OCP cluster.",
           "type": "string",
-          "pattern": "^[^/]*\\.(yaml|yml|json|yaml.patch.*|yml.patch.*)$"
+          "pattern": "^[^\\/]*\\.(json|ya?ml(\\.patch_?[a-zA-Z0-9_]*)?)$"
         },
         "folder": {
           "description": "The folder that contains the files. Manifests can be placed in 'manifests' or 'openshift' directories.",
@@ -20948,7 +20962,7 @@ func init() {
         "file_name": {
           "description": "The file name for the manifest to modify.",
           "type": "string",
-          "pattern": "^[^/]*\\.(yaml|yml|json|yaml.patch.*|yml.patch.*)$",
+          "pattern": "^[^\\/]*\\.(json|ya?ml(\\.patch_?[a-zA-Z0-9_]*)?)$",
           "x-nullable": false
         },
         "folder": {
@@ -20969,7 +20983,7 @@ func init() {
         "updated_file_name": {
           "description": "The new file name for the manifest.",
           "type": "string",
-          "pattern": "^[^/]*\\.(yaml|yml|json|yaml.patch.*|yml.patch.*)$",
+          "pattern": "^[^\\/]*\\.(json|ya?ml(\\.patch_?[a-zA-Z0-9_]*)?)$",
           "x-nullable": true
         },
         "updated_folder": {

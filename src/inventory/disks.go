@@ -323,10 +323,6 @@ func (d *disks) isHiddenDevice(disk *ghw.Disk) bool {
 // be eligible. Also returns whether the disk appears to be an installation
 // media or not.
 func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallationMedia bool) {
-	if disk.IsRemovable {
-		notEligibleReasons = append(notEligibleReasons, "Disk is removable")
-	}
-
 	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) && !d.isDASD(disk) {
 		notEligibleReasons = append(notEligibleReasons, "Disk has unknown storage controller")
 	}

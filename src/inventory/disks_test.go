@@ -521,15 +521,12 @@ var _ = Describe("Disks test", func() {
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
-	It("filters removable disks", func() {
+	It("removable disks should be eligible", func() {
 		blockInfo, expectedDisks := prepareDisksTest(dependencies, 1)
 
 		blockInfo.Disks[0].IsRemovable = true
 		expectedDisks[0].Removable = true
-		expectedDisks[0].InstallationEligibility.Eligible = false
-		expectedDisks[0].InstallationEligibility.NotEligibleReasons = []string{
-			"Disk is removable",
-		}
+		expectedDisks[0].InstallationEligibility.Eligible = true
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)

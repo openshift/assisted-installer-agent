@@ -239,7 +239,7 @@ var _ = Describe("installer test", func() {
 	It("install without enable skip MCO reboot", func() {
 		action := getInstall(installCommandRequest, filesystem, false)
 		args := action.Args()
-		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("--enable-skip-mco-reboot true"))
+		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("--enable-skip-mco-reboot"))
 	})
 
 	It("install with enable skip MCO reboot", func() {
@@ -247,6 +247,19 @@ var _ = Describe("installer test", func() {
 		action := getInstall(installCommandRequest, filesystem, false)
 		args := action.Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--enable-skip-mco-reboot"))
+	})
+
+	It("install without notify num reboots", func() {
+		action := getInstall(installCommandRequest, filesystem, false)
+		args := action.Args()
+		Expect(strings.Join(args, " ")).ToNot(ContainSubstring("--notify-num-reboots"))
+	})
+
+	It("install with notify num reboots", func() {
+		installCommandRequest.NotifyNumReboots = true
+		action := getInstall(installCommandRequest, filesystem, false)
+		args := action.Args()
+		Expect(strings.Join(args, " ")).To(ContainSubstring("--notify-num-reboots"))
 	})
 
 	It("install no installer args", func() {

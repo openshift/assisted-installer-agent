@@ -18,7 +18,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.33.1
-	github.com/openshift/assisted-service v1.0.10-0.20240522115645-fad8782951ca
+	github.com/openshift/assisted-service v1.0.10-0.20240531185134-780deffb6a35
 	github.com/openshift/assisted-service/client v0.0.0
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
@@ -56,7 +56,7 @@ require (
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/user v0.1.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/openshift/api v0.0.0-20231031181504-3be12e93388f // indirect
+	github.com/openshift/api v0.0.0-20240521212423-414cf30d37be // indirect
 	github.com/openshift/assisted-service/api v0.0.0 // indirect
 	github.com/openshift/hive/apis v0.0.0-20220222213051-def9088fdb5a // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
@@ -98,7 +98,7 @@ require (
 	github.com/docker/docker v25.0.3+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -114,7 +114,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/glog v1.1.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
@@ -173,14 +173,14 @@ require (
 	gorm.io/driver/postgres v1.3.5 // indirect
 	gorm.io/gorm v1.25.7 // indirect
 	howett.net/plist v1.0.0 // indirect
-	k8s.io/api v0.28.4 // indirect
-	k8s.io/apimachinery v0.28.4 // indirect
-	k8s.io/client-go v0.28.4 // indirect
-	k8s.io/klog/v2 v2.100.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
+	k8s.io/api v0.29.5 // indirect
+	k8s.io/apimachinery v0.29.5 // indirect
+	k8s.io/client-go v0.29.5 // indirect
+	k8s.io/klog/v2 v2.110.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
@@ -195,9 +195,9 @@ replace (
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
-	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20240522115645-fad8782951ca
-	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20240522115645-fad8782951ca
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20240522115645-fad8782951ca
+	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20240531185134-780deffb6a35
+	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20240531185134-780deffb6a35
+	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20240531185134-780deffb6a35
 	golang.org/x/net => golang.org/x/net v0.24.0
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205

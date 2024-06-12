@@ -1,6 +1,8 @@
 module github.com/openshift/assisted-installer-agent
 
-go 1.20
+go 1.21
+
+toolchain go1.22.3
 
 require (
 	github.com/PuerkitoBio/rehttp v1.4.0
@@ -196,7 +198,7 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20240531185134-780deffb6a35
 	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20240531185134-780deffb6a35
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20240531185134-780deffb6a35
+	github.com/openshift/assisted-service/models => github.com/adriengentil/assisted-service/models v0.0.0-20240612141820-d05f3eb1f803
 	golang.org/x/net => golang.org/x/net v0.24.0
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205

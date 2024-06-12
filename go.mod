@@ -2,8 +2,6 @@ module github.com/openshift/assisted-installer-agent
 
 go 1.21
 
-toolchain go1.22.3
-
 require (
 	github.com/PuerkitoBio/rehttp v1.4.0
 	github.com/alessio/shellescape v1.4.2

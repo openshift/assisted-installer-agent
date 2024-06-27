@@ -939,6 +939,46 @@ var _ = Describe("Disks test", func() {
 		}))
 	})
 
+	It("Multipath device - should have a non-empty WWN", func() {
+		path := "/dev/dm-2"
+		mockGetWWNCallForSuccess(dependencies, map[string]string{path: "wwn-0x6141877064533b0020adf3bc0325d664"})
+		disk := createDeviceMapperDisk()
+		mockFetchDisks(dependencies, nil, disk)
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetHctl(dependencies, disk.Name, "error")
+		mockGetBootable(dependencies, path, true, "")
+		mockNoUUID(dependencies, path)
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(""), nil)
+
+		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil)
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ByID:      "/dev/disk/by-id/wwn-0x6141877064533b0020adf3bc0325d664",
+				ID:        "/dev/disk/by-id/wwn-0x6141877064533b0020adf3bc0325d664",
+				ByPath:    "",
+				DriveType: models.DriveTypeMultipath,
+				Hctl:      "",
+				Model:     "",
+				Name:      "dm-2",
+				Path:      "/dev/dm-2",
+				Serial:    "",
+				SizeBytes: 21474836480,
+				Vendor:    "",
+				Wwn:       "0x6141877064533b0020adf3bc0325d664",
+				Bootable:  true,
+				Smart:     "",
+				Holders:   "",
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible: true,
+				},
+			},
+		}))
+	})
+
 	It("Appliance multipath virtual device", func() {
 		disk := createDeviceMapperDisk()
 		disk.Name = "dm-0"

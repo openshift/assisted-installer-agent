@@ -19,6 +19,8 @@ import (
 
 const (
 	applianceAgentPrefix = "agent"
+	byIdLocation         = "/dev/disk/by-id"
+	wwnPrefix            = "wwn-"
 )
 
 type disks struct {
@@ -30,9 +32,17 @@ func newDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDepe
 	return &disks{dependencies: dependencies, subprocessConfig: subprocessConfig}
 }
 
+func getPureWWN(wwn string, byId string) string {
+	if wwn == ghwutil.UNKNOWN {
+		prefix := byIdLocation + "/" + wwnPrefix
+		withoutPrefix := strings.TrimPrefix(byId, prefix)
+		return withoutPrefix
+	}
+	return wwn
+}
+
 func (d *disks) getDisksWWNs() map[string]string {
-	const ByIdLocation = "/dev/disk/by-id"
-	filesInfo, err := d.dependencies.ReadDir(ByIdLocation)
+	filesInfo, err := d.dependencies.ReadDir(byIdLocation)
 
 	if err != nil {
 		logrus.Warnf("Cannot get disk/by-id information: %s", err)
@@ -42,7 +52,7 @@ func (d *disks) getDisksWWNs() map[string]string {
 	matchingFiles := funk.Filter(filesInfo, func(fileInfo os.FileInfo) bool {
 		basename := filepath.Base(fileInfo.Name())
 
-		if !strings.HasPrefix(basename, "wwn-") && !strings.HasPrefix(basename, "nvme-eui") {
+		if !strings.HasPrefix(basename, wwnPrefix) && !strings.HasPrefix(basename, "nvme-eui") {
 			return false
 		}
 
@@ -53,7 +63,7 @@ func (d *disks) getDisksWWNs() map[string]string {
 	// For example: wwn-0x6141877064533b0020adf3bc0325d664	-> /dev/sdb
 	// "wwn-0x6141877064533b0020adf3bc0325d664" is the disk id and the path is: /dev/sdb
 	return funk.Map(matchingFiles, func(fileInfo os.FileInfo) (string, string) {
-		diskId := filepath.Join(ByIdLocation, fileInfo.Name())
+		diskId := filepath.Join(byIdLocation, fileInfo.Name())
 		diskPath, err := d.dependencies.EvalSymlinks(diskId)
 
 		if err != nil {
@@ -468,7 +478,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Serial:                  unknownToEmpty(disk.SerialNumber),
 			SizeBytes:               int64(disk.SizeBytes),
 			Vendor:                  unknownToEmpty(disk.Vendor),
-			Wwn:                     unknownToEmpty(disk.WWN),
+			Wwn:                     getPureWWN(disk.WWN, diskPath2diskWWN[path]),
 			Bootable:                d.getBootable(path),
 			Removable:               disk.IsRemovable,
 			Smart:                   "", // We no longer collect disk S.M.A.R.T. as it's not used and usually not interesting

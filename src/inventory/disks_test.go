@@ -782,6 +782,8 @@ var _ = Describe("Disks test", func() {
 		mockGetByPath(dependencies, disk.BusPath, "")
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
+		dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 
@@ -803,6 +805,9 @@ var _ = Describe("Disks test", func() {
 				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
+				},
+				Iscsi: &models.Iscsi{
+					HostIPAddress: "1.2.3.4",
 				},
 			},
 		}))

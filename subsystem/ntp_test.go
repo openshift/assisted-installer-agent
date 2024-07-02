@@ -180,5 +180,5 @@ func getNTPResponseFromStepReply(actualReply *models.StepReply) *models.NtpSynch
 func addChronyDaemon(ctx context.Context, hostID string) {
 	s, e, errorCode := agentUtils.Execute("docker", []string{"exec", "agent", "chronyd"}...)
 	fmt.Println(s, e, errorCode)
-	Expect(errorCode).To(Equal(0))
+	Expect(errorCode).To(Equal(0), "Failed to start chrony daemon")
 }

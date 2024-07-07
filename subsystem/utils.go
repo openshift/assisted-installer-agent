@@ -459,16 +459,16 @@ func stopAgent() error {
 }
 
 func startContainer(args ...string) error {
-	args = append([]string{"-f", "docker-compose.yml", "up", "-d"}, args...)
+	args = append([]string{"compose", "-f", "docker-compose.yml", "up", "-d"}, args...)
 
-	cmd := exec.Command("docker-compose", args...)
+	cmd := exec.Command("docker", args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
 }
 
 func stopContainer(name string) error {
-	cmd := exec.Command("docker-compose", "-f", "docker-compose.yml", "rm", "-s", "-f", name)
+	cmd := exec.Command("docker", "compose", "-f", "docker-compose.yml", "rm", "-s", "-f", name)
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }

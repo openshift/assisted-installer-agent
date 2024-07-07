@@ -24,7 +24,7 @@ GINKGO_FLAGS = -ginkgo.focus="$(FOCUS)" -ginkgo.v -ginkgo.skip="$(SKIP)" -ginkgo
 GIT_REVISION := $(shell git rev-parse HEAD)
 CONTAINER_BUILD_PARAMS = --network=host --label git_revision=${GIT_REVISION} ${CONTAINER_BUILD_EXTRA_PARAMS}
 
-DOCKER_COMPOSE=docker-compose -f ./subsystem/docker-compose.yml
+DOCKER_COMPOSE=docker compose -f ./subsystem/docker-compose.yml
 
 all: build
 

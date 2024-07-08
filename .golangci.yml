@@ -62,7 +62,7 @@ linters:
     - megacheck
     - unconvert
     - goimports
-    - scopelint
+    - exportloopref
 
 linters-settings:
   govet:

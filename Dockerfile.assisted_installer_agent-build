@@ -29,6 +29,8 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
 ENV GOROOT=/usr/lib/golang
 ENV GOPATH=/opt/app-root/src/go
 ENV PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+# required due to issue https://github.com/docker/compose/issues/4060
+ENV LANG=en_US.UTF-8
 
 COPY --from=golang $GOPATH $GOPATH
 COPY --from=golang $GOROOT $GOROOT

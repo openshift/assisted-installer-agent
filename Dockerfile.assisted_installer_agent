@@ -1,4 +1,7 @@
-FROM registry.ci.openshift.org/openshift/release:golang-1.20 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.20 AS builder
+
+USER 0
+
 ARG TARGETPLATFORM
 ENV GO111MODULE=on
 ENV GOFLAGS=""
@@ -13,6 +16,7 @@ COPY . .
 RUN TARGETPLATFORM=$TARGETPLATFORM make build-release
 
 FROM quay.io/centos/centos:stream9
+
 ARG TARGETPLATFORM
 
 RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then dnf install -y biosdevname dmidecode ; fi ; \

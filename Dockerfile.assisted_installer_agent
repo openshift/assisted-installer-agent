@@ -1,4 +1,7 @@
-FROM registry.ci.openshift.org/openshift/release:golang-1.19 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.19 AS builder
+
+USER 0
+
 ARG TARGETPLATFORM
 ENV GO111MODULE=on
 ENV GOFLAGS=""
@@ -12,10 +15,7 @@ COPY . .
 
 RUN TARGETPLATFORM=$TARGETPLATFORM make build
 
-FROM quay.io/centos/centos:stream8
-
-RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
-    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+FROM quay.io/centos/centos:stream9
 
 ARG TARGETPLATFORM
 RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then  dnf install -y biosdevname dmidecode ; fi
@@ -25,8 +25,7 @@ RUN dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
 		findutils iputils \
 		podman \
 		# inventory
-		ipmitool file fio \
-		sg3_utils \
+		ipmitool file fio sg3_utils \
 		# free_addresses
 		nmap \
 		# dhcp_lease_allocate
@@ -35,6 +34,8 @@ RUN dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
 		tar openssh-clients \
 		# ntp_synchronizer
 		chrony \
+		# for the 'nsenter' executable
+		util-linux-core \
 		&& dnf update --setopt=install_weak_deps=False --setopt=tsdocs=False -y systemd && dnf clean all && rm -rf /var/cache
 
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent

@@ -238,8 +238,7 @@ func startTcpDump(output chan string, ifaceName string, timeoutSecs, count int) 
 	if count > 0 {
 		countStr = fmt.Sprintf("-c %d", count)
 	}
-	dump := fmt.Sprintf("timeout %d tcpdump -l -i %s %s -v 'udp dst port 67' | awk '/DHCP-Message Option 53/{print $6}'", timeoutSecs, ifaceName, countStr)
-
+	dump := fmt.Sprintf("timeout %d tcpdump -l -i %s %s -v 'udp dst port 67' | awk '/DHCP-Message \\(53\\)/{print $5}'", timeoutSecs, ifaceName, countStr)
 	s, e, errorCode := agentUtils.Execute("docker", []string{"exec", "agent", "bash", "-c", dump}...)
 	fmt.Println(s, e, errorCode)
 	output <- s

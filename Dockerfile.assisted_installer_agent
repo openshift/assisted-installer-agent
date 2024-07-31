@@ -3,12 +3,10 @@ ARG TARGETPLATFORM
 ENV GO111MODULE=on
 ENV GOFLAGS=""
 
-WORKDIR /go/src/github.com/openshift/assisted-installer-agent
-
-COPY go.mod .
+COPY --chown=1001 go.mod .
 RUN go mod download
 
-COPY . .
+COPY --chown=1001 . .
 
 RUN TARGETPLATFORM=$TARGETPLATFORM make build-release
 
@@ -45,7 +43,7 @@ RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then d
             # Remove RPM/DNF files to reduce image size
             && rm -rf /var/lib/rpm/rpmdb.sqlite /var/lib/dnf
 
-COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent
+COPY --from=builder /opt/app-root/src/build/agent /usr/bin/agent
 
 # The step binaries are all symlinks to /usr/bin/agent
 RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \

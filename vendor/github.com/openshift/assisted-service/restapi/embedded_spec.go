@@ -7320,10 +7320,16 @@ func init() {
           "description": "Whether the disk appears to be an installation media or not",
           "type": "boolean"
         },
+        "iscsi": {
+          "$ref": "#/definitions/iscsi"
+        },
         "model": {
           "type": "string"
         },
         "name": {
+          "type": "string"
+        },
+        "partitionTypes": {
           "type": "string"
         },
         "path": {
@@ -9122,6 +9128,15 @@ func init() {
       "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
       "x-go-custom-tag": "gorm:\"primaryKey\""
     },
+    "iscsi": {
+      "type": "object",
+      "properties": {
+        "host_ip_address": {
+          "description": "Host IP address used to reach iSCSI target",
+          "type": "string"
+        }
+      }
+    },
     "kernel_argument": {
       "description": "pair of [operation, argument] specifying the argument and what operation should be applied on it.",
       "type": "object",
@@ -9378,6 +9393,14 @@ func init() {
           "enum": [
             "manifests",
             "openshift"
+          ]
+        },
+        "manifest_source": {
+          "description": "Describes whether manifest is sourced from a user or created by the system.",
+          "type": "string",
+          "enum": [
+            "user",
+            "system"
           ]
         }
       }
@@ -18116,10 +18139,16 @@ func init() {
           "description": "Whether the disk appears to be an installation media or not",
           "type": "boolean"
         },
+        "iscsi": {
+          "$ref": "#/definitions/iscsi"
+        },
         "model": {
           "type": "string"
         },
         "name": {
+          "type": "string"
+        },
+        "partitionTypes": {
           "type": "string"
         },
         "path": {
@@ -19887,6 +19916,15 @@ func init() {
       "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
       "x-go-custom-tag": "gorm:\"primaryKey\""
     },
+    "iscsi": {
+      "type": "object",
+      "properties": {
+        "host_ip_address": {
+          "description": "Host IP address used to reach iSCSI target",
+          "type": "string"
+        }
+      }
+    },
     "kernel_argument": {
       "description": "pair of [operation, argument] specifying the argument and what operation should be applied on it.",
       "type": "object",
@@ -20132,6 +20170,14 @@ func init() {
           "enum": [
             "manifests",
             "openshift"
+          ]
+        },
+        "manifest_source": {
+          "description": "Describes whether manifest is sourced from a user or created by the system.",
+          "type": "string",
+          "enum": [
+            "user",
+            "system"
           ]
         }
       }

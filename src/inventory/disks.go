@@ -488,6 +488,12 @@ func (d *disks) getDisks() []*models.Disk {
 			Holders:                 d.getHolders(disk.Name),
 		}
 
+		if rec.DriveType == models.DriveTypeISCSI {
+			rec.Iscsi = &models.Iscsi{
+				HostIPAddress: d.getISCSIHostIPAddress(rec.Name),
+			}
+		}
+
 		rec.ID = rec.Path
 
 		if rec.ByID != "" {
@@ -520,6 +526,36 @@ func (d *disks) getBusPath(disks []*block.Disk, index int, busPath string) strin
 	}
 
 	return d.getByPath(busPath)
+}
+
+// getISCSIHostIPAddress retuns the IP address in use to connect on the iSCSI volume
+func (d *disks) getISCSIHostIPAddress(diskName string) string {
+	// resolve /sys/block/sda ->  /sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda
+	sysBlockPath := filepath.Join("/sys", "block", diskName)
+	sysDevicesPath, err := d.dependencies.EvalSymlinks(sysBlockPath)
+	if err != nil {
+		logrus.WithError(err).Errorf("Failed to evaluate symlink for iSCSI device")
+		return ""
+	}
+
+	// extract iSCSI host
+	const hostIndex = 4
+	splitPath := strings.Split(sysDevicesPath, "/")
+	if len(splitPath) < (hostIndex + 1) {
+		logrus.Errorf("Failed to resolve iSCSI host in path %s", sysDevicesPath)
+		return ""
+	}
+
+	// Read IP address
+	hostIPAdressFile := fmt.Sprintf("/sys/class/iscsi_host/%s/ipaddress", splitPath[hostIndex])
+	data, err := d.dependencies.ReadFile(hostIPAdressFile)
+	if err != nil {
+		logrus.WithError(err).Errorf("Failed to read host IP address file for iSCSI device")
+		return ""
+	}
+
+	ipAddress := strings.TrimSpace(string(data))
+	return ipAddress
 }
 
 func GetDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) []*models.Disk {

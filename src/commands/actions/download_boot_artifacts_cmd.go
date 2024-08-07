@@ -50,7 +50,7 @@ const (
 	bootLoaderConfigFileName string = "/00-assisted-discovery.conf"
 	bootLoaderConfigTemplate string = `title Assisted Installer Discovery
 version 999
-options random.trust_cpu=on ignition.firstboot ignition.platform.id=metal 'coreos.live.rootfs_url=%s'
+options random.trust_cpu=on ignition.firstboot ignition.platform.id=metal coreos.live.rootfs_url=%s
 linux %s
 initrd %s`
 )

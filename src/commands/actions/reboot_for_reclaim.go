@@ -26,7 +26,7 @@ func (a *rebootForReclaim) Run() (stdout, stderr string, exitCode int) {
 	if err := syscall.Chroot(*req.HostFsMountDir); err != nil {
 		return "", err.Error(), -1
 	}
-	unshareCommand := "sudo unshare"
+	unshareCommand := "unshare"
 	unshareArgs := []string{"--mount", "bash", "-c", "mount -o remount,rw /boot && zipl -V -t /boot -i /boot/discovery/vmlinuz -r /boot/discovery/initrd -p /boot/loader/entries/00-assisted-discovery.conf"}
 	stdout, stderr, exitCode = util.Execute(unshareCommand, unshareArgs...)
 	if exitCode != 0 {

@@ -38,7 +38,7 @@ var _ = Describe("NTP tests", func() {
 
 	Context("add_new_server", func() {
 		It("IP", func() {
-			server := "1.2.3.4"
+			server := "169.254.1.3"
 			startNTPSynchronizer(ctx, hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 			ntpResponse := getNTPResponse(hostID, []string{server})
 			Expect(ntpResponse).ShouldNot(BeNil())
@@ -57,7 +57,7 @@ var _ = Describe("NTP tests", func() {
 	})
 
 	It("add_existing_server", func() {
-		server := "2.2.2.2"
+		server := "169.254.2.3"
 		startNTPSynchronizer(ctx, hostID, models.NtpSynchronizationRequest{NtpSource: &server})
 
 		By("Add server 1st time", func() {
@@ -77,7 +77,7 @@ var _ = Describe("NTP tests", func() {
 	})
 
 	It("add_multiple_servers", func() {
-		servers := []string{"1.1.1.3", "1.1.1.4", "1.1.1.5"}
+		servers := []string{"169.254.1.3", "169.254.1.4", "169.254.1.5"}
 		serversAsString := strings.Join(servers, ",")
 		startNTPSynchronizer(ctx, hostID, models.NtpSynchronizationRequest{NtpSource: &serversAsString})
 		ntpResponse := getNTPResponse(hostID, servers)

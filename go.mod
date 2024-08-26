@@ -29,7 +29,7 @@ require (
 	github.com/ssgreg/journald v1.0.0
 	github.com/stretchr/testify v1.9.0
 	github.com/thoas/go-funk v0.9.3
-	github.com/vishvananda/netlink v1.2.1-beta.2
+	github.com/vishvananda/netlink v1.3.0
 	golang.org/x/sync v0.8.0
 	golang.org/x/sys v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -185,7 +185,7 @@ require (
 
 require (
 	github.com/itchyny/gojq v0.12.16
-	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
+	github.com/vishvananda/netns v0.0.4 // indirect
 	golang.org/x/text v0.16.0 // indirect
 )
 

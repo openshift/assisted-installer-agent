@@ -3,6 +3,7 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"syscall"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -25,6 +26,24 @@ func (a *rebootForReclaim) Run() (stdout, stderr string, exitCode int) {
 
 	if err := syscall.Chroot(*req.HostFsMountDir); err != nil {
 		return "", err.Error(), -1
+	}
+
+	if runtime.GOARCH == "s390x" {
+		unshareCommand := "unshare"
+		unshareArgs := []string{
+			"--mount",
+			"bash",
+			"-c",
+			fmt.Sprintf("mount -o remount,rw /boot && zipl -V -t /boot -i %s/%s -r %s/%s -c /boot/loader/entries%s -p /boot/loader/entries%s",
+				artifactsFolder, kernelFile,
+				artifactsFolder, initrdFile,
+				bootLoaderConfigFileName,
+				bootLoaderConfigFileName),
+		}
+		stdout, stderr, exitCode = util.Execute(unshareCommand, unshareArgs...)
+		if exitCode != 0 {
+			return stdout, stderr, exitCode
+		}
 	}
 	return util.Execute("systemctl", "reboot")
 }

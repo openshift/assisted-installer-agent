@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"runtime"
 	"syscall"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -44,10 +45,15 @@ func (a *downloadBootArtifacts) Args() []string {
 }
 
 const (
-	artifactsFolder          string = "/boot/discovery"
-	kernelFile               string = "vmlinuz"
-	initrdFile               string = "initrd"
-	bootLoaderConfigFileName string = "/00-assisted-discovery.conf"
+	artifactsFolder               string = "/boot/discovery"
+	kernelFile                    string = "vmlinuz"
+	initrdFile                    string = "initrd"
+	bootLoaderConfigFileName      string = "/00-assisted-discovery.conf"
+	bootLoaderConfigTemplateS390x string = `title Assisted Installer Discovery
+version 999
+options random.trust_cpu=on ignition.firstboot ignition.platform.id=metal coreos.live.rootfs_url=%s
+linux %s
+initrd %s`
 	bootLoaderConfigTemplate string = `title Assisted Installer Discovery
 version 999
 options random.trust_cpu=on ignition.firstboot ignition.platform.id=metal 'coreos.live.rootfs_url=%s'
@@ -141,7 +147,11 @@ func createBootLoaderConfig(rootfsUrl, artifactsPath, bootLoaderPath string) err
 	kernelPath := path.Join(artifactsPath, kernelFile)
 	initrdPath := path.Join(artifactsPath, initrdFile)
 	bootLoaderConfigFile := path.Join(bootLoaderPath, bootLoaderConfigFileName)
-	bootLoaderConfig := fmt.Sprintf(bootLoaderConfigTemplate, rootfsUrl, kernelPath, initrdPath)
+	var bootLoaderConfig string
+	bootLoaderConfig = fmt.Sprintf(bootLoaderConfigTemplate, rootfsUrl, kernelPath, initrdPath)
+	if runtime.GOARCH == "s390x" {
+		bootLoaderConfig = fmt.Sprintf(bootLoaderConfigTemplateS390x, rootfsUrl, kernelPath, initrdPath)
+	}
 
 	if err := os.WriteFile(bootLoaderConfigFile, []byte(bootLoaderConfig), 0644); err != nil { //nolint:gosec
 		return fmt.Errorf("failed writing bootloader config content to %s: %w", bootLoaderConfigFile, err)

@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"runtime"
 	"syscall"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
-	inv "github.com/openshift/assisted-installer-agent/src/inventory"
-	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -149,10 +148,8 @@ func createBootLoaderConfig(rootfsUrl, artifactsPath, bootLoaderPath string) err
 	initrdPath := path.Join(artifactsPath, initrdFile)
 	bootLoaderConfigFile := path.Join(bootLoaderPath, bootLoaderConfigFileName)
 	var bootLoaderConfig string
-	dependencies := &util.Dependencies{}
-	cpuInfo := inv.GetCPU(dependencies)
 	bootLoaderConfig = fmt.Sprintf(bootLoaderConfigTemplate, rootfsUrl, kernelPath, initrdPath)
-	if cpuInfo.Architecture == "s390x" {
+	if runtime.GOARCH == "s390x" {
 		bootLoaderConfig = fmt.Sprintf(bootLoaderConfigTemplateS390x, rootfsUrl, kernelPath, initrdPath)
 	}
 

@@ -3,9 +3,9 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"syscall"
 
-	inv "github.com/openshift/assisted-installer-agent/src/inventory"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 )
@@ -27,9 +27,8 @@ func (a *rebootForReclaim) Run() (stdout, stderr string, exitCode int) {
 	if err := syscall.Chroot(*req.HostFsMountDir); err != nil {
 		return "", err.Error(), -1
 	}
-	dependencies := &util.Dependencies{}
-	cpuInfo := inv.GetCPU(dependencies)
-	if cpuInfo.Architecture == "s390x" {
+
+	if runtime.GOARCH == "s390x" {
 		unshareCommand := "unshare"
 		unshareArgs := []string{
 			"--mount",

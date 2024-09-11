@@ -11,6 +11,7 @@ import (
 	"path"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
@@ -45,6 +46,8 @@ func (a *downloadBootArtifacts) Args() []string {
 }
 
 const (
+	retryDownloadAmount                  = 5
+	defaultDownloadRetryDelay            = 1 * time.Minute
 	artifactsFolder               string = "/boot/discovery"
 	kernelFile                    string = "vmlinuz"
 	initrdFile                    string = "initrd"
@@ -83,11 +86,11 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 		return fmt.Errorf("failed creating secure assisted service client: %w", err)
 	}
 
-	if err := download(httpClient, path.Join(hostArtifactsFolder, kernelFile), *req.KernelURL); err != nil {
+	if err := download(httpClient, path.Join(hostArtifactsFolder, kernelFile), *req.KernelURL, retryDownloadAmount); err != nil {
 		return fmt.Errorf("failed downloading kernel to host: %w", err)
 	}
 
-	if err := download(httpClient, path.Join(hostArtifactsFolder, initrdFile), *req.InitrdURL); err != nil {
+	if err := download(httpClient, path.Join(hostArtifactsFolder, initrdFile), *req.InitrdURL, retryDownloadAmount); err != nil {
 		return fmt.Errorf("failed downloading initrd to host: %w", err)
 	}
 
@@ -122,20 +125,29 @@ func createHTTPClient(caCertPath string) (*http.Client, error) {
 	return client, nil
 }
 
-func download(httpClient *http.Client, filePath, url string) error {
-	res, err := httpClient.Get(url)
-	if err != nil {
-		return fmt.Errorf("failed getting %s: %w", url, err)
+func download(httpClient *http.Client, filePath, url string, retry int) error {
+	var downloadErr error
+	var res *http.Response
+	for attempts := 0; attempts < retry; attempts++ {
+		res, downloadErr = httpClient.Get(url)
+		if downloadErr == nil && (res.StatusCode >= 200 && res.StatusCode < 300) {
+			break
+		}
+		downloadErr = fmt.Errorf("failed downloading boot artifact from %s, status code received: %d, attempt %d/%d, download error: %w",
+			url, res.StatusCode, attempts, retry, downloadErr)
+		log.Warn(downloadErr.Error())
+		time.Sleep(defaultDownloadRetryDelay)
+	}
+
+	if downloadErr != nil {
+		return fmt.Errorf("failed getting %s: %w", url, downloadErr)
 	}
 	defer res.Body.Close()
+
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read body while getting url %s: %w", url, err)
 	}
-	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("failed getting %s, status code received: %d\nBody received: %s", url, res.StatusCode, body)
-	}
-
 	err = os.WriteFile(filePath, body, 0644) //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("failed writing file %s: %w", filePath, err)

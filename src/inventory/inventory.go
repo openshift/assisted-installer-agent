@@ -20,7 +20,7 @@ func ReadInventory(subprocessConfig *config.SubprocessConfig, c *Options) *model
 		Boot:         GetBoot(d),
 		CPU:          GetCPU(d),
 		Disks:        GetDisks(subprocessConfig, d),
-		Gpus:         GetGPUs(d),
+		Gpus:         GetGPUs(subprocessConfig, d),
 		Hostname:     GetHostname(d),
 		Interfaces:   GetInterfaces(d),
 		Memory:       GetMemory(d),

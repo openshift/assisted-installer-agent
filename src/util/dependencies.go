@@ -27,6 +27,7 @@ type IDependencies interface {
 	GPU(opts ...*ghw.WithOption) (*ghw.GPUInfo, error)
 	Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error)
 	Chassis(opts ...*ghw.WithOption) (*ghw.ChassisInfo, error)
+	PCI(opts ...*ghw.WithOption) (*ghw.PCIInfo, error)
 	GetGhwChrootRoot() string
 }
 
@@ -111,6 +112,10 @@ func (d *Dependencies) Memory(opts ...*ghw.WithOption) (*ghw.MemoryInfo, error) 
 
 func (d *Dependencies) Chassis(opts ...*ghw.WithOption) (*ghw.ChassisInfo, error) {
 	return ghw.Chassis(opts...)
+}
+
+func (d *Dependencies) PCI(opts ...*ghw.WithOption) (*ghw.PCIInfo, error) {
+	return ghw.PCI(opts...)
 }
 
 func NewDependencies(dryRunConfig *config.DryRunConfig, ghwChrootRoot string) IDependencies {

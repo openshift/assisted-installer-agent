@@ -30,6 +30,48 @@ identifier (UUID) of the host that the agent is running on.
 * *--cacert*: Path to a custom CA certificate file in PEM format.
 * *--help*: Print help message and exit.
 
+### Inventory Flags
+> [!WARNING]
+> The inventory process is typically executed during the agent provisioning workflow. Therefore, the inventory configuration must be set before reaching the step of calling the `inventory` binary.
+
+* *--gpu-config-file*: Path to a configuration file to filter the GPU discovery process.
+
+The GPU configuration file is in YAML format with 3 elements:
+* `classes`. PCI class (base + subclass) allowed.
+* `vendors`. Combination of PCI class + PCI vendor-id
+* `models`. Combination od PCI class + PCI vendor-id + PCI device-id
+
+The idea for filtering devices is to go from the most generic (PCI Class) to the most specific (Hardware model). If any hardware matches a generic filter it will be added to the list of GPUs. We discard the use of a single element, for example the vendor-id, because it can cause false positives. For example, Intel hardware (`0x8086`) can be a VGA display controller but also a sound controller. For this reason, for a vendor-id we should add a PCI class to be more precise.
+
+Example:
+```yaml
+---
+# Include all Display controllers, VGA compatible (0x0300)
+classes:
+  - '0300'
+# Include Nvidia (0x10de) 3D controllers (0x302)
+vendors:
+  - '0302 10de'
+# Include Habana labs (0x1da3) Gaudi2 (0x1020) AI accelerator (0x1200)
+models:
+  - '1200 1da3 1020'
+```
+
+Example filtering only Nvidia (0x10de) display controllers:
+```yaml
+---
+# Include Nvidia (0x10de) 3D controllers (0x302)
+vendors:
+  - '0300 10de'
+  - '0302 10de'
+```
+
+By default, the PCI classes discovered will be:
+* VGA compatible display controllers (`0x0300`)
+* 3D display controllers (`0x0302`)
+* Display controllers (`0x0380`)
+* Processing accelerators (`0x1200`)
+
 ### Packaging
 
 By default, the executables are packaged in a container image `quay.io/ocpmetal/assisted-installer-agent:latest`.

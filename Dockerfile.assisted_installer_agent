@@ -21,6 +21,8 @@ RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then d
             # inventory
             ipmitool file \
             sg3_utils \
+            # inventory - this contains pci-ids DB, required GPU PCI scan
+            hwdata \
             # disk_speed_check
             fio \
             # free_addresses

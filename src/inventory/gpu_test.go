@@ -74,6 +74,26 @@ var (
 			ID:   "1da3",
 		},
 	}
+	card3a = ghw.PCIDevice{
+		Address: "0000:00:04.1",
+		Class: &pcidb.Class{
+			ID:   "12",
+			Name: "Processing accelerators",
+		},
+		Subclass: &pcidb.Subclass{
+			ID:   "00",
+			Name: "Processing accelerators",
+		},
+		Product: &pcidb.Product{
+			VendorID: "1da3",
+			ID:       "1020",
+			Name:     "Gaudi2 AI Training Accelerator",
+		},
+		Vendor: &pcidb.Vendor{
+			Name: "Habana Labs Ltd.",
+			ID:   "1da3",
+		},
+	}
 	card4 = ghw.PCIDevice{
 		Address: "0000:00:05.0",
 		Class: &pcidb.Class{
@@ -111,6 +131,13 @@ var (
 	}
 	gpu3 = models.Gpu{
 		Address:  "0000:00:04.0",
+		Name:     "Gaudi2 AI Training Accelerator",
+		DeviceID: "1020",
+		Vendor:   "Habana Labs Ltd.",
+		VendorID: "1da3",
+	}
+	gpu3a = models.Gpu{
+		Address:  "0000:00:04.1",
 		Name:     "Gaudi2 AI Training Accelerator",
 		DeviceID: "1020",
 		Vendor:   "Habana Labs Ltd.",
@@ -195,6 +222,17 @@ var _ = Describe("GPUs information discovery", func() {
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu2))
+	})
+
+	// This is important for some OCP functionalities
+	// Each GPU, even within the same PCI card, must be detected as a different GPU
+	It("should detect PCI cards con several functions", func() {
+		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card1, &card2, &card3, &card3a}}, nil).Once()
+
+		gpus := GetGPUs(subprocessConfig, dependencies)
+
+		Expect(gpus).ToNot(BeNil())
+		Expect(gpus).To(ConsistOf(&gpu1, &gpu2, &gpu3, &gpu3a))
 	})
 
 	It("should handle error gracefully", func() {

@@ -11,6 +11,7 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	yamlpatch "github.com/krishicks/yaml-patch"
 	"github.com/openshift/assisted-service/models"
 	"github.com/thoas/go-funk"
 	"gorm.io/gorm"
@@ -22,9 +23,10 @@ const (
 	MinMasterHostsNeededForInstallation    = 3
 	AllowedNumberOfMasterHostsInNoneHaMode = 1
 	AllowedNumberOfWorkersInNoneHaMode     = 0
-	IllegalWorkerHostsCount                = 1
 
 	HostCACertPath = "/etc/assisted-service/service-ca-cert.crt"
+
+	AdditionalTrustBundlePath = "/etc/pki/ca-trust/source/anchors/assisted-infraenv-additional-trust-bundle.pem"
 
 	consoleUrlPrefix = "https://console-openshift-console.apps"
 
@@ -43,6 +45,8 @@ const (
 	X86CPUArchitecture     = "x86_64"
 	DefaultCPUArchitecture = X86CPUArchitecture
 	ARM64CPUArchitecture   = "arm64"
+	// rchos is sending aarch64 and not arm as arm64 arch
+	AARCH64CPUArchitecture = "aarch64"
 	PowerCPUArchitecture   = "ppc64le"
 	MultiCPUArchitecture   = "multi"
 )
@@ -192,18 +196,18 @@ func GetNetworkCidrAttr(obj interface{}, fieldName string) []*string {
 // IsSliceNonEmpty checks whether the provided slice is non-empty. The slice is assumed to be
 // non-empty if at least one of its elements contains a non-zero value for its respective type.
 // Examples:
-// - `[]*models.MachineNetwork{{Cidr: "5.5.0.0/24"}, {Cidr: "6.6.0.0/24"}}` - valid, as we are
-//   configuring two machine networks
-// - `[]*models.ClusterNetwork{}` - valid, as it means we are removing all the cluster networks
-//   that may have been currently configured
-// - `[]*models.MachineNetwork{{}}` - invalid, as it means that we are trying to configure
-//    a single machine network that is empty; a valid network contains at least a CIDR which is
-//    missing in this case
-// - `[]*models.MachineNetwork{{Cidr: ""}}` - invalid, as it means we are trying to configure
-//   a single machine network that has empty CIDR; a valid network should contain a non-empty
-//   CIDR
-// - `[]*models.ClusterNetwork{{HostPrefix: 0}}` - invalid, as it means we are trying to configure
-//   a single cluster network with host prefix with a value 0; this is not a valid subnet lenght
+//   - `[]*models.MachineNetwork{{Cidr: "5.5.0.0/24"}, {Cidr: "6.6.0.0/24"}}` - valid, as we are
+//     configuring two machine networks
+//   - `[]*models.ClusterNetwork{}` - valid, as it means we are removing all the cluster networks
+//     that may have been currently configured
+//   - `[]*models.MachineNetwork{{}}` - invalid, as it means that we are trying to configure
+//     a single machine network that is empty; a valid network contains at least a CIDR which is
+//     missing in this case
+//   - `[]*models.MachineNetwork{{Cidr: ""}}` - invalid, as it means we are trying to configure
+//     a single machine network that has empty CIDR; a valid network should contain a non-empty
+//     CIDR
+//   - `[]*models.ClusterNetwork{{HostPrefix: 0}}` - invalid, as it means we are trying to configure
+//     a single cluster network with host prefix with a value 0; this is not a valid subnet lenght
 func IsSliceNonEmpty(arg interface{}) bool {
 	res := false
 	if reflect.ValueOf(arg).Kind() == reflect.Slice {
@@ -415,4 +419,18 @@ func GetAPIHostname(c *Cluster) string {
 	// connect to the API directly. The UI even has a special dialog to help users
 	// do that.
 	return swag.StringValue(c.APIVipDNSName)
+}
+
+func ApplyYamlPatch(src []byte, ops []byte) ([]byte, error) {
+	patch, err := yamlpatch.DecodePatch(ops)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	patched, err := patch.Apply(src)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return patched, nil
 }

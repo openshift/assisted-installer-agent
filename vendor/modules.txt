@@ -40,9 +40,6 @@ github.com/cespare/xxhash/v2
 # github.com/containerd/continuity v0.3.0
 ## explicit; go 1.17
 github.com/containerd/continuity/pathdriver
-# github.com/containers/image/v5 v5.21.1
-## explicit; go 1.16
-github.com/containers/image/v5/docker/reference
 # github.com/coreos/go-iptables v0.6.0
 ## explicit; go 1.16
 github.com/coreos/go-iptables/iptables
@@ -90,6 +87,10 @@ github.com/docker/cli/cli/compose/schema
 github.com/docker/cli/cli/compose/template
 github.com/docker/cli/cli/compose/types
 github.com/docker/cli/opts
+# github.com/docker/distribution v2.8.2+incompatible
+## explicit
+github.com/docker/distribution/digestset
+github.com/docker/distribution/reference
 # github.com/docker/docker v20.10.24+incompatible
 ## explicit
 github.com/docker/docker/api/types
@@ -119,6 +120,10 @@ github.com/fsnotify/fsnotify
 # github.com/ghodss/yaml v1.0.0
 ## explicit
 github.com/ghodss/yaml
+# github.com/go-jose/go-jose v2.6.3+incompatible
+## explicit
+github.com/go-jose/go-jose
+github.com/go-jose/go-jose/json
 # github.com/go-logr/logr v1.2.4
 ## explicit; go 1.16
 github.com/go-logr/logr
@@ -248,8 +253,8 @@ github.com/itchyny/timefmt-go
 # github.com/jackc/chunkreader/v2 v2.0.1
 ## explicit; go 1.12
 github.com/jackc/chunkreader/v2
-# github.com/jackc/pgconn v1.12.0
-## explicit; go 1.12
+# github.com/jackc/pgconn v1.14.3
+## explicit; go 1.17
 github.com/jackc/pgconn
 github.com/jackc/pgconn/internal/ctxwatch
 github.com/jackc/pgconn/stmtcache
@@ -259,17 +264,17 @@ github.com/jackc/pgio
 # github.com/jackc/pgpassfile v1.0.0
 ## explicit; go 1.12
 github.com/jackc/pgpassfile
-# github.com/jackc/pgproto3/v2 v2.3.0
+# github.com/jackc/pgproto3/v2 v2.3.3
 ## explicit; go 1.12
 github.com/jackc/pgproto3/v2
-# github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b
+# github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a
 ## explicit; go 1.14
 github.com/jackc/pgservicefile
-# github.com/jackc/pgtype v1.11.0
+# github.com/jackc/pgtype v1.14.0
 ## explicit; go 1.13
 github.com/jackc/pgtype
-# github.com/jackc/pgx/v4 v4.16.0
-## explicit; go 1.13
+# github.com/jackc/pgx/v4 v4.16.0 => github.com/jackc/pgx/v4 v4.18.3
+## explicit; go 1.17
 github.com/jackc/pgx/v4
 github.com/jackc/pgx/v4/internal/sanitize
 github.com/jackc/pgx/v4/stdlib
@@ -433,7 +438,7 @@ github.com/openshift-online/ocm-sdk-go/servicelogs/v1
 # github.com/openshift/api v0.0.0-20231031181504-3be12e93388f
 ## explicit; go 1.20
 github.com/openshift/api/config/v1
-# github.com/openshift/assisted-service v1.0.10-0.20240209205003-fdb1176fc27d
+# github.com/openshift/assisted-service v1.0.10-0.20241014124856-fa809af26be2
 ## explicit; go 1.20
 github.com/openshift/assisted-service/internal/common
 github.com/openshift/assisted-service/internal/constants
@@ -459,11 +464,11 @@ github.com/openshift/assisted-service/restapi/operations/managed_domains
 github.com/openshift/assisted-service/restapi/operations/manifests
 github.com/openshift/assisted-service/restapi/operations/operators
 github.com/openshift/assisted-service/restapi/operations/versions
-# github.com/openshift/assisted-service/api v0.0.0 => github.com/openshift/assisted-service/api v0.0.0-20240209205003-fdb1176fc27d
+# github.com/openshift/assisted-service/api v0.0.0 => github.com/openshift/assisted-service/api v0.0.0-20241014124856-fa809af26be2
 ## explicit; go 1.18
 github.com/openshift/assisted-service/api/common
 github.com/openshift/assisted-service/api/hiveextension/v1beta1
-# github.com/openshift/assisted-service/client v0.0.0 => github.com/openshift/assisted-service/client v0.0.0-20240209205003-fdb1176fc27d
+# github.com/openshift/assisted-service/client v0.0.0 => github.com/openshift/assisted-service/client v0.0.0-20241014124856-fa809af26be2
 ## explicit; go 1.18
 github.com/openshift/assisted-service/client
 github.com/openshift/assisted-service/client/events
@@ -472,7 +477,7 @@ github.com/openshift/assisted-service/client/managed_domains
 github.com/openshift/assisted-service/client/manifests
 github.com/openshift/assisted-service/client/operators
 github.com/openshift/assisted-service/client/versions
-# github.com/openshift/assisted-service/models v0.0.0 => github.com/openshift/assisted-service/models v0.0.0-20240209205003-fdb1176fc27d
+# github.com/openshift/assisted-service/models v0.0.0 => github.com/openshift/assisted-service/models v0.0.0-20241014124856-fa809af26be2
 ## explicit; go 1.18
 github.com/openshift/assisted-service/models
 # github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
@@ -733,14 +738,13 @@ google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/fsnotify.v1 v1.4.7
 ## explicit
 gopkg.in/fsnotify.v1
+# gopkg.in/go-jose/go-jose.v2 v2.6.3
+## explicit
+gopkg.in/go-jose/go-jose.v2/cipher
+gopkg.in/go-jose/go-jose.v2/json
 # gopkg.in/inf.v0 v0.9.1
 ## explicit
 gopkg.in/inf.v0
-# gopkg.in/square/go-jose.v2 v2.6.0
-## explicit
-gopkg.in/square/go-jose.v2
-gopkg.in/square/go-jose.v2/cipher
-gopkg.in/square/go-jose.v2/json
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 ## explicit
 gopkg.in/tomb.v1
@@ -1035,13 +1039,14 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
+# github.com/jackc/pgx/v4 => github.com/jackc/pgx/v4 v4.18.3
 # github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 # github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 # github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
 # github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
-# github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20240209205003-fdb1176fc27d
-# github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20240209205003-fdb1176fc27d
-# github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20240209205003-fdb1176fc27d
+# github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20241014124856-fa809af26be2
+# github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20241014124856-fa809af26be2
+# github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20241014124856-fa809af26be2
 # golang.org/x/net => golang.org/x/net v0.24.0
 # sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 # sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205

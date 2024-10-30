@@ -32,7 +32,6 @@ func (a *rebootForReclaim) Run() (stdout, stderr string, exitCode int) {
 
 	if runtime.GOARCH == "s390x" {
 		var options string
-		cmdline_params := make(map[string]string)
 		var requiredCmdline string
 
 		stdout, stderr, exitCode = util.Execute("cat", "/boot/loader/entries/00-assisted-discovery.conf")
@@ -61,17 +60,7 @@ func (a *rebootForReclaim) Run() (stdout, stderr string, exitCode int) {
 			"rd.dasd",
 		}
 
-		for _, param := range paramsToExtract {
-			regex := regexp.MustCompile(fmt.Sprintf(`\b%s=([^\s]+)`, param))
-			match := regex.FindStringSubmatch(stdout)
-			if len(match) > 1 {
-				cmdline_params[param] = match[1]
-			}
-		}
-
-		for key, value := range cmdline_params {
-			requiredCmdline += fmt.Sprintf("%s=%s ", key, value)
-		}
+		requiredCmdline = extractCmdlineParams(stdout, paramsToExtract)
 
 		unshareCommand := "unshare"
 		unshareArgs := []string{
@@ -91,6 +80,30 @@ func (a *rebootForReclaim) Run() (stdout, stderr string, exitCode int) {
 
 	}
 	return util.Execute("systemctl", "reboot")
+}
+
+// Returns the paramsToExtract parameters which are present in cmdlineOutput, if no paramter matched then returns any empty string ''
+
+func extractCmdlineParams(cmdlineOutput string, paramsToExtract []string) string {
+	cmdlineParams := make(map[string]string)
+	var requiredCmdline string
+
+	// Matches the exact param from paramsToExtract followed by an = sign, and then capture the non-whitespace value after the =
+	for _, param := range paramsToExtract {
+		regex := regexp.MustCompile(fmt.Sprintf(`\b%s=([^\s]+)`, param))
+		match := regex.FindStringSubmatch(cmdlineOutput)
+		if len(match) > 1 {
+			cmdlineParams[param] = match[1]
+		}
+	}
+
+	// Convert the key value pairs in map to string with predefined order which is in paramsToExtract
+	for _, key := range paramsToExtract {
+		if value, exists := cmdlineParams[key]; exists {
+			requiredCmdline += fmt.Sprintf("%s=%s ", key, value)
+		}
+	}
+	return requiredCmdline
 }
 
 // Unused, but required as part of ActionInterface

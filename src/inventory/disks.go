@@ -20,6 +20,7 @@ import (
 const (
 	applianceAgentPrefix = "agent"
 	byIdLocation         = "/dev/disk/by-id"
+	ibftBasePath         = "/sys/firmware/ibft"
 	wwnPrefix            = "wwn-"
 )
 
@@ -341,8 +342,10 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 		notEligibleReasons = append(notEligibleReasons, "Disk is an LVM logical volume")
 	}
 
-	notEligibleReasons = append(notEligibleReasons, d.checkEligibilityISCSIState(disk)...)
-	notEligibleReasons = append(notEligibleReasons, d.checkEligibilityISCSIinIBFT(disk)...)
+	if isISCSIDisk(disk) {
+		notEligibleReasons = append(notEligibleReasons, d.checkEligibilityISCSIState(disk)...)
+		notEligibleReasons = append(notEligibleReasons, d.checkEligibilityISCSIinIBFT(disk)...)
+	}
 
 	// Don't check partitions if this is an appliance disk, as those disks should be marked as eligible for installation.
 	for _, partition := range disk.Partitions {
@@ -557,10 +560,6 @@ func GetDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDepe
 
 // Check if the state of the iSCSI disk is running
 func (d *disks) checkEligibilityISCSIState(disk *ghw.Disk) []string {
-	if !isISCSIDisk(disk) {
-		return []string{}
-	}
-
 	stateFile := filepath.Join("/sys/block", disk.Name, "device/state")
 	state, err := d.dependencies.ReadFile(stateFile)
 	if err != nil {
@@ -577,10 +576,6 @@ func (d *disks) checkEligibilityISCSIState(disk *ghw.Disk) []string {
 
 // Check if the target in the iSCSI disk is in iBFT
 func (d *disks) checkEligibilityISCSIinIBFT(disk *ghw.Disk) []string {
-	if !isISCSIDisk(disk) {
-		return []string{}
-	}
-
 	iSCSISession, err := d.getISCSISession(disk.Name)
 	if err != nil {
 		logrus.WithError(err).Errorf("Cannot resolve iSCSI session")
@@ -607,7 +602,6 @@ func (d *disks) checkEligibilityISCSIinIBFT(disk *ghw.Disk) []string {
 	//
 	// targetN directories contain "target-name" file, which will try to
 	// match with the target used by the iSCSI volume on the host.
-	const ibftBasePath = "/sys/firmware/ibft"
 	files, err := d.dependencies.ReadDir(ibftBasePath)
 	if err != nil {
 		return []string{"iBFT firmware is missing"}
@@ -621,7 +615,8 @@ func (d *disks) checkEligibilityISCSIinIBFT(disk *ghw.Disk) []string {
 		ibftTargetNameFile := filepath.Join(ibftBasePath, file.Name(), "target-name")
 		ibftTargetData, err := d.dependencies.ReadFile(ibftTargetNameFile)
 		if err != nil {
-			logrus.WithError(err).Errorf("Failed to read iSCSI target name in iBFT")
+			logrus.WithError(err).Warn("Failed to read iSCSI target name in iBFT")
+			continue
 		}
 
 		if strings.TrimSpace(string(ibftTargetData)) == iSCSITarget {

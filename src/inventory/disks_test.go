@@ -787,24 +787,30 @@ var _ = Describe("Disks test", func() {
 			mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 			dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
-			// block device symlink to iSCSI device
-			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
-
-			// Report iSCSI host IP address
-			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
-
-			// iSCSI target validation in iBFT
+			// Mock for iSCSI target directory in iBFT
 			targetMock = MockFileInfo{}
 			targetMock.On("Name").Return("target0")
 			targetMock.On("IsDir").Return(true)
 		})
 		It("Is eligible", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
+			// Report iSCSI host IP address
+			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
 			// iBFT target validation
 			dependencies.On("ReadFile", "/sys/class/iscsi_session/session1/targetname").Return([]byte("iqn.2023-01.com.example:tm1"), nil)
 			dependencies.On("ReadFile", "/sys/firmware/ibft/target0/target-name").Return([]byte("iqn.2023-01.com.example:tm1"), nil)
-			mockReadDir(dependencies, ibftBasePath, "", &targetMock)
+
+			ignoredFileMock := MockFileInfo{}
+			ignoredFileMock.On("IsDir").Return(false)
+
+			ignoredDirMock := MockFileInfo{}
+			ignoredDirMock.On("Name").Return("ethernet0")
+			ignoredDirMock.On("IsDir").Return(true)
+
+			mockReadDir(dependencies, ibftBasePath, "", &ignoredFileMock, &ignoredDirMock, &targetMock)
 
 			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Expect(ret).To(Equal([]*models.Disk{
@@ -833,6 +839,10 @@ var _ = Describe("Disks test", func() {
 			}))
 		})
 		It("Is not in running state", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
+			// Report iSCSI host IP address
+			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("not-running"), nil)
 			// iBFT target validation
@@ -842,10 +852,15 @@ var _ = Describe("Disks test", func() {
 
 			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iSCSI disk is not in running state"))
 
 		})
 		It("Missing state file", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
+			// Report iSCSI host IP address
+			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte(""), fmt.Errorf("file not found"))
 			// iBFT target validation
@@ -860,6 +875,10 @@ var _ = Describe("Disks test", func() {
 
 		})
 		It("target is not in iBFT", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
+			// Report iSCSI host IP address
+			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
 			// iBFT target validation
@@ -869,9 +888,14 @@ var _ = Describe("Disks test", func() {
 
 			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iSCSI disk is missing from iBFT"))
 		})
 		It("targetname file is missing from iSCSI session", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
+			// Report iSCSI host IP address
+			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
 			// iBFT target validation
@@ -879,9 +903,14 @@ var _ = Describe("Disks test", func() {
 
 			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("Cannot find iSCSI target name"))
 		})
 		It("iBFT is missing", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
+			// Report iSCSI host IP address
+			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
 			// iBFT target validation
@@ -890,7 +919,47 @@ var _ = Describe("Disks test", func() {
 
 			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iBFT firmware is missing"))
+		})
+		It("iBFT target-name is un-readable", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda", nil)
+			// Report iSCSI host IP address
+			dependencies.On("ReadFile", "/sys/class/iscsi_host/host2/ipaddress").Return([]byte("1.2.3.4"), nil)
+			// iSCSI state validation
+			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
+			// iBFT target validation
+			dependencies.On("ReadFile", "/sys/class/iscsi_session/session1/targetname").Return([]byte("this-is-not-iqn.2023-01.com.example:tm1"), nil)
+			dependencies.On("ReadFile", "/sys/firmware/ibft/target0/target-name").Return([]byte(""), fmt.Errorf("file not found"))
+			mockReadDir(dependencies, ibftBasePath, "", &targetMock)
+
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iSCSI disk is missing from iBFT"))
+		})
+		It("iSCSI block device symlink is not available", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("", fmt.Errorf("symlink not found"))
+			// iSCSI state validation
+			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
+
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("Cannot find iSCSI session"))
+		})
+		It("iSCSI block device symlink does not contain iSCSI session or host", func() {
+			// block device symlink to iSCSI device
+			dependencies.On("EvalSymlinks", "/sys/block/sda").Return("/something/invalid", nil)
+			// iSCSI state validation
+			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
+
+			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
+			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("Cannot find iSCSI session"))
 		})
 	})
 

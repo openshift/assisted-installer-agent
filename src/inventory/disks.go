@@ -20,6 +20,7 @@ import (
 const (
 	applianceAgentPrefix = "agent"
 	byIdLocation         = "/dev/disk/by-id"
+	ibftBasePath         = "/sys/firmware/ibft"
 	wwnPrefix            = "wwn-"
 )
 
@@ -341,6 +342,11 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 		notEligibleReasons = append(notEligibleReasons, "Disk is an LVM logical volume")
 	}
 
+	if isISCSIDisk(disk) {
+		notEligibleReasons = append(notEligibleReasons, d.checkEligibilityISCSIState(disk)...)
+		notEligibleReasons = append(notEligibleReasons, d.checkEligibilityISCSIinIBFT(disk)...)
+	}
+
 	// Don't check partitions if this is an appliance disk, as those disks should be marked as eligible for installation.
 	for _, partition := range disk.Partitions {
 		if strings.HasPrefix(partition.Label, applianceAgentPrefix) {
@@ -530,24 +536,14 @@ func (d *disks) getBusPath(disks []*block.Disk, index int, busPath string) strin
 
 // getISCSIHostIPAddress retuns the IP address in use to connect on the iSCSI volume
 func (d *disks) getISCSIHostIPAddress(diskName string) string {
-	// resolve /sys/block/sda ->  /sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda
-	sysBlockPath := filepath.Join("/sys", "block", diskName)
-	sysDevicesPath, err := d.dependencies.EvalSymlinks(sysBlockPath)
+	iSCSIHost, err := d.getISCSIHost(diskName)
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed to evaluate symlink for iSCSI device")
-		return ""
-	}
-
-	// extract iSCSI host
-	const hostIndex = 4
-	splitPath := strings.Split(sysDevicesPath, "/")
-	if len(splitPath) < (hostIndex + 1) {
-		logrus.Errorf("Failed to resolve iSCSI host in path %s", sysDevicesPath)
+		logrus.WithError(err).Errorf("Failed to resolve iSCSI host")
 		return ""
 	}
 
 	// Read IP address
-	hostIPAdressFile := fmt.Sprintf("/sys/class/iscsi_host/%s/ipaddress", splitPath[hostIndex])
+	hostIPAdressFile := filepath.Join("/sys/class/iscsi_host", iSCSIHost, "ipaddress")
 	data, err := d.dependencies.ReadFile(hostIPAdressFile)
 	if err != nil {
 		logrus.WithError(err).Errorf("Failed to read host IP address file for iSCSI device")
@@ -560,4 +556,101 @@ func (d *disks) getISCSIHostIPAddress(diskName string) string {
 
 func GetDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) []*models.Disk {
 	return newDisks(subprocessConfig, dependencies).getDisks()
+}
+
+// Check if the state of the iSCSI disk is running
+func (d *disks) checkEligibilityISCSIState(disk *ghw.Disk) []string {
+	stateFile := filepath.Join("/sys/block", disk.Name, "device/state")
+	state, err := d.dependencies.ReadFile(stateFile)
+	if err != nil {
+		logrus.WithError(err).Errorf("Failed to read state of iSCSI disk")
+		return []string{"Failed to read state of iSCSI disk"}
+	}
+
+	if strings.TrimSpace(string(state)) != "running" {
+		return []string{"iSCSI disk is not in running state"}
+	}
+
+	return []string{}
+}
+
+// Check if the target in the iSCSI disk is in iBFT
+func (d *disks) checkEligibilityISCSIinIBFT(disk *ghw.Disk) []string {
+	iSCSISession, err := d.getISCSISession(disk.Name)
+	if err != nil {
+		logrus.WithError(err).Errorf("Cannot resolve iSCSI session")
+		return []string{"Cannot find iSCSI session"}
+	}
+
+	// Read target name
+	targetNameFile := filepath.Join("/sys/class/iscsi_session", iSCSISession, "targetname")
+	data, err := d.dependencies.ReadFile(targetNameFile)
+	if err != nil {
+		logrus.WithError(err).Errorf("Failed to read iSCSI target name")
+		return []string{"Cannot find iSCSI target name"}
+	}
+	iSCSITarget := strings.TrimSpace(string(data))
+
+	// Try to find the target used by the iSCSI volume insode the iBFT
+	// The iBFT directory structure looks like this:
+	// # ls -l
+	// total 0
+	// drwxr-xr-x. 2 root root 0 Nov  7 10:14 acpi_header
+	// drwxr-xr-x. 2 root root 0 Nov  7 10:14 ethernet0
+	// drwxr-xr-x. 2 root root 0 Nov  7 10:14 initiator
+	// drwxr-xr-x. 2 root root 0 Nov  7 10:14 target0
+	//
+	// targetN directories contain "target-name" file, which will try to
+	// match with the target used by the iSCSI volume on the host.
+	files, err := d.dependencies.ReadDir(ibftBasePath)
+	if err != nil {
+		return []string{"iBFT firmware is missing"}
+	}
+
+	for _, file := range files {
+		if !file.IsDir() || !strings.Contains(file.Name(), "target") {
+			continue
+		}
+
+		ibftTargetNameFile := filepath.Join(ibftBasePath, file.Name(), "target-name")
+		ibftTargetData, err := d.dependencies.ReadFile(ibftTargetNameFile)
+		if err != nil {
+			logrus.WithError(err).Warn("Failed to read iSCSI target name in iBFT")
+			continue
+		}
+
+		if strings.TrimSpace(string(ibftTargetData)) == iSCSITarget {
+			return []string{}
+		}
+	}
+
+	return []string{"iSCSI disk is missing from iBFT"}
+}
+
+func (d *disks) getISCSIProperty(diskName string, propertyIndex int) (string, error) {
+	// resolve /sys/block/sda ->  /sys/devices/platform/host2/session1/target2:0:0/2:0:0:1/block/sda
+	sysBlockPath := filepath.Join("/sys", "block", diskName)
+	sysDevicesPath, err := d.dependencies.EvalSymlinks(sysBlockPath)
+	if err != nil {
+		return "", err
+	}
+
+	// extract iSCSI property from the path
+	splitPath := strings.Split(sysDevicesPath, "/")
+	if len(splitPath) < (propertyIndex + 1) {
+		return "", fmt.Errorf("Index %d is above the number of components in path %s", propertyIndex, sysDevicesPath)
+	}
+
+	return splitPath[propertyIndex], nil
+}
+
+func (d *disks) getISCSIHost(diskName string) (string, error) {
+	const hostIndex = 4
+	return d.getISCSIProperty(diskName, hostIndex)
+}
+
+func (d *disks) getISCSISession(diskName string) (string, error) {
+	const sessionIndex = 5
+	return d.getISCSIProperty(diskName, sessionIndex)
+
 }

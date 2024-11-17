@@ -160,6 +160,23 @@ func createDeviceMapperDisk() *ghw.Disk {
 	}
 }
 
+func createMultipleDevicesDisk() *ghw.Disk {
+	return &ghw.Disk{
+		Name:                   "md-0",
+		SizeBytes:              21474836480,
+		DriveType:              ghw.DRIVE_TYPE_UNKNOWN,
+		BusPath:                "unknown",
+		Vendor:                 "unknown",
+		Model:                  "unknown",
+		SerialNumber:           "unknown",
+		WWN:                    "unknown",
+		IsRemovable:            false,
+		NUMANodeID:             0,
+		PhysicalBlockSizeBytes: 512,
+		StorageController:      ghw.STORAGE_CONTROLLER_UNKNOWN,
+	}
+}
+
 const devDiskByIdLocation = "/dev/disk/by-id"
 const sdaWwn = "wwn-0x6141877064533b0020adf3bb03167694"
 const sdaPath = "/dev/sda"
@@ -476,12 +493,11 @@ var _ = Describe("Disks test", func() {
 
 	It("Invalid disks", func() {
 		zramDisk := createDisk("zram0", 4, "6141877064533b0020adf3bc0325d665", "0x6141877064533b0020adf3bc0325d665")
-		mdDisk := createDisk("md-1", 5, "6141877064533b0020adf3bc0325d667", "0x6141877064533b0020adf3bc0325d667")
-		loopDisk := createDisk("loop5", 6, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d668")
-		hiddenDisk := createDisk("hidden", 7, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d669")
+		loopDisk := createDisk("loop5", 5, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d668")
+		hiddenDisk := createDisk("hidden", 6, "6141877064533b0020adf3bc0325d668", "0x6141877064533b0020adf3bc0325d669")
 
 		mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
-		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, mdDisk, loopDisk, hiddenDisk)
+		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, loopDisk, hiddenDisk)
 
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
 		Expect(ret).Should(HaveLen(2))
@@ -1160,6 +1176,43 @@ var _ = Describe("Disks test", func() {
 				Smart:     "",
 				Holders:   "",
 				HasUUID:   true,
+				InstallationEligibility: models.DiskInstallationEligibility{
+					Eligible: true,
+				},
+			},
+		}))
+	})
+
+	It("MultipleDevices device", func() {
+		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
+		path := "/dev/md-0"
+		disk := createMultipleDevicesDisk()
+		mockFetchDisks(dependencies, nil, disk)
+		mockGetPathFromDev(dependencies, disk.Name, "")
+		mockGetHctl(dependencies, disk.Name, "error")
+		mockGetBootable(dependencies, path, true, "")
+		mockNoUUID(dependencies, path)
+		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
+		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
+
+		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+
+		Expect(ret).To(Equal([]*models.Disk{
+			{
+				ID:        "/dev/md-0",
+				ByPath:    "",
+				DriveType: models.DriveTypeRAID,
+				Hctl:      "",
+				Model:     "",
+				Name:      "md-0",
+				Path:      "/dev/md-0",
+				Serial:    "",
+				SizeBytes: 21474836480,
+				Vendor:    "",
+				Wwn:       "",
+				Bootable:  true,
+				Smart:     "",
+				Holders:   "",
 				InstallationEligibility: models.DiskInstallationEligibility{
 					Eligible: true,
 				},

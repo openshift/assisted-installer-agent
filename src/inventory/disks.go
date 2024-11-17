@@ -199,6 +199,10 @@ func (d *disks) isLVM(disk *ghw.Disk) bool {
 	return d.dmUUIDHasPrefix(disk, "LVM-")
 }
 
+func isMultipleDevices(disk *ghw.Disk) bool {
+	return strings.HasPrefix(disk.Name, "md")
+}
+
 // Return true if the specified disk belongs
 // to an openshift-appliance node
 func (d *disks) isAppliance(disk *ghw.Disk) bool {
@@ -334,7 +338,7 @@ func (d *disks) isHiddenDevice(disk *ghw.Disk) bool {
 // be eligible. Also returns whether the disk appears to be an installation
 // media or not.
 func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, isInstallationMedia bool) {
-	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) && !d.isDASD(disk) {
+	if disk.StorageController == ghw.STORAGE_CONTROLLER_UNKNOWN && !d.isMultipath(disk) && !d.isLVM(disk) && !d.isDASD(disk) && !isMultipleDevices(disk) {
 		notEligibleReasons = append(notEligibleReasons, "Disk has unknown storage controller")
 	}
 
@@ -396,8 +400,7 @@ func (d *disks) shouldReturnDisk(disk *block.Disk) bool {
 	return !(d.isHiddenDevice(disk) || // Disk is marked as hidden by sysfs
 		(strings.HasPrefix(disk.Name, "dm-") && !(d.isMultipath(disk) || d.isLVM(disk))) || // Device mapper devices, except multipath/LVM
 		strings.HasPrefix(disk.Name, "loop") || // Loop devices (see `man loop`)
-		strings.HasPrefix(disk.Name, "zram") || // Default name usually assigned to "swap on ZRAM" block devices
-		strings.HasPrefix(disk.Name, "md")) // Linux multiple-device-driver block devices
+		strings.HasPrefix(disk.Name, "zram")) // Default name usually assigned to "swap on ZRAM" block devices
 }
 
 func (d *disks) getDriveType(disk *block.Disk) models.DriveType {
@@ -414,6 +417,8 @@ func (d *disks) getDriveType(disk *block.Disk) models.DriveType {
 		driveType = models.DriveTypeMultipath
 	} else if d.isLVM(disk) {
 		driveType = models.DriveTypeLVM
+	} else if isMultipleDevices(disk) {
+		driveType = models.DriveTypeRAID
 	} else if diskString == ghw.DRIVE_TYPE_FDD.String() {
 		driveType = models.DriveTypeFDD
 	} else if diskString == ghw.DRIVE_TYPE_HDD.String() {

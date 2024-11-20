@@ -2,11 +2,14 @@ package inventory
 
 import (
 	"fmt"
+	"os"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/openshift/assisted-service/models"
 )
 
 const (
@@ -32,6 +35,7 @@ var _ = Describe("boot", func() {
 		fileInfoMock.On("IsDir").Return(true)
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, fmt.Errorf("Just error")).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return(nil, fmt.Errorf("Just another error"))
+		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CurrentBootMode).To(Equal("bios"))
 		Expect(bootRecord.PxeInterface).To(Equal(""))
@@ -43,6 +47,7 @@ var _ = Describe("boot", func() {
 		fileInfoMock.On("IsDir").Return(false).Once()
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return([]byte(cmdlineNoPxe), nil)
+		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CurrentBootMode).To(Equal("bios"))
 		Expect(bootRecord.PxeInterface).To(Equal(""))
@@ -54,6 +59,7 @@ var _ = Describe("boot", func() {
 		fileInfoMock.On("IsDir").Return(true).Once()
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return([]byte(cmdlineWithPxe), nil)
+		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CurrentBootMode).To(Equal("uefi"))
 		Expect(bootRecord.PxeInterface).To(Equal("80:32:53:4f:cf:d6"))
@@ -65,8 +71,65 @@ var _ = Describe("boot", func() {
 		fileInfoMock.On("IsDir").Return(true).Once()
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return([]byte(cmdlines390x), nil)
+		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CommandLine).To(Equal(cmdlines390x))
 		fileInfoMock.AssertExpectations(GinkgoT())
 	})
+
+	DescribeTable(
+		"Secure boot state",
+		func(content []byte, err error, expected models.SecureBootState) {
+			fileInfoMock := MockFileInfo{}
+			fileInfoMock.On("IsDir").Return(true).Once()
+			dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil)
+			dependencies.On("ReadFile", "/proc/cmdline").Return(nil, nil)
+			dependencies.On("ReadFile", secureBootEfivarsPath).Return(content, err)
+			bootRecord := GetBoot(dependencies)
+			Expect(bootRecord.SecureBootState).To(Equal(expected))
+			fileInfoMock.AssertExpectations(GinkgoT())
+		},
+		Entry(
+			"Disabled",
+			[]byte{0x06, 0x00, 0x00, 0x00, 0x00},
+			nil,
+			models.SecureBootStateDisabled,
+		),
+		Entry(
+			"Enabled",
+			[]byte{0x06, 0x00, 0x00, 0x00, 0x01},
+			nil,
+			models.SecureBootStateEnabled,
+		),
+		Entry(
+			"Not supported",
+			nil,
+			os.ErrNotExist,
+			models.SecureBootStateNotSupported,
+		),
+		Entry(
+			"Permission denied",
+			nil,
+			os.ErrPermission,
+			models.SecureBootStateUnknown,
+		),
+		Entry(
+			"Content too short",
+			[]byte{0x06, 0x00, 0x00, 0x00},
+			nil,
+			models.SecureBootStateUnknown,
+		),
+		Entry(
+			"Content too long",
+			[]byte{0x06, 0x00, 0x00, 0x00, 0x00, 0x00},
+			nil,
+			models.SecureBootStateUnknown,
+		),
+		Entry(
+			"Unknown state",
+			[]byte{0x06, 0x00, 0x00, 0x00, 0x02},
+			nil,
+			models.SecureBootStateUnknown,
+		),
+	)
 })

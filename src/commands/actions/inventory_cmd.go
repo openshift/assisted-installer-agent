@@ -2,9 +2,12 @@ package actions
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -12,6 +15,7 @@ import (
 
 type inventory struct {
 	args        []string
+	filesystem  afero.Fs
 	agentConfig *config.AgentConfig
 }
 
@@ -43,8 +47,14 @@ func (a *inventory) Args() []string {
 	mtabCopy := fmt.Sprintf("cp /etc/mtab %s", mtabPath)
 	mtabMount := fmt.Sprintf("%s:/host/etc/mtab:ro", mtabPath)
 
-	podmanRunCmd := strings.Join([]string{
-		podman, "run", "--privileged", "--pid=host", "--net=host", "--rm", "--quiet",
+	podmanRunArgv := []string{
+		podman, "run",
+		"--privileged",
+		"--pid=host",
+		"--net=host",
+		"--rm",
+		"--quiet",
+
 		"-v", "/var/log:/var/log",
 		"-v", "/run/udev:/run/udev",
 		"-v", "/dev/disk:/dev/disk",
@@ -62,10 +72,34 @@ func (a *inventory) Args() []string {
 		"-v", "/sys/class:/host/sys/class:ro",
 		"-v", "/run/udev:/host/run/udev:ro",
 		"-v", "/dev/disk:/host/dev/disk:ro",
+	}
 
+	// The EFI variables files system will not exist for machines that boot in BIOS mode, so we can't add it
+	// unconditionally, as that will make the podman command fail.
+	const efivarsPath = "/sys/firmware/efi/efivars"
+	efivarsLogger := logrus.WithFields(logrus.Fields{
+		"path": efivarsPath,
+	})
+	_, err := a.filesystem.Stat(efivarsPath)
+	if os.IsNotExist(err) {
+		efivarsLogger.Info("EFI variables filesystem isn't mounted")
+	} else if err != nil {
+		efivarsLogger.WithError(err).Info("Failed to check if EFI variables filesystem is mounted")
+	} else {
+		efivarsLogger.Info("EFI variables filesystem is mounted")
+		podmanRunArgv = append(
+			podmanRunArgv,
+			"-v", fmt.Sprintf("%[1]s:/host%[1]s", efivarsPath),
+		)
+	}
+
+	podmanRunArgv = append(
+		podmanRunArgv,
 		a.agentConfig.AgentVersion,
 		"inventory",
-	}, " ")
+	)
+
+	podmanRunCmd := strings.Join(podmanRunArgv, " ")
 
 	return []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
 }

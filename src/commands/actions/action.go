@@ -48,7 +48,7 @@ func ValidateCommon(name string, expectedArgsLength int, args []string, modelToV
 
 func New(agentConfig *config.AgentConfig, stepType models.StepType, args []string) (*Action, error) {
 	var stepActionMap = map[models.StepType]*Action{
-		models.StepTypeInventory:                  {&inventory{args: args, agentConfig: agentConfig}},
+		models.StepTypeInventory:                  {&inventory{args: args, filesystem: afero.NewOsFs(), agentConfig: agentConfig}},
 		models.StepTypeConnectivityCheck:          {&connectivityCheck{args: args, agentConfig: agentConfig}},
 		models.StepTypeFreeNetworkAddresses:       {&freeAddresses{args: args, agentConfig: agentConfig}},
 		models.StepTypeNtpSynchronizer:            {&ntpSynchronizer{args: args, agentConfig: agentConfig}},

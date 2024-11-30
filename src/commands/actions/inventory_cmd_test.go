@@ -3,12 +3,12 @@ package actions
 import (
 	"fmt"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-service/models"
+	"github.com/spf13/afero"
 )
 
 func verifyPaths(command string, paths []string) {
@@ -18,18 +18,25 @@ func verifyPaths(command string, paths []string) {
 }
 
 var _ = Describe("inventory", func() {
-	var hostId strfmt.UUID
+	var filesystem afero.Fs
+	var hostId string
+	var action *inventory
 
 	BeforeEach(func() {
-		hostId = strfmt.UUID(uuid.New().String())
+		filesystem = afero.NewMemMapFs()
+		hostId = uuid.NewString()
+		action = &inventory{
+			args: []string{
+				hostId,
+			},
+			filesystem:  filesystem,
+			agentConfig: &config.AgentConfig{},
+		}
 	})
 
 	It("inventory cmd", func() {
-
-		action, err := New(&config.AgentConfig{}, models.StepTypeInventory, []string{hostId.String()})
-		Expect(err).NotTo(HaveOccurred())
-
 		args := action.Args()
+
 		By("running two commands via sh")
 		command := action.Command()
 		Expect(command).To(Equal("sh"))
@@ -60,6 +67,19 @@ var _ = Describe("inventory", func() {
 	})
 
 	It("inventory cmd wrong args number", func() {
-		badParamsCommonTests(models.StepTypeDhcpLeaseAllocate, []string{hostId.String()})
+		badParamsCommonTests(models.StepTypeDhcpLeaseAllocate, []string{hostId})
+	})
+
+	It("Adds the EFI variables volume if the directory exists", func() {
+		err := filesystem.MkdirAll("/sys/firmware/efi/efivars", 0755)
+		Expect(err).ToNot(HaveOccurred())
+
+		args := action.Args()
+		Expect(args[1]).To(ContainSubstring("-v /sys/firmware/efi/efivars:/host/sys/firmware/efi/efivars"))
+	})
+
+	It("Doesn't add the EFI variables volume if the directory doesn't exist", func() {
+		args := action.Args()
+		Expect(args[1]).ToNot(ContainSubstring("-v /sys/firmware/efi/efivars:/host/sys/firmware/efi/efivars"))
 	})
 })

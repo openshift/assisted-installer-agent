@@ -73,7 +73,7 @@ func getOutgoingNics(dryRunConfig *config.DryRunConfig, d util.IDependencies) []
 		// NICs those interfaces that have at least one IP address assigned.
 		addrs, _ := intf.Addrs()
 
-		outgoingNic := OutgoingNic{Name: intf.Name()}
+		outgoingNic := OutgoingNic{Name: intf.Name(), MTU: intf.MTU()}
 		for _, addr := range addrs {
 			isIpv4, isLinkLocal, err := analyzeAddress(addr)
 			if err != nil {
@@ -93,6 +93,7 @@ func getOutgoingNics(dryRunConfig *config.DryRunConfig, d util.IDependencies) []
 			log.Infof("Skipping NIC %s (MAC %s) because of no valid addresses", intf.Name(), intf.HardwareAddr().String())
 			continue
 		}
+		outgoingNic.Addresses = addrs
 		ret = append(ret, outgoingNic)
 	}
 	return ret

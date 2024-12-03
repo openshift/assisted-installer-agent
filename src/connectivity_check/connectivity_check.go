@@ -24,6 +24,7 @@ func (c *connectivity) checkers() []Checker {
 			&pingChecker{executer: e},
 			&arpingChecker{executer: e},
 			&nmapChecker{executer: e},
+			&mtuChecker{executer: e},
 		}
 	}
 }

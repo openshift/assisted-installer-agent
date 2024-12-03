@@ -5,14 +5,14 @@ go 1.21
 require (
 	github.com/PuerkitoBio/rehttp v1.4.0
 	github.com/alessio/shellescape v1.4.2
-	github.com/coreos/ignition/v2 v2.19.0
+	github.com/coreos/ignition/v2 v2.20.0
 	github.com/go-openapi/runtime v0.28.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-openapi/swag v0.23.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.7.0
-	github.com/jaypipes/ghw v0.12.1-0.20230829170642-835f6a233b6d
+	github.com/jaypipes/ghw v0.13.0
 	github.com/jaypipes/pcidb v1.0.1
 	github.com/jinzhu/copier v0.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -27,11 +27,11 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.11.0
 	github.com/ssgreg/journald v1.0.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/thoas/go-funk v0.9.3
-	github.com/vishvananda/netlink v1.2.1-beta.2
-	golang.org/x/sync v0.8.0
-	golang.org/x/sys v0.24.0
+	github.com/vishvananda/netlink v1.3.0
+	golang.org/x/sync v0.9.0
+	golang.org/x/sys v0.26.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -76,8 +76,8 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240513163218-0867130af1f8 // indirect
-	google.golang.org/grpc v1.63.2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240624140628-dc46fd24d27d // indirect
+	google.golang.org/grpc v1.64.1 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
 )
@@ -161,12 +161,12 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
-	golang.org/x/crypto v0.25.0 // indirect
-	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/oauth2 v0.20.0 // indirect
-	golang.org/x/term v0.22.0 // indirect
+	golang.org/x/crypto v0.28.0 // indirect
+	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/oauth2 v0.23.0 // indirect
+	golang.org/x/term v0.25.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -186,9 +186,9 @@ require (
 )
 
 require (
-	github.com/itchyny/gojq v0.12.16
-	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	github.com/itchyny/gojq v0.12.17
+	github.com/vishvananda/netns v0.0.4 // indirect
+	golang.org/x/text v0.19.0 // indirect
 )
 
 replace (

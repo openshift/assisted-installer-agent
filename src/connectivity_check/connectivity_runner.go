@@ -1,6 +1,7 @@
 package connectivity_check
 
 import (
+	"net"
 	"sort"
 	"sync"
 
@@ -18,9 +19,11 @@ const (
 )
 
 type OutgoingNic struct {
+	MTU              int
 	Name             string
 	HasIpv4Addresses bool
 	HasIpv6Addresses bool
+	Addresses        []net.Addr
 }
 
 // Attributes to be sent to a checker in order to perform a single checking operation

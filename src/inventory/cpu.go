@@ -43,11 +43,11 @@ func GetCPU(dependencies util.IDependencies) *models.CPU {
 		switch f.Field[:len(f.Field)-1] {
 		case "Architecture":
 			ret.Architecture = f.Data
-		case "Model name":
+		case "Model name", "Machine type":
 			ret.ModelName = f.Data
 		case "CPU(s)":
 			ret.Count, _ = strconv.ParseInt(f.Data, 10, 64)
-		case "CPU MHz", "CPU max MHz":
+		case "CPU MHz", "CPU max MHz", "CPU static MHz":
 			f, _ := strconv.ParseFloat(f.Data, 64)
 			ret.Frequency = max(ret.Frequency, f)
 		case "Flags":

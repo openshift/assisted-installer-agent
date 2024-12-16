@@ -20,7 +20,7 @@ RUN ${HOME}/go/bin/go-licenses save --save_path /tmp/licenses ./...
 RUN CGO_FLAG=1 make build
 
 
-FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi:9.4
+FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi:9.5-1734081738
 ARG release=main
 ARG version=latest
 

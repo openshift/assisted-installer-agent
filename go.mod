@@ -60,8 +60,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/openshift/api v0.0.0-20240521212423-414cf30d37be // indirect
 	github.com/openshift/assisted-service/api v0.0.0 // indirect
-	github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87 // indirect
-	github.com/openshift/hive/apis v0.0.0-20231220215202-ad99b9e52d27 // indirect
+	github.com/openshift/hive/apis v0.0.0-20220222213051-def9088fdb5a // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect

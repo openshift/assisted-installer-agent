@@ -161,7 +161,7 @@ require (
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.27.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.20.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
@@ -199,7 +199,7 @@ replace (
 	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20241216003847-83494e54a4ce
 	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20241216003847-83494e54a4ce
 	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20241216003847-83494e54a4ce
-	golang.org/x/net => golang.org/x/net v0.24.0
+	golang.org/x/net => golang.org/x/net v0.33.0
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 )

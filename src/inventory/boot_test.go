@@ -36,6 +36,7 @@ var _ = Describe("boot", func() {
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, fmt.Errorf("Just error")).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return(nil, fmt.Errorf("Just another error"))
 		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
+		dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("/dev/loop1", "", 0)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CurrentBootMode).To(Equal("bios"))
 		Expect(bootRecord.PxeInterface).To(Equal(""))
@@ -48,6 +49,7 @@ var _ = Describe("boot", func() {
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return([]byte(cmdlineNoPxe), nil)
 		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
+		dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("/dev/loop1", "", 0)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CurrentBootMode).To(Equal("bios"))
 		Expect(bootRecord.PxeInterface).To(Equal(""))
@@ -60,6 +62,7 @@ var _ = Describe("boot", func() {
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return([]byte(cmdlineWithPxe), nil)
 		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
+		dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("/dev/loop1", "", 0)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CurrentBootMode).To(Equal("uefi"))
 		Expect(bootRecord.PxeInterface).To(Equal("80:32:53:4f:cf:d6"))
@@ -72,6 +75,7 @@ var _ = Describe("boot", func() {
 		dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil).Once()
 		dependencies.On("ReadFile", "/proc/cmdline").Return([]byte(cmdlines390x), nil)
 		dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
+		dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("/dev/loop1", "", 0)
 		bootRecord := GetBoot(dependencies)
 		Expect(bootRecord.CommandLine).To(Equal(cmdlines390x))
 		fileInfoMock.AssertExpectations(GinkgoT())
@@ -85,6 +89,7 @@ var _ = Describe("boot", func() {
 			dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil)
 			dependencies.On("ReadFile", "/proc/cmdline").Return(nil, nil)
 			dependencies.On("ReadFile", secureBootEfivarsPath).Return(content, err)
+			dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("/dev/loop1", "", 0)
 			bootRecord := GetBoot(dependencies)
 			Expect(bootRecord.SecureBootState).To(Equal(expected))
 			fileInfoMock.AssertExpectations(GinkgoT())
@@ -132,4 +137,28 @@ var _ = Describe("boot", func() {
 			models.SecureBootStateUnknown,
 		),
 	)
+
+	Describe("getDeviceType", func() {
+		BeforeEach(func() {
+			fileInfoMock := MockFileInfo{}
+			fileInfoMock.On("IsDir").Return(true).Once()
+			dependencies.On("Stat", "/sys/firmware/efi").Return(&fileInfoMock, nil)
+			dependencies.On("ReadFile", "/proc/cmdline").Return(nil, nil)
+			dependencies.On("ReadFile", secureBootEfivarsPath).Return([]byte{0x06, 0x00, 0x00, 0x00, 0x00}, nil)
+		})
+		It("returns ephemeral when sysroot is a loop device", func() {
+			dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("/dev/loop1", "", 0)
+			Expect(GetBoot(dependencies).DeviceType).To(Equal("ephemeral"))
+		})
+
+		It("returns persistent when sysroot is a real device", func() {
+			dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("/dev/sda4", "", 0)
+			Expect(GetBoot(dependencies).DeviceType).To(Equal("persistent"))
+		})
+
+		It("returns empty when an error occurs", func() {
+			dependencies.On("ExecutePrivileged", "findmnt", "--noheadings", "--output", "SOURCE", "/sysroot").Return("", "failed", 1)
+			Expect(GetBoot(dependencies).DeviceType).To(Equal(""))
+		})
+	})
 })

@@ -103,12 +103,24 @@ func (b *boot) getSecureBootState() models.SecureBootState {
 	}
 }
 
+func (b *boot) getDeviceType() string {
+	stdOut, _, code := b.dependencies.ExecutePrivileged("findmnt", "--noheadings", "--output", "SOURCE", "/sysroot")
+	if code != 0 {
+		return ""
+	}
+	if strings.HasPrefix(stdOut, "/dev/loop") {
+		return models.BootDeviceTypeEphemeral
+	}
+	return models.BootDeviceTypePersistent
+}
+
 func (b *boot) getBoot() *models.Boot {
 	ret := models.Boot{
 		CurrentBootMode: b.getCurrentBootMode(),
 		PxeInterface:    b.getPxeInterface(),
 		CommandLine:     b.getCommandLine(),
 		SecureBootState: b.getSecureBootState(),
+		DeviceType:      b.getDeviceType(),
 	}
 	return &ret
 }

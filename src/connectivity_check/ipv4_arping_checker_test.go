@@ -55,7 +55,7 @@ Received 0 response(s)
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true, Addresses: getAddr(outgoingIPAddress, 24)},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockFullReply(remoteIPAddress, remoteMACAddress)
@@ -84,7 +84,7 @@ Received 0 response(s)
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true, Addresses: getAddr(outgoingIPAddress, 24)},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockFullReply(remoteIPAddress, secondaryMACAddress)
@@ -103,7 +103,7 @@ Received 0 response(s)
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true, Addresses: getAddr(outgoingIPAddress, 24)},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockFullReply(remoteIPAddress, additionalMACAddress)
@@ -122,7 +122,7 @@ Received 0 response(s)
 		attributes := Attributes{
 			RemoteIPAddress:    remoteIPAddress,
 			RemoteMACAddress:   remoteMACAddress,
-			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true},
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true, Addresses: getAddr(outgoingIPAddress, 24)},
 			RemoteMACAddresses: remoteMACAddresses,
 		}
 		mockEmptyReply(remoteIPAddress)
@@ -131,5 +131,15 @@ Received 0 response(s)
 		var resultingHost models.ConnectivityRemoteHost
 		Expect(reporter.Report(&resultingHost)).ToNot(HaveOccurred())
 		Expect(resultingHost.L2Connectivity).To(HaveLen(0))
+	})
+	It("outgoing interface in different subnet", func() {
+		attributes := Attributes{
+			RemoteIPAddress:    remoteIPAddress,
+			RemoteMACAddress:   remoteMACAddress,
+			OutgoingNIC:        OutgoingNic{Name: outgoingNIC, HasIpv4Addresses: true, Addresses: getAddr("2.2.3.4", 24)},
+			RemoteMACAddresses: remoteMACAddresses,
+		}
+		reporter := checker.Check(attributes)
+		Expect(reporter).To(BeNil(), fmt.Sprintf("report: %s", reporter))
 	})
 })

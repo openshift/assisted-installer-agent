@@ -13,15 +13,12 @@ COPY --chown=${USER_UID} . /app
 WORKDIR /app
 RUN make build
 
-RUN go install github.com/google/go-licenses@v1.6.0
-RUN ${HOME}/go/bin/go-licenses save --save_path /tmp/licenses ./...
-
 
 FROM --platform=$BUILDPLATFORM registry.redhat.io/rhel9-4-els/rhel:9.4
 ARG release=main
 ARG version=latest
 
-COPY --from=builder /tmp/licenses /licenses
+COPY LICENSE /licenses/
 COPY --from=builder /app/build/agent /usr/bin/agent
 
 # The step binaries are all just symlinks to /usr/bin/agent
@@ -33,12 +30,11 @@ RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \
 
 COPY --from=builder /app/scripts/installer/* /usr/local/bin/
 
-RUN INSTALL_PKGS="dhclient ipmitool sg3_utils file kmod findutils iputils nmap podman chrony fio openssh-clients hwdata" && \
+RUN INSTALL_PKGS="findutils iputils podman ipmitool file sg3_utils fio nmap dhclient tar openssh-clients chrony util-linux hwdata kmod" && \
     X86_PKGS=$(if [ "$(uname -m)" == "x86_64" ]; then echo -n biosdevname dmidecode ; fi) && \
     ARM_PKGS=$(if [ "$(uname -m)" == "aarch64" ]; then echo -n dmidecode ; fi) && \
     PPC64LE_PKGS=$(if [ "$(uname -m)" == "ppc64le" ]; then echo -n '' ; fi) && \
     S390X_PKGS=$(if [ "$(uname -m)" == "s390x" ]; then echo -n '' ; fi) && \
-    subscription-manager refresh && \
     dnf install -y $INSTALL_PKGS $X86_PKGS $ARM_PKGS $PPC64LE_PKGS $S390X_PKGS && \
     dnf clean all && \
     rm -rf /var/cache/{yum,dnf}/* && \
@@ -76,6 +72,7 @@ LABEL com.redhat.component="assisted-installer-agent-container" \
       distribution-scope="public" \
       release="${release}" \
       vendor="Red Hat, Inc." \
+      io.openshift.tags="OpenShift 4" \
       upstream_commit="${version}" \
       org.label-schema.vcs-ref="${version}" \
       org.label-schema.vcs-url="https://github.com/openshift/assisted-installer-agent"

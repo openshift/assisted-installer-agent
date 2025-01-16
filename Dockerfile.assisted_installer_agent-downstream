@@ -37,27 +37,7 @@ RUN INSTALL_PKGS="findutils iputils podman ipmitool file sg3_utils fio nmap dhcl
     S390X_PKGS=$(if [ "$(uname -m)" == "s390x" ]; then echo -n '' ; fi) && \
     dnf install -y $INSTALL_PKGS $X86_PKGS $ARM_PKGS $PPC64LE_PKGS $S390X_PKGS && \
     dnf clean all && \
-    rm -rf /var/cache/{yum,dnf}/* && \
-    # Remove RPM/DNF files to reduce image size
-    rm -rf /var/lib/rpm/rpmdb.sqlite /var/lib/dnf && \
-    # Remove Python cache
-    find /usr/lib64/ -type d -name __pycache__ | xargs rm -rf && \
-    # Remove GeoIP database
-    rm -rf /usr/share/GeoIP && \
-    # Clean unnecessary nmap files to reduce image size
-    find /usr/share/nmap/ -mindepth 1 -maxdepth 1 | grep -v nmap-payloads | xargs rm -rf && \
-    # Remove cracklib installed as part of systemd to reduce image size
-    rm -rf /usr/share/cracklib && \
-    # Remove manpages && docs to reduce image size
-    rm -rf /usr/share/man /usr/share/doc && \
-    # Remove dbus-1 information (we're not running dbus in the container)
-    rm -rf /usr/share/dbus-1 && \
-    # Remove pip/setuptools wheels
-    rm -rf /usr/share/python3-wheels/pip* /usr/share/python3-wheels/setuptools* && \
-    # Remove log
-    rm -rf /var/log/lastlog && \
-    # Remove unnecessary fio ceph stuff
-    rm -rf /usr/lib64/ceph librbd.so.* librados.so.*
+    rm -rf /var/cache/{yum,dnf}/*
 
 LABEL com.redhat.component="assisted-installer-agent-container" \
       name="assisted-installer-agent" \

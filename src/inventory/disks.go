@@ -360,15 +360,6 @@ func (d *disks) checkEligibility(disk *ghw.Disk) (notEligibleReasons []string, i
 
 	// Check disk partitions for type, name, and mount points:
 	for _, partition := range disk.Partitions {
-		if partition.Type == "iso9660" {
-			notEligibleReasons = append(
-				notEligibleReasons,
-				"Disk appears to be an ISO installation media (has partition with "+
-					"type iso9660)",
-			)
-			isInstallationMedia = true
-		}
-
 		if strings.HasSuffix(partition.MountPoint, "iso") {
 			notEligibleReasons = append(
 				notEligibleReasons,

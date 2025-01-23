@@ -170,6 +170,10 @@ func (a *install) getFullInstallerCommand() string {
 		installerCmdArgs = append(installerCmdArgs, "--service-ips", strings.Join(a.installParams.ServiceIps, ","))
 	}
 
+	if len(a.installParams.CoreosImage) > 0 {
+		installerCmdArgs = append(installerCmdArgs, "--coreos-image", a.installParams.CoreosImage)
+	}
+
 	return fmt.Sprintf("%s %s %s", shellescape.QuoteCommand(podmanCmd), swag.StringValue(a.installParams.InstallerImage),
 		shellescape.QuoteCommand(installerCmdArgs))
 }

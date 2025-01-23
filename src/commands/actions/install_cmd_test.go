@@ -421,4 +421,9 @@ var _ = Describe("installer test", func() {
 
 	})
 
+	It("Args adds the CoreosImage from the install command request when set", func() {
+		installCommandRequest.CoreosImage = "example.com/openshift/coreos:tag"
+		args := getInstall(installCommandRequest, filesystem, false).Args()
+		Expect(strings.Join(args, " ")).To(ContainSubstring("--coreos-image example.com/openshift/coreos:tag"))
+	})
 })

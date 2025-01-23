@@ -550,7 +550,7 @@ var _ = Describe("Disks test", func() {
 	})
 
 	It("filters ISO disks / marks them as installation media", func() {
-		blockInfo, expectedDisks := prepareDisksTest(dependencies, 3)
+		blockInfo, expectedDisks := prepareDisksTest(dependencies, 2)
 
 		blockInfo.Disks[0].Partitions = []*ghw.Partition{
 			{
@@ -569,27 +569,9 @@ var _ = Describe("Disks test", func() {
 		}
 		expectedDisks[0].IsInstallationMedia = true
 
-		blockInfo.Disks[1].Partitions = []*ghw.Partition{
-			{
-				Disk:       nil,
-				Name:       "partition2",
-				Label:      "partition2-label",
-				MountPoint: "/some/mount/point",
-				SizeBytes:  5555,
-				Type:       "iso9660",
-				IsReadOnly: false,
-			},
-		}
-
-		expectedDisks[1].InstallationEligibility.Eligible = false
-		expectedDisks[1].InstallationEligibility.NotEligibleReasons = []string{
-			"Disk appears to be an ISO installation media (has partition with type iso9660)",
-		}
-		expectedDisks[1].IsInstallationMedia = true
-
 		// Make sure regular disks don't get marked as installation media
-		expectedDisks[2].InstallationEligibility.Eligible = true
-		expectedDisks[2].IsInstallationMedia = false
+		expectedDisks[1].InstallationEligibility.Eligible = true
+		expectedDisks[1].IsInstallationMedia = false
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
 		ret := GetDisks(&config.SubprocessConfig{}, dependencies)

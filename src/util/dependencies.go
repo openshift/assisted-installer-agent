@@ -13,6 +13,7 @@ import (
 //go:generate mockery --name IDependencies --inpackage
 type IDependencies interface {
 	Execute(command string, args ...string) (stdout string, stderr string, exitCode int)
+	ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int)
 	ReadFile(fname string) ([]byte, error)
 	Stat(fname string) (os.FileInfo, error)
 	Hostname() (string, error)
@@ -43,6 +44,10 @@ func (d *Dependencies) GetGhwChrootRoot() string {
 
 func (d *Dependencies) Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
 	return Execute(command, args...)
+}
+
+func (d *Dependencies) ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
+	return ExecutePrivileged(command, args...)
 }
 
 func (d *Dependencies) ReadFile(fname string) ([]byte, error) {

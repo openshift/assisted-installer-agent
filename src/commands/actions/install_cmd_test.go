@@ -131,6 +131,19 @@ var _ = Describe("installer test", func() {
 		Expect(argsAsString).NotTo(ContainSubstring("--high-availability-mode"))
 	})
 
+	It("control_plane_count is nil, parameter should be omitted", func() {
+		installCommandRequest.ControlPlaneCount = nil
+		installCommandLineString = getInstallCommandLineString(installCommandRequest)
+
+		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
+		validationError := action.Validate()
+		Expect(validationError).NotTo(HaveOccurred())
+
+		args := action.Args()
+		argsAsString := strings.Join(args, " ")
+		Expect(argsAsString).NotTo(ContainSubstring("--control-plane-count"))
+	})
+
 	It("ha mode is Full, command line parameter should indicate this", func() {
 		installCommandRequest.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeFull)
 		installCommandLineString = getInstallCommandLineString(installCommandRequest)
@@ -142,6 +155,20 @@ var _ = Describe("installer test", func() {
 		args := action.Args()
 		argsAsString := strings.Join(args, " ")
 		Expect(argsAsString).To(ContainSubstring("--high-availability-mode Full"))
+	})
+
+	It("if control-plane-count is set, command line parameter should indicate this", func() {
+		ctrlPlaneCount := int64(4)
+		installCommandRequest.ControlPlaneCount = &ctrlPlaneCount
+		installCommandLineString = getInstallCommandLineString(installCommandRequest)
+
+		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
+		validationError := action.Validate()
+		Expect(validationError).NotTo(HaveOccurred())
+
+		args := action.Args()
+		argsAsString := strings.Join(args, " ")
+		Expect(argsAsString).To(ContainSubstring("--control-plane-count 4"))
 	})
 
 	It("ha mode is None, command line parameter should indicate this", func() {

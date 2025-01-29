@@ -10,10 +10,10 @@ metadata:
       == "master"
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: assisted-installer-agent-downstream-main
-    appstudio.openshift.io/component: assisted-installer-agent-downstream-main
+    appstudio.openshift.io/application: assisted-installer-application-ds-main
+    appstudio.openshift.io/component: assisted-installer-agent-ds-main
     pipelines.appstudio.openshift.io/type: build
-  name: assisted-installer-agent-downstream-main-on-push
+  name: assisted-installer-agent-ds-main-on-push
   namespace: assisted-installer-tenant
 spec:
   params:
@@ -22,7 +22,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/assisted-installer-tenant/assisted-installer-agent-downstream-main/assisted-installer-agent-downstream-main:{{revision}}
+    value: quay.io/redhat-user-workloads/assisted-installer-tenant/assisted-installer-application-ds-main/assisted-installer-agent-ds-main:{{revision}}
   - name: build-platforms
     value:
     - linux/x86_64

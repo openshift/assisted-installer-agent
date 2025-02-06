@@ -27,7 +27,7 @@ const (
 	templateGetImage          = "podman images --quiet %s"
 	failedToPullImageExitCode = 2
 	defaultImagePullRetries   = 3
-	defaultImagePullTimeout   = 30
+	defaultImagePullTimeout   = 600
 )
 
 var podmanBaseCmd = [...]string{
@@ -330,8 +330,8 @@ func pullImage(pullTimeoutSeconds int64, image string) error {
 	case 0:
 		return nil
 	case util.TimeoutExitCode:
-		return errors.Errorf("podman pull was timed out after %d seconds", pullTimeoutSeconds)
+		return errors.Errorf("pulling the installer image %s timed out after %d seconds", image, pullTimeoutSeconds)
 	default:
-		return errors.Errorf("podman pull exited with non-zero exit code %d: %s\n %s", exitCode, stdout, stderr)
+		return errors.Errorf("pulling the installer image %s exited with non-zero exit code %d: %s\n %s", image, exitCode, stdout, stderr)
 	}
 }

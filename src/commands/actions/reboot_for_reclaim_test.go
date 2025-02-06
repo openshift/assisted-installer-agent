@@ -21,4 +21,25 @@ var _ = Describe("reboot_for_reclaim", func() {
 	It("fails when given bad input", func() {
 		badParamsCommonTests(models.StepTypeRebootForReclaim, []string{})
 	})
+
+	Context("extractCmdlineParams", func() {
+		It("returns the expected parameters when valid cmdline output is given", func() {
+			cmdlineOutput := "ip=192.168.1.1 nameserver=8.8.8.8 rd.znet=enabled zfcp.allow_lun_scan=0 rd.zfcp=xyz rd.dasd=abc"
+			paramsToExtract := []string{"ip", "nameserver", "rd.znet", "zfcp.allow_lun_scan", "rd.zfcp", "rd.dasd"}
+
+			expectedCmdline := "ip=192.168.1.1 nameserver=8.8.8.8 rd.znet=enabled zfcp.allow_lun_scan=0 rd.zfcp=xyz rd.dasd=abc "
+			requiredCmdline := extractCmdlineParams(cmdlineOutput, paramsToExtract)
+
+			Expect(requiredCmdline).To(Equal(expectedCmdline))
+		})
+
+		It("returns an empty string when no parameters match", func() {
+			cmdlineOutput := "other_param=value"
+			paramsToExtract := []string{"ip", "nameserver"}
+
+			requiredCmdline := extractCmdlineParams(cmdlineOutput, paramsToExtract)
+
+			Expect(requiredCmdline).To(Equal(""))
+		})
+	})
 })

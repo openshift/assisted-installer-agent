@@ -6,21 +6,21 @@ import (
 	"strconv"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/models"
 )
 
 var _ = Describe("MTU checker", func() {
 	const (
-		remoteIPv4Address         = "192.168.127.31"
-		remoteIPv6Address         = "3001:db9::22"
-		outgoingIPv4Address       = "192.168.127.30"
-		outgoingIPv6Address       = "3001:db9::1f"
-		outgoingNIC               = "ens3"
-		bigSize                   = 9000
-		regularSize               = 1500
-		bigSizeWithoutHeaders     = bigSize - headers
-		regularSizeWithoutHeaders = regularSize - headers
+		remoteIPv4Address   = "192.168.127.31"
+		remoteIPv6Address   = "3001:db9::22"
+		outgoingIPv4Address = "192.168.127.30"
+		outgoingIPv6Address = "3001:db9::1f"
+		outgoingNIC         = "ens3"
+		bigSize             = 9000
+		regularSize         = 1500
+		smallSize           = 1300
 	)
 
 	var (
@@ -33,15 +33,18 @@ var _ = Describe("MTU checker", func() {
 			Return("success output", nil).Once()
 	}
 
-	mockSuccessPingWithSize := func(remoteIPAddress string) {
-		mockExecuter.On("Execute", "ping", remoteIPAddress, "-c", "3", "-M", "do", "-s", strconv.Itoa(regularSizeWithoutHeaders), "-I", outgoingNIC).
+	mockFailPingWithSize := func(remoteIPAddress string, sizeWithoutIPHeader int) {
+		mockExecuter.On("Execute", "ping", remoteIPAddress, "-c", "3", "-M", "do", "-s", strconv.Itoa(sizeWithoutIPHeader), "-I", outgoingNIC).
+			Return("failure output", fmt.Errorf("some error")).Once()
+	}
+
+	mockSuccessPingWithSize := func(remoteIPAddress string, sizeWithoutIPHeader int) {
+		mockExecuter.On("Execute", "ping", remoteIPAddress, "-c", "3", "-M", "do", "-s", strconv.Itoa(sizeWithoutIPHeader), "-I", outgoingNIC).
 			Return("success output", nil).Once()
 	}
 
-	mockFailPingWithSize := func(remoteIPAddress string) {
-		mockExecuter.On("Execute", "ping", remoteIPAddress, "-c", "3", "-M", "do", "-s", strconv.Itoa(bigSizeWithoutHeaders), "-I", outgoingNIC).
-			Return("failure output", fmt.Errorf("some error")).Once()
-	}
+	ipv4Mask := net.CIDRMask(24, 32)
+	ipv6Mask := net.CIDRMask(64, 128)
 
 	BeforeEach(func() {
 		mockExecuter = &MockExecuter{}
@@ -50,84 +53,66 @@ var _ = Describe("MTU checker", func() {
 	AfterEach(func() {
 		mockExecuter.AssertExpectations(GinkgoT())
 	})
-	It("MTU Check Failure - IPv4", func() {
-
+	table.DescribeTable("Successful report", func(remoteIP, outgoingIP string, size, header int, mask net.IPMask) {
 		attributes := Attributes{
-			RemoteIPAddress: remoteIPv4Address,
-			OutgoingNIC: OutgoingNic{Name: outgoingNIC, MTU: 9000, Addresses: []net.Addr{&net.IPNet{
-				IP:   net.ParseIP(outgoingIPv4Address),
-				Mask: net.CIDRMask(24, 32),
+			RemoteIPAddress: remoteIP,
+			OutgoingNIC: OutgoingNic{Name: outgoingNIC, MTU: size, Addresses: []net.Addr{&net.IPNet{
+				IP:   net.ParseIP(outgoingIP),
+				Mask: mask,
 			}}},
 		}
-		mockSuccessPingWithoutSize(remoteIPv4Address)
-		mockFailPingWithSize(remoteIPv4Address)
+		mockSuccessPingWithoutSize(remoteIP)
+		mockSuccessPingWithSize(remoteIP, size-header)
 		reporter := checker.Check(attributes)
 		Expect(reporter).ToNot(BeNil())
 		var resultingHost models.ConnectivityRemoteHost
 		Expect(reporter.Report(&resultingHost)).ToNot(HaveOccurred())
 		Expect(resultingHost.MtuReport).To(HaveLen(1))
-		Expect(resultingHost.MtuReport[0].RemoteIPAddress).To(Equal(remoteIPv4Address))
-		Expect(resultingHost.MtuReport[0].OutgoingNic).To(Equal(outgoingNIC))
-		Expect(resultingHost.MtuReport[0].MtuSuccessful).To(BeFalse())
-	})
-	It("MTU Check Failure - IPv6", func() {
-
-		attributes := Attributes{
-			RemoteIPAddress: remoteIPv6Address,
-			OutgoingNIC: OutgoingNic{Name: outgoingNIC, MTU: 9000, Addresses: []net.Addr{&net.IPNet{
-				IP:   net.ParseIP(outgoingIPv6Address),
-				Mask: net.CIDRMask(64, 128),
-			}}},
-		}
-		mockSuccessPingWithoutSize(remoteIPv6Address)
-		mockFailPingWithSize(remoteIPv6Address)
-		reporter := checker.Check(attributes)
-		Expect(reporter).ToNot(BeNil())
-		var resultingHost models.ConnectivityRemoteHost
-		Expect(reporter.Report(&resultingHost)).ToNot(HaveOccurred())
-		Expect(resultingHost.MtuReport).To(HaveLen(1))
-		Expect(resultingHost.MtuReport[0].RemoteIPAddress).To(Equal(remoteIPv6Address))
-		Expect(resultingHost.MtuReport[0].OutgoingNic).To(Equal(outgoingNIC))
-		Expect(resultingHost.MtuReport[0].MtuSuccessful).To(BeFalse())
-	})
-	It("MTU Check Success - IPv4", func() {
-
-		attributes := Attributes{
-			RemoteIPAddress: remoteIPv4Address,
-			OutgoingNIC: OutgoingNic{Name: outgoingNIC, MTU: 1500, Addresses: []net.Addr{&net.IPNet{
-				IP:   net.ParseIP(outgoingIPv4Address),
-				Mask: net.CIDRMask(24, 32),
-			}}},
-		}
-		mockSuccessPingWithoutSize(remoteIPv4Address)
-		mockSuccessPingWithSize(remoteIPv4Address)
-		reporter := checker.Check(attributes)
-		Expect(reporter).ToNot(BeNil())
-		var resultingHost models.ConnectivityRemoteHost
-		Expect(reporter.Report(&resultingHost)).ToNot(HaveOccurred())
-		Expect(resultingHost.MtuReport).To(HaveLen(1))
-		Expect(resultingHost.MtuReport[0].RemoteIPAddress).To(Equal(remoteIPv4Address))
+		Expect(resultingHost.MtuReport[0].RemoteIPAddress).To(Equal(remoteIP))
 		Expect(resultingHost.MtuReport[0].OutgoingNic).To(Equal(outgoingNIC))
 		Expect(resultingHost.MtuReport[0].MtuSuccessful).To(BeTrue())
-	})
-	It("MTU Check Success - IPv6", func() {
-
+	},
+		table.Entry("MTU > 1500, IPv4 ", remoteIPv4Address, outgoingIPv4Address, bigSize, ipv4Header, ipv4Mask),
+		table.Entry("MTU > 1500, IPv6 ", remoteIPv6Address, outgoingIPv6Address, bigSize, ipv6Header, ipv6Mask),
+		table.Entry("MTU < 1500, IPv4 ", remoteIPv4Address, outgoingIPv4Address, smallSize, ipv4Header, ipv4Mask),
+		table.Entry("MTU < 1500, IPv6 ", remoteIPv6Address, outgoingIPv6Address, smallSize, ipv6Header, ipv6Mask),
+	)
+	table.DescribeTable("Unsuccessful report", func(remoteIP, outgoingIP string, size, header int, mask net.IPMask) {
 		attributes := Attributes{
-			RemoteIPAddress: remoteIPv6Address,
-			OutgoingNIC: OutgoingNic{Name: outgoingNIC, MTU: 1500, Addresses: []net.Addr{&net.IPNet{
-				IP:   net.ParseIP(outgoingIPv6Address),
-				Mask: net.CIDRMask(64, 128),
+			RemoteIPAddress: remoteIP,
+			OutgoingNIC: OutgoingNic{Name: outgoingNIC, MTU: size, Addresses: []net.Addr{&net.IPNet{
+				IP:   net.ParseIP(outgoingIP),
+				Mask: mask,
 			}}},
 		}
-		mockSuccessPingWithoutSize(remoteIPv6Address)
-		mockSuccessPingWithSize(remoteIPv6Address)
+		mockSuccessPingWithoutSize(remoteIP)
+		mockFailPingWithSize(remoteIP, size-header)
 		reporter := checker.Check(attributes)
 		Expect(reporter).ToNot(BeNil())
 		var resultingHost models.ConnectivityRemoteHost
 		Expect(reporter.Report(&resultingHost)).ToNot(HaveOccurred())
 		Expect(resultingHost.MtuReport).To(HaveLen(1))
-		Expect(resultingHost.MtuReport[0].RemoteIPAddress).To(Equal(remoteIPv6Address))
+		Expect(resultingHost.MtuReport[0].RemoteIPAddress).To(Equal(remoteIP))
 		Expect(resultingHost.MtuReport[0].OutgoingNic).To(Equal(outgoingNIC))
-		Expect(resultingHost.MtuReport[0].MtuSuccessful).To(BeTrue())
-	})
+		Expect(resultingHost.MtuReport[0].MtuSuccessful).To(BeFalse())
+	},
+		table.Entry("MTU > 1500, IPv4 ", remoteIPv4Address, outgoingIPv4Address, bigSize, ipv4Header, ipv4Mask),
+		table.Entry("MTU > 1500, IPv6 ", remoteIPv6Address, outgoingIPv6Address, bigSize, ipv6Header, ipv6Mask),
+		table.Entry("MTU < 1500, IPv4 ", remoteIPv4Address, outgoingIPv4Address, smallSize, ipv4Header, ipv4Mask),
+		table.Entry("MTU < 1500, IPv6 ", remoteIPv6Address, outgoingIPv6Address, smallSize, ipv6Header, ipv6Mask),
+	)
+	table.DescribeTable("MTU equal 1500 - should not check", func(remoteIP, outgoingIP string, mask net.IPMask) {
+		attributes := Attributes{
+			RemoteIPAddress: remoteIP,
+			OutgoingNIC: OutgoingNic{Name: outgoingNIC, MTU: regularSize, Addresses: []net.Addr{&net.IPNet{
+				IP:   net.ParseIP(outgoingIP),
+				Mask: mask,
+			}}},
+		}
+		reporter := checker.Check(attributes)
+		Expect(reporter).To(BeNil())
+	},
+		table.Entry("IPv4", remoteIPv4Address, outgoingIPv4Address, ipv4Mask),
+		table.Entry("IPv6", remoteIPv6Address, outgoingIPv6Address, ipv6Mask),
+	)
 })

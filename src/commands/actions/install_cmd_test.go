@@ -42,17 +42,17 @@ var _ = Describe("installer test", func() {
 		hostId := strfmt.UUID("f7ac1860-92cf-4ed8-aeec-2d9f20b35bab")
 		bootDevice := "/dev/disk/by-path/pci-0000:00:06.0"
 		return models.InstallCmdRequest{
-			BootDevice:           swag.String(bootDevice),
-			CheckCvo:             swag.Bool(true),
-			ClusterID:            &clusterId,
-			HostID:               &hostId,
-			InfraEnvID:           &infraEnvId,
-			ControllerImage:      swag.String("localhost:5000/edge-infrastructure/assisted-installer-controller:latest"),
-			DisksToFormat:        []string{},
-			HighAvailabilityMode: swag.String(models.ClusterHighAvailabilityModeFull),
-			InstallerArgs:        "[\"--append-karg\",\"ip=ens3:dhcp\"]",
-			InstallerImage:       swag.String("quay.io/edge-infrastructure/assisted-installer:latest"),
-			McoImage:             "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4",
+			BootDevice:        swag.String(bootDevice),
+			CheckCvo:          swag.Bool(true),
+			ClusterID:         &clusterId,
+			HostID:            &hostId,
+			InfraEnvID:        &infraEnvId,
+			ControllerImage:   swag.String("localhost:5000/edge-infrastructure/assisted-installer-controller:latest"),
+			DisksToFormat:     []string{},
+			ControlPlaneCount: int64(3),
+			InstallerArgs:     "[\"--append-karg\",\"ip=ens3:dhcp\"]",
+			InstallerImage:    swag.String("quay.io/edge-infrastructure/assisted-installer:latest"),
+			McoImage:          "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4",
 			MustGatherImage: "{\"cnv\":\"registry.redhat.io/container-native-virtualization/cnv-must-gather-rhel8:v2.6.5\"," +
 				"\"lso\":\"registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8\"," +
 				"\"ocp\":\"quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4\"," +
@@ -111,15 +111,57 @@ var _ = Describe("installer test", func() {
 			"--cluster-id cd781f46-f32a-4154-9670-6442a367ab81 --host-id f7ac1860-92cf-4ed8-aeec-2d9f20b35bab --boot-device /dev/disk/by-path/pci-0000:00:06.0 " +
 			"--url http://10.1.178.26:6000 --controller-image localhost:5000/edge-infrastructure/assisted-installer-controller:latest " +
 			"--agent-image quay.io/edge-infrastructure/assisted-installer-agent:latest " +
-			"--high-availability-mode Full " +
+			"--control-plane-count 3 " +
 			"--mco-image quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4 " +
 			"--must-gather-image '{\"cnv\":\"registry.redhat.io/container-native-virtualization/cnv-must-gather-rhel8:v2.6.5\"," +
 			"\"lso\":\"registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8\",\"ocp\":\"quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3c30f115dc95c3fef94ea5185f386aa1af8a4b5f07ce8f41a17007d54004e1c4\"," +
 			"\"ocs\":\"registry.redhat.io/ocs4/ocs-must-gather-rhel8\"}' --openshift-version 4.9.24 --insecure --check-cluster-version --installer-args '[\"--append-karg\",\"ip=ens3:dhcp\"]'"))
 	})
 
-	It("ha mode is nil, parameter should be omitted", func() {
-		installCommandRequest.HighAvailabilityMode = nil
+	It("control_plane_count is 0, parameter should be omitted", func() {
+		installCommandRequest.ControlPlaneCount = 0
+		installCommandLineString = getInstallCommandLineString(installCommandRequest)
+
+		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
+		validationError := action.Validate()
+		Expect(validationError).NotTo(HaveOccurred())
+
+		args := action.Args()
+		argsAsString := strings.Join(args, " ")
+		Expect(argsAsString).NotTo(ContainSubstring("--control-plane-count"))
+	})
+
+	It("if control-plane-count is set, command line parameter should indicate this", func() {
+		ctrlPlaneCount := int64(4)
+		installCommandRequest.ControlPlaneCount = ctrlPlaneCount
+		installCommandLineString = getInstallCommandLineString(installCommandRequest)
+
+		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
+		validationError := action.Validate()
+		Expect(validationError).NotTo(HaveOccurred())
+
+		args := action.Args()
+		argsAsString := strings.Join(args, " ")
+		Expect(argsAsString).To(ContainSubstring("--control-plane-count 4"))
+	})
+
+	It("if control-plane-count is set to 1, command line parameter should indicate this", func() {
+		ctrlPlaneCount := int64(1)
+		installCommandRequest.ControlPlaneCount = ctrlPlaneCount
+		installCommandLineString = getInstallCommandLineString(installCommandRequest)
+
+		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
+		validationError := action.Validate()
+		Expect(validationError).NotTo(HaveOccurred())
+
+		args := action.Args()
+		argsAsString := strings.Join(args, " ")
+		Expect(argsAsString).To(ContainSubstring("--control-plane-count 1"))
+	})
+
+	It("high-availability-mode should not be present any more", func() {
+		ctrlPlaneCount := int64(4)
+		installCommandRequest.ControlPlaneCount = ctrlPlaneCount
 		installCommandLineString = getInstallCommandLineString(installCommandRequest)
 
 		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
@@ -129,32 +171,6 @@ var _ = Describe("installer test", func() {
 		args := action.Args()
 		argsAsString := strings.Join(args, " ")
 		Expect(argsAsString).NotTo(ContainSubstring("--high-availability-mode"))
-	})
-
-	It("ha mode is Full, command line parameter should indicate this", func() {
-		installCommandRequest.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeFull)
-		installCommandLineString = getInstallCommandLineString(installCommandRequest)
-
-		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
-		validationError := action.Validate()
-		Expect(validationError).NotTo(HaveOccurred())
-
-		args := action.Args()
-		argsAsString := strings.Join(args, " ")
-		Expect(argsAsString).To(ContainSubstring("--high-availability-mode Full"))
-	})
-
-	It("ha mode is None, command line parameter should indicate this", func() {
-		installCommandRequest.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeNone)
-		installCommandLineString = getInstallCommandLineString(installCommandRequest)
-
-		action := install{args: []string{installCommandLineString}, filesystem: filesystem, agentConfig: agentConfig}
-		validationError := action.Validate()
-		Expect(validationError).NotTo(HaveOccurred())
-
-		args := action.Args()
-		argsAsString := strings.Join(args, " ")
-		Expect(argsAsString).To(ContainSubstring("--high-availability-mode None"))
 	})
 
 	It("install ca cert", func() {
@@ -385,11 +401,6 @@ var _ = Describe("installer test", func() {
 			"\"lso\":\"registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel8\"," +
 			"\"ocp\":\"registry.redhat.io/ocs4/ocs-must-gather-rhel8|rm\"," +
 			"\"ocs\":\"registry.redhat.io/ocs4/ocs-must-gather-rhel8\"}"
-		_ = getInstall(installCommandRequest, filesystem, true)
-	})
-
-	It("bad HighAvailability", func() {
-		installCommandRequest.HighAvailabilityMode = swag.String("some string")
 		_ = getInstall(installCommandRequest, filesystem, true)
 	})
 

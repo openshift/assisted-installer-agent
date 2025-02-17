@@ -105,8 +105,15 @@ func (a *install) getFullInstallerCommand() string {
 		"--agent-image", a.agentConfig.AgentVersion,
 	}
 
-	if a.installParams.HighAvailabilityMode != nil {
-		installerCmdArgs = append(installerCmdArgs, "--high-availability-mode", swag.StringValue(a.installParams.HighAvailabilityMode))
+	if a.installParams.ControlPlaneCount != nil {
+		installerCmdArgs = append(installerCmdArgs, "--control-plane-count", strconv.FormatInt(int64(*a.installParams.ControlPlaneCount), 10))
+	}
+
+	switch swag.StringValue(a.installParams.HighAvailabilityMode) {
+	case models.ClusterHighAvailabilityModeFull:
+		installerCmdArgs = append(installerCmdArgs, "--control-plane-count", strconv.FormatInt(3, 10))
+	case models.ClusterHighAvailabilityModeNone:
+		installerCmdArgs = append(installerCmdArgs, "--control-plane-count", strconv.FormatInt(1, 10))
 	}
 
 	if a.installParams.McoImage != "" {

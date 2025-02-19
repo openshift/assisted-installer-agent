@@ -15,6 +15,12 @@ COPY . .
 
 RUN TARGETPLATFORM=$TARGETPLATFORM make build
 
+# Extract the commit reference from which the image is built
+USER 0
+
+RUN git config --global --add safe.directory '*' && \ 
+    git rev-parse --short HEAD > /commit-reference.txt
+
 FROM quay.io/centos/centos:stream9
 
 ARG TARGETPLATFORM
@@ -37,6 +43,9 @@ RUN dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
 		# for the 'nsenter' executable
 		util-linux-core \
 		&& dnf update --setopt=install_weak_deps=False --setopt=tsdocs=False -y systemd && dnf clean all && rm -rf /var/cache
+
+# Copy the commit reference from the builder
+COPY --from=builder /commit-reference.txt /commit-reference.txt
 
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/agent /usr/bin/agent
 COPY --from=builder /go/src/github.com/openshift/assisted-installer-agent/build/free_addresses /usr/bin/free_addresses

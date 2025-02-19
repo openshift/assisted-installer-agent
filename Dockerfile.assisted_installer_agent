@@ -10,6 +10,12 @@ COPY --chown=1001 . .
 
 RUN TARGETPLATFORM=$TARGETPLATFORM make build-release
 
+# Extract the commit reference from which the image is built
+USER 0
+
+RUN git config --global --add safe.directory '*' && \ 
+    git rev-parse --short HEAD > /commit-reference.txt
+
 FROM quay.io/centos/centos:stream9
 ARG TARGETPLATFORM
 
@@ -44,6 +50,10 @@ RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then d
             && rm -rf /usr/share/man /usr/share/doc \
             # Remove RPM/DNF files to reduce image size
             && rm -rf /var/lib/rpm/rpmdb.sqlite /var/lib/dnf
+
+
+# Copy the commit reference from the builder
+COPY --from=builder /commit-reference.txt /commit-reference.txt
 
 COPY --from=builder /opt/app-root/src/build/agent /usr/bin/agent
 

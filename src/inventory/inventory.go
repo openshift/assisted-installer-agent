@@ -3,6 +3,7 @@ package inventory
 import (
 	"encoding/json"
 	"net"
+	"slices"
 	"sort"
 	"strings"
 
@@ -80,12 +81,7 @@ var forbiddenHostnames = []string{
 // isForbiddenHostname checks if the given string is a forbidden host name that needs to be replaced
 // with an automatically generated one.
 func isForbiddenHostname(hostname string) bool {
-	for _, forbiddenHostname := range forbiddenHostnames {
-		if hostname == forbiddenHostname {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(forbiddenHostnames, hostname)
 }
 
 // calculateHostname calculates a hostname from the MAC address of one of the network interfaces of
@@ -120,33 +116,52 @@ func findUsableNIC(inventory *models.Inventory) (result *models.Interface, err e
 	for _, nic := range nics {
 		isPhysical := nic.Type == "physical"
 		isVLAN := nic.Type == "vlan"
+		isBond := nic.Type == "bond"
+		if !(isPhysical || isVLAN || isBond) {
+			continue
+		}
+
 		hasMAC := nic.MacAddress != ""
+		if !hasMAC {
+			continue
+		}
+
 		hasV4 := false
-		for _, ip := range nic.IPV4Addresses {
-			hasV4, err = isGlobalCIDR(ip)
-			if err != nil {
-				return
-			}
-			if hasV4 {
-				break
-			}
-		}
-		hasV6 := false
-		for _, ip := range nic.IPV6Addresses {
-			hasV6, err = isGlobalCIDR(ip)
-			if err != nil {
-				return
-			}
-			if hasV6 {
-				break
-			}
-		}
-		if (isPhysical || isVLAN) && hasMAC && (hasV4 || hasV6) {
-			result = nic
+		hasV4, err = hasGlobalCIDR(nic.IPV4Addresses)
+		if err != nil {
 			return
 		}
+
+		hasV6 := false
+		hasV6, err = hasGlobalCIDR(nic.IPV6Addresses)
+		if err != nil {
+			return
+		}
+
+		if !(hasV4 || hasV6) {
+			continue
+		}
+
+		result = nic
+		return
 	}
+
 	return
+}
+
+func hasGlobalCIDR(ips []string) (bool, error) {
+	for _, ip := range ips {
+		ret, err := isGlobalCIDR(ip)
+		if err != nil {
+			return false, err
+		}
+
+		if ret {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // isGlobalCIDR returns a boolean flag indicating if the IP address in the given CIDR is a global

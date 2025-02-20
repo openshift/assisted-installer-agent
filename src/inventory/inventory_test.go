@@ -205,7 +205,7 @@ var _ = Describe("Hostname processing", func() {
 				{
 					Name:       "eth0",
 					Type:       "physical",
-					MacAddress: "71:A0:A4:6F:BE:C8",
+					MacAddress: "71:A0:A4:6F:BE:C7",
 				},
 				{
 					Name:          "eth0.42",
@@ -215,6 +215,24 @@ var _ = Describe("Hostname processing", func() {
 				},
 			},
 			"71-a0-a4-6f-be-c8",
+		),
+		Entry(
+			"Renames with bond",
+			"localhost.localdomain",
+			[]*models.Interface{
+				{
+					Name:       "eth0",
+					Type:       "physical",
+					MacAddress: "71:A0:A4:6F:BE:C8",
+				},
+				{
+					Name:          "bond0",
+					Type:          "bond",
+					MacAddress:    "52:54:00:aa:3d:c4",
+					IPV4Addresses: []string{"192.168.124.33/24"},
+				},
+			},
+			"52-54-00-aa-3d-c4",
 		),
 	)
 })

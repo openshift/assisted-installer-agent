@@ -9,10 +9,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Since the exact headers in use are uncertain, the total overhead is estimated to be a maximum of ~100 bytes.
-// This includes 18 bytes for VLAN, a maximum of 60 bytes for IPv4/IPv6, 8 bytes for ICMP, and potential additional headers.
-// To be on the safe side, we assume an overhead of 150 bytes.
-const headers = 150
+const defaultMTUThreshold = 1500
+const ipv4Header = 28
+const ipv6Header = 48
 
 type mtuChecker struct {
 	executer Executer
@@ -38,6 +37,13 @@ func (m *mtuChecker) Check(attributes Attributes) ResultReporter {
 
 	var localIP string
 
+	mtu := attributes.OutgoingNIC.MTU
+
+	// Only consider hosts with MTU != 1500
+	if mtu == defaultMTUThreshold {
+		return nil
+	}
+
 	for _, addr := range attributes.OutgoingNIC.Addresses {
 		ipN, ok := addr.(*net.IPNet)
 		if !ok {
@@ -53,9 +59,6 @@ func (m *mtuChecker) Check(attributes Attributes) ResultReporter {
 			continue
 		}
 
-		mtu := attributes.OutgoingNIC.MTU
-		sizeWithoutHeaders := mtu - headers
-
 		// Perform an initial ping without specifying the MTU to rule out the possibility of failure due to issues unrelated to MTU.
 		_, err := m.executer.Execute("ping", attributes.RemoteIPAddress, "-c", "3", "-I", attributes.OutgoingNIC.Name)
 		if err != nil {
@@ -63,8 +66,15 @@ func (m *mtuChecker) Check(attributes Attributes) ResultReporter {
 			return nil
 		}
 
+		var sizeWithoutIPHeader int
+		if isLocalIPv6 {
+			sizeWithoutIPHeader = mtu - ipv6Header
+		} else {
+			sizeWithoutIPHeader = mtu - ipv4Header
+		}
+
 		// Second ping with MTU
-		_, err = m.executer.Execute("ping", attributes.RemoteIPAddress, "-c", "3", "-M", "do", "-s", strconv.Itoa(sizeWithoutHeaders), "-I", attributes.OutgoingNIC.Name)
+		_, err = m.executer.Execute("ping", attributes.RemoteIPAddress, "-c", "3", "-M", "do", "-s", strconv.Itoa(sizeWithoutIPHeader), "-I", attributes.OutgoingNIC.Name)
 		if err != nil {
 			log.WithError(err).Errorf("MTU checker: failed to ping address %s nic %s mtu %d", attributes.RemoteIPAddress, attributes.OutgoingNIC.Name, mtu)
 			return newMtuResultReporter(&ret)

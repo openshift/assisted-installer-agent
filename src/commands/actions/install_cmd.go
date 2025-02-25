@@ -70,7 +70,7 @@ func (a *install) Validate() error {
 
 	if a.installParams.InstallerArgs != "" {
 		var installAgs []string
-		err := json.Unmarshal([]byte(a.installParams.InstallerArgs), &installAgs)
+		err = json.Unmarshal([]byte(a.installParams.InstallerArgs), &installAgs)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to unmarshal installer args: json.Unmarshal, %s", a.installParams.InstallerArgs)
 			return err
@@ -82,7 +82,7 @@ func (a *install) Validate() error {
 	}
 
 	if a.installParams.OpenshiftVersion != "" {
-		_, err := version.NewVersion(a.installParams.OpenshiftVersion)
+		_, err = version.NewVersion(a.installParams.OpenshiftVersion)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to parse OCP version %s", a.installParams.OpenshiftVersion)
 		}
@@ -105,8 +105,15 @@ func (a *install) getFullInstallerCommand() string {
 		"--agent-image", a.agentConfig.AgentVersion,
 	}
 
-	if a.installParams.HighAvailabilityMode != nil {
-		installerCmdArgs = append(installerCmdArgs, "--high-availability-mode", swag.StringValue(a.installParams.HighAvailabilityMode))
+	if a.installParams.ControlPlaneCount != 0 {
+		installerCmdArgs = append(installerCmdArgs, "--control-plane-count", strconv.Itoa(int(a.installParams.ControlPlaneCount)))
+	} else {
+		switch swag.StringValue(a.installParams.HighAvailabilityMode) {
+		case models.ClusterHighAvailabilityModeFull:
+			installerCmdArgs = append(installerCmdArgs, "--control-plane-count", "3")
+		case models.ClusterHighAvailabilityModeNone:
+			installerCmdArgs = append(installerCmdArgs, "--control-plane-count", "1")
+		}
 	}
 
 	if a.installParams.McoImage != "" {

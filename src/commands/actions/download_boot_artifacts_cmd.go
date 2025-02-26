@@ -54,7 +54,7 @@ const (
 	bootLoaderConfigFileName      string = "/00-assisted-discovery.conf"
 	bootLoaderConfigTemplateS390x string = `title Assisted Installer Discovery
 version 999
-options random.trust_cpu=on ignition.firstboot ignition.platform.id=metal coreos.live.rootfs_url=%s
+options random.trust_cpu=on ai.ip_cfg_override=1 ignition.firstboot ignition.platform.id=metal coreos.live.rootfs_url=%s
 linux %s
 initrd %s`
 	bootLoaderConfigTemplate string = `title Assisted Installer Discovery

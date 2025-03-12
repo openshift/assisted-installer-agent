@@ -107,7 +107,7 @@ func isUsableIPv6Route(route netlink.Route) bool {
 		return false
 	}
 	// Ignore non-advertised routes
-	if route.Protocol != unix.RTPROT_RA {
+	if int(route.Protocol) != unix.RTPROT_RA {
 		return false
 	}
 

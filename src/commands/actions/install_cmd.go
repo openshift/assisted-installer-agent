@@ -107,13 +107,6 @@ func (a *install) getFullInstallerCommand() string {
 
 	if a.installParams.ControlPlaneCount != 0 {
 		installerCmdArgs = append(installerCmdArgs, "--control-plane-count", strconv.Itoa(int(a.installParams.ControlPlaneCount)))
-	} else {
-		switch swag.StringValue(a.installParams.HighAvailabilityMode) {
-		case models.ClusterHighAvailabilityModeFull:
-			installerCmdArgs = append(installerCmdArgs, "--control-plane-count", "3")
-		case models.ClusterHighAvailabilityModeNone:
-			installerCmdArgs = append(installerCmdArgs, "--control-plane-count", "1")
-		}
 	}
 
 	if a.installParams.McoImage != "" {

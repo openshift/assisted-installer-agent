@@ -311,9 +311,10 @@ github.com/jackc/pgtype
 github.com/jackc/pgx/v4
 github.com/jackc/pgx/v4/internal/sanitize
 github.com/jackc/pgx/v4/stdlib
-# github.com/jaypipes/ghw v0.12.1-0.20230829170642-835f6a233b6d
-## explicit; go 1.19
+# github.com/jaypipes/ghw v0.16.0
+## explicit; go 1.21
 github.com/jaypipes/ghw
+github.com/jaypipes/ghw/pkg/accelerator
 github.com/jaypipes/ghw/pkg/baseboard
 github.com/jaypipes/ghw/pkg/bios
 github.com/jaypipes/ghw/pkg/block

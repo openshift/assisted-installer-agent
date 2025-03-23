@@ -17,11 +17,20 @@ import (
 // swagger:model bundle
 type Bundle struct {
 
-	// The name of the bundle.
-	Name string `json:"name,omitempty"`
+	// Longer human friendly description for the bundle, usually one or more sentences.
+	//
+	Description string `json:"description,omitempty"`
+
+	// Unique identifier of the bundle, for example `virtualization` or `openshift-ai-nvidia`.
+	ID string `json:"id,omitempty"`
 
 	// List of operators associated with the bundle.
 	Operators []string `json:"operators"`
+
+	// Short human friendly description for the bundle, usually only a few words, for example `Virtualization` or
+	// `OpenShift AI (NVIDIA)`.
+	//
+	Title string `json:"title,omitempty"`
 }
 
 // Validate validates this bundle

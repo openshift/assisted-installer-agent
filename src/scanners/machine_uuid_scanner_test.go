@@ -65,6 +65,17 @@ var _ = Describe("Machine uuid test", func() {
 		id := ReadId(serialDiscovery, dependencies)
 		Expect(id).To(Equal(toUUID(TestUuid)))
 	})
+	It("dash serial", func() {
+		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "-"}, nil).Once()
+		serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: TestUuid}, nil)
+		id := ReadId(serialDiscovery, dependencies)
+		Expect(id).To(Equal(toUUID(TestUuid)))
+	})
+	It("dash serial embedded", func() {
+		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "123-456-789"}, nil).Once()
+		id := ReadId(serialDiscovery, dependencies)
+		Expect(id).To(Equal(toUUID("856f4f9c-3c08-4d97-8ec7-ea0ad7d4cadf")))
+	})
 
 	tests := []struct {
 		useCase  string

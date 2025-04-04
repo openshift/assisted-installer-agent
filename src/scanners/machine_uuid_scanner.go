@@ -32,7 +32,7 @@ var (
 	FailureUUID = strfmt.UUID("deaddead-dead-dead-dead-deaddeaddead")
 )
 
-var unknownSerialCases = []string{"", util.UNKNOWN, "none",
+var unknownSerialCases = []string{"", util.UNKNOWN, "none", "-",
 	SerialUnspecifiedBaseBoardString, SerialUnspecifiedSystemString,
 	SerialDefaultString, SerialNotSpecified, strings.ToLower(SerialProliantGen11)}
 var unknownUuidCases = []string{"", util.UNKNOWN, ZeroesUUID, KaloomUUID}

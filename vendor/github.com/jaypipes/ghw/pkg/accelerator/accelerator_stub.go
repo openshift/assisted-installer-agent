@@ -1,12 +1,12 @@
-//go:build !linux && !windows && !darwin
-// +build !linux,!windows,!darwin
+//go:build !linux
+// +build !linux
 
 // Use and distribution licensed under the Apache license version 2.
 //
 // See the COPYING file in the root project directory for full text.
 //
 
-package cpu
+package accelerator
 
 import (
 	"runtime"
@@ -15,5 +15,5 @@ import (
 )
 
 func (i *Info) load() error {
-	return errors.New("cpu.Info.load not implemented on " + runtime.GOOS)
+	return errors.New("accelerator.Info.load not implemented on " + runtime.GOOS)
 }

@@ -32,7 +32,7 @@ func RegisterHostWithRetry(agentConfig *config.AgentConfig, log logrus.FieldLogg
 			// wait forever
 			select {}
 		case *installer.V2RegisterHostConflict:
-			s.Logger().Warn("Host will stop trying to register; cluster cannot accept new hosts in its current state")
+			s.Logger().Warnf("Host will stop trying to register; cluster cannot accept new hosts in its current state: %s", getErrorMessage(err))
 			// wait forever
 			select {}
 		case *installer.V2RegisterHostNotFound:

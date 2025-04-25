@@ -42,6 +42,9 @@ type ClusterCreateParams struct {
 	// Cluster networks that are associated with this cluster.
 	ClusterNetworks []*ClusterNetwork `json:"cluster_networks"`
 
+	// Specifies the required number of control plane nodes that should be part of the cluster.
+	ControlPlaneCount *int64 `json:"control_plane_count,omitempty"`
+
 	// The CPU architecture of the image (x86_64/arm64/etc).
 	// Enum: [x86_64 aarch64 arm64 ppc64le s390x multi]
 	CPUArchitecture string `json:"cpu_architecture,omitempty"`
@@ -49,7 +52,7 @@ type ClusterCreateParams struct {
 	// Installation disks encryption mode and host roles to be applied.
 	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty" gorm:"embedded;embeddedPrefix:disk_encryption_"`
 
-	// Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster
+	// (DEPRECATED) Please use 'control_plane_count' instead. Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster
 	// over multiple master nodes whereas 'None' installs a full cluster over one node.
 	//
 	// Enum: [Full None]
@@ -75,6 +78,9 @@ type ClusterCreateParams struct {
 	// The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.
 	IngressVips []*IngressVip `json:"ingress_vips"`
 
+	// load balancer
+	LoadBalancer *LoadBalancer `json:"load_balancer,omitempty" gorm:"embedded;embeddedPrefix:load_balancer_"`
+
 	// Machine networks that are associated with this cluster.
 	MachineNetworks []*MachineNetwork `json:"machine_networks"`
 
@@ -95,6 +101,8 @@ type ClusterCreateParams struct {
 	OcpReleaseImage string `json:"ocp_release_image,omitempty"`
 
 	// List of OLM operators to be installed.
+	// For the full list of supported operators, check the endpoint `/v2/supported-operators`:
+	//
 	OlmOperators []*OperatorCreateParams `json:"olm_operators"`
 
 	// Version of the OpenShift cluster.
@@ -172,6 +180,10 @@ func (m *ClusterCreateParams) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateIngressVips(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLoadBalancer(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -505,6 +517,25 @@ func (m *ClusterCreateParams) validateIngressVips(formats strfmt.Registry) error
 	return nil
 }
 
+func (m *ClusterCreateParams) validateLoadBalancer(formats strfmt.Registry) error {
+	if swag.IsZero(m.LoadBalancer) { // not required
+		return nil
+	}
+
+	if m.LoadBalancer != nil {
+		if err := m.LoadBalancer.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("load_balancer")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("load_balancer")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ClusterCreateParams) validateMachineNetworks(formats strfmt.Registry) error {
 	if swag.IsZero(m.MachineNetworks) { // not required
 		return nil
@@ -715,6 +746,10 @@ func (m *ClusterCreateParams) ContextValidate(ctx context.Context, formats strfm
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateLoadBalancer(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMachineNetworks(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -824,6 +859,22 @@ func (m *ClusterCreateParams) contextValidateIngressVips(ctx context.Context, fo
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ClusterCreateParams) contextValidateLoadBalancer(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LoadBalancer != nil {
+		if err := m.LoadBalancer.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("load_balancer")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("load_balancer")
+			}
+			return err
+		}
 	}
 
 	return nil

@@ -22,17 +22,16 @@ import (
 const (
 	EnvConfigPrefix = "myapp"
 
-	MinMasterHostsNeededForInstallation    = 3
-	AllowedNumberOfMasterHostsInNoneHaMode = 1
-	AllowedNumberOfWorkersInNoneHaMode     = 0
-
 	HostCACertPath = "/etc/assisted-service/service-ca-cert.crt"
 
 	AdditionalTrustBundlePath = "/etc/pki/ca-trust/source/anchors/assisted-infraenv-additional-trust-bundle.pem"
 
 	consoleUrlPrefix = "https://console-openshift-console.apps"
 
-	MirrorRegistriesCertificateFile = "tls-ca-bundle.pem"
+	SystemCertificateBundle     = "tls-ca-bundle.pem"
+	SystemCertificateBundlePath = "/etc/pki/ca-trust/extracted/pem/" + SystemCertificateBundle
+
+	MirrorRegistriesCertificateFile = "user-registry-ca-bundle.pem"
 	MirrorRegistriesCertificatePath = "/etc/pki/ca-trust/extracted/pem/" + MirrorRegistriesCertificateFile
 	MirrorRegistriesConfigDir       = "/etc/containers"
 	MirrorRegistriesConfigFile      = "registries.conf"
@@ -52,6 +51,16 @@ const (
 	MultiCPUArchitecture   = "multi"
 
 	ExternalPlatformNameOci = "oci"
+
+	MaxMasterHostsNeededForInstallationInHaModeOfOCP418OrNewer       = 5
+	MinMasterHostsNeededForInstallationInHaMode                      = 3
+	AllowedNumberOfMasterHostsForInstallationInHaModeOfOCP417OrOlder = 3
+	AllowedNumberOfMasterHostsInNoneHaMode                           = 1
+	AllowedNumberOfWorkersInNoneHaMode                               = 0
+	MinimumVersionForNonStandardHAOCPControlPlane                    = "4.18"
+	MinimumNumberOfWorkersForNonSchedulableMastersClusterInHaMode    = 2
+
+	MinimumVersionForUserManagedLoadBalancerFeature = "4.16"
 )
 
 type AddressFamily int
@@ -179,7 +188,7 @@ func GetBootstrapHost(cluster *Cluster) *models.Host {
 }
 
 func IsSingleNodeCluster(cluster *Cluster) bool {
-	return swag.StringValue(cluster.HighAvailabilityMode) == models.ClusterHighAvailabilityModeNone
+	return cluster.ControlPlaneCount == 1
 }
 
 func IsDay2Cluster(cluster *Cluster) bool {
@@ -190,15 +199,10 @@ func IsImportedCluster(cluster *Cluster) bool {
 	return swag.BoolValue(cluster.Imported)
 }
 
+// AreMastersSchedulable returns whether a given cluster masters will be schedulable
+// It will get correct result only when all hosts roles are assigned.
 func AreMastersSchedulable(cluster *Cluster) bool {
 	return swag.BoolValue(cluster.SchedulableMastersForcedTrue) || swag.BoolValue(cluster.SchedulableMasters)
-}
-
-func GetEffectiveRole(host *models.Host) models.HostRole {
-	if host.Role == models.HostRoleAutoAssign && host.SuggestedRole != "" {
-		return host.SuggestedRole
-	}
-	return host.Role
 }
 
 func GetConsoleUrl(clusterName, baseDomain string) string {
@@ -417,6 +421,42 @@ func VerifyCaBundle(pemCerts []byte) error {
 	return nil
 }
 
+// RemoveDuplicatesFromCaBundle removes duplicate certificates from a given CA bundle.
+func RemoveDuplicatesFromCaBundle(caBundle string) (string, int, error) {
+	// Parse certificates
+	certs, ok := ParsePemCerts([]byte(caBundle))
+	if !ok {
+		return "", 0, errors.New("failed to remove duplicate certificate")
+	}
+
+	// Remove duplicates by serial number
+	uniqueCerts := funk.UniqBy(certs, func(cert x509.Certificate) string {
+		return fmt.Sprintf("%x", cert.SerialNumber)
+	})
+
+	// Convert certs back to a string
+	certStrings := funk.Map(uniqueCerts, func(cert x509.Certificate) string {
+		// Encode certificate to PEM format
+		block := &pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: cert.Raw,
+		}
+		var sb strings.Builder
+		if err := pem.Encode(&sb, block); err != nil {
+			// Error encoding certificate
+			return ""
+		}
+		return sb.String()
+	})
+
+	numOfCerts := len(certs)
+	numOfUniqueCerts := len(uniqueCerts.([]x509.Certificate))
+	numOfDuplicates := numOfCerts - numOfUniqueCerts
+
+	// Join the PEM-encoded certificates into a single string
+	return strings.Join(certStrings.([]string), "\n"), numOfDuplicates, nil
+}
+
 func CanonizeStrings(slice []string) (ret []string) {
 	if len(slice) == 0 {
 		return
@@ -628,4 +668,104 @@ func IsOciExternalIntegrationEnabled(platform *models.Platform) bool {
 
 func IsMultiNodeNonePlatformCluster(cluster *Cluster) bool {
 	return !IsSingleNodeCluster(cluster) && swag.BoolValue(cluster.UserManagedNetworking)
+}
+
+func NumberOfWorkers(c *Cluster) int {
+	num := 0
+	for _, host := range c.Hosts {
+		if GetEffectiveRole(host) != models.HostRoleWorker {
+			continue
+		}
+		num += 1
+	}
+	return num
+}
+
+func GetEffectiveRole(host *models.Host) models.HostRole {
+	if host.Role == models.HostRoleAutoAssign && host.SuggestedRole != "" {
+		return host.SuggestedRole
+	}
+	return host.Role
+}
+
+// GetHostsByEachRole returns the 3 slices of hosts by their effective role for a given cluster:
+// 1. bootstrap/master hosts
+// 2. worker hosts
+// 3. auto-assign hosts
+// Note - The hosts should be preloaded in the cluster
+func GetHostsByEachRole(cluster *models.Cluster, effectiveRoles bool) ([]*models.Host, []*models.Host, []*models.Host) {
+	masterHosts := make([]*models.Host, 0)
+	workerHosts := make([]*models.Host, 0)
+	autoAssignHosts := make([]*models.Host, 0)
+
+	roleFunction := func(host *models.Host) models.HostRole {
+		if effectiveRoles {
+			return GetEffectiveRole(host)
+		}
+
+		return host.Role
+	}
+
+	for _, host := range cluster.Hosts {
+		switch role := roleFunction(host); role {
+		case models.HostRoleMaster, models.HostRoleBootstrap:
+			masterHosts = append(masterHosts, host)
+		case models.HostRoleWorker:
+			workerHosts = append(workerHosts, host)
+		case models.HostRoleAutoAssign:
+			autoAssignHosts = append(autoAssignHosts, host)
+		}
+	}
+
+	return masterHosts, workerHosts, autoAssignHosts
+}
+
+func ShouldMastersBeSchedulable(cluster *models.Cluster) bool {
+	if cluster.ControlPlaneCount == 1 {
+		return true
+	}
+
+	_, workers, _ := GetHostsByEachRole(cluster, true)
+	return len(workers) < MinimumNumberOfWorkersForNonSchedulableMastersClusterInHaMode
+}
+
+func IsMirrorConfigurationSet(conf *MirrorRegistryConfiguration) bool {
+	if conf == nil {
+		return false
+	}
+
+	if conf.RegistriesConf != "" {
+		return true
+	}
+
+	return false
+}
+
+func GetDefaultHighAvailabilityAndMasterCountParams(highAvailabilityMode *string, controlPlaneCount *int64) (*string, *int64) {
+	// Both not set, multi node by default
+	if highAvailabilityMode == nil && controlPlaneCount == nil {
+		return swag.String(models.ClusterCreateParamsHighAvailabilityModeFull),
+			swag.Int64(MinMasterHostsNeededForInstallationInHaMode)
+	}
+
+	// only highAvailabilityMode set
+	if controlPlaneCount == nil {
+		if *highAvailabilityMode == models.ClusterHighAvailabilityModeNone {
+			return highAvailabilityMode, swag.Int64(AllowedNumberOfMasterHostsInNoneHaMode)
+		}
+
+		return highAvailabilityMode, swag.Int64(MinMasterHostsNeededForInstallationInHaMode)
+	}
+
+	// only controlPlaneCount set
+	if highAvailabilityMode == nil {
+		if *controlPlaneCount == AllowedNumberOfMasterHostsInNoneHaMode {
+			return swag.String(models.ClusterHighAvailabilityModeNone), controlPlaneCount
+		}
+
+		return swag.String(models.ClusterHighAvailabilityModeFull), controlPlaneCount
+	}
+
+	// both are set
+	return highAvailabilityMode, controlPlaneCount
 }

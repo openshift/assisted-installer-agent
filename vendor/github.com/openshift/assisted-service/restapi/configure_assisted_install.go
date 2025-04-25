@@ -262,6 +262,12 @@ type ManifestsAPI interface {
 
 /* OperatorsAPI  */
 type OperatorsAPI interface {
+	/* V2GetBundle Get operator properties for a bundle */
+	V2GetBundle(ctx context.Context, params operators.V2GetBundleParams) middleware.Responder
+
+	/* V2ListBundles Get list of avaliable bundles */
+	V2ListBundles(ctx context.Context, params operators.V2ListBundlesParams) middleware.Responder
+
 	/* V2ListOfClusterOperators Lists operators to be monitored for a cluster. */
 	V2ListOfClusterOperators(ctx context.Context, params operators.V2ListOfClusterOperatorsParams) middleware.Responder
 
@@ -320,6 +326,9 @@ type Config struct {
 
 	// AuthUserAuth Applies when the "Authorization" header is set
 	AuthUserAuth func(token string) (interface{}, error)
+
+	// AuthWatcherAuth Applies when the "Watcher-Authorization" header is set
+	AuthWatcherAuth func(token string) (interface{}, error)
 
 	// Authenticator to use for all APIKey authentication
 	APIKeyAuthenticator func(string, string, security.TokenAuthentication) runtime.Authenticator
@@ -408,6 +417,13 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 			return token, nil
 		}
 		return c.AuthUserAuth(token)
+	}
+
+	api.WatcherAuthAuth = func(token string) (interface{}, error) {
+		if c.AuthWatcherAuth == nil {
+			return token, nil
+		}
+		return c.AuthWatcherAuth(token)
 	}
 
 	api.APIAuthorizer = authorizer(c.Authorizer)
@@ -526,6 +542,11 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx = storeAuth(ctx, principal)
 		return c.InstallerAPI.V2DownloadClusterLogs(ctx, params)
 	})
+	api.OperatorsV2GetBundleHandler = operators.V2GetBundleHandlerFunc(func(params operators.V2GetBundleParams, principal interface{}) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		ctx = storeAuth(ctx, principal)
+		return c.OperatorsAPI.V2GetBundle(ctx, params)
+	})
 	api.InstallerV2GetClusterDefaultConfigHandler = installer.V2GetClusterDefaultConfigHandlerFunc(func(params installer.V2GetClusterDefaultConfigParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
@@ -550,6 +571,11 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx := params.HTTPRequest.Context()
 		ctx = storeAuth(ctx, principal)
 		return c.InstallerAPI.V2GetPresignedForClusterFiles(ctx, params)
+	})
+	api.OperatorsV2ListBundlesHandler = operators.V2ListBundlesHandlerFunc(func(params operators.V2ListBundlesParams, principal interface{}) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		ctx = storeAuth(ctx, principal)
+		return c.OperatorsAPI.V2ListBundles(ctx, params)
 	})
 	api.ManifestsV2ListClusterManifestsHandler = manifests.V2ListClusterManifestsHandlerFunc(func(params manifests.V2ListClusterManifestsParams, principal interface{}) middleware.Responder {
 		ctx := params.HTTPRequest.Context()

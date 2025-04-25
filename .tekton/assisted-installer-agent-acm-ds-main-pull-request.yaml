@@ -394,7 +394,7 @@ spec:
       - name: CACHI2_ARTIFACT
         value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
       - name: ARGS
-        value: "--project-name=assisted-installer-agent --report --org=3e6fd93b-b325-49dd-8a33-432a0160ab66"
+        value: --project-name=assisted-installer-agent --report --org=3e6fd93b-b325-49dd-8a33-432a0160ab66
       runAfter:
       - build-image-index
       taskRef:
@@ -612,7 +612,8 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-assisted-installer-agent-acm-ds-main
   workspaces:
   - name: git-auth
     secret:

@@ -28,10 +28,7 @@ const (
 
 	consoleUrlPrefix = "https://console-openshift-console.apps"
 
-	SystemCertificateBundle     = "tls-ca-bundle.pem"
-	SystemCertificateBundlePath = "/etc/pki/ca-trust/extracted/pem/" + SystemCertificateBundle
-
-	MirrorRegistriesCertificateFile = "user-registry-ca-bundle.pem"
+	MirrorRegistriesCertificateFile = "tls-ca-bundle.pem"
 	MirrorRegistriesCertificatePath = "/etc/pki/ca-trust/extracted/pem/" + MirrorRegistriesCertificateFile
 	MirrorRegistriesConfigDir       = "/etc/containers"
 	MirrorRegistriesConfigFile      = "registries.conf"
@@ -57,10 +54,8 @@ const (
 	AllowedNumberOfMasterHostsForInstallationInHaModeOfOCP417OrOlder = 3
 	AllowedNumberOfMasterHostsInNoneHaMode                           = 1
 	AllowedNumberOfWorkersInNoneHaMode                               = 0
-	MinimumVersionForNonStandardHAOCPControlPlane                    = "4.18"
+	MinimumVersionForStretchedControlPlanesCluster                   = "4.18"
 	MinimumNumberOfWorkersForNonSchedulableMastersClusterInHaMode    = 2
-
-	MinimumVersionForUserManagedLoadBalancerFeature = "4.16"
 )
 
 type AddressFamily int
@@ -188,7 +183,7 @@ func GetBootstrapHost(cluster *Cluster) *models.Host {
 }
 
 func IsSingleNodeCluster(cluster *Cluster) bool {
-	return cluster.ControlPlaneCount == 1
+	return swag.StringValue(cluster.HighAvailabilityMode) == models.ClusterHighAvailabilityModeNone
 }
 
 func IsDay2Cluster(cluster *Cluster) bool {
@@ -419,42 +414,6 @@ func VerifyCaBundle(pemCerts []byte) error {
 	}
 
 	return nil
-}
-
-// RemoveDuplicatesFromCaBundle removes duplicate certificates from a given CA bundle.
-func RemoveDuplicatesFromCaBundle(caBundle string) (string, int, error) {
-	// Parse certificates
-	certs, ok := ParsePemCerts([]byte(caBundle))
-	if !ok {
-		return "", 0, errors.New("failed to remove duplicate certificate")
-	}
-
-	// Remove duplicates by serial number
-	uniqueCerts := funk.UniqBy(certs, func(cert x509.Certificate) string {
-		return fmt.Sprintf("%x", cert.SerialNumber)
-	})
-
-	// Convert certs back to a string
-	certStrings := funk.Map(uniqueCerts, func(cert x509.Certificate) string {
-		// Encode certificate to PEM format
-		block := &pem.Block{
-			Type:  "CERTIFICATE",
-			Bytes: cert.Raw,
-		}
-		var sb strings.Builder
-		if err := pem.Encode(&sb, block); err != nil {
-			// Error encoding certificate
-			return ""
-		}
-		return sb.String()
-	})
-
-	numOfCerts := len(certs)
-	numOfUniqueCerts := len(uniqueCerts.([]x509.Certificate))
-	numOfDuplicates := numOfCerts - numOfUniqueCerts
-
-	// Join the PEM-encoded certificates into a single string
-	return strings.Join(certStrings.([]string), "\n"), numOfDuplicates, nil
 }
 
 func CanonizeStrings(slice []string) (ret []string) {
@@ -721,24 +680,12 @@ func GetHostsByEachRole(cluster *models.Cluster, effectiveRoles bool) ([]*models
 }
 
 func ShouldMastersBeSchedulable(cluster *models.Cluster) bool {
-	if cluster.ControlPlaneCount == 1 {
+	if swag.StringValue(cluster.HighAvailabilityMode) == models.ClusterCreateParamsHighAvailabilityModeNone {
 		return true
 	}
 
 	_, workers, _ := GetHostsByEachRole(cluster, true)
 	return len(workers) < MinimumNumberOfWorkersForNonSchedulableMastersClusterInHaMode
-}
-
-func IsMirrorConfigurationSet(conf *MirrorRegistryConfiguration) bool {
-	if conf == nil {
-		return false
-	}
-
-	if conf.RegistriesConf != "" {
-		return true
-	}
-
-	return false
 }
 
 func GetDefaultHighAvailabilityAndMasterCountParams(highAvailabilityMode *string, controlPlaneCount *int64) (*string, *int64) {
@@ -752,20 +699,32 @@ func GetDefaultHighAvailabilityAndMasterCountParams(highAvailabilityMode *string
 	if controlPlaneCount == nil {
 		if *highAvailabilityMode == models.ClusterHighAvailabilityModeNone {
 			return highAvailabilityMode, swag.Int64(AllowedNumberOfMasterHostsInNoneHaMode)
+		} else {
+			return highAvailabilityMode, swag.Int64(MinMasterHostsNeededForInstallationInHaMode)
 		}
-
-		return highAvailabilityMode, swag.Int64(MinMasterHostsNeededForInstallationInHaMode)
 	}
 
 	// only controlPlaneCount set
 	if highAvailabilityMode == nil {
 		if *controlPlaneCount == AllowedNumberOfMasterHostsInNoneHaMode {
 			return swag.String(models.ClusterHighAvailabilityModeNone), controlPlaneCount
+		} else {
+			return swag.String(models.ClusterHighAvailabilityModeFull), controlPlaneCount
 		}
-
-		return swag.String(models.ClusterHighAvailabilityModeFull), controlPlaneCount
 	}
 
 	// both are set
 	return highAvailabilityMode, controlPlaneCount
+}
+
+func IsMirrorConfigurationSet(conf *MirrorRegistryConfiguration) bool {
+	if conf == nil {
+		return false
+	}
+
+	if conf.RegistriesConf != "" {
+		return true
+	}
+
+	return false
 }

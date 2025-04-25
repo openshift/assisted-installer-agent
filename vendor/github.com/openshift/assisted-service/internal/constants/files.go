@@ -2,7 +2,6 @@ package constants
 
 const Kubeconfig = "kubeconfig"
 const KubeconfigNoIngress = "kubeconfig-noingress"
-const KubeadminPassword = "kubeadmin-password"
 
 // an arbitrary subdomain of *.apps.<cluster-name>.<base-domain> used by DNS
 // validations to verify that *.apps wildcard is configured properly

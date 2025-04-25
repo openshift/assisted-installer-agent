@@ -54,9 +54,6 @@ type Cluster struct {
 	// Json formatted string containing the majority groups for connectivity checks.
 	ConnectivityMajorityGroups string `json:"connectivity_majority_groups,omitempty" gorm:"type:text"`
 
-	// Specifies the required number of control plane nodes that should be part of the cluster.
-	ControlPlaneCount int64 `json:"control_plane_count,omitempty"`
-
 	// controller logs collected at
 	// Format: date-time
 	ControllerLogsCollectedAt strfmt.DateTime `json:"controller_logs_collected_at,omitempty" gorm:"type:timestamp with time zone"`
@@ -88,7 +85,7 @@ type Cluster struct {
 	// JSON-formatted string containing the usage information by feature name
 	FeatureUsage string `json:"feature_usage,omitempty" gorm:"type:text"`
 
-	// (DEPRECATED) Please use 'control_plane_count' instead. Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster
+	// Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster
 	// over multiple master nodes whereas 'None' installs a full cluster over one node.
 	//
 	// Enum: [Full None]
@@ -173,9 +170,6 @@ type Cluster struct {
 
 	// last installation preparation
 	LastInstallationPreparation LastInstallationPreparation `json:"last-installation-preparation,omitempty" gorm:"embedded;embeddedPrefix:last_installation_preparation_"`
-
-	// load balancer
-	LoadBalancer *LoadBalancer `json:"load_balancer,omitempty" gorm:"embedded;embeddedPrefix:load_balancer_"`
 
 	// The progress of log collection or empty if logs are not applicable
 	LogsInfo LogsState `json:"logs_info,omitempty" gorm:"type:varchar(2048)"`
@@ -375,10 +369,6 @@ func (m *Cluster) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLastInstallationPreparation(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLoadBalancer(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -958,25 +948,6 @@ func (m *Cluster) validateLastInstallationPreparation(formats strfmt.Registry) e
 	return nil
 }
 
-func (m *Cluster) validateLoadBalancer(formats strfmt.Registry) error {
-	if swag.IsZero(m.LoadBalancer) { // not required
-		return nil
-	}
-
-	if m.LoadBalancer != nil {
-		if err := m.LoadBalancer.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("load_balancer")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("load_balancer")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *Cluster) validateLogsInfo(formats strfmt.Registry) error {
 	if swag.IsZero(m.LogsInfo) { // not required
 		return nil
@@ -1331,10 +1302,6 @@ func (m *Cluster) ContextValidate(ctx context.Context, formats strfmt.Registry) 
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateLoadBalancer(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateLogsInfo(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -1522,22 +1489,6 @@ func (m *Cluster) contextValidateLastInstallationPreparation(ctx context.Context
 			return ce.ValidateName("last-installation-preparation")
 		}
 		return err
-	}
-
-	return nil
-}
-
-func (m *Cluster) contextValidateLoadBalancer(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.LoadBalancer != nil {
-		if err := m.LoadBalancer.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("load_balancer")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("load_balancer")
-			}
-			return err
-		}
 	}
 
 	return nil

@@ -134,7 +134,7 @@ var _ = Describe("Route test", func() {
 			{"should have no routes", testHandler{routes: nothing.routes, linkNames: nothing.linkNames, family: unix.AF_INET}, len(nothing.routes), []*models.Route{}, ""},
 			{"should have routes when no internet connection/default route", testHandler{routes: ipv4NoInternetConnection.routes, linkNames: ipv4NoInternetConnection.linkNames, family: unix.AF_INET}, len(ipv4NoInternetConnection.routes), ipv4RouteNoInternetConnection, ""},
 			{"should return error when retrieving routes", testHandler{errorRoutes: fmt.Errorf("cannot retrieve routes"), family: unix.AF_INET}, 0, nil, "cannot retrieve routes"},
-			{"should return error when retrieving link name", testHandler{routes: ipV4GW.routes, errorLinkName: fmt.Errorf("cannot retrieve link name"), family: unix.AF_INET}, 0, nil, "cannot retrieve link name"},
+			{"should skip routes when retrieving link name fails", testHandler{routes: ipV4GW.routes, errorLinkName: fmt.Errorf("cannot retrieve link name"), family: unix.AF_INET}, 0, nil, ""},
 			{"should parse from multipath", testHandler{routes: ipv4WithMultiPath.routes, linkNames: ipv4WithMultiPath.linkNames, family: unix.AF_INET}, len(ipv4WithMultiPath.routes), ipv4RoutWithMultiPath, ""},
 		}
 
@@ -165,7 +165,7 @@ var _ = Describe("Route test", func() {
 			{"should have no routes", testHandler{routes: nothing.routes, linkNames: nothing.linkNames, family: unix.AF_INET6}, len(nothing.routes), nil, ""},
 			{"should have routes when no internet connection/default route", testHandler{routes: ipv6NoInternetConnection.routes, linkNames: ipv6NoInternetConnection.linkNames, family: unix.AF_INET6}, len(ipv6NoInternetConnection.routes), ipv6RouteNoInternetConnection, ""},
 			{"should return error when retrieving routes", testHandler{errorRoutes: fmt.Errorf("cannot retrieve routes"), family: unix.AF_INET6}, 0, nil, "cannot retrieve routes"},
-			{"should return error when retrieving link name", testHandler{routes: ipV6GW.routes, errorLinkName: fmt.Errorf("cannot retrieve link name"), family: unix.AF_INET6}, 0, nil, "cannot retrieve link name"},
+			{"should skip routes when retrieving link name fails", testHandler{routes: ipV6GW.routes, errorLinkName: fmt.Errorf("cannot retrieve link name"), family: unix.AF_INET6}, 0, nil, ""},
 			{"should have a route when gateway is nil", testHandler{routes: ipV6GWNil.routes, linkNames: ipV6GWNil.linkNames, family: unix.AF_INET6}, len(ipV6GWNil.routes), ipv6RouteGWNil, ""},
 		}
 		for _, tc := range testCases {

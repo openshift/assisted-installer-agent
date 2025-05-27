@@ -53,7 +53,7 @@ func (a *nextStepRunnerAction) cleanupPrevious() {
 func (a *nextStepRunnerAction) Args() []string {
 	a.cleanupPrevious()
 
-	arguments := []string{"run", "--rm", "-ti", "--privileged", "--pid=host", "--net=host",
+	arguments := []string{"run", "--rm", "-ti", "--privileged", "--pid=host", "--uts=host", "--net=host",
 
 		// unlimited number of processes in the container
 		"--pids-limit=0",

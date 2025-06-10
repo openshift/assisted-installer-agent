@@ -47,6 +47,7 @@ var _ = Describe("MTU checker", func() {
 	ipv6Mask := net.CIDRMask(64, 128)
 
 	BeforeEach(func() {
+		// for a test. will be removed
 		mockExecuter = &MockExecuter{}
 		checker = &mtuChecker{executer: mockExecuter}
 	})

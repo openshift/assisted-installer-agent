@@ -334,8 +334,8 @@ github.com/jaypipes/ghw/pkg/snapshot
 github.com/jaypipes/ghw/pkg/topology
 github.com/jaypipes/ghw/pkg/unitutil
 github.com/jaypipes/ghw/pkg/util
-# github.com/jaypipes/pcidb v1.0.0
-## explicit; go 1.17
+# github.com/jaypipes/pcidb v1.0.1
+## explicit; go 1.21
 github.com/jaypipes/pcidb
 # github.com/jinzhu/copier v0.4.0
 ## explicit; go 1.13

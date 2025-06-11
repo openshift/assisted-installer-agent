@@ -1,6 +1,8 @@
 module github.com/openshift/assisted-installer-agent
 
-go 1.20
+go 1.21
+
+toolchain go1.24.3
 
 require (
 	github.com/PuerkitoBio/rehttp v1.4.0
@@ -13,7 +15,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/jaypipes/ghw v0.16.0
-	github.com/jaypipes/pcidb v1.0.0
+	github.com/jaypipes/pcidb v1.0.1
 	github.com/jinzhu/copier v0.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5

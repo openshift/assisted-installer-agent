@@ -45,7 +45,7 @@ var _ = Describe("Interfaces", func() {
 		dependencies.On("ReadFile", "/sys/class/net/eth0/carrier").Return([]byte("1\n"), nil).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/device/device").Return([]byte("my-device"), nil).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth0/device/vendor").Return([]byte("my-vendor"), nil).Once()
-		dependencies.On("LinkByName", "eth0").Return(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: "eth0"}}, nil).Once()
+		util.SetupNetlinkMocks(dependencies, []util.Interface{interfaceMock})
 		dependencies.On("RouteList", mock.Anything, mock.Anything).Return([]netlink.Route{
 			{
 				Dst:      &net.IPNet{IP: net.ParseIP("de90::"), Mask: net.CIDRMask(64, 128)},
@@ -105,7 +105,7 @@ var _ = Describe("Interfaces", func() {
 		dependencies.On("ReadFile", "/sys/class/net/eth2.10/carrier").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth2.10/device/device").Return(nil, errors.New("Blah")).Once()
 		dependencies.On("ReadFile", "/sys/class/net/eth2.10/device/vendor").Return([]byte("my-vendor2"), nil).Once()
-		dependencies.On("LinkByName", mock.Anything).Return(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: "eth0"}}, nil)
+		util.SetupNetlinkMocks(dependencies, rets)
 		dependencies.On("RouteList", mock.Anything, mock.Anything).Return([]netlink.Route{
 			{
 				Dst:      &net.IPNet{IP: net.ParseIP("de90::"), Mask: net.CIDRMask(62, 128)},

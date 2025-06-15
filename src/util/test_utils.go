@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/stretchr/testify/mock"
+	"github.com/vishvananda/netlink"
 )
 
 func NewFilledMockInterface(mtu int, name string, macAddr string, flags net.Flags, addrs []string, speedMbps int64, interfaceType string) *MockInterface {
@@ -16,7 +17,7 @@ func FillInterfaceMock(mock *mock.Mock, mtu int, name string, macAddr string, fl
 	mock.On("Name").Return(name)
 	mock.On("MTU").Return(mtu)
 	hwAddr, _ := net.ParseMAC(macAddr)
-	mock.On("HardwareAddr").Return(hwAddr)
+	mock.On("HardwareAddr").Return(hwAddr).Maybe()
 	mock.On("Flags").Return(flags)
 	mock.On("Addrs").Return(parseAddresses(addrs), nil).Once()
 	mock.On("SpeedMbps").Return(speedMbps)
@@ -41,4 +42,19 @@ func parseAddress(addrStr string) net.Addr {
 		return &net.IPNet{}
 	}
 	return &net.IPNet{IP: ip, Mask: ipnet.Mask}
+}
+
+func SetupNetlinkMocks(dependencies *MockIDependencies, interfaces []Interface) {
+	for _, iface := range interfaces {
+		name := iface.Name()
+		hwAddr := iface.HardwareAddr()
+
+		link := &netlink.Dummy{
+			LinkAttrs: netlink.LinkAttrs{
+				Name:         name,
+				HardwareAddr: hwAddr,
+			},
+		}
+		dependencies.On("LinkByName", name).Return(link, nil).Maybe()
+	}
 }

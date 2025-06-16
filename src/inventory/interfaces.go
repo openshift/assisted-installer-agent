@@ -8,6 +8,7 @@ import (
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	"github.com/vishvananda/netlink"
 )
 
 const ipv4LocalLinkCIDR = "169.254.0.0/16"
@@ -82,6 +83,35 @@ func getFlags(flags net.Flags) []string {
 	}
 }
 
+// getPermMacAddress returns the permanent MAC address regardless of network bonding configuration.
+// For bond slaves, it returns the PermHardwareAddr,
+// For non-slave interfaces, the HardwareAddr is the permanent MAC address anyway
+func (i *interfaces) getPermMacAddress(name string) string {
+	link, err := i.dependencies.LinkByName(name)
+	if err != nil {
+		logrus.WithError(err).Warnf("Could not find netlink for interface %s", name)
+		return ""
+	}
+
+	if link.Attrs() == nil {
+		logrus.Warnf("No attributes found for interface %s", name)
+		return ""
+	}
+
+	if link.Attrs().Slave != nil {
+		if bondSlave, ok := link.Attrs().Slave.(*netlink.BondSlave); ok && bondSlave.PermHardwareAddr != nil {
+			return bondSlave.PermHardwareAddr.String()
+		}
+	}
+
+	if link.Attrs().HardwareAddr != nil {
+		return link.Attrs().HardwareAddr.String()
+	}
+
+	logrus.Warnf("No hardware address found for interface %s", name)
+	return ""
+}
+
 func (i *interfaces) getInterfaces() []*models.Interface {
 	ret := make([]*models.Interface, 0)
 	ins, err := i.dependencies.Interfaces()
@@ -95,7 +125,7 @@ func (i *interfaces) getInterfaces() []*models.Interface {
 			HasCarrier:    i.hasCarrier(in.Name()),
 			IPV4Addresses: make([]string, 0),
 			IPV6Addresses: make([]string, 0),
-			MacAddress:    in.HardwareAddr().String(),
+			MacAddress:    i.getPermMacAddress(in.Name()),
 			Name:          in.Name(),
 			Mtu:           int64(in.MTU()),
 			Biosdevname:   i.getBiosDevname(in.Name()),

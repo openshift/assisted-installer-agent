@@ -116,7 +116,7 @@ var _ = Describe("Machine uuid test", func() {
 			dependencies.On("ReadFile", "/sys/class/net/eth1/carrier").Return(nil, errors.New("Blah")).Once()
 			dependencies.On("ReadFile", "/sys/class/net/eth1/device/device").Return(nil, errors.New("Blah")).Once()
 			dependencies.On("ReadFile", "/sys/class/net/eth1/device/vendor").Return([]byte("my-vendor2"), nil).Once()
-			dependencies.On("LinkByName", mock.Anything).Return(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: "eth0"}}, nil)
+			agentutils.SetupNetlinkMocks(dependencies, rets)
 			dependencies.On("RouteList", mock.Anything, mock.Anything).Return([]netlink.Route{
 				{
 					Dst:      &net.IPNet{IP: net.ParseIP("de90::"), Mask: net.CIDRMask(64, 128)},

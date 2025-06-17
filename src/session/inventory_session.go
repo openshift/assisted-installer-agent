@@ -204,7 +204,11 @@ func readCACertificate(agentConfig *config.AgentConfig) (*x509.CertPool, error) 
 		return nil, err
 	}
 
-	pool := x509.NewCertPool()
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load system cert pool: %w", err)
+	}
+
 	if !pool.AppendCertsFromPEM(caData) {
 		return nil, fmt.Errorf("failed to load certificate: %s", agentConfig.CACertificatePath)
 	}

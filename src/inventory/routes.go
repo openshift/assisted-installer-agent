@@ -73,8 +73,8 @@ func getIPRoutes(h handler) ([]*models.Route, error) {
 	for _, r := range rList {
 		linkName, err := h.getLinkName(r)
 		if err != nil {
-			logrus.Errorf("Unable to retrieve the link name for index %d: %s", r.LinkIndex, err)
-			return nil, err
+			logrus.Warnf("Skipping route with index %d: failed to retrieve link name: %s", r.LinkIndex, err)
+			continue
 		}
 		var dst, gw string
 		if r.Dst == nil {

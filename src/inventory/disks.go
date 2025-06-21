@@ -478,7 +478,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Path:                    path,
 			DriveType:               d.getDriveType(disk),
 			Serial:                  unknownToEmpty(disk.SerialNumber),
-			SizeBytes:               int64(disk.SizeBytes),
+			SizeBytes:               int64(disk.SizeBytes), //nolint: gosec
 			Vendor:                  unknownToEmpty(disk.Vendor),
 			Wwn:                     getPureWWN(disk.WWN, diskPath2diskWWN[path]),
 			Bootable:                d.getBootable(path),

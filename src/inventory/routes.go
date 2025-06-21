@@ -91,8 +91,8 @@ func getIPRoutes(h handler) ([]*models.Route, error) {
 			Interface:   linkName,
 			Destination: dst,
 			Gateway:     gw,
-			Family:      int32(h.getFamily()),
-			Metric:      int32(r.Priority),
+			Family:      int32(h.getFamily()), //nolint: gosec
+			Metric:      int32(r.Priority),    //nolint: gosec
 		})
 	}
 	return routes, nil

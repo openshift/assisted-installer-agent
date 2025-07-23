@@ -61,8 +61,9 @@ func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool)
 	}
 
 	loggingConfig.Tags = []string{"agent", "installer"}
+	loggingConfig.Services = []string{"ironic-agent"}
 	if loggingConfig.IsBootstrap {
-		loggingConfig.Services = []string{"bootkube"}
+		loggingConfig.Services = append(loggingConfig.Services, "bootkube")
 	}
 
 	if loggingConfig.PullSecretToken == "" {

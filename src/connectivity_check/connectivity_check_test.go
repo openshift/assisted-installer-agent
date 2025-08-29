@@ -218,7 +218,7 @@ var _ = Describe("check host parallel validation", func() {
 		It(t.name, func() {
 			d := setupDispather(t.simulateL2IPConflict, t.success, t.hosts.Nics)
 			ret, err := d.Run(models.ConnectivityCheckParams{t.hosts}, funk.Map(t.nics, func(s string) OutgoingNic {
-				return OutgoingNic{Name: s, HasIpv4Addresses: true, HasIpv6Addresses: true}
+				return OutgoingNic{Name: s, HasIpv4Addresses: true, HasIpv6Addresses: true, Addresses: getAddr("192.168.1.133", 24)}
 			}).([]OutgoingNic))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ret.RemoteHosts).To(HaveLen(1))
@@ -345,4 +345,14 @@ Received 0 response(s)`, args[5], args[6]), nil
 func TestConnectivityCheck(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "connectivity check tests")
+}
+
+func getAddr(addr string, mask int) []net.Addr {
+	localIP := net.ParseIP(addr)
+	localMask := net.CIDRMask(mask, 32)
+
+	return []net.Addr{&net.IPNet{
+		IP:   localIP,
+		Mask: localMask,
+	}}
 }

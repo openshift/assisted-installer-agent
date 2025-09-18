@@ -40,7 +40,8 @@ RUN INSTALL_PKGS="findutils iputils podman ipmitool file sg3_utils fio nmap dhcl
     rm -rf /var/cache/{yum,dnf}/*
 
 LABEL com.redhat.component="assisted-installer-agent-container" \
-      name="assisted-installer-agent" \
+      name="rhai/assisted-installer-agent-rhel9" \
+      cpe="cpe:/a:redhat:assisted_installer:2.38::el9" \
       version="${version}" \
       upstream-ref="${version}" \
       upstream-url="https://github.com/openshift/assisted-installer-agent.git" \

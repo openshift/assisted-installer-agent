@@ -53,6 +53,7 @@ LABEL com.redhat.component="multicluster-engine-assisted-installer-agent-contain
       io.k8s.description="OpenShift Assisted Installer" \
       distribution-scope="public" \
       release="${release}" \
+      cpe="cpe:/a:redhat:multicluster_engine:2.9::el9" \
       vendor="Red Hat, Inc." \
       io.openshift.tags="OpenShift 4" \
       upstream_commit="${version}" \

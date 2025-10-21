@@ -1,6 +1,6 @@
 module github.com/openshift/assisted-installer-agent
 
-go 1.20
+go 1.21
 
 require (
 	github.com/PuerkitoBio/rehttp v1.4.0
@@ -17,8 +17,8 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.33.1
-	github.com/openshift/assisted-service v1.0.10-0.20241215073835-af8bf11a3fcd
+	github.com/onsi/gomega v1.34.1
+	github.com/openshift/assisted-service v1.0.10-0.20241216003847-83494e54a4ce
 	github.com/openshift/assisted-service/client v0.0.0
 	github.com/openshift/assisted-service/models v0.0.0
 	github.com/openshift/baremetal-runtimecfg v0.0.0-20220211165258-fe92b9507bec
@@ -27,7 +27,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.11.0
 	github.com/ssgreg/journald v1.0.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/thoas/go-funk v0.9.3
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	golang.org/x/sync v0.11.0
@@ -42,10 +42,10 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/distribution v2.8.2-beta.1+incompatible // indirect
+	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/klauspost/compress v1.17.1 // indirect
@@ -60,7 +60,8 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/openshift/api v0.0.0-20240521212423-414cf30d37be // indirect
 	github.com/openshift/assisted-service/api v0.0.0 // indirect
-	github.com/openshift/hive/apis v0.0.0-20220222213051-def9088fdb5a // indirect
+	github.com/openshift/custom-resource-status v1.1.3-0.20220503160415-f2fdb4999d87 // indirect
+	github.com/openshift/hive/apis v0.0.0-20231220215202-ad99b9e52d27 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
@@ -72,9 +73,9 @@ require (
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
-	golang.org/x/exp v0.0.0-20231226003508-02704c960a9b // indirect
-	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
+	golang.org/x/mod v0.19.0 // indirect
+	golang.org/x/tools v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240513163218-0867130af1f8 // indirect
 	google.golang.org/grpc v1.63.2 // indirect
 	sigs.k8s.io/controller-runtime v0.16.3 // indirect
@@ -113,7 +114,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
-	github.com/golang/glog v1.2.0 // indirect
+	github.com/golang/glog v1.2.4 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
@@ -159,7 +160,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.20.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
@@ -195,10 +196,10 @@ replace (
 	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20220217140404-6b1ecb71984f
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils => github.com/openshift/baremetal-operator/pkg/hardwareutils v0.0.0-20220217140404-6b1ecb71984f
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
-	github.com/openshift/assisted-service => github.com/openshift/assisted-service v0.0.0-20250322033521-434b52535ecb
-	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20250322033521-434b52535ecb
-	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20250322033521-434b52535ecb
-	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20250322033521-434b52535ecb
+	github.com/openshift/assisted-service => github.com/openshift/assisted-service v0.0.0-20250321071539-bb292eceebb7
+	github.com/openshift/assisted-service/api => github.com/openshift/assisted-service/api v0.0.0-20250321071539-bb292eceebb7
+	github.com/openshift/assisted-service/client => github.com/openshift/assisted-service/client v0.0.0-20250321071539-bb292eceebb7
+	github.com/openshift/assisted-service/models => github.com/openshift/assisted-service/models v0.0.0-20250321071539-bb292eceebb7
 	golang.org/x/crypto => github.com/openshift/golang-crypto v0.33.1-0.20250310193910-9003f682e581
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205

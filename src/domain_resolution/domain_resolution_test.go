@@ -90,10 +90,12 @@ var _ = Describe("Domain resolution", func() {
 	})
 
 	Context("Resolution error", func() {
-		dm := DomainResolver{}
-		ips, err := dm.ResolveIPs("faillallthetimeigal-blbl.com")
-		Expect(err).ShouldNot(HaveOccurred())
-		Expect(ips).Should(BeEmpty())
+		It("Should handle non-existent domain resolution", func() {
+			dm := DomainResolver{}
+			ips, err := dm.ResolveIPs("nonexistent.invalid")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(ips).Should(BeEmpty())
+		})
 	})
 
 	Context("Run", func() {

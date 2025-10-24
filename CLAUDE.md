@@ -46,3 +46,17 @@ go list ./... | grep -v subsystem | xargs go test
 
 - **Unit tests**: Located alongside source code in various `src/` and `pkg/` directories
 - **Subsystem tests**: Located in the `subsystem/` directory (require additional setup)
+
+## Known Issues
+
+### DNS Resolution Test in Sandbox Mode
+
+The `src/domain_resolution` package contains a test that performs actual DNS lookups using the reserved `.invalid` TLD (RFC 2606). When running in a sandboxed environment (like Claude Code), this test may fail with:
+
+```
+lookup nonexistent.invalid: Temporary failure in name resolution
+```
+
+This is expected behavior due to network restrictions in the sandbox. In a normal environment, the DNS resolver returns an `IsNotFound` error (which the code suppresses), but in the sandbox the DNS lookup is blocked entirely, resulting in an `IsTemporary` error.
+
+The test will pass when run outside the sandbox where DNS access is available.

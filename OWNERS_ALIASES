@@ -19,6 +19,7 @@ aliases:
     - danmanor
     - eifrach
     - linoyaslan
+    - cve-automation
   emeritus_approvers:
     - empovit
     - yevgeny-shnaidman

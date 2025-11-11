@@ -18,6 +18,7 @@ aliases:
     - adriengentil
     - danmanor
     - eifrach
+    - cve-automation
   emeritus_approvers:
     - empovit
     - yevgeny-shnaidman

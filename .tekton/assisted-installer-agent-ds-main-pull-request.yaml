@@ -56,7 +56,8 @@ spec:
         value: main
       - name: pathInRepo
         value: "pipelines/standard-pipeline.yaml"
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-assisted-installer-agent-ds-main
   workspaces:
   - name: git-auth
     secret:

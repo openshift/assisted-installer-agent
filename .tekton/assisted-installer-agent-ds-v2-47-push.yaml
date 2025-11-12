@@ -6,13 +6,13 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "master"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "v2.47"
   creationTimestamp:
   labels:
-    appstudio.openshift.io/application: assisted-installer-application-ds-main
-    appstudio.openshift.io/component: assisted-installer-agent-ds-main
+    appstudio.openshift.io/application: assisted-installer-application-ds-v2-47
+    appstudio.openshift.io/component: assisted-installer-agent-ds-v2-47
     pipelines.appstudio.openshift.io/type: build
-  name: assisted-installer-agent-ds-main-on-push
+  name: assisted-installer-agent-ds-v2-47-on-push
   namespace: assisted-installer-tenant
 spec:
   params:
@@ -21,7 +21,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/assisted-installer-tenant/assisted-installer-application-ds-main/assisted-installer-agent-ds-main:{{revision}}
+    value: quay.io/redhat-user-workloads/assisted-installer-tenant/assisted-installer-application-ds-v2-47/assisted-installer-agent-ds-v2-47:{{revision}}
   - name: build-platforms
     value:
     - linux/x86_64
@@ -53,7 +53,7 @@ spec:
   - name: slack-webhook-notification-secret-key
     value: token
   - name: slack-webhook-notification-message
-    value: "[D/S] [assisted-installer-agent] [{{revision}}] [<https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/assisted-installer-tenant/applications/assisted-installer-application-ds-main/pipelineruns/$(context.pipelineRun.name)|pipeline>] Konflux build failed"
+    value: "[D/S] [2.47] [assisted-installer-agent] [<https://github.com/openshift/assisted-installer-agent/commit/{{revision}}|{{revision}}>] [<https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/assisted-installer-tenant/applications/assisted-installer-application-ds-v2-47/pipelineruns/$(context.pipelineRun.name)|pipeline>] Konflux build failed"
   pipelineRef:
     resolver: git
     params:
@@ -63,7 +63,8 @@ spec:
         value: main
       - name: pathInRepo
         value: "pipelines/standard-pipeline.yaml"
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-assisted-installer-agent-ds-v2-47
   workspaces:
   - name: git-auth
     secret:

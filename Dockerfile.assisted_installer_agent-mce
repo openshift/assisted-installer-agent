@@ -46,6 +46,7 @@ LABEL com.redhat.component="multicluster-engine-assisted-installer-agent-contain
       version="${version}" \
       upstream-ref="${version}" \
       upstream-url="https://github.com/openshift/assisted-installer-agent.git" \
+      url="https://github.com/openshift/assisted-installer-agent.git" \
       summary="OpenShift Assisted Installer Agent" \
       io.k8s.display-name="OpenShift Assisted Installer" \
       maintainer="Liat Gamliel <lgamliel@redhat.com>" \

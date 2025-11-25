@@ -124,13 +124,13 @@ var _ = Describe("Hostname test", func() {
 	}
 
 	It("Parse Error", func() {
-		o, e, exitCode := GetFreeAddresses("blah blah", execute, log)
+		o, e, exitCode := GetFreeAddresses("blah blah", execute, log, false)
 		Expect(exitCode).To(Equal(-1))
 		Expect(o).To(BeEmpty())
 		Expect(e).To(Equal("invalid character 'b' looking for beginning of value"))
 	})
 	It("Bad network", func() {
-		o, e, exitCode := GetFreeAddresses(freeRequest("10.0.0.1/24"), execute, log)
+		o, e, exitCode := GetFreeAddresses(freeRequest("10.0.0.1/24"), execute, log, false)
 		Expect(exitCode).To(Equal(-1))
 		Expect(o).To(BeEmpty())
 		Expect(e).To(Equal("Requested CIDR 10.0.0.0/24 is not equal to provided network 10.0.0.1/24"))
@@ -139,7 +139,7 @@ var _ = Describe("Hostname test", func() {
 		It("Happpy flow", func() {
 			execute.On("Execute", "nmap", "-sn", "-PR", "-n", "-oX", "-", "10.0.0.0/24").
 				Return(oneAddress, "", 0)
-			o, e, exitCode := GetFreeAddresses(freeRequest("10.0.0.0/24"), execute, log)
+			o, e, exitCode := GetFreeAddresses(freeRequest("10.0.0.0/24"), execute, log, false)
 			Expect(exitCode).To(Equal(0))
 			Expect(e).To(BeEmpty())
 			parsedResponse := *parseResponse(o)
@@ -168,7 +168,7 @@ var _ = Describe("Hostname test", func() {
 			Return(empty, "", 0)
 		execute.On("Execute", "nmap", "-sn", "-PR", "-n", "-oX", "-", "192.168.28.0/22").
 			Return(empty, "", 0)
-		o, e, exitCode := GetFreeAddresses(freeRequest("10.0.0.0/24", "192.168.0.0/18"), execute, log)
+		o, e, exitCode := GetFreeAddresses(freeRequest("10.0.0.0/24", "192.168.0.0/18"), execute, log, false)
 		Expect(exitCode).To(Equal(0))
 		Expect(e).To(BeEmpty())
 		parsedResponse := *parseResponse(o)

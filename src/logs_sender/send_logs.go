@@ -388,6 +388,12 @@ func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, stri
 	}
 
 	for _, service := range loggingConfig.Services {
+		serviceName := service + ".service"
+		stdout, _, _ := l.ExecutePrivileged("systemctl", "list-units", "--no-legend", serviceName)
+		if !strings.Contains(stdout, serviceName) {
+			log.Infof("Service %s not found, skipping log collection", service)
+			continue
+		}
 		outputFile := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
 		if err := getJournalLogs(l, loggingConfig.Since, outputFile,
 			[]string{"-u", service}); err != nil {

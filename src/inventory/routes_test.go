@@ -139,7 +139,6 @@ var _ = Describe("Route test", func() {
 		}
 
 		for _, tc := range testCases {
-			tc := tc
 			It(tc.name, func() {
 				routes, err := getIPRoutes(tc.handler)
 				if err != nil {
@@ -169,7 +168,6 @@ var _ = Describe("Route test", func() {
 			{"should have a route when gateway is nil", testHandler{routes: ipV6GWNil.routes, linkNames: ipV6GWNil.linkNames, family: unix.AF_INET6}, len(ipV6GWNil.routes), ipv6RouteGWNil, ""},
 		}
 		for _, tc := range testCases {
-			tc := tc
 			It(tc.name, func() {
 				routes, err := getIPRoutes(tc.handler)
 				if err != nil {

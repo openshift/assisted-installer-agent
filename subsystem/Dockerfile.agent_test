@@ -1,15 +1,27 @@
 ARG ASSISTED_INSTALLER_AGENT=quay.io/edge-infrastructure/assisted-installer-agent:latest
-FROM $ASSISTED_INSTALLER_AGENT
 
+# Stage 1: Setup repositories on UBI 9 (better compatibility)
+FROM registry.access.redhat.com/ubi9/ubi:latest AS repo-setup
 RUN dnf install -y 'dnf-command(config-manager)' && \
     dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
-    dnf install -y --nobest --allowerasing \
+    sed -i 's/$releasever/9/g' /etc/yum.repos.d/docker-ce.repo && \
+    dnf config-manager --add-repo http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/ && \
+    dnf config-manager --add-repo http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
+
+# Stage 2: Final image based on assisted-installer-agent
+FROM $ASSISTED_INSTALLER_AGENT
+
+# Copy repository configuration and GPG keys from stage 1
+COPY --from=repo-setup /etc/yum.repos.d/ /etc/yum.repos.d/
+COPY --from=repo-setup /etc/pki/rpm-gpg/ /etc/pki/rpm-gpg/
+
+# Install all packages directly
+RUN dnf install -y --nobest --allowerasing \
         docker-ce \
         docker-ce-cli \
         containerd.io \
         tcpdump \
-        procps \
-        python39 \
+        procps-ng \
     && dnf clean all
 
 RUN echo -e "#!/bin/sh \nshift 7 && \$@" > /usr/bin/nsenter && chmod a+x /usr/bin/nsenter

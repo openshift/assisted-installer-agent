@@ -13,43 +13,71 @@ RUN TARGETPLATFORM=$TARGETPLATFORM make build-release
 # Extract the commit reference from which the image is built
 USER 0
 
-RUN git config --global --add safe.directory '*' && \ 
+RUN git config --global --add safe.directory '*' && \
     git rev-parse --short HEAD > /commit-reference.txt
 
-FROM quay.io/centos/centos:stream9
+# Stage to extract repository configuration from CentOS Stream 9 - no package installation needed
+FROM quay.io/centos/centos:stream9 AS repo-source
+
+# Final stage - UBI minimal with extracted repos for missing packages
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:6fc28bcb6776e387d7a35a2056d9d2b985dc4e26031e98a2bd35a7137cd6fd71
 ARG TARGETPLATFORM
 
-RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then dnf install -y biosdevname dmidecode ; fi ; \
-    if [[ "$TARGETPLATFORM" == "linux/arm64" || -z "$TARGETPLATFORM" ]] ; then dnf install -y dmidecode ; fi ; \
-    dnf install --setopt=install_weak_deps=False --setopt=tsdocs=False -y \
-            findutils iputils \
-            podman \
-            # inventory
-            ipmitool file \
-            sg3_utils \
-            # inventory - this contains pci-ids DB, required GPU PCI scan
-            hwdata \
-            # disk_speed_check
-            fio \
-            # free_addresses
-            nmap \
-            # dhcp_lease_allocate
-            dhclient \
-            # logs_sender
-            tar openssh-clients \
-            # ntp_synchronizer
-            chrony \
-            # for the 'nsenter' executable
-            util-linux-core \
-            && dnf update --setopt=install_weak_deps=False --setopt=tsdocs=False -y systemd && dnf clean all && rm -rf /var/cache \
-            # Clean unnecessary nmap files to reduce image size
-            && find /usr/share/nmap/ -mindepth 1 -maxdepth 1 | grep -v nmap-payloads | xargs rm -rf \
-            # Remove cracklib installed as part of systemd to reduce image size
-            && rm -rf /usr/share/cracklib \
-            # Remove manpages && docs to reduce image size
-            && rm -rf /usr/share/man /usr/share/doc \
-            # Remove RPM/DNF files to reduce image size
-            && rm -rf /var/lib/rpm/rpmdb.sqlite /var/lib/dnf
+# Install packages available in UBI minimal and dnf for metalink support
+RUN microdnf install -y \
+        findutils \
+        tar \
+        rsync \
+        iputils \
+        file \
+        hwdata \
+        openssh-clients \
+        util-linux-core \
+        podman \
+        sg3_utils \
+        nmap \
+        systemd \
+        dnf \
+    && microdnf clean all
+
+# Copy repository configuration from CentOS Stream 9 for packages not in UBI
+COPY --from=repo-source /etc/yum.repos.d/ /etc/yum.repos.d/
+COPY --from=repo-source /etc/pki/rpm-gpg/ /etc/pki/rpm-gpg/
+
+# Fix variable expansion in CentOS repos and enable specific repos for missing packages
+RUN ls /etc/yum.repos.d/ && \
+    sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/centos*.repo && \
+    sed -i 's/\$stream/9-stream/g' /etc/yum.repos.d/centos*.repo && \
+    sed -i 's/\$basearch/x86_64/g' /etc/yum.repos.d/centos*.repo && \
+    sed -i '/\[baseos\]/,/^\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/centos.repo && \
+    sed -i '/\[appstream\]/,/^\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/centos.repo
+
+# Install packages that require CentOS repos using dnf
+RUN dnf install -y --nodocs --setopt=install_weak_deps=False \
+        ipmitool \
+        fio \
+        dhclient \
+        chrony \
+        kmod \
+        golang \
+    && dnf clean all
+
+# Set Go environment variables for compatibility with e2e tests
+ENV GOROOT=/usr/lib/golang \
+    GOPATH=/go \
+    PATH="/usr/lib/golang/bin:/go/bin:${PATH}"
+
+# Install architecture-specific packages from CentOS repos using dnf
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        dnf install -y --nodocs --setopt=install_weak_deps=False biosdevname dmidecode; \
+    elif [ "$(uname -m)" = "aarch64" ]; then \
+        dnf install -y --nodocs --setopt=install_weak_deps=False dmidecode; \
+    fi && dnf clean all
+
+# Clean up repository files to reduce security surface and remove unnecessary files
+RUN rm -rf /etc/yum.repos.d/* /etc/pki/rpm-gpg/* /var/cache/{yum,microdnf}/* && \
+    find /usr/share/nmap/ -mindepth 1 -maxdepth 1 | grep -v nmap-payloads | xargs rm -rf && \
+    rm -rf /usr/share/cracklib /usr/share/man /usr/share/doc
 
 
 # Copy the commit reference from the builder

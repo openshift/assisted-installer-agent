@@ -17,17 +17,20 @@ WORKDIR /app
 RUN CGO_FLAG=1 make build
 
 
-FROM --platform=$BUILDPLATFORM registry.redhat.io/rhel9-4-els/rhel:9.4
+FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:6fc28bcb6776e387d7a35a2056d9d2b985dc4e26031e98a2bd35a7137cd6fd71
 ARG release=main
 ARG version=latest
 
+# Install all packages using dnf for better dependency resolution with rpm-prefetching
 RUN PKGS="findutils iputils podman ipmitool file sg3_utils fio nmap dhclient tar openssh-clients chrony util-linux hwdata kmod" && \
     X86_PKGS=$(if [ "$(uname -m)" == "x86_64" ]; then echo -n biosdevname dmidecode ; fi) && \
     ARM_PKGS=$(if [ "$(uname -m)" == "aarch64" ]; then echo -n dmidecode ; fi) && \
     PPC64LE_PKGS=$(if [ "$(uname -m)" == "ppc64le" ]; then echo -n '' ; fi) && \
     S390X_PKGS=$(if [ "$(uname -m)" == "s390x" ]; then echo -n '' ; fi) && \
-    dnf install -y $PKGS $X86_PKGS $ARM_PKGS $PPC64LE_PKGS $S390X_PKGS && \
-    dnf update -y systemd && \
+    microdnf install -y dnf && \
+    dnf upgrade -y --setopt=install_weak_deps=False --allowerasing openssl-libs pam && \
+    dnf install -y --setopt=install_weak_deps=False --nobest --allowerasing $PKGS $X86_PKGS $ARM_PKGS $PPC64LE_PKGS $S390X_PKGS && \
+    dnf update -y --nobest --allowerasing systemd && \
     dnf clean all && \
     rm -rf /var/cache/{yum,dnf}/*
 

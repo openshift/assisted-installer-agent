@@ -155,7 +155,7 @@ func (e *LogsSenderExecuter) CollectPartialLogs(ctx context.Context, wg *sync.Wa
 			args := []string{"-czvf", partialArchivePath, "-C", filepath.Dir(inputPath), filepath.Base(inputPath)}
 			_, errOut, execCode := e.Execute("tar", args...)
 			if execCode != 0 {
-				log.WithError(errors.Errorf(errOut)).Errorf("Failed to run to archive %s.", inputPath)
+				log.WithError(errors.Errorf("%s", errOut)).Errorf("Failed to run to archive %s.", inputPath)
 				continue
 			}
 			log.Info("uploading partial logs...")
@@ -279,7 +279,7 @@ func getDmesgLogs(l LogsSender, outputFilePath string) error {
 	log.Infof("Running dmesg")
 	stderr, exitCode := l.ExecuteOutputToFile(outputFilePath, "dmesg", "-T")
 	if exitCode != 0 {
-		err := errors.Errorf(stderr)
+		err := errors.Errorf("%s", stderr)
 		log.WithError(err).Errorf("Failed to run dmesg command")
 		return err
 	}
@@ -302,7 +302,7 @@ func getCoreDumps(l LogsSender, targetDir string) error {
 		outputFile := path.Join(targetDir, fmt.Sprintf("coredump_exe_%s_pid_%s", exe, pid))
 		_, stderr, exitCode := l.ExecutePrivileged("coredumpctl", "dump", pid, "--output", outputFile)
 		if exitCode != 0 {
-			err := errors.Errorf(stderr)
+			err := errors.Errorf("%s", stderr)
 			log.WithError(err).Errorf("Failed to read coredump for PID: %s", pid)
 			return err
 		}
@@ -321,7 +321,7 @@ func getJournalLogs(l LogsSender, since string, outputFilePath string, journalFi
 	args = append(args, journalFilterParams...)
 	stderr, exitCode := l.ExecutePrivilegedToFile(outputFilePath, "journalctl", args...)
 	if exitCode != 0 {
-		err := errors.Errorf(stderr)
+		err := errors.Errorf("%s", stderr)
 		log.WithError(err).Errorf("Failed to run journalctl command")
 		return err
 	}
@@ -339,7 +339,7 @@ func uploadLogs(l LogsSender, inputPath string, archivePath string) error {
 	_, errOut, execCode := l.Execute("tar", args...)
 
 	if execCode != 0 {
-		err := errors.Errorf(errOut)
+		err := errors.Errorf("%s", errOut)
 		log.WithError(err).Errorf("Failed to run to archive %s.", inputPath)
 		return err
 	}

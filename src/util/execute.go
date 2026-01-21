@@ -46,7 +46,7 @@ func Execute(command string, args ...string) (stdout string, stderr string, exit
 }
 
 func LogPrivilegedCommandOutput(logfile *os.File, result error, commandDescription string, command string, args ...string) error {
-	log.Infof(commandDescription)
+	log.Infof("%s", commandDescription)
 	loglnToFile(logfile, commandDescription)
 
 	loglnToFile(logfile, fmt.Sprintf("%s %s", command, strings.Join(args[:], " ")))

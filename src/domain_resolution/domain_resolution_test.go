@@ -63,8 +63,6 @@ var _ = Describe("Domain resolution", func() {
 			{ipv4Count: 1, ipv6Count: 1}, {ipv4Count: 2, ipv6Count: 2}, {ipv4Count: 3, ipv6Count: 3},
 			{ipv4Count: 0, ipv6Count: 2}, {ipv4Count: 2, ipv6Count: 0}, {ipv4Count: 100, ipv6Count: 200},
 		} {
-			test := test
-
 			It(fmt.Sprintf("Test with %d IPv4 addresses and %d IPv6 addresses",
 				test.ipv4Count, test.ipv6Count), func() {
 				domainResolutionDependencies.On("ResolveIPs", testDomain).Return(

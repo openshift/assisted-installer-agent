@@ -17,6 +17,9 @@ RUN git config --global --add safe.directory '*' && \
     git rev-parse --short HEAD > /commit-reference.txt
 
 FROM quay.io/centos/centos:stream9
+
+
+
 ARG TARGETPLATFORM
 
 RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then dnf install -y biosdevname dmidecode ; fi ; \

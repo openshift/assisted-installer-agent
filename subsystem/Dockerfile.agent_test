@@ -5,8 +5,8 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS repo-setup
 RUN dnf install -y 'dnf-command(config-manager)' && \
     dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
     sed -i 's/$releasever/9/g' /etc/yum.repos.d/docker-ce.repo && \
-    dnf config-manager --add-repo http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/ && \
-    dnf config-manager --add-repo http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
+    dnf config-manager --add-repo https://mirror.stream.centos.org/9-stream/BaseOS/\$basearch/os/ && \
+    dnf config-manager --add-repo https://mirror.stream.centos.org/9-stream/AppStream/\$basearch/os/
 
 # Stage 2: Final image based on assisted-installer-agent
 FROM $ASSISTED_INSTALLER_AGENT

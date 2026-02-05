@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -47,6 +48,9 @@ func (a *downloadBootArtifacts) Args() []string {
 
 const (
 	retryDownloadAmount                  = 5
+	minFreeSpaceReq                      = 115 * 1024 * 1024 // 115MB
+	retryCmdAmount                       = 5
+	defaultCmdRetryDelay                 = 1 * time.Minute
 	defaultDownloadRetryDelay            = 1 * time.Minute
 	artifactsFolder               string = "/boot/discovery"
 	kernelFile                    string = "vmlinuz"
@@ -69,10 +73,54 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 	if err := json.Unmarshal([]byte(downloaderRequestStr), &req); err != nil {
 		return fmt.Errorf("failed unmarshalling download boot artifacts request: %w", err)
 	}
-
 	bootFolder := path.Join(*req.HostFsMountDir, "/boot")
 	if err := syscall.Mount(bootFolder, bootFolder, "", syscall.MS_REMOUNT, ""); err != nil {
 		return fmt.Errorf("failed remounting /host/boot folder as rw: %w", err)
+	}
+	for i := 0; i < retryCmdAmount; i++ {
+		if err := runDownloadBootArtifacts(req, caCertPath, bootFolder); err != nil {
+			log.WithError(err).Errorf("Failed to download boot artifacts (attempt %d/%d), retrying in %s minute", i+1, retryCmdAmount, defaultCmdRetryDelay)
+			time.Sleep(defaultCmdRetryDelay)
+			continue
+		}
+		break
+	}
+	return nil
+}
+
+func runDownloadBootArtifacts(req models.DownloadBootArtifactsRequest, caCertPath string, bootFolder string) error {
+	// Determine size of /boot folder
+	// Currently there's a space limit of 350MB that's hard-coded in coreos
+	// https://github.com/coreos/coreos-assembler/issues/4384
+	// In OCP 4.19+ ostree uses at least an extra 14MB which does not leave enough space for the
+	// reclaim artifacts.
+	// If there's less than 115MB of space, we call rpm-ostree to cleanup the rhcos image, which takes up a lot of space.
+	freeSpace, err := getSize(bootFolder)
+	if err != nil {
+		return fmt.Errorf("failed to get size of %s to determine free space available for downloading boot artifacts: %w", bootFolder, err)
+	}
+	if freeSpace < minFreeSpaceReq {
+		// Remove some files to free up space
+		filePath := path.Join(bootFolder, "ostree")
+		log.Infof("Not enough space to download boot artifacts, attempting to remove rhcos %s", filePath)
+		sysrootFolder := path.Join(*req.HostFsMountDir, "/sysroot")
+		if err := syscall.Mount(sysrootFolder, sysrootFolder, "", syscall.MS_REMOUNT, ""); err != nil {
+			return fmt.Errorf("failed remounting %s folder as rw: %w", sysrootFolder, err)
+		}
+		stdout, stderr, exitCode := util.Execute("unset container")
+		if exitCode != 0 {
+			log.Errorf("failed to unset container: %s: %s", stdout, stderr)
+		}
+		stdout, stderr, exitCode = util.ExecutePrivileged("rpm-ostree", "cleanup", "--os=rhcos", "-r")
+		if exitCode != 0 {
+			util.ExecuteShell("unset container")
+			stdout, stderr, exitCode = util.ExecutePrivileged("rpm-ostree", "cleanup", "--os=rhcos", "-r")
+			if exitCode != 0 {
+				log.Errorf("failed to remove rhcos: %s: %s", stdout, stderr)
+			}
+			log.Infof("Successfully removed rhcos second time")
+		}
+		log.Infof("Successfully removed rhcos")
 	}
 
 	hostArtifactsFolder := path.Join(*req.HostFsMountDir, artifactsFolder)
@@ -187,5 +235,29 @@ func createFolders(artifactsPath, bootLoaderPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create bootloader folder [%s]: %w", bootLoaderPath, err)
 	}
+	return nil
+}
+
+func getSize(folder string) (int64, error) {
+	info, err := os.Stat(folder)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat %s: %w", folder, err)
+	}
+	return info.Size(), nil
+}
+
+func removeFiles(folder string) error {
+	subFolders, err := os.ReadDir(folder)
+	if err != nil {
+		return fmt.Errorf("failed to read %s: %w", folder, err)
+	}
+	log.Infof("Removing files from %s: %v", folder, subFolders)
+	for _, subFolder := range subFolders {
+		log.Infof("Removing sub folder %s in %s", subFolder.Name(), folder)
+		if err := os.RemoveAll(path.Join(folder, subFolder.Name())); err != nil {
+			return fmt.Errorf("failed to remove sub folder %s in %s: %w", subFolder.Name(), folder, err)
+		}
+	}
+	log.Infof("Successfully removed folders from %s", folder)
 	return nil
 }

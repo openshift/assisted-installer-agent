@@ -58,7 +58,7 @@ var _ = Describe("logs sender", func() {
 		}
 		for _, service := range loggingConfig.Services {
 			serviceName := service + ".service"
-			logsSenderMock.On("ExecutePrivileged", "systemctl", "list-units", "--no-legend", serviceName).
+			logsSenderMock.On("ExecutePrivileged", "systemctl", "list-units", "--all", "--no-legend", serviceName).
 				Return(serviceName, "", 0)
 			outputPath := path.Join(logsTmpFilesDir, fmt.Sprintf("%s.logs", service))
 			logsSenderMock.On("ExecutePrivilegedToFile", outputPath, "journalctl", "-D", "/var/log/journal/", "--all",

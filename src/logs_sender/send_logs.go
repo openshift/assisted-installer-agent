@@ -389,7 +389,7 @@ func SendLogs(loggingConfig *config.LogsSenderConfig, l LogsSender) (error, stri
 
 	for _, service := range loggingConfig.Services {
 		serviceName := service + ".service"
-		stdout, _, _ := l.ExecutePrivileged("systemctl", "list-units", "--no-legend", serviceName)
+		stdout, _, _ := l.ExecutePrivileged("systemctl", "list-units", "--all", "--no-legend", serviceName)
 		if !strings.Contains(stdout, serviceName) {
 			log.Infof("Service %s not found, skipping log collection", service)
 			continue

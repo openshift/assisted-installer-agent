@@ -66,15 +66,47 @@ func incSubnet(ip net.IP, mask int) {
 }
 
 type scanner struct {
-	exe Executer
-	log logrus.FieldLogger
+	exe    Executer
+	log    logrus.FieldLogger
+	dryRun bool
 }
 
-func newScanner(exe Executer, log logrus.FieldLogger) *scanner {
+func newScanner(exe Executer, log logrus.FieldLogger, dryRun bool) *scanner {
 	return &scanner{
-		exe: exe,
-		log: log,
+		exe:    exe,
+		log:    log,
+		dryRun: dryRun,
 	}
+}
+
+func (s *scanner) scanForOccupiedAddresses(subNetwork string) (map[string]int, error) {
+	occupiedAddresses := make(map[string]int)
+
+	o, e, exitCode := s.exe.Execute("nmap", "-sn", "-PR", "-n", "-oX", "-", subNetwork)
+	if exitCode != 0 {
+		s.log.Warnf("nmap failed with exit-code %d: %s", exitCode, e)
+		return nil, fmt.Errorf("%s", e)
+	}
+
+	var nmaprun nmap.Nmaprun
+	err := xml.Unmarshal([]byte(o), &nmaprun)
+	if err != nil {
+		s.log.WithError(err).Warn("XML Unmarshal")
+		return nil, err
+	}
+
+	for _, h := range nmaprun.Hosts {
+		if h.Status.State == "up" {
+			for _, a := range h.Addresses {
+				if a.AddrType == "ipv4" {
+					occupiedAddresses[a.Addr] = 0
+					break
+				}
+			}
+		}
+	}
+
+	return occupiedAddresses, nil
 }
 
 func (s *scanner) scanSubNetwork(subNetwork string) ([]strfmt.IPv4, string, int) {
@@ -89,26 +121,12 @@ func (s *scanner) scanSubNetwork(subNetwork string) ([]strfmt.IPv4, string, int)
 		s.log.Warn(stderr)
 		return nil, stderr, -1
 	}
-	o, e, exitCode := s.exe.Execute("nmap", "-sn", "-PR", "-n", "-oX", "-", subNetwork)
-	if exitCode != 0 {
-		s.log.Warnf("nmap failed with exit-code %d: %s", exitCode, e)
-		return nil, e, exitCode
-	}
-	var nmaprun nmap.Nmaprun
-	err = xml.Unmarshal([]byte(o), &nmaprun)
-	if err != nil {
-		s.log.WithError(err).Warn("XML Unmarshal")
-		return nil, err.Error(), -1
-	}
 	occupiedAddesses := make(map[string]int)
-	for _, h := range nmaprun.Hosts {
-		if h.Status.State == "up" {
-			for _, a := range h.Addresses {
-				if a.AddrType == "ipv4" {
-					occupiedAddesses[a.Addr] = 0
-					break
-				}
-			}
+	if !s.dryRun {
+		var err error
+		occupiedAddesses, err = s.scanForOccupiedAddresses(subNetwork)
+		if err != nil {
+			return nil, err.Error(), -1
 		}
 	}
 	ret := make([]strfmt.IPv4, 0)
@@ -166,7 +184,7 @@ func (s *scanner) scanNetwork(network string) (*models.FreeNetworkAddresses, str
 	return &ret, "", 0
 }
 
-func GetFreeAddresses(freeAddressesRequestStr string, e Executer, log logrus.FieldLogger) (stdout string, stderr string, exitCode int) {
+func GetFreeAddresses(freeAddressesRequestStr string, e Executer, log logrus.FieldLogger, dryRun bool) (stdout string, stderr string, exitCode int) {
 	var freeAddressesRequest models.FreeAddressesRequest
 	err := json.Unmarshal([]byte(freeAddressesRequestStr), &freeAddressesRequest)
 	if err != nil {
@@ -174,7 +192,7 @@ func GetFreeAddresses(freeAddressesRequestStr string, e Executer, log logrus.Fie
 		return "", err.Error(), -1
 	}
 	freeAddresses := models.FreeNetworksAddresses{}
-	s := newScanner(e, log)
+	s := newScanner(e, log, dryRun)
 	for _, r := range freeAddressesRequest {
 		rec, e, exitCode := s.scanNetwork(r)
 		if exitCode != 0 {

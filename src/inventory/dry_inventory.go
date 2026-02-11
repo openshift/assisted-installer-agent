@@ -21,11 +21,11 @@ func applyDryRunConfig(subprocessConfig *config.SubprocessConfig, inventory *mod
 	inventory.Interfaces = []*models.Interface{inventory.Interfaces[targetInterface]}
 }
 
-// findRelevantInterface returns the index of the first interface
+// findRelevantInterface returns the index of the first physical interface
 // which has an ipv4 address
 func findRelevantInterface(inventory *models.Inventory) (int, error) {
 	for interfaceIndex, iface := range inventory.Interfaces {
-		if len(iface.IPV4Addresses) > 0 {
+		if len(iface.IPV4Addresses) > 0 && iface.Type == "physical" {
 			return interfaceIndex, nil
 		}
 	}

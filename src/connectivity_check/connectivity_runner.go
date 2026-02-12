@@ -1,6 +1,7 @@
 package connectivity_check
 
 import (
+	"net"
 	"sort"
 	"sync"
 
@@ -21,6 +22,7 @@ type OutgoingNic struct {
 	Name             string
 	HasIpv4Addresses bool
 	HasIpv6Addresses bool
+	Addresses        []net.Addr
 }
 
 // Attributes to be sent to a checker in order to perform a single checking operation

@@ -1,6 +1,7 @@
 package connectivity_check
 
 import (
+	"net"
 	"os/exec"
 	"regexp"
 	"sort"
@@ -21,6 +22,22 @@ func (p *arpingChecker) Features() Features {
 
 func (p *arpingChecker) Check(attributes Attributes) ResultReporter {
 	if !util.IsIPv4Addr(attributes.RemoteIPAddress) || !attributes.OutgoingNIC.HasIpv4Addresses {
+		return nil
+	}
+
+	remoteIP := net.ParseIP(attributes.RemoteIPAddress)
+	inSubnet := false
+	for _, addr := range attributes.OutgoingNIC.Addresses {
+		_, nicNetwork, err := net.ParseCIDR(addr.String())
+		if err != nil {
+			continue
+		}
+		if nicNetwork.Contains(remoteIP) {
+			inSubnet = true
+			break
+		}
+	}
+	if !inSubnet {
 		return nil
 	}
 

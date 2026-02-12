@@ -26,21 +26,30 @@ var _ = Describe("get outgoing nics", func() {
 			100, "physical")}, nil)
 		outgoingNics := getOutgoingNics(nil, d)
 		Expect(outgoingNics).To(HaveLen(1))
-		Expect(outgoingNics[0]).To(Equal(OutgoingNic{Name: "eth0", HasIpv4Addresses: true}))
+		Expect(outgoingNics[0].Name).To(Equal("eth0"))
+		Expect(outgoingNics[0].HasIpv4Addresses).To(BeTrue())
+		Expect(outgoingNics[0].HasIpv6Addresses).To(BeFalse())
+		Expect(outgoingNics[0].Addresses).To(HaveLen(1))
 	})
 	It("ipv6", func() {
 		d.On("Interfaces").Return([]util.Interface{util.NewFilledMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagUp, []string{"2003::10/64"},
 			100, "physical")}, nil)
 		outgoingNics := getOutgoingNics(nil, d)
 		Expect(outgoingNics).To(HaveLen(1))
-		Expect(outgoingNics[0]).To(Equal(OutgoingNic{Name: "eth0", HasIpv6Addresses: true}))
+		Expect(outgoingNics[0].Name).To(Equal("eth0"))
+		Expect(outgoingNics[0].HasIpv4Addresses).To(BeFalse())
+		Expect(outgoingNics[0].HasIpv6Addresses).To(BeTrue())
+		Expect(outgoingNics[0].Addresses).To(HaveLen(1))
 	})
 	It("dual stack", func() {
 		d.On("Interfaces").Return([]util.Interface{util.NewFilledMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagUp, []string{"1.2.3.4/24",
 			"2003::10/64"}, 100, "physical")}, nil)
 		outgoingNics := getOutgoingNics(nil, d)
 		Expect(outgoingNics).To(HaveLen(1))
-		Expect(outgoingNics[0]).To(Equal(OutgoingNic{Name: "eth0", HasIpv4Addresses: true, HasIpv6Addresses: true}))
+		Expect(outgoingNics[0].Name).To(Equal("eth0"))
+		Expect(outgoingNics[0].HasIpv4Addresses).To(BeTrue())
+		Expect(outgoingNics[0].HasIpv6Addresses).To(BeTrue())
+		Expect(outgoingNics[0].Addresses).To(HaveLen(2))
 	})
 	It("ipv4 link local", func() {
 		d.On("Interfaces").Return([]util.Interface{util.NewFilledMockInterface(1500, "eth0", "f8:75:a4:a4:00:fe", net.FlagUp, []string{"169.254.0.5/16"},

@@ -43,6 +43,13 @@ RUN INSTALL_PKGS="findutils iputils podman ipmitool file sg3_utils fio nmap dhcl
     dnf clean all && \
     rm -rf /var/cache/{yum,dnf}/*
 
+# Create non-root user for security (CIS Docker Benchmark 4.1)
+# The user is created but USER directive is not set to maintain compatibility
+# with discovery ISO boot process that runs: podman run ... cp /usr/bin/agent /hostbin
+# which requires root to write to host filesystem.
+# Callers should use --user 1001 when running the agent for security.
+RUN useradd -r -u 1001 -g root -s /sbin/nologin agent
+
 LABEL com.redhat.component="assisted-installer-agent-container" \
       name="rhai/assisted-installer-agent-rhel9" \
       cpe="cpe:/a:redhat:assisted_installer:2.38::el9" \

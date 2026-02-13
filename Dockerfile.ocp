@@ -19,3 +19,10 @@ RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \
 RUN if [ "$(arch)" = "x86_64" ]; then dnf install -y biosdevname dmidecode; fi
 RUN if [ "$(arch)" = "aarch64" ]; then dnf install -y dmidecode; fi
 RUN dnf install -y dhclient file findutils fio ipmitool iputils nmap openssh-clients podman chrony sg3_utils && dnf clean all
+
+# Create non-root user for security (CIS Docker Benchmark 4.1)
+# The user is created but USER directive is not set to maintain compatibility
+# with discovery ISO boot process that runs: podman run ... cp /usr/bin/agent /hostbin
+# which requires root to write to host filesystem.
+# Callers should use --user 1001 when running the agent for security.
+RUN useradd -r -u 1001 -g root -s /sbin/nologin agent

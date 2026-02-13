@@ -11,6 +11,9 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
 # Stage 2: Final image based on assisted-installer-agent
 FROM $ASSISTED_INSTALLER_AGENT
 
+# Switch to root for package installation (base image runs as non-root user 1001)
+USER root
+
 # Copy repository configuration and GPG keys from stage 1
 COPY --from=repo-setup /etc/yum.repos.d/ /etc/yum.repos.d/
 COPY --from=repo-setup /etc/pki/rpm-gpg/ /etc/pki/rpm-gpg/

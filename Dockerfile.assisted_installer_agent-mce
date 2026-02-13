@@ -44,6 +44,13 @@ RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \
     ln -s /usr/bin/agent /usr/bin/next_step_runner && \
     ln -s /usr/bin/agent /usr/bin/disk_speed_check
 
+# Create non-root user for security (CIS Docker Benchmark 4.1)
+# The user is created but USER directive is not set to maintain compatibility
+# with discovery ISO boot process that runs: podman run ... cp /usr/bin/agent /hostbin
+# which requires root to write to host filesystem.
+# Callers should use --user 1001 when running the agent for security.
+RUN useradd -r -u 1001 -g root -s /sbin/nologin agent
+
 LABEL com.redhat.component="multicluster-engine-assisted-installer-agent-container" \
       name="multicluster-engine/assisted-installer-agent-rhel9" \
       version="${version}" \

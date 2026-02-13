@@ -8,11 +8,22 @@ import (
 
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
 const MaxIpmiChannel = 12
 
+// bmc handles BMC (Baseboard Management Controller) information retrieval via ipmitool.
+//
+// BMC commands may fail when running as non-root due to:
+//   - ipmitool requiring /dev/ipmi* access (typically root-only)
+//   - dhclient requiring raw socket capabilities (CAP_NET_RAW)
+//
+// These failures are logged at debug level and handled gracefully by returning
+// fallback values (0.0.0.0 for IPv4, ::/0 for IPv6). BMC information will be
+// unavailable in non-root mode, which is acceptable for most deployment scenarios
+// where out-of-band management is not required.
 type bmc struct {
 	dependicies      util.IDependencies
 	subprocessConfig *config.SubprocessConfig
@@ -25,6 +36,9 @@ func newBMC(subprocessConfig *config.SubprocessConfig, dependencies util.IDepend
 func (b *bmc) getIpForChannnel(ch int) string {
 	o, e, exitCode := b.dependicies.Execute("ipmitool", "lan", "print", strconv.FormatInt(int64(ch), 10))
 	if exitCode != 0 || strings.HasPrefix(e, "Invalid channel") {
+		if exitCode != 0 && !strings.HasPrefix(e, "Invalid channel") {
+			logrus.Debugf("ipmitool lan print for channel %d failed (exit code %d): %s", ch, exitCode, e)
+		}
 		return ""
 	}
 	r := regexp.MustCompile("^IP Address[ \t]*:[ \t]*([^ \t]*)[ \t]*$")
@@ -60,6 +74,8 @@ func (b *bmc) getBmcAddress() string {
 			return ret
 		}
 	}
+	// ipmitool is non-critical; return fallback if BMC address unavailable
+	logrus.Debug("Could not retrieve BMC IPv4 address via ipmitool, using fallback 0.0.0.0")
 	return "0.0.0.0"
 }
 
@@ -68,8 +84,9 @@ func GetBmcAddress(subprocessConfig *config.SubprocessConfig, dependencies util.
 }
 
 func (b *bmc) getV6Address(ch int, addressType string) string {
-	o, _, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), addressType+"_addr")
+	o, e, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), addressType+"_addr")
 	if exitCode != 0 {
+		logrus.Debugf("ipmitool lan6 print for channel %d (%s_addr) failed (exit code %d): %s", ch, addressType, exitCode, e)
 		return ""
 	}
 	m := make(map[interface{}]interface{})
@@ -112,8 +129,9 @@ func (b *bmc) getV6Address(ch int, addressType string) string {
 }
 
 func (b *bmc) getAddrMode(ch int) string {
-	o, _, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), "enables")
+	o, e, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), "enables")
 	if exitCode != 0 {
+		logrus.Debugf("ipmitool lan6 print for channel %d (enables) failed (exit code %d): %s", ch, exitCode, e)
 		return ""
 	}
 	r := regexp.MustCompile("^IPv6/IPv4 Addressing Enables: (both|ipv6)[ \t]*$")
@@ -150,6 +168,8 @@ func (b *bmc) getBmcV6Address() string {
 		}
 		return ip.String()
 	}
+	// ipmitool is non-critical; return fallback if BMC address unavailable
+	logrus.Debug("Could not retrieve BMC IPv6 address via ipmitool, using fallback ::/0")
 	return "::/0"
 }
 

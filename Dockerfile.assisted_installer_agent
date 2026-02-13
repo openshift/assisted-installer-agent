@@ -93,3 +93,23 @@ RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \
     ln -s /usr/bin/agent /usr/bin/disk_speed_check
 
 COPY scripts/installer/* /usr/local/bin/
+
+# ==============================================================================
+# NON-ROOT USER FOR SECURITY HARDENING (CIS Docker Benchmark 4.1)
+# ==============================================================================
+# The USER directive is intentionally omitted to support dual execution modes:
+#
+#   1. Discovery ISO: Requires root for hardware operations:
+#      - ipmitool requires /dev/ipmi* device access
+#      - dhclient requires raw socket capabilities
+#      - Disk access for hardware inventory
+#      - Writing agent binary to host filesystem during bootstrap
+#
+#   2. Production agent: Should be invoked with '--user 1001' for reduced privileges
+#      when BMC/hardware operations are not required
+#
+# Orchestrators (Kubernetes, Podman) can enforce non-root execution via:
+#   - Kubernetes: securityContext.runAsUser: 1001
+#   - Podman: --user 1001
+# ==============================================================================
+RUN useradd -r -u 1001 -g root -s /sbin/nologin agent

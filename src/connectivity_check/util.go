@@ -93,6 +93,7 @@ func getOutgoingNics(dryRunConfig *config.DryRunConfig, d util.IDependencies) []
 			log.Infof("Skipping NIC %s (MAC %s) because of no valid addresses", intf.Name(), intf.HardwareAddr().String())
 			continue
 		}
+		outgoingNic.Addresses = addrs
 		ret = append(ret, outgoingNic)
 	}
 	return ret

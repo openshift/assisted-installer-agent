@@ -59,8 +59,14 @@ func (a *diskPerfCheck) Args() []string {
 	// Never concatenate user-controlled values directly into command strings.
 	escapedCmd := shellescape.QuoteCommand(podmanRunCmd)
 
-	// Check if container is already running before starting a new one
-	checkAlreadyRunningCmd := "id=`podman ps --quiet --filter \"name=disk_performance\"` ; test ! -z \"$id\""
+	// Check if container is already running before starting a new one.
+	// If a container named "disk_performance" is already running, we output a sentinel message
+	// and exit with code 0. This allows callers to distinguish between:
+	// 1. A successful disk speed check (actual metrics returned)
+	// 2. A skipped check because container was already running (sentinel message returned)
+	// Without this sentinel, callers would receive empty stdout with exit code 0, making
+	// the "already running" case indistinguishable from other edge cases.
+	checkAlreadyRunningCmd := "id=`podman ps --quiet --filter \"name=disk_performance\"` ; test ! -z \"$id\" && echo 'disk_performance:already_running'"
 
 	return []string{"-c", fmt.Sprintf("%s || %s", checkAlreadyRunningCmd, escapedCmd)}
 }

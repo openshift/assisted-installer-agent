@@ -158,4 +158,33 @@ var _ = Describe("disk performance command injection prevention", func() {
 		Expect(cmdStr).To(ContainSubstring("timeout"))
 		Expect(cmdStr).To(ContainSubstring(timeout))
 	})
+
+	It("outputs sentinel message when container is already running", func() {
+		// This test verifies that when the disk_performance container is already running,
+		// the command outputs a sentinel message "disk_performance:already_running"
+		// instead of silently returning empty stdout with exit code 0.
+		// This allows callers to distinguish between a successful disk speed check
+		// and a skipped check due to an already running container.
+		action := &diskPerfCheck{
+			args:        []string{"{\"path\":\"/dev/sda\"}", timeout},
+			agentConfig: agentConfig,
+		}
+
+		args := action.Args()
+		Expect(args).To(HaveLen(2))
+		Expect(args[0]).To(Equal("-c"))
+
+		cmdStr := args[1]
+
+		// Verify the check for already running container is present
+		Expect(cmdStr).To(ContainSubstring("podman ps --quiet --filter"))
+		Expect(cmdStr).To(ContainSubstring("name=disk_performance"))
+
+		// Verify the sentinel message is echoed when container is already running
+		Expect(cmdStr).To(ContainSubstring("echo 'disk_performance:already_running'"))
+
+		// Verify the overall command structure: check || run
+		// The check should output sentinel if container exists, otherwise run the disk check
+		Expect(cmdStr).To(MatchRegexp(`test ! -z "\$id" && echo 'disk_performance:already_running' \|\|`))
+	})
 })

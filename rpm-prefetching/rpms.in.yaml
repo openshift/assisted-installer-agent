@@ -30,3 +30,5 @@ arches:
   - aarch64
   - ppc64le
   - s390x
+context:
+  containerfile: ../Dockerfile.assisted_installer_agent-mce

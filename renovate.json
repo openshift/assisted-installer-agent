@@ -9,7 +9,8 @@
     "prConcurrentLimit": 0,
     "enabledManagers": [
         "custom.regex",
-        "tekton"
+        "tekton",
+        "rpm-lockfile"
     ],
     "tekton": {
         "managerFilePatterns": [
@@ -165,6 +166,18 @@
                 "registry.access.redhat.com/ubi9/ubi-minimal"
             ],
             "enabled": false
+        },
+        {
+            "groupName": "RPM lockfile refresh",
+            "addLabels": [
+                "rpm-lockfile"
+            ],
+            "schedule": [
+                "on Saturday"
+            ],
+            "matchManagers": [
+                "rpm-lockfile"
+            ]
         }
     ]
 }

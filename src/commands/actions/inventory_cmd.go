@@ -3,8 +3,8 @@ package actions
 import (
 	"fmt"
 	"os"
-	"strings"
 
+	"github.com/alessio/shellescape"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -43,8 +43,13 @@ func (a *inventory) Args() []string {
 	// We incorporate the host's ID in the copied mtab file path to allow multiple agents
 	// to run on the same host during load testing easily without fighting over the same
 	// path (each of them has a different fake host ID)
+	//
+	// SECURITY (Defense in Depth): The mtab path is escaped even though a.args[0] is
+	// validated as UUID in Validate(). This is defense-in-depth - if an attacker could
+	// somehow control this path (e.g., through environment variable manipulation or
+	// bypassing validation), the escaping prevents command injection exploitation.
 	mtabPath := fmt.Sprintf("/root/mtab-%s", a.args[0])
-	mtabCopy := fmt.Sprintf("cp /etc/mtab %s", mtabPath)
+	mtabCopy := fmt.Sprintf("cp /etc/mtab %s", shellescape.Quote(mtabPath))
 	mtabMount := fmt.Sprintf("%s:/host/etc/mtab:ro", mtabPath)
 
 	podmanRunArgv := []string{
@@ -99,7 +104,9 @@ func (a *inventory) Args() []string {
 		"inventory",
 	)
 
-	podmanRunCmd := strings.Join(podmanRunArgv, " ")
+	// Use shellescape.QuoteCommand to safely escape all podman arguments
+	// This prevents command injection through malicious input
+	podmanRunCmd := shellescape.QuoteCommand(podmanRunArgv)
 
 	return []string{"-c", fmt.Sprintf("%v && %v", mtabCopy, podmanRunCmd)}
 }

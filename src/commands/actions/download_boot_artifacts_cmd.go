@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -45,10 +46,23 @@ func (a *downloadBootArtifacts) Args() []string {
 	return a.args
 }
 
+type folders struct {
+	// bootFolder is the folder where the /boot directory is mounted
+	bootFolder string
+	// hostArtifactsFolder is the folder where boot artifacts will eventually be moved to in the /boot folder
+	hostArtifactsFolder string
+	// bootLoaderFolder is where the bootloader config is the will eventually exist in the /boot folder
+	bootLoaderFolder string
+	// tempDownloadFolder is the folder where the artifacts will be temporarily downloaded to
+	tempDownloadFolder string
+}
+
 const (
-	retryDownloadAmount                  = 5
-	defaultDownloadRetryDelay            = 1 * time.Minute
-	artifactsFolder               string = "/boot/discovery"
+	defaultRetryAmount                   = 5
+	defaultRetryDelay                    = 1 * time.Minute
+	artifactsFolder               string = "/discovery"
+	bootLoaderFolder              string = "/loader/entries"
+	tempBootArtifactsFolder       string = "/tmp/boot"
 	kernelFile                    string = "vmlinuz"
 	initrdFile                    string = "initrd"
 	bootLoaderConfigFileName      string = "/00-assisted-discovery.conf"
@@ -65,40 +79,45 @@ initrd %s`
 )
 
 func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
+	if _, err := os.Stat(path.Join(tempBootArtifactsFolder, "boot_artifacts_moved")); err == nil {
+		log.Info("Boot artifacts already successfully downloaded")
+		return nil
+	}
+
 	var req models.DownloadBootArtifactsRequest
 	if err := json.Unmarshal([]byte(downloaderRequestStr), &req); err != nil {
 		return fmt.Errorf("failed unmarshalling download boot artifacts request: %w", err)
 	}
 
-	bootFolder := path.Join(*req.HostFsMountDir, "/boot")
-	if err := syscall.Mount(bootFolder, bootFolder, "", syscall.MS_REMOUNT, ""); err != nil {
-		return fmt.Errorf("failed remounting /host/boot folder as rw: %w", err)
-	}
-
-	hostArtifactsFolder := path.Join(*req.HostFsMountDir, artifactsFolder)
-	bootLoaderFolder := path.Join(*req.HostFsMountDir, "/boot/loader/entries")
-	if err := createFolders(hostArtifactsFolder, bootLoaderFolder); err != nil {
-		return fmt.Errorf("failed creating folders: %w", err)
-	}
-
-	httpClient, err := createHTTPClient(caCertPath)
+	folders, err := createFolders(*req.HostFsMountDir, defaultRetryAmount)
 	if err != nil {
-		return fmt.Errorf("failed creating secure assisted service client: %w", err)
+		log.Errorf("failed creating folders: %s", err.Error())
+		return fmt.Errorf("failed creating folders: %s", err.Error())
 	}
 
-	if err := download(httpClient, path.Join(hostArtifactsFolder, kernelFile), *req.KernelURL, retryDownloadAmount); err != nil {
-		return fmt.Errorf("failed downloading kernel to host: %w", err)
+	if err := downloadArtifacts(req, caCertPath, folders); err != nil {
+		log.Errorf("failed downloading boot artifacts: %s", err.Error())
+		return fmt.Errorf("failed downloading boot artifacts: %s", err.Error())
+	}
+	log.Info("Successfully downloaded boot artifacts")
+
+	if err := createBootLoaderConfig(*req.RootfsURL, folders); err != nil {
+		log.Errorf("failed creating bootloader config file on host: %s", err.Error())
+		return fmt.Errorf("failed creating bootloader config file on host: %s", err.Error())
+	}
+	log.Infof("Successfully created bootloader config.")
+
+	if err := ensureBootHasSpace(folders); err != nil {
+		log.Errorf("failed to ensure boot folder has enough space: %s", err.Error())
+		return fmt.Errorf("failed to ensure boot folder has enough space: %s", err.Error())
 	}
 
-	if err := download(httpClient, path.Join(hostArtifactsFolder, initrdFile), *req.InitrdURL, retryDownloadAmount); err != nil {
-		return fmt.Errorf("failed downloading initrd to host: %w", err)
+	if err := moveFilesToBootFolder(folders); err != nil {
+		log.Errorf("failed to move files to boot folder: %s", err.Error())
+		return fmt.Errorf("failed to move files to boot folder: %s", err.Error())
 	}
 
-	if err := createBootLoaderConfig(*req.RootfsURL, artifactsFolder, bootLoaderFolder); err != nil {
-		return fmt.Errorf("failed creating bootloader config file on host: %w", err)
-	}
-
-	log.Infof("Successfully downloaded boot artifacts and created bootloader config.")
+	log.Infof("Download boot artifacts completed successfully.")
 	return nil
 }
 
@@ -136,7 +155,7 @@ func download(httpClient *http.Client, filePath, url string, retry int) error {
 		downloadErr = fmt.Errorf("failed downloading boot artifact from %s, status code received: %d, attempt %d/%d, download error: %w",
 			url, res.StatusCode, attempts, retry, downloadErr)
 		log.Warn(downloadErr.Error())
-		time.Sleep(defaultDownloadRetryDelay)
+		time.Sleep(defaultRetryDelay)
 	}
 
 	if downloadErr != nil {
@@ -155,10 +174,26 @@ func download(httpClient *http.Client, filePath, url string, retry int) error {
 	return nil
 }
 
-func createBootLoaderConfig(rootfsUrl, artifactsPath, bootLoaderPath string) error {
-	kernelPath := path.Join(artifactsPath, kernelFile)
-	initrdPath := path.Join(artifactsPath, initrdFile)
-	bootLoaderConfigFile := path.Join(bootLoaderPath, bootLoaderConfigFileName)
+func downloadArtifacts(req models.DownloadBootArtifactsRequest, caCertPath string, folders *folders) error {
+	httpClient, err := createHTTPClient(caCertPath)
+	if err != nil {
+		return fmt.Errorf("failed creating secure assisted service client: %s", err.Error())
+	}
+
+	if err := download(httpClient, path.Join(folders.tempDownloadFolder, kernelFile), *req.KernelURL, defaultRetryAmount); err != nil {
+		return fmt.Errorf("failed downloading kernel to host: %s", err.Error())
+	}
+
+	if err := download(httpClient, path.Join(folders.tempDownloadFolder, initrdFile), *req.InitrdURL, defaultRetryAmount); err != nil {
+		return fmt.Errorf("failed downloading initrd to host: %s", err.Error())
+	}
+	return nil
+}
+
+func createBootLoaderConfig(rootfsUrl string, folders *folders) error {
+	kernelPath := path.Join("/boot", artifactsFolder, kernelFile)
+	initrdPath := path.Join("/boot", artifactsFolder, initrdFile)
+	bootLoaderConfigFile := path.Join(tempBootArtifactsFolder, bootLoaderConfigFileName)
 	var bootLoaderConfig string
 	bootLoaderConfig = fmt.Sprintf(bootLoaderConfigTemplate, rootfsUrl, kernelPath, initrdPath)
 	if runtime.GOARCH == "s390x" {
@@ -178,14 +213,189 @@ func createFolderIfNotExist(folder string) error {
 	return nil
 }
 
-func createFolders(artifactsPath, bootLoaderPath string) error {
-	err := createFolderIfNotExist(artifactsPath)
-	if err != nil {
-		return fmt.Errorf("failed to create artifacts folder [%s]: %w", artifactsPath, err)
+func createFolders(hostFsMountDir string, retryAmount int) (*folders, error) {
+	var err error
+	bootFolder := path.Join(hostFsMountDir, "boot")
+	folders := &folders{
+		bootFolder:          bootFolder,
+		hostArtifactsFolder: path.Join(bootFolder, artifactsFolder),
+		bootLoaderFolder:    path.Join(bootFolder, bootLoaderFolder),
+		tempDownloadFolder:  path.Join(tempBootArtifactsFolder, artifactsFolder),
 	}
-	err = createFolderIfNotExist(bootLoaderPath)
+
+	for i := 0; i < retryAmount; i++ {
+		log.Debugf("Creating folders attempt %d/%d", i, retryAmount)
+		err = syscall.Mount(folders.bootFolder, folders.bootFolder, "", syscall.MS_REMOUNT, "")
+		if err != nil {
+			log.Warnf("failed to mount boot folder [%s]: %s\nRetrying in %s", folders.bootFolder, err.Error(), defaultRetryDelay)
+			continue
+		}
+		syscall.Sync()
+		if err = createFolderIfNotExist(folders.hostArtifactsFolder); err != nil {
+			log.Warnf("failed to create artifacts folder [%s]: %s\nRetrying in %s", folders.hostArtifactsFolder, err.Error(), defaultRetryDelay)
+			continue
+		}
+		if err = createFolderIfNotExist(folders.bootLoaderFolder); err != nil {
+			log.Warnf("failed to create bootloader folder [%s]: %s\nRetrying in %s", folders.bootLoaderFolder, err.Error(), defaultRetryDelay)
+			continue
+		}
+		if err = createFolderIfNotExist(folders.tempDownloadFolder); err != nil {
+			log.Warnf("failed to create temp download folder [%s]: %s\nRetrying in %s", folders.tempDownloadFolder, err.Error(), defaultRetryDelay)
+			continue
+		}
+		log.Debug("Folders created successfully")
+		return folders, nil
+	}
+	return nil, fmt.Errorf("failed to create folders: %w", err)
+}
+
+func ensureBootHasSpace(folders *folders) error {
+	artifactsSize, err := calculateBootArtifactsSize(folders)
 	if err != nil {
-		return fmt.Errorf("failed to create bootloader folder [%s]: %w", bootLoaderPath, err)
+		return fmt.Errorf("failed to calculate size of boot artifacts: %w", err)
+	}
+	log.Debugf("Boot artifacts total size: %d bytes", artifactsSize)
+
+	freeSpace, err := getFreeSpace(folders.bootFolder)
+	if err != nil {
+		return fmt.Errorf("failed to get free space of boot folder [%s]: %w", folders.bootFolder, err)
+	}
+	log.Debugf("Free space in boot folder: %d bytes", freeSpace)
+
+	if freeSpace > artifactsSize {
+		return nil
+	}
+
+	log.Warnf("Boot folder does not have enough space. Wanted: %d bytes, Available: %d bytes. Attempting to reclaim space", artifactsSize, freeSpace)
+	if err := reclaimBootFolderSpace(); err != nil {
+		return fmt.Errorf("failed to reclaim boot folder space: %w", err)
+	}
+
+	freeSpace, err = getFreeSpace(folders.bootFolder)
+	if err != nil {
+		return fmt.Errorf("failed to get free space of boot folder [%s]: %w", folders.bootFolder, err)
+	}
+
+	if freeSpace < artifactsSize {
+		return fmt.Errorf("boot folder does not have enough space, artifacts size: %d, free space: %d", artifactsSize, freeSpace)
+	}
+	return nil
+}
+
+// getFreeSpace returns the available space in the given folder
+func getFreeSpace(folder string) (int64, error) {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(folder, &stat); err != nil {
+		return 0, fmt.Errorf("failed to statfs %s: %w", folder, err)
+	}
+	return int64(stat.Bavail) * int64(stat.Bsize), nil
+}
+
+// calculateBootArtifactsSize calculates the total size of downloaded boot artifacts and bootloader config
+func calculateBootArtifactsSize(folders *folders) (int64, error) {
+	var totalSize int64
+
+	// Calculate size of kernel file
+	kernelPath := path.Join(folders.tempDownloadFolder, kernelFile)
+	kernelInfo, err := os.Stat(kernelPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat kernel file %s: %w", kernelPath, err)
+	}
+	totalSize += kernelInfo.Size()
+
+	// Calculate size of initrd file
+	initrdPath := path.Join(folders.tempDownloadFolder, initrdFile)
+	initrdInfo, err := os.Stat(initrdPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat initrd file %s: %w", initrdPath, err)
+	}
+	totalSize += initrdInfo.Size()
+
+	// Calculate size of bootloader config file
+	bootLoaderConfigPath := path.Join(tempBootArtifactsFolder, bootLoaderConfigFileName)
+	bootLoaderInfo, err := os.Stat(bootLoaderConfigPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat bootloader config file %s: %w", bootLoaderConfigPath, err)
+	}
+	totalSize += bootLoaderInfo.Size()
+
+	return totalSize, nil
+}
+
+func reclaimBootFolderSpace() error {
+	stdout, stderr, exitCode := util.ExecutePrivileged("rpm-ostree", "cleanup", "--os=rhcos", "-r")
+	log.Debugf("Cleanup RHCOS stdout: %s\nstderr: %s\nexitCode: %d", stdout, stderr, exitCode)
+	if exitCode != 0 {
+		return fmt.Errorf("Cleanup command for RHCOS failed: %s: %s", stdout, stderr)
+	}
+	log.Info("Successfully cleaned up RHCOS")
+	return nil
+}
+
+func moveFilesToBootFolder(folders *folders) error {
+	if err := moveFiles(folders.tempDownloadFolder, folders.hostArtifactsFolder); err != nil {
+		return fmt.Errorf("failed moving files from %s to %s: %w", folders.tempDownloadFolder, folders.hostArtifactsFolder, err)
+	}
+	if err := moveFiles(tempBootArtifactsFolder, folders.bootLoaderFolder); err != nil {
+		return fmt.Errorf("failed moving files from %s to %s: %w", tempBootArtifactsFolder, folders.bootLoaderFolder, err)
+	}
+
+	log.Info("Successfully moved files to /boot folder.")
+	if err := os.WriteFile(path.Join(tempBootArtifactsFolder, "boot_artifacts_moved"), []byte("true"), 0644); err != nil {
+		return fmt.Errorf("failed to write successful artifacts file: %w", err)
+	}
+	return nil
+}
+
+func moveFiles(sourceFolder, destinationFolder string) error {
+	files, err := os.ReadDir(sourceFolder)
+	if err != nil {
+		return fmt.Errorf("failed to read %s: %w", sourceFolder, err)
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			log.Debugf("Skipping directory %s", file.Name())
+			continue
+		}
+		log.Debugf("Moving file %s from %s to %s", file.Name(), sourceFolder, destinationFolder)
+		sourcePath := path.Join(sourceFolder, file.Name())
+		destPath := path.Join(destinationFolder, file.Name())
+
+		if err := copyFile(sourcePath, destPath); err != nil {
+			return fmt.Errorf("failed to copy file %s to %s: %w", file.Name(), destinationFolder, err)
+		}
+
+	}
+	return nil
+}
+
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open source file %s: %w", src, err)
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file %s: %w", dst, err)
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, sourceFile); err != nil {
+		return fmt.Errorf("failed to copy data from %s to %s: %w", src, dst, err)
+	}
+
+	// Preserve file permissions
+	sourceInfo, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("failed to stat source file %s: %w", src, err)
+	}
+	if err := os.Chmod(dst, sourceInfo.Mode()); err != nil {
+		return fmt.Errorf("failed to set permissions on %s: %w", dst, err)
+	}
+	if err := destFile.Sync(); err != nil {
+		return fmt.Errorf("failed to sync destination file %s: %w", dst, err)
 	}
 	return nil
 }

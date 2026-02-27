@@ -106,6 +106,13 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 		log.Errorf("failed to ensure boot folder has enough space: %s", err.Error())
 		return fmt.Errorf("failed to ensure boot folder has enough space: %s", err.Error())
 	}
+
+	if err := moveFilesToBootFolder(folders); err != nil {
+		log.Errorf("failed to move files to boot folder: %s", err.Error())
+		return fmt.Errorf("failed to move files to boot folder: %s", err.Error())
+	}
+
+	log.Infof("Download boot artifacts completed successfully.")
 	return nil
 }
 
@@ -317,5 +324,70 @@ func reclaimBootFolderSpace() error {
 		return fmt.Errorf("Cleanup command for RHCOS failed: %s: %s", stdout, stderr)
 	}
 	log.Info("Successfully cleaned up RHCOS")
+	return nil
+}
+
+func moveFilesToBootFolder(folders *folders) error {
+	if err := moveFiles(folders.tempDownloadFolder, folders.hostArtifactsFolder); err != nil {
+		return fmt.Errorf("failed moving files from %s to %s: %w", folders.tempDownloadFolder, folders.hostArtifactsFolder, err)
+	}
+	if err := moveFiles(tempBootArtifactsFolder, folders.bootLoaderFolder); err != nil {
+		return fmt.Errorf("failed moving files from %s to %s: %w", tempBootArtifactsFolder, folders.bootLoaderFolder, err)
+	}
+
+	log.Infof("Successfully moved files to /boot folder.")
+	return nil
+}
+
+func moveFiles(sourceFolder, destinationFolder string) error {
+	files, err := os.ReadDir(sourceFolder)
+	if err != nil {
+		return fmt.Errorf("failed to read %s: %w", sourceFolder, err)
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			log.Debugf("Skipping directory %s", file.Name())
+			continue
+		}
+		log.Debugf("Moving file %s from %s to %s", file.Name(), sourceFolder, destinationFolder)
+		sourcePath := path.Join(sourceFolder, file.Name())
+		destPath := path.Join(destinationFolder, file.Name())
+
+		if err := copyFile(sourcePath, destPath); err != nil {
+			return fmt.Errorf("failed to copy file %s to %s: %w", file.Name(), destinationFolder, err)
+		}
+
+	}
+	return nil
+}
+
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open source file %s: %w", src, err)
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file %s: %w", dst, err)
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, sourceFile); err != nil {
+		return fmt.Errorf("failed to copy data from %s to %s: %w", src, dst, err)
+	}
+
+	// Preserve file permissions
+	sourceInfo, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("failed to stat source file %s: %w", src, err)
+	}
+	if err := os.Chmod(dst, sourceInfo.Mode()); err != nil {
+		return fmt.Errorf("failed to set permissions on %s: %w", dst, err)
+	}
+	if err := destFile.Sync(); err != nil {
+		return fmt.Errorf("failed to sync destination file %s: %w", dst, err)
+	}
 	return nil
 }

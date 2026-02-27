@@ -79,6 +79,11 @@ initrd %s`
 )
 
 func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
+	if _, err := os.Stat(path.Join(tempBootArtifactsFolder, "boot_artifacts_moved")); err == nil {
+		log.Info("Boot artifacts already successfully downloaded")
+		return nil
+	}
+
 	var req models.DownloadBootArtifactsRequest
 	if err := json.Unmarshal([]byte(downloaderRequestStr), &req); err != nil {
 		return fmt.Errorf("failed unmarshalling download boot artifacts request: %w", err)
@@ -335,7 +340,10 @@ func moveFilesToBootFolder(folders *folders) error {
 		return fmt.Errorf("failed moving files from %s to %s: %w", tempBootArtifactsFolder, folders.bootLoaderFolder, err)
 	}
 
-	log.Infof("Successfully moved files to /boot folder.")
+	log.Info("Successfully moved files to /boot folder.")
+	if err := os.WriteFile(path.Join(tempBootArtifactsFolder, "boot_artifacts_moved"), []byte("true"), 0644); err != nil {
+		return fmt.Errorf("failed to write successful artifacts file: %w", err)
+	}
 	return nil
 }
 

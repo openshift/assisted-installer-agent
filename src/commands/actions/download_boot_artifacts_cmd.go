@@ -91,24 +91,17 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 		return fmt.Errorf("failed creating folders: %s", err.Error())
 	}
 
-	httpClient, err := createHTTPClient(caCertPath)
-	if err != nil {
-		return fmt.Errorf("failed creating secure assisted service client: %w", err)
+	if err := downloadArtifactsToTempFolder(req, caCertPath); err != nil {
+		log.Errorf("failed downloading boot artifacts: %s", err.Error())
+		return fmt.Errorf("failed downloading boot artifacts: %s", err.Error())
 	}
+	log.Info("Successfully downloaded boot artifacts")
 
-	if err := download(httpClient, path.Join(hostArtifactsFolder, kernelFile), *req.KernelURL, retryDownloadAmount); err != nil {
-		return fmt.Errorf("failed downloading kernel to host: %w", err)
+	if err := createBootLoaderConfigInTempFolder(*req.RootfsURL); err != nil {
+		log.Errorf("failed creating bootloader config file on host: %s", err.Error())
+		return fmt.Errorf("failed creating bootloader config file on host: %s", err.Error())
 	}
-
-	if err := download(httpClient, path.Join(hostArtifactsFolder, initrdFile), *req.InitrdURL, retryDownloadAmount); err != nil {
-		return fmt.Errorf("failed downloading initrd to host: %w", err)
-	}
-
-	if err := createBootLoaderConfig(*req.RootfsURL, artifactsFolder, bootLoaderFolder); err != nil {
-		return fmt.Errorf("failed creating bootloader config file on host: %w", err)
-	}
-
-	log.Infof("Successfully downloaded boot artifacts and created bootloader config.")
+	log.Infof("Successfully wrote bootloader config to %s", path.Join(tempBootArtifactsFolder, bootLoaderConfigFileName))
 	return nil
 }
 
@@ -165,16 +158,34 @@ func download(httpClient *http.Client, filePath, url string, retry int) error {
 	return nil
 }
 
-func createBootLoaderConfig(rootfsUrl, artifactsPath, bootLoaderPath string) error {
-	kernelPath := path.Join(artifactsPath, kernelFile)
-	initrdPath := path.Join(artifactsPath, initrdFile)
-	bootLoaderConfigFile := path.Join(bootLoaderPath, bootLoaderConfigFileName)
+func downloadArtifactsToTempFolder(req models.DownloadBootArtifactsRequest, caCertPath string) error {
+	httpClient, err := createHTTPClient(caCertPath)
+	if err != nil {
+		return fmt.Errorf("failed creating secure assisted service client: %s", err.Error())
+	}
+
+	if err := download(httpClient, path.Join(tempBootArtifactsFolder, kernelFile), *req.KernelURL, defaultRetryAmount); err != nil {
+		return fmt.Errorf("failed downloading kernel to host: %s", err.Error())
+	}
+
+	if err := download(httpClient, path.Join(tempBootArtifactsFolder, initrdFile), *req.InitrdURL, defaultRetryAmount); err != nil {
+		return fmt.Errorf("failed downloading initrd to host: %s", err.Error())
+	}
+	return nil
+}
+
+func createBootLoaderConfigInTempFolder(rootfsUrl string) error {
+	// These are the actual paths to the kernel and initrd in the actual host
+	kernelPath := path.Join("/boot", artifactsFolder, kernelFile)
+	initrdPath := path.Join("/boot", artifactsFolder, initrdFile)
+
 	var bootLoaderConfig string
 	bootLoaderConfig = fmt.Sprintf(bootLoaderConfigTemplate, rootfsUrl, kernelPath, initrdPath)
 	if runtime.GOARCH == "s390x" {
 		bootLoaderConfig = fmt.Sprintf(bootLoaderConfigTemplateS390x, rootfsUrl, kernelPath, initrdPath)
 	}
 
+	bootLoaderConfigFile := path.Join(tempBootArtifactsFolder, bootLoaderConfigFileName)
 	if err := os.WriteFile(bootLoaderConfigFile, []byte(bootLoaderConfig), 0644); err != nil { //nolint:gosec
 		return fmt.Errorf("failed writing bootloader config content to %s: %w", bootLoaderConfigFile, err)
 	}

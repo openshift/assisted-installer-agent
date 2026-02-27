@@ -45,10 +45,23 @@ func (a *downloadBootArtifacts) Args() []string {
 	return a.args
 }
 
+type folders struct {
+	// bootFolder is the folder where the /boot directory is mounted
+	bootFolder string
+	// hostArtifactsFolder is the folder where boot artifacts will eventually be moved to in the /boot folder
+	hostArtifactsFolder string
+	// bootLoaderFolder is where the bootloader config is the will eventually exist in the /boot folder
+	bootLoaderFolder string
+	// tempDownloadFolder is the folder where the artifacts will be temporarily downloaded to
+	tempDownloadFolder string
+}
+
 const (
-	retryDownloadAmount                  = 5
-	defaultDownloadRetryDelay            = 1 * time.Minute
-	artifactsFolder               string = "/boot/discovery"
+	defaultRetryAmount                   = 5
+	defaultRetryDelay                    = 1 * time.Minute
+	artifactsFolder               string = "/discovery"
+	bootLoaderFolder              string = "/loader/entries"
+	tempBootArtifactsFolder       string = "/tmp/boot"
 	kernelFile                    string = "vmlinuz"
 	initrdFile                    string = "initrd"
 	bootLoaderConfigFileName      string = "/00-assisted-discovery.conf"
@@ -70,15 +83,10 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 		return fmt.Errorf("failed unmarshalling download boot artifacts request: %w", err)
 	}
 
-	bootFolder := path.Join(*req.HostFsMountDir, "/boot")
-	if err := syscall.Mount(bootFolder, bootFolder, "", syscall.MS_REMOUNT, ""); err != nil {
-		return fmt.Errorf("failed remounting /host/boot folder as rw: %w", err)
-	}
-
-	hostArtifactsFolder := path.Join(*req.HostFsMountDir, artifactsFolder)
-	bootLoaderFolder := path.Join(*req.HostFsMountDir, "/boot/loader/entries")
-	if err := createFolders(hostArtifactsFolder, bootLoaderFolder); err != nil {
-		return fmt.Errorf("failed creating folders: %w", err)
+	folders, err := createFolders(*req.HostFsMountDir, defaultRetryAmount)
+	if err != nil {
+		log.Errorf("failed creating folders: %s", err.Error())
+		return fmt.Errorf("failed creating folders: %s", err.Error())
 	}
 
 	httpClient, err := createHTTPClient(caCertPath)
@@ -136,7 +144,7 @@ func download(httpClient *http.Client, filePath, url string, retry int) error {
 		downloadErr = fmt.Errorf("failed downloading boot artifact from %s, status code received: %d, attempt %d/%d, download error: %w",
 			url, res.StatusCode, attempts, retry, downloadErr)
 		log.Warn(downloadErr.Error())
-		time.Sleep(defaultDownloadRetryDelay)
+		time.Sleep(defaultRetryDelay)
 	}
 
 	if downloadErr != nil {
@@ -178,14 +186,42 @@ func createFolderIfNotExist(folder string) error {
 	return nil
 }
 
-func createFolders(artifactsPath, bootLoaderPath string) error {
-	err := createFolderIfNotExist(artifactsPath)
-	if err != nil {
-		return fmt.Errorf("failed to create artifacts folder [%s]: %w", artifactsPath, err)
+func createFolders(hostFsMountDir string, retryAmount int) (*folders, error) {
+	var err error
+	bootFolder := path.Join(hostFsMountDir, "boot")
+	folders := &folders{
+		bootFolder:          bootFolder,
+		hostArtifactsFolder: path.Join(bootFolder, artifactsFolder),
+		bootLoaderFolder:    path.Join(bootFolder, bootLoaderFolder),
+		tempDownloadFolder:  path.Join(tempBootArtifactsFolder, artifactsFolder),
 	}
-	err = createFolderIfNotExist(bootLoaderPath)
-	if err != nil {
-		return fmt.Errorf("failed to create bootloader folder [%s]: %w", bootLoaderPath, err)
+
+	for i := 0; i < retryAmount; i++ {
+		log.Debugf("Creating folders attempt %d/%d", i, retryAmount)
+		err = syscall.Mount(folders.bootFolder, folders.bootFolder, "", syscall.MS_REMOUNT, "")
+		if err != nil {
+			log.Warnf("failed to mount boot folder [%s]: %s\nRetrying in %s", folders.bootFolder, err.Error(), defaultRetryDelay)
+			time.Sleep(defaultRetryDelay)
+			continue
+		}
+		syscall.Sync()
+		if err = createFolderIfNotExist(folders.hostArtifactsFolder); err != nil {
+			log.Warnf("failed to create artifacts folder [%s]: %s\nRetrying in %s", folders.hostArtifactsFolder, err.Error(), defaultRetryDelay)
+			time.Sleep(defaultRetryDelay)
+			continue
+		}
+		if err = createFolderIfNotExist(folders.bootLoaderFolder); err != nil {
+			log.Warnf("failed to create bootloader folder [%s]: %s\nRetrying in %s", folders.bootLoaderFolder, err.Error(), defaultRetryDelay)
+			time.Sleep(defaultRetryDelay)
+			continue
+		}
+		if err = createFolderIfNotExist(folders.tempDownloadFolder); err != nil {
+			log.Warnf("failed to create temp download folder [%s]: %s\nRetrying in %s", folders.tempDownloadFolder, err.Error(), defaultRetryDelay)
+			time.Sleep(defaultRetryDelay)
+			continue
+		}
+		log.Debug("Folders created successfully")
+		return folders, nil
 	}
-	return nil
+	return nil, fmt.Errorf("failed to create folders: %w", err)
 }

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/openshift/assisted-installer-agent/src/config"
+	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -100,6 +101,11 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 		return fmt.Errorf("failed creating bootloader config file on host: %s", err.Error())
 	}
 	log.Infof("Successfully created bootloader config.")
+
+	if err := ensureBootHasSpace(folders); err != nil {
+		log.Errorf("failed to ensure boot folder has enough space: %s", err.Error())
+		return fmt.Errorf("failed to ensure boot folder has enough space: %s", err.Error())
+	}
 	return nil
 }
 
@@ -229,4 +235,87 @@ func createFolders(hostFsMountDir string, retryAmount int) (*folders, error) {
 		return folders, nil
 	}
 	return nil, fmt.Errorf("failed to create folders: %w", err)
+}
+
+func ensureBootHasSpace(folders *folders) error {
+	artifactsSize, err := calculateBootArtifactsSize(folders)
+	if err != nil {
+		return fmt.Errorf("failed to calculate size of boot artifacts: %w", err)
+	}
+	log.Debugf("Boot artifacts total size: %d bytes", artifactsSize)
+
+	freeSpace, err := getFreeSpace(folders.bootFolder)
+	if err != nil {
+		return fmt.Errorf("failed to get free space of boot folder [%s]: %w", folders.bootFolder, err)
+	}
+	log.Debugf("Free space in boot folder: %d bytes", freeSpace)
+
+	if freeSpace > artifactsSize {
+		return nil
+	}
+
+	log.Warnf("Boot folder does not have enough space. Wanted: %d bytes, Available: %d bytes. Attempting to reclaim space", artifactsSize, freeSpace)
+	if err := reclaimBootFolderSpace(); err != nil {
+		return fmt.Errorf("failed to reclaim boot folder space: %w", err)
+	}
+
+	freeSpace, err = getFreeSpace(folders.bootFolder)
+	if err != nil {
+		return fmt.Errorf("failed to get free space of boot folder [%s]: %w", folders.bootFolder, err)
+	}
+
+	if freeSpace < artifactsSize {
+		return fmt.Errorf("boot folder does not have enough space, artifacts size: %d, free space: %d", artifactsSize, freeSpace)
+	}
+	return nil
+}
+
+// getFreeSpace returns the available space in the given folder
+func getFreeSpace(folder string) (int64, error) {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(folder, &stat); err != nil {
+		return 0, fmt.Errorf("failed to statfs %s: %w", folder, err)
+	}
+	return int64(stat.Bavail) * int64(stat.Bsize), nil
+}
+
+// calculateBootArtifactsSize calculates the total size of downloaded boot artifacts and bootloader config
+func calculateBootArtifactsSize(folders *folders) (int64, error) {
+	var totalSize int64
+
+	// Calculate size of kernel file
+	kernelPath := path.Join(folders.tempDownloadFolder, kernelFile)
+	kernelInfo, err := os.Stat(kernelPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat kernel file %s: %w", kernelPath, err)
+	}
+	totalSize += kernelInfo.Size()
+
+	// Calculate size of initrd file
+	initrdPath := path.Join(folders.tempDownloadFolder, initrdFile)
+	initrdInfo, err := os.Stat(initrdPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat initrd file %s: %w", initrdPath, err)
+	}
+	totalSize += initrdInfo.Size()
+
+	// Calculate size of bootloader config file
+	bootLoaderConfigPath := path.Join(tempBootArtifactsFolder, bootLoaderConfigFileName)
+	bootLoaderInfo, err := os.Stat(bootLoaderConfigPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat bootloader config file %s: %w", bootLoaderConfigPath, err)
+	}
+	totalSize += bootLoaderInfo.Size()
+
+	return totalSize, nil
+}
+
+func reclaimBootFolderSpace() error {
+	stdout, stderr, exitCode := util.ExecutePrivileged("rpm-ostree", "cleanup", "--os=rhcos", "-r")
+	log.Debugf("Cleanup RHCOS stdout: %s\nstderr: %s\nexitCode: %d", stdout, stderr, exitCode)
+	if exitCode != 0 {
+		return fmt.Errorf("Cleanup command for RHCOS failed: %s: %s", stdout, stderr)
+	}
+	log.Info("Successfully cleaned up RHCOS")
+	return nil
 }

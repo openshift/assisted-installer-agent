@@ -2,7 +2,9 @@ package actions
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/afero"
 
@@ -436,5 +438,89 @@ var _ = Describe("installer test", func() {
 		installCommandRequest.CoreosImage = "example.com/openshift/coreos:tag"
 		args := getInstall(installCommandRequest, filesystem, false).Args()
 		Expect(strings.Join(args, " ")).To(ContainSubstring("--coreos-image example.com/openshift/coreos:tag"))
+	})
+
+	Context("buildInstallerArgs", func() {
+		var tuiStart time.Time
+
+		setupAgentTUI := func(t time.Time) {
+			Expect(filesystem.MkdirAll(agentTUILogDir, 0755)).To(Succeed())
+			Expect(filesystem.Chtimes(agentTUILogDir, t, t)).To(Succeed())
+			Expect(afero.WriteFile(filesystem, agentTUILogFile, []byte("agent-tui started\n"), 0644)).To(Succeed())
+		}
+
+		writeNMKeyfile := func(name, content string, mtime time.Time) {
+			Expect(filesystem.MkdirAll(nmConnectionsDir, 0755)).To(Succeed())
+			p := filepath.Join(nmConnectionsDir, name)
+			Expect(afero.WriteFile(filesystem, p, []byte(content), 0600)).To(Succeed())
+			Expect(filesystem.Chtimes(p, mtime, mtime)).To(Succeed())
+		}
+
+		BeforeEach(func() {
+			tuiStart = time.Now()
+			setupAgentTUI(tuiStart)
+		})
+
+		It("does not add --copy-network when agent-tui log file is absent", func() {
+			// Without the agent-tui log file this is not an ABI workflow or the
+			// TUI did not produce output, so the check is skipped.
+			Expect(filesystem.Remove(agentTUILogFile)).To(Succeed())
+
+			writeNMKeyfile("static.nmconnection", `[connection]
+id=static
+type=ethernet
+`, time.Now())
+			args := getInstall(installCommandRequest, filesystem, false).Args()
+			Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--copy-network"))
+		})
+
+		It("does not add --copy-network when no keyfiles exist", func() {
+			installCommandRequest.InstallerArgs = "[\"--append-karg\",\"ip=ens3:dhcp\"]"
+			args := getInstall(installCommandRequest, filesystem, false).Args()
+			Expect(strings.Join(args, " ")).To(ContainSubstring("--installer-args '[\"--append-karg\",\"ip=ens3:dhcp\"]'"))
+			Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--copy-network"))
+		})
+
+		It("does not add --copy-network for keyfiles created before agent-tui started", func() {
+			// Files created before the agent-tui started are auto-generated
+			// (nm-initrd-generator, pre-network-manager-config.sh, etc.) and are
+			// filtered by mtime.
+			writeNMKeyfile("ens3.nmconnection", `[connection]
+id=ens3
+type=ethernet
+interface-name=ens3
+
+[ipv4]
+method=auto
+`, tuiStart.Add(-3*time.Second))
+			args := getInstall(installCommandRequest, filesystem, false).Args()
+			Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--copy-network"))
+		})
+
+		It("adds --copy-network when a manually-created keyfile has the same mtime as TUI start", func() {
+			// Filesystems with second-level precision may give the keyfile and the
+			// TUI start the same mtime. We use >= so same-second files are included.
+			writeNMKeyfile("static.nmconnection", `[connection]
+id=static
+type=ethernet
+
+[ipv4]
+method=manual
+address1=192.168.111.20/24,192.168.111.1
+`, tuiStart)
+			args := getInstall(installCommandRequest, filesystem, false).Args()
+			Expect(strings.Join(args, " ")).To(ContainSubstring("--copy-network"))
+		})
+
+		It("does not duplicate --copy-network if already set via the API", func() {
+			writeNMKeyfile("static.nmconnection", `[connection]
+id=static
+type=ethernet
+`, tuiStart.Add(2*time.Minute))
+			installCommandRequest.InstallerArgs = "[\"--copy-network\"]"
+			args := getInstall(installCommandRequest, filesystem, false).Args()
+			argsStr := strings.Join(args, " ")
+			Expect(strings.Count(argsStr, "--copy-network")).To(Equal(1))
+		})
 	})
 })

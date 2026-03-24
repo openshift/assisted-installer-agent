@@ -359,7 +359,7 @@ func incrementFileInfoNameCall(dependencies *util.MockIDependencies, id string) 
 }
 
 func mockFetchDisks(dependencies *util.MockIDependencies, error error, disks ...*ghw.Disk) {
-	dependencies.On("Block", ghw.WithChroot("/host")).Return(&ghw.BlockInfo{Disks: disks}, error).Once()
+	dependencies.On("Block", mock.AnythingOfType("config.Modifier")).Return(&ghw.BlockInfo{Disks: disks}, error).Once()
 }
 
 // mockGetPathFromDev Mocks the dependency call that try to locate the disk at /dev/diskName used by disks.getPath.

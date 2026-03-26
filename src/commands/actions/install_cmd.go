@@ -6,11 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/alessio/shellescape"
+	"github.com/djherbis/times"
 	"github.com/go-openapi/swag"
 	"github.com/hashicorp/go-version"
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -33,11 +34,11 @@ const (
 	// nmConnectionsDir uses /proc/1/root to access the host's filesystem from
 	// within the next-step-runner container, which runs with --pid=host but does
 	// not mount /etc/NetworkManager/system-connections directly.
-	nmConnectionsDir   = "/proc/1/root/etc/NetworkManager/system-connections"
+	nmConnectionsDir = "/proc/1/root/etc/NetworkManager/system-connections"
 	// agentTUILogFile and agentTUILogDir are accessible at their normal paths
 	// because the next-step-runner container mounts /var/log from the host.
-	agentTUILogFile    = "/var/log/agent/agent-tui.log"
-	agentTUILogDir     = "/var/log/agent"
+	agentTUILogFile = "/var/log/agent/agent-tui.log"
+	agentTUILogDir  = "/var/log/agent"
 )
 
 var podmanBaseCmd = [...]string{
@@ -56,6 +57,17 @@ type install struct {
 	installParams models.InstallCmdRequest
 	filesystem    afero.Fs
 	agentConfig   *config.AgentConfig
+	birthTimeFn   func(string) (time.Time, bool)
+}
+
+// defaultBirthTimeFn returns the birth time of the file at the given path using
+// the statx syscall (kernel >= 4.11). Returns false if birth time is unavailable.
+func defaultBirthTimeFn(path string) (time.Time, bool) {
+	ts, err := times.Stat(path)
+	if err != nil || !ts.HasBirthTime() {
+		return time.Time{}, false
+	}
+	return ts.BirthTime(), true
 }
 
 func (a *install) Validate() error {
@@ -287,30 +299,32 @@ func (a *install) validateDisks() error {
 	return nil
 }
 
-// agentTUIStartTime returns the approximate time the agent-tui started on this
-// node. It checks for the existence of the agent-tui log file to confirm the TUI
-// actually ran, then uses the mtime of the agent log directory as the timestamp.
+// agentTUIStartTime returns the time the agent-tui started on this node.
+// It checks for the existence of the agent-tui log file to confirm the TUI
+// actually ran, then returns the birth time of the agent log directory.
 //
-// The directory mtime is used rather than the log file mtime because:
-//   - The log directory is created by agent-interactive-console.service's ExecStartPre
-//     (mkdir -p /var/log/agent) just before the TUI launches. When agent-tui creates
-//     the log file inside the directory, the directory mtime is updated to that moment,
-//     making it a close proxy for TUI start time.
-//   - The log file's mtime reflects the time of its LAST write (when the TUI exits),
-//     which is after all user interactions — using it would cause user-created keyfiles
-//     to be incorrectly filtered out.
+// The log directory is created by agent-interactive-console.service's ExecStartPre
+// (mkdir -p /var/log/agent) just before the TUI launches. On an agent ISO boot the
+// directory does not exist beforehand, so its birth time is set exactly once at
+// service startup — making it a reliable proxy for TUI start time. Birth time is
+// used rather than mtime because mtime advances whenever a file is created inside
+// the directory (e.g. when agent-tui.log is created).
 //
-// Returns a zero time if the log file does not exist, indicating this is not
-// an ABI workflow or the TUI did not produce any output on this node.
+// Returns a zero time if the log file does not exist (not an ABI workflow or the
+// TUI did not produce output) or if birth time is unavailable on this system.
 func (a *install) agentTUIStartTime() time.Time {
 	if _, err := a.filesystem.Stat(agentTUILogFile); err != nil {
 		return time.Time{}
 	}
-	info, err := a.filesystem.Stat(agentTUILogDir)
-	if err != nil {
+	birthTimeFn := a.birthTimeFn
+	if birthTimeFn == nil {
+		birthTimeFn = defaultBirthTimeFn
+	}
+	btime, ok := birthTimeFn(agentTUILogDir)
+	if !ok {
 		return time.Time{}
 	}
-	return info.ModTime()
+	return btime
 }
 
 // hasManualNetworkConfig returns true if NetworkManager keyfiles were created
@@ -320,7 +334,7 @@ func (a *install) agentTUIStartTime() time.Time {
 // the user creates via nmtui will appear in the NM connections directory AFTER the
 // agent-tui started. Auto-generated files (nm-initrd-generator, NMState configs via
 // pre-network-manager-config.sh) are created BEFORE the agent-tui starts, so they
-// are excluded by the mtime comparison.
+// are excluded by comparing their mtime to the TUI start time.
 //
 // If the agent-tui log file does not exist the TUI did not run on this node, so
 // we skip the check entirely. This limits the logic to ABI TUI scenarios and avoids
@@ -372,7 +386,7 @@ func (a *install) hasManualNetworkConfig() bool {
 			continue
 		}
 		if strings.Contains(string(content), "[connection]") {
-			log.Infof("Found manually-created NetworkManager keyfile: %s", filePath)
+			log.Infof("Found manually-created NetworkManager keyfile: %s (mtime %v)", filePath, info.ModTime())
 			found = true
 			break
 		}

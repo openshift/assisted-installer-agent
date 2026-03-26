@@ -443,9 +443,8 @@ var _ = Describe("installer test", func() {
 	Context("buildInstallerArgs", func() {
 		var tuiStart time.Time
 
-		setupAgentTUI := func(t time.Time) {
+		setupAgentTUI := func() {
 			Expect(filesystem.MkdirAll(agentTUILogDir, 0755)).To(Succeed())
-			Expect(filesystem.Chtimes(agentTUILogDir, t, t)).To(Succeed())
 			Expect(afero.WriteFile(filesystem, agentTUILogFile, []byte("agent-tui started\n"), 0644)).To(Succeed())
 		}
 
@@ -456,9 +455,19 @@ var _ = Describe("installer test", func() {
 			Expect(filesystem.Chtimes(p, mtime, mtime)).To(Succeed())
 		}
 
+		// getInstallForTUI wraps getInstall and injects a birthTimeFn that returns
+		// tuiStart for agentTUILogDir, simulating djherbis/times on the real filesystem.
+		getInstallForTUI := func(request models.InstallCmdRequest) *install {
+			action := getInstall(request, filesystem, false)
+			action.birthTimeFn = func(string) (time.Time, bool) {
+				return tuiStart, true
+			}
+			return action
+		}
+
 		BeforeEach(func() {
 			tuiStart = time.Now()
-			setupAgentTUI(tuiStart)
+			setupAgentTUI()
 		})
 
 		It("does not add --copy-network when agent-tui log file is absent", func() {
@@ -470,13 +479,13 @@ var _ = Describe("installer test", func() {
 id=static
 type=ethernet
 `, time.Now())
-			args := getInstall(installCommandRequest, filesystem, false).Args()
+			args := getInstallForTUI(installCommandRequest).Args()
 			Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--copy-network"))
 		})
 
 		It("does not add --copy-network when no keyfiles exist", func() {
 			installCommandRequest.InstallerArgs = "[\"--append-karg\",\"ip=ens3:dhcp\"]"
-			args := getInstall(installCommandRequest, filesystem, false).Args()
+			args := getInstallForTUI(installCommandRequest).Args()
 			Expect(strings.Join(args, " ")).To(ContainSubstring("--installer-args '[\"--append-karg\",\"ip=ens3:dhcp\"]'"))
 			Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--copy-network"))
 		})
@@ -484,7 +493,7 @@ type=ethernet
 		It("does not add --copy-network for keyfiles created before agent-tui started", func() {
 			// Files created before the agent-tui started are auto-generated
 			// (nm-initrd-generator, pre-network-manager-config.sh, etc.) and are
-			// filtered by mtime.
+			// filtered by comparing their mtime to the TUI start time.
 			writeNMKeyfile("ens3.nmconnection", `[connection]
 id=ens3
 type=ethernet
@@ -493,13 +502,26 @@ interface-name=ens3
 [ipv4]
 method=auto
 `, tuiStart.Add(-3*time.Second))
-			args := getInstall(installCommandRequest, filesystem, false).Args()
+			args := getInstallForTUI(installCommandRequest).Args()
 			Expect(strings.Join(args, " ")).NotTo(ContainSubstring("--copy-network"))
 		})
 
-		It("adds --copy-network when a manually-created keyfile has the same mtime as TUI start", func() {
-			// Filesystems with second-level precision may give the keyfile and the
-			// TUI start the same mtime. We use >= so same-second files are included.
+		It("adds --copy-network when a manually-created keyfile is created after agent-tui started", func() {
+			writeNMKeyfile("static.nmconnection", `[connection]
+id=static
+type=ethernet
+
+[ipv4]
+method=manual
+address1=192.168.111.20/24,192.168.111.1
+`, tuiStart.Add(3*time.Second))
+			args := getInstallForTUI(installCommandRequest).Args()
+			Expect(strings.Join(args, " ")).To(ContainSubstring("--copy-network"))
+		})
+
+		It("adds --copy-network when a manually-created keyfile has the same timestamp as TUI start", func() {
+			// Filesystems with second-level precision may give the keyfile the same
+			// timestamp as TUI start. We use >= so same-second files are included.
 			writeNMKeyfile("static.nmconnection", `[connection]
 id=static
 type=ethernet
@@ -508,7 +530,7 @@ type=ethernet
 method=manual
 address1=192.168.111.20/24,192.168.111.1
 `, tuiStart)
-			args := getInstall(installCommandRequest, filesystem, false).Args()
+			args := getInstallForTUI(installCommandRequest).Args()
 			Expect(strings.Join(args, " ")).To(ContainSubstring("--copy-network"))
 		})
 
@@ -518,7 +540,7 @@ id=static
 type=ethernet
 `, tuiStart.Add(2*time.Minute))
 			installCommandRequest.InstallerArgs = "[\"--copy-network\"]"
-			args := getInstall(installCommandRequest, filesystem, false).Args()
+			args := getInstallForTUI(installCommandRequest).Args()
 			argsStr := strings.Join(args, " ")
 			Expect(strings.Count(argsStr, "--copy-network")).To(Equal(1))
 		})

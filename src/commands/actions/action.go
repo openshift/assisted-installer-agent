@@ -60,7 +60,7 @@ func New(agentConfig *config.AgentConfig, stepType models.StepType, args []strin
 		models.StepTypeContainerImageAvailability: {&imageAvailability{args: args, agentConfig: agentConfig}},
 		models.StepTypeStopInstallation:           {&stopInstallation{args: args}},
 		models.StepTypeLogsGather:                 {&logsGather{args: args, agentConfig: agentConfig}},
-		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs(), agentConfig: agentConfig}},
+		models.StepTypeInstall:                    {&install{args: args, filesystem: afero.NewOsFs(), agentConfig: agentConfig, birthTimeFn: defaultBirthTimeFn}},
 		models.StepTypeUpgradeAgent:               {&upgradeAgent{args: args}},
 		models.StepTypeDownloadBootArtifacts:      {&downloadBootArtifacts{args: args, agentConfig: agentConfig}},
 		models.StepTypeRebootForReclaim:           {&rebootForReclaim{args: args}},

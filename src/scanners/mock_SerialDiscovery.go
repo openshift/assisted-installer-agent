@@ -6,8 +6,6 @@ import (
 	baseboard "github.com/jaypipes/ghw/pkg/baseboard"
 	mock "github.com/stretchr/testify/mock"
 
-	option "github.com/jaypipes/ghw/pkg/option"
-
 	product "github.com/jaypipes/ghw/pkg/product"
 )
 
@@ -17,13 +15,9 @@ type MockSerialDiscovery struct {
 }
 
 // Baseboard provides a mock function with given fields: opts
-func (_m *MockSerialDiscovery) Baseboard(opts ...*option.Option) (*baseboard.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockSerialDiscovery) Baseboard(opts ...interface{}) (*baseboard.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -32,10 +26,10 @@ func (_m *MockSerialDiscovery) Baseboard(opts ...*option.Option) (*baseboard.Inf
 
 	var r0 *baseboard.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*baseboard.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*baseboard.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *baseboard.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *baseboard.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -43,7 +37,7 @@ func (_m *MockSerialDiscovery) Baseboard(opts ...*option.Option) (*baseboard.Inf
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -53,13 +47,9 @@ func (_m *MockSerialDiscovery) Baseboard(opts ...*option.Option) (*baseboard.Inf
 }
 
 // Product provides a mock function with given fields: opts
-func (_m *MockSerialDiscovery) Product(opts ...*option.Option) (*product.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockSerialDiscovery) Product(opts ...interface{}) (*product.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -68,10 +58,10 @@ func (_m *MockSerialDiscovery) Product(opts ...*option.Option) (*product.Info, e
 
 	var r0 *product.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*product.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*product.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *product.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *product.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -79,7 +69,7 @@ func (_m *MockSerialDiscovery) Product(opts ...*option.Option) (*product.Info, e
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)

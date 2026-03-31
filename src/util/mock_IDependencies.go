@@ -16,8 +16,6 @@ import (
 
 	netlink "github.com/vishvananda/netlink"
 
-	option "github.com/jaypipes/ghw/pkg/option"
-
 	pci "github.com/jaypipes/ghw/pkg/pci"
 
 	product "github.com/jaypipes/ghw/pkg/product"
@@ -57,13 +55,9 @@ func (_m *MockIDependencies) Abs(path string) (string, error) {
 }
 
 // Block provides a mock function with given fields: opts
-func (_m *MockIDependencies) Block(opts ...*option.Option) (*block.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockIDependencies) Block(opts ...interface{}) (*block.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -72,10 +66,10 @@ func (_m *MockIDependencies) Block(opts ...*option.Option) (*block.Info, error) 
 
 	var r0 *block.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*block.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*block.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *block.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *block.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -83,7 +77,7 @@ func (_m *MockIDependencies) Block(opts ...*option.Option) (*block.Info, error) 
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -93,13 +87,9 @@ func (_m *MockIDependencies) Block(opts ...*option.Option) (*block.Info, error) 
 }
 
 // Chassis provides a mock function with given fields: opts
-func (_m *MockIDependencies) Chassis(opts ...*option.Option) (*chassis.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockIDependencies) Chassis(opts ...interface{}) (*chassis.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -108,10 +98,10 @@ func (_m *MockIDependencies) Chassis(opts ...*option.Option) (*chassis.Info, err
 
 	var r0 *chassis.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*chassis.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*chassis.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *chassis.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *chassis.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -119,7 +109,7 @@ func (_m *MockIDependencies) Chassis(opts ...*option.Option) (*chassis.Info, err
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -241,13 +231,9 @@ func (_m *MockIDependencies) ExecutePrivileged(command string, args ...string) (
 }
 
 // GPU provides a mock function with given fields: opts
-func (_m *MockIDependencies) GPU(opts ...*option.Option) (*gpu.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockIDependencies) GPU(opts ...interface{}) (*gpu.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -256,10 +242,10 @@ func (_m *MockIDependencies) GPU(opts ...*option.Option) (*gpu.Info, error) {
 
 	var r0 *gpu.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*gpu.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*gpu.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *gpu.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *gpu.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -267,7 +253,7 @@ func (_m *MockIDependencies) GPU(opts ...*option.Option) (*gpu.Info, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -383,13 +369,9 @@ func (_m *MockIDependencies) LinkByName(name string) (netlink.Link, error) {
 }
 
 // Memory provides a mock function with given fields: opts
-func (_m *MockIDependencies) Memory(opts ...*option.Option) (*memory.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockIDependencies) Memory(opts ...interface{}) (*memory.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -398,10 +380,10 @@ func (_m *MockIDependencies) Memory(opts ...*option.Option) (*memory.Info, error
 
 	var r0 *memory.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*memory.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*memory.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *memory.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *memory.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -409,7 +391,7 @@ func (_m *MockIDependencies) Memory(opts ...*option.Option) (*memory.Info, error
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -419,13 +401,9 @@ func (_m *MockIDependencies) Memory(opts ...*option.Option) (*memory.Info, error
 }
 
 // PCI provides a mock function with given fields: opts
-func (_m *MockIDependencies) PCI(opts ...*option.Option) (*pci.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockIDependencies) PCI(opts ...interface{}) (*pci.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -434,10 +412,10 @@ func (_m *MockIDependencies) PCI(opts ...*option.Option) (*pci.Info, error) {
 
 	var r0 *pci.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*pci.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*pci.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *pci.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *pci.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -445,7 +423,7 @@ func (_m *MockIDependencies) PCI(opts ...*option.Option) (*pci.Info, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -455,13 +433,9 @@ func (_m *MockIDependencies) PCI(opts ...*option.Option) (*pci.Info, error) {
 }
 
 // Product provides a mock function with given fields: opts
-func (_m *MockIDependencies) Product(opts ...*option.Option) (*product.Info, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
+func (_m *MockIDependencies) Product(opts ...interface{}) (*product.Info, error) {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -470,10 +444,10 @@ func (_m *MockIDependencies) Product(opts ...*option.Option) (*product.Info, err
 
 	var r0 *product.Info
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...*option.Option) (*product.Info, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*product.Info, error)); ok {
 		return rf(opts...)
 	}
-	if rf, ok := ret.Get(0).(func(...*option.Option) *product.Info); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *product.Info); ok {
 		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -481,7 +455,7 @@ func (_m *MockIDependencies) Product(opts ...*option.Option) (*product.Info, err
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...*option.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(opts...)
 	} else {
 		r1 = ret.Error(1)

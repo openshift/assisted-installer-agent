@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/util"
 	"github.com/openshift/assisted-service/models"
+	"github.com/stretchr/testify/mock"
 )
 
 var _ = Describe("System vendor test", func() {
@@ -23,17 +24,17 @@ var _ = Describe("System vendor test", func() {
 	})
 
 	It("Product error", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(nil, fmt.Errorf("Just an error")).Once()
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(nil, fmt.Errorf("Just an error")).Once()
 		ret := GetVendor(dependencies)
 		Expect(ret).To(Equal(&models.SystemVendor{}))
 	})
 	It("Product OK", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         "A Name",
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
@@ -46,12 +47,12 @@ var _ = Describe("System vendor test", func() {
 		}))
 	})
 	It("Bare metal virtualization detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         "A Name",
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
@@ -59,12 +60,12 @@ var _ = Describe("System vendor test", func() {
 		Expect(systemVendor.Virtual).ShouldNot(BeTrue())
 	})
 	It("Virtual machine detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         "A Name",
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("anyvirt", "", 0).Once()
@@ -72,12 +73,12 @@ var _ = Describe("System vendor test", func() {
 		Expect(systemVendor.Virtual).Should(BeTrue())
 	})
 	It("Virtual machine error on detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         "A Name",
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("", "an error", 1).Once()
@@ -85,10 +86,10 @@ var _ = Describe("System vendor test", func() {
 		Expect(systemVendor.Virtual).ShouldNot(BeTrue())
 	})
 	It("oVirt product detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Family: "oVirt",
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("ovirt", "", 0).Once()
@@ -100,22 +101,22 @@ var _ = Describe("System vendor test", func() {
 		}))
 	})
 	It("Chassis error", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         "A Name",
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(nil, fmt.Errorf("Just an error")).Once()
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(nil, fmt.Errorf("Just an error")).Once()
 		ret := GetVendor(dependencies)
 		Expect(ret).To(Equal(&models.SystemVendor{}))
 	})
 	It("Oracle Cloud detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         "A Name",
 			SerialNumber: "A Serial Number",
 			Vendor:       "A Vendor",
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "OracleCloud.com",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("none", "", 0).Once()
@@ -123,12 +124,12 @@ var _ = Describe("System vendor test", func() {
 		Expect(systemVendor.Manufacturer).Should(Equal("OracleCloud.com"))
 	})
 	It("s390x zVM node detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         ghwutil.UNKNOWN,
 			SerialNumber: ghwutil.UNKNOWN,
 			Vendor:       ghwutil.UNKNOWN,
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("zvm", "", 0).Once()
@@ -139,12 +140,12 @@ var _ = Describe("System vendor test", func() {
 		Expect(systemVendor.ProductName).Should(Equal("z/VM    7.2.0"))
 	})
 	It("s390x KVM node detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         ghwutil.UNKNOWN,
 			SerialNumber: ghwutil.UNKNOWN,
 			Vendor:       ghwutil.UNKNOWN,
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("kvm", "", 0).Once()
@@ -155,12 +156,12 @@ var _ = Describe("System vendor test", func() {
 		Expect(systemVendor.ProductName).Should(Equal("KVM/Linux"))
 	})
 	It("s390x LPAR node detection", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         ghwutil.UNKNOWN,
 			SerialNumber: ghwutil.UNKNOWN,
 			Vendor:       ghwutil.UNKNOWN,
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("", "", 0).Once()
@@ -171,12 +172,12 @@ var _ = Describe("System vendor test", func() {
 		Expect(systemVendor.ProductName).Should(Equal("LPAR"))
 	})
 	It("s390x LPAR node detection (glitch during detect virt)", func() {
-		dependencies.On("Product", ghw.WithChroot("/host")).Return(&ghw.ProductInfo{
+		dependencies.On("Product", mock.AnythingOfType("config.Modifier")).Return(&ghw.ProductInfo{
 			Name:         ghwutil.UNKNOWN,
 			SerialNumber: ghwutil.UNKNOWN,
 			Vendor:       ghwutil.UNKNOWN,
 		}, nil).Once()
-		dependencies.On("Chassis", ghw.WithChroot("/host")).Return(&ghw.ChassisInfo{
+		dependencies.On("Chassis", mock.AnythingOfType("config.Modifier")).Return(&ghw.ChassisInfo{
 			AssetTag: "An Asset Tag",
 		}, nil).Once()
 		dependencies.On("Execute", "systemd-detect-virt", "--vm").Return("", "an error", 1).Once()

@@ -60,13 +60,13 @@ arches:
     name: criu-libs
     evr: 3.19-3.el9
     sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/crun-1.26-1.el9_7.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/crun-1.27-1.el9_7.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 248573
-    checksum: sha256:ead32f38887800b4ad98107142bdf991ee16e724387fd30917b0590086558aa7
+    size: 251685
+    checksum: sha256:bbc7e023c9ffa117101ca68007ce72512ccde579ccaf06e5589f3b0139ebdf19
     name: crun
-    evr: 1.26-1.el9_7
-    sourcerpm: crun-1.26-1.el9_7.src.rpm
+    evr: 1.27-1.el9_7
+    sourcerpm: crun-1.27-1.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/f/fio-3.35-1.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 6594129
@@ -960,13 +960,13 @@ arches:
     name: criu-libs
     evr: 3.19-3.el9
     sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/crun-1.26-1.el9_7.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/crun-1.27-1.el9_7.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 289613
-    checksum: sha256:3d60e6bf3baecf72edd987d777e325294be4ac9e194e765853d0f7eec496b90f
+    size: 292730
+    checksum: sha256:74138a8a9d80a6f5f5034c3de5a00a9236703426c5f6584befd8a40395e47e51
     name: crun
-    evr: 1.26-1.el9_7
-    sourcerpm: crun-1.26-1.el9_7.src.rpm
+    evr: 1.27-1.el9_7
+    sourcerpm: crun-1.27-1.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/f/fio-3.35-1.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 6638282
@@ -1909,13 +1909,13 @@ arches:
     name: criu-libs
     evr: 3.19-3.el9
     sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/crun-1.26-1.el9_7.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/crun-1.27-1.el9_7.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 245853
-    checksum: sha256:2aba23dfe954eaa31f0ec6687f67ed4885db8a70a5aa229e255a69b701523be1
+    size: 248910
+    checksum: sha256:d599e3dcb72ebaedf68e647c15415e7640524dc96424c481bd0e4702d69430c0
     name: crun
-    evr: 1.26-1.el9_7
-    sourcerpm: crun-1.26-1.el9_7.src.rpm
+    evr: 1.27-1.el9_7
+    sourcerpm: crun-1.27-1.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/f/fio-3.35-1.el9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 6565690
@@ -2802,13 +2802,13 @@ arches:
     name: criu-libs
     evr: 3.19-3.el9
     sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/crun-1.26-1.el9_7.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/crun-1.27-1.el9_7.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 265054
-    checksum: sha256:ff2ab3dc93536b676ffc3dce8113a037a1cc30d9b92cd3a3802339fd3aa100f4
+    size: 268352
+    checksum: sha256:61b1d11863da6f3c0854fe7d83e97fb32e76569c64eaa413b6146b22beacf49a
     name: crun
-    evr: 1.26-1.el9_7
-    sourcerpm: crun-1.26-1.el9_7.src.rpm
+    evr: 1.27-1.el9_7
+    sourcerpm: crun-1.27-1.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/f/fio-3.35-1.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 6589904

@@ -86,6 +86,11 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 		return fmt.Errorf("failed unmarshalling download boot artifacts request: %w", err)
 	}
 
+	if bootArtifactsExist(*req.HostFsMountDir) {
+		log.Info("Boot artifacts are already present on the host in the /boot folder")
+		return nil
+	}
+
 	err := createFolders(*req.HostFsMountDir, defaultRetryAmount)
 	if err != nil {
 		log.Errorf("failed creating folders: %s", err.Error())
@@ -116,6 +121,23 @@ func run(infraEnvId, downloaderRequestStr, caCertPath string) error {
 
 	log.Infof("Download boot artifacts completed successfully.")
 	return nil
+}
+
+// bootArtifactsExist checks if the boot artifacts already exist in the host filesystem
+func bootArtifactsExist(hostFsMountDir string) bool {
+	kernelFilePath := path.Join(getMountedArtifactsFolder(hostFsMountDir), kernelFile)
+	initrdFilePath := path.Join(getMountedArtifactsFolder(hostFsMountDir), initrdFile)
+	bootLoaderConfigFilePath := path.Join(getMountedBootLoaderFolder(hostFsMountDir), bootLoaderConfigFileName)
+	_, err := os.Stat(kernelFilePath)
+	if err != nil {
+		return false
+	}
+	_, err = os.Stat(initrdFilePath)
+	if err != nil {
+		return false
+	}
+	_, err = os.Stat(bootLoaderConfigFilePath)
+	return err == nil
 }
 
 func createHTTPClient(caCertPath string) (*http.Client, error) {
@@ -348,7 +370,8 @@ func copyFilesToBootFolder(hostFsMountDir string) error {
 	if err := copyFile(path.Join(tempBootArtifactsFolder, bootLoaderConfigFileName), path.Join(mountedBootLoaderFolder, bootLoaderConfigFileName)); err != nil {
 		return fmt.Errorf("failed to copy file %s to %s: %w", path.Join(tempBootArtifactsFolder, bootLoaderConfigFileName), path.Join(mountedBootLoaderFolder, bootLoaderConfigFileName), err)
 	}
-	log.Infof("Successfully moved files to /boot folder.")
+
+	log.Info("Successfully copied files to /boot folder.")
 	return nil
 }
 

@@ -60,6 +60,7 @@ RUN dnf install -y --nodocs --setopt=install_weak_deps=False \
         chrony \
         kmod \
         golang \
+        rpm-ostree \
     && dnf clean all
 
 # Set Go environment variables for compatibility with e2e tests

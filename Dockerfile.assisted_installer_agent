@@ -20,7 +20,7 @@ RUN git config --global --add safe.directory '*' && \
 FROM quay.io/centos/centos:stream9 AS repo-source
 
 # Final stage - UBI minimal with extracted repos for missing packages
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:6fc28bcb6776e387d7a35a2056d9d2b985dc4e26031e98a2bd35a7137cd6fd71
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:d91be7cea9f03a757d69ad7fcdfcd7849dba820110e7980d5e2a1f46ed06ea3b
 ARG TARGETPLATFORM
 
 # Install packages available in UBI minimal and dnf for metalink support

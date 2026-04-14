@@ -104,7 +104,7 @@ func isSupportedModel(deviceID string) bool {
 }
 
 // GetGPUs discovers GPU devices on the system
-func GetGPUs(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) []*models.Gpu {
+func GetGPUs(inventoryConfig *config.InventoryConfig, dependencies util.IDependencies) []*models.Gpu {
 	gpus := make([]*models.Gpu, 0)
 
 	pciInfo, err := dependencies.PCI()
@@ -113,7 +113,7 @@ func GetGPUs(subprocessConfig *config.SubprocessConfig, dependencies util.IDepen
 		return gpus
 	}
 
-	supportedConfig, err = readGpuConfiguration(subprocessConfig.GPUConfigFile)
+	supportedConfig, err = readGpuConfiguration(inventoryConfig.GPUConfigFile)
 	if err != nil {
 		logrus.Warnf("Error getting GPU configuration: %s", err)
 		logrus.Info("Using default GPU discovery configuration")

@@ -11,8 +11,7 @@ import (
 )
 
 func Main() {
-	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
+	subprocessConfig := config.ProcessSubprocessArgs()
 	util.SetLogging("disk-speed-check", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.StdoutLogging, subprocessConfig.ForcedHostID)
 
 	req := flag.Arg(flag.NArg() - 1)

@@ -155,11 +155,11 @@ var (
 var _ = Describe("GPUs information discovery", func() {
 
 	var dependencies *util.MockIDependencies
-	var subprocessConfig *config.SubprocessConfig
+	var inventoryConfig *config.InventoryConfig
 
 	BeforeEach(func() {
 		dependencies = newDependenciesMock()
-		subprocessConfig = &config.SubprocessConfig{}
+		inventoryConfig = &config.InventoryConfig{}
 	})
 
 	AfterEach(func() {
@@ -169,7 +169,7 @@ var _ = Describe("GPUs information discovery", func() {
 	It("should load information about one GPU", func() {
 		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card1}}, nil).Once()
 
-		gpus := GetGPUs(subprocessConfig, dependencies)
+		gpus := GetGPUs(inventoryConfig, dependencies)
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu1))
@@ -178,7 +178,7 @@ var _ = Describe("GPUs information discovery", func() {
 	It("should load information about multiple GPUs", func() {
 		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card1, &card2, &card3, &card4}}, nil).Once()
 
-		gpus := GetGPUs(subprocessConfig, dependencies)
+		gpus := GetGPUs(inventoryConfig, dependencies)
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu1, &gpu2, &gpu3, &gpu4))
@@ -197,8 +197,8 @@ var _ = Describe("GPUs information discovery", func() {
 		Expect(err).NotTo(HaveOccurred())
 		tmpFile.Close()
 
-		subprocessConfig.GPUConfigFile = tmpFile.Name()
-		gpus := GetGPUs(subprocessConfig, dependencies)
+		inventoryConfig.GPUConfigFile = tmpFile.Name()
+		gpus := GetGPUs(inventoryConfig, dependencies)
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu3))
@@ -217,8 +217,8 @@ var _ = Describe("GPUs information discovery", func() {
 		Expect(err).NotTo(HaveOccurred())
 		tmpFile.Close()
 
-		subprocessConfig.GPUConfigFile = tmpFile.Name()
-		gpus := GetGPUs(subprocessConfig, dependencies)
+		inventoryConfig.GPUConfigFile = tmpFile.Name()
+		gpus := GetGPUs(inventoryConfig, dependencies)
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu2))
@@ -229,7 +229,7 @@ var _ = Describe("GPUs information discovery", func() {
 	It("should detect PCI cards con several functions", func() {
 		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card1, &card2, &card3, &card3a}}, nil).Once()
 
-		gpus := GetGPUs(subprocessConfig, dependencies)
+		gpus := GetGPUs(inventoryConfig, dependencies)
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu1, &gpu2, &gpu3, &gpu3a))
@@ -238,7 +238,7 @@ var _ = Describe("GPUs information discovery", func() {
 	It("should handle error gracefully", func() {
 		dependencies.On("PCI").Return(nil, errors.New("boom")).Once()
 
-		gpus := GetGPUs(subprocessConfig, dependencies)
+		gpus := GetGPUs(inventoryConfig, dependencies)
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(BeEmpty())

@@ -418,7 +418,7 @@ func mockAllForSuccess(dependencies *util.MockIDependencies, disks ...*ghw.Disk)
 			hiddenText = "1\n"
 		}
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", name)).Return([]byte(hiddenText), nil)
-		if !newDisks(&config.SubprocessConfig{}, dependencies).shouldReturnDisk(disk) {
+		if !newDisks(&config.InventoryConfig{}, dependencies).shouldReturnDisk(disk) {
 			continue
 		}
 
@@ -481,13 +481,13 @@ var _ = Describe("Disks test", func() {
 
 	It("Execute error", func() {
 		mockFetchDisks(dependencies, fmt.Errorf("just an error"))
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
 
 	It("Empty", func() {
 		mockFetchDisks(dependencies, nil)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{}))
 	})
 
@@ -499,7 +499,7 @@ var _ = Describe("Disks test", func() {
 		mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
 		mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk(), zramDisk, loopDisk, hiddenDisk)
 
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).Should(HaveLen(2))
 	})
 
@@ -525,7 +525,7 @@ var _ = Describe("Disks test", func() {
 		})
 
 		AfterEach(func() {
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret).To(Equal(expectation))
 		})
 	})
@@ -533,7 +533,7 @@ var _ = Describe("Disks test", func() {
 	It("Multiple disks", func() {
 		blockInfo, expectedDisks := prepareDisksTest(dependencies, 2)
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -545,7 +545,7 @@ var _ = Describe("Disks test", func() {
 		expectedDisks[0].InstallationEligibility.Eligible = true
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -574,7 +574,7 @@ var _ = Describe("Disks test", func() {
 		expectedDisks[1].IsInstallationMedia = false
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -619,7 +619,7 @@ var _ = Describe("Disks test", func() {
 		}
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -637,7 +637,7 @@ var _ = Describe("Disks test", func() {
 		expectedDisks[1].DriveType = models.DriveTypeHDD
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal(expectedDisks))
 	})
 
@@ -667,7 +667,7 @@ var _ = Describe("Disks test", func() {
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -730,7 +730,7 @@ var _ = Describe("Disks test", func() {
 		mockNoUUID(dependencies, path)
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{
 			{
 				ID:        "/dev/disk/by-path/pci-0000:3d:00.0-nvme-1",
@@ -765,7 +765,7 @@ var _ = Describe("Disks test", func() {
 		}
 
 		mockFetchDisks(dependencies, nil, blockInfo.Disks...)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal(expectation))
 	})
 
@@ -810,7 +810,7 @@ var _ = Describe("Disks test", func() {
 
 			mockReadDir(dependencies, ibftBasePath, "", &ignoredFileMock, &ignoredDirMock, &targetMock)
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret).To(Equal([]*models.Disk{
 				{
 					ID:        "/dev/disk/by-path/ip-192.168.130.10:3260-iscsi-iqn.2022-01.com.redhat.foo:disk0-lun-0",
@@ -848,7 +848,7 @@ var _ = Describe("Disks test", func() {
 			dependencies.On("ReadFile", "/sys/firmware/ibft/target0/target-name").Return([]byte("iqn.2023-01.com.example:tm1"), nil)
 			mockReadDir(dependencies, ibftBasePath, "", &targetMock)
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iSCSI disk is not in running state"))
@@ -866,7 +866,7 @@ var _ = Describe("Disks test", func() {
 			dependencies.On("ReadFile", "/sys/firmware/ibft/target0/target-name").Return([]byte("iqn.2023-01.com.example:tm1"), nil)
 			mockReadDir(dependencies, ibftBasePath, "", &targetMock)
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("Failed to read state of iSCSI disk"))
@@ -884,7 +884,7 @@ var _ = Describe("Disks test", func() {
 			dependencies.On("ReadFile", "/sys/firmware/ibft/target0/target-name").Return([]byte("iqn.2023-01.com.example:tm1"), nil)
 			mockReadDir(dependencies, ibftBasePath, "", &targetMock)
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iSCSI disk is missing from iBFT"))
@@ -899,7 +899,7 @@ var _ = Describe("Disks test", func() {
 			// iBFT target validation
 			dependencies.On("ReadFile", "/sys/class/iscsi_session/session1/targetname").Return([]byte(""), fmt.Errorf("file not found"))
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("Cannot find iSCSI target name"))
@@ -915,7 +915,7 @@ var _ = Describe("Disks test", func() {
 			dependencies.On("ReadFile", "/sys/class/iscsi_session/session1/targetname").Return([]byte("iqn.2023-01.com.example:tm1"), nil)
 			mockReadDir(dependencies, ibftBasePath, "no directory found")
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iBFT firmware is missing"))
@@ -932,7 +932,7 @@ var _ = Describe("Disks test", func() {
 			dependencies.On("ReadFile", "/sys/firmware/ibft/target0/target-name").Return([]byte(""), fmt.Errorf("file not found"))
 			mockReadDir(dependencies, ibftBasePath, "", &targetMock)
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("iSCSI disk is missing from iBFT"))
@@ -943,7 +943,7 @@ var _ = Describe("Disks test", func() {
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("Cannot find iSCSI session"))
@@ -954,7 +954,7 @@ var _ = Describe("Disks test", func() {
 			// iSCSI state validation
 			dependencies.On("ReadFile", "/sys/block/sda/device/state").Return([]byte("running"), nil)
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Expect(ret[0].InstallationEligibility.Eligible).To(BeFalse())
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(HaveLen(1))
 			Expect(ret[0].InstallationEligibility.NotEligibleReasons).To(ContainElement("Cannot find iSCSI session"))
@@ -982,7 +982,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("ReadDir", "/sys/block/sda/holders").Return(holderInfos, nil).Times(1)
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -1028,7 +1028,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("ReadDir", "/sys/block/sda/holders").Return(holderInfos, nil).Times(1)
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -1067,7 +1067,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(""), nil)
 
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -1106,7 +1106,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(""), nil)
 
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("mpath-36001405961d8b6f55cf48beb0de296b2\n"), nil)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -1141,7 +1141,7 @@ var _ = Describe("Disks test", func() {
 		mockHasUUID(dependencies, "/dev/dm-0", "")
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(applianceAgentPrefix), nil)
 
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).To(Equal([]*models.Disk{
 			{
 				ByPath:    "",
@@ -1177,7 +1177,7 @@ var _ = Describe("Disks test", func() {
 		mockReadDir(dependencies, fmt.Sprintf("/sys/block/%s/holders", disk.Name), "")
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/hidden", disk.Name)).Return([]byte("0\n"), nil)
 
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -1216,7 +1216,7 @@ var _ = Describe("Disks test", func() {
 		dependencies.On("ReadFile", fmt.Sprintf("/sys/block/%s/dm/name", disk.Name)).Return([]byte(""), nil)
 
 		dependencies.On("ReadFile", "/sys/block/dm-2/dm/uuid").Return([]byte("LVM-Uq2y4MzaRpGE1XwVHSYDU5VAuHXXOA4gCkn9flYIZlS7UEfwlYPMyzHwx2R6VQoJ2\n"), nil)
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 		Expect(ret).To(Equal([]*models.Disk{
 			{
@@ -1273,7 +1273,7 @@ var _ = Describe("Disks test", func() {
 		mockGetWWNCallForSuccess(dependencies, make(map[string]string))
 		mockAllForSuccess(dependencies, dasdaDisk, dasdbDisk, dasdcDisk, dasddDisk, dasdeDisk, dasdfDisk)
 
-		ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+		ret := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(ret).Should(HaveLen(6))
 		for _, disk := range ret {
 			if disk.Name == "dasda" {
@@ -1292,7 +1292,7 @@ var _ = Describe("Disks test", func() {
 		Specify("GetDisk does not affect from failures while fetching the disk WWN - Read dir failed", func() {
 			mockReadDir(dependencies, "/dev/disk/by-id", "fetching the by-id disk failed")
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -1319,7 +1319,7 @@ var _ = Describe("Disks test", func() {
 			})
 
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -1350,7 +1350,7 @@ var _ = Describe("Disks test", func() {
 			})
 
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 
 			Ω(ret).Should(HaveLen(2))
 
@@ -1369,7 +1369,7 @@ var _ = Describe("Disks test", func() {
 			byidmapping["path"] = "id"
 			mockGetWWNCallForSuccess(dependencies, byidmapping)
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -1380,7 +1380,7 @@ var _ = Describe("Disks test", func() {
 		It("Should have the by-id information", func() {
 			mockGetWWNCallForSuccess(dependencies, createWWNResults())
 			mockAllForSuccess(dependencies, createSDADisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(Equal(sdaIdFullPath))
@@ -1391,7 +1391,7 @@ var _ = Describe("Disks test", func() {
 			delete(results, sdbPath)
 			mockGetWWNCallForSuccess(dependencies, results)
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -1406,7 +1406,7 @@ var _ = Describe("Disks test", func() {
 		It("Should have the by-id information for all the disks", func() {
 			mockGetWWNCallForSuccess(dependencies, createWWNResults())
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 
 			for _, disk := range ret {
@@ -1424,7 +1424,7 @@ var _ = Describe("Disks test", func() {
 			byidmapping["/dev/nvme0n1"] = nvmeById
 			mockGetWWNCallForSuccess(dependencies, byidmapping)
 			mockAllForSuccess(dependencies, createNVMEDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(Equal(filepath.Join(devDiskByIdLocation, nvmeById)))
@@ -1433,7 +1433,7 @@ var _ = Describe("Disks test", func() {
 		It("All the other fields are the same", func() {
 			mockGetWWNCallForSuccess(dependencies, createWWNResults())
 			mockAllForSuccess(dependencies, createSDADisk(), createSDBDisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 			Expect(ret).Should(ConsistOf(createExpectedSDAModelDisk(), createExpectedSDBModelDisk()))
 		})
@@ -1444,7 +1444,7 @@ var _ = Describe("Disks test", func() {
 			mockAllForSuccess(dependencies, sdaDisk)
 			remockGetByPath(dependencies, sdaDisk.BusPath, "Error")
 
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(BeEmpty())
@@ -1454,7 +1454,7 @@ var _ = Describe("Disks test", func() {
 		It("Id equals to the disk by-path field", func() {
 			mockGetWWNCallForSuccess(dependencies, make(map[string]string))
 			mockAllForSuccess(dependencies, createSDADisk())
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(1))
 			disk := ret[0]
 			Ω(disk.ByID).Should(BeEmpty())
@@ -1470,7 +1470,7 @@ var _ = Describe("Disks test", func() {
 			path := fmt.Sprintf("/dev/disk/by-path/%s", sda.BusPath)
 			util.DeleteExpectedMethod(&dependencies.Mock, "Stat", path)
 			util.DeleteExpectedMethod(&dependencies.Mock, "Stat", path)
-			ret := GetDisks(&config.SubprocessConfig{}, dependencies)
+			ret := GetDisks(&config.InventoryConfig{}, dependencies)
 			Ω(ret).Should(HaveLen(2))
 			disk := ret[0]
 			Ω(disk.ByID).Should(BeEmpty())
@@ -1503,7 +1503,7 @@ var _ = Describe("Disks test", func() {
 			},
 		}
 		mockAllForSuccess(dependencies, disk)
-		disks := GetDisks(&config.SubprocessConfig{}, dependencies)
+		disks := GetDisks(&config.InventoryConfig{}, dependencies)
 		Expect(disks).To(HaveLen(1))
 		Expect(disks[0].InstallationEligibility.Eligible).To(BeFalse())
 		Expect(disks[0].InstallationEligibility.NotEligibleReasons).To(ContainElements(

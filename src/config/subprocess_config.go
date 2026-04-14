@@ -1,6 +1,10 @@
 package config
 
-import "flag"
+import (
+	"flag"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // LoggingConfig defines logging for agent processes
 type LoggingConfig struct {
@@ -13,27 +17,32 @@ type LoggingConfig struct {
 type SubprocessConfig struct {
 	LoggingConfig
 	DryRunConfig
-	GPUConfigFile string
 }
 
-// DefaultLoggingConfig pre-defined most commonly used defaults
-var DefaultLoggingConfig = LoggingConfig{
-	TextLogging:    false,
-	JournalLogging: true,
-	StdoutLogging:  false,
+// RegisterLoggingArgs must not be called more than once per process.
+// Subsequent calls will panic.
+func RegisterLoggingArgs(loggingConfig *LoggingConfig) {
+	flag.BoolVar(&loggingConfig.JournalLogging, "with-journal-logging", true, "Use journal logging")
+	flag.BoolVar(&loggingConfig.TextLogging, "with-text-logging", false, "Use text logging")
+	flag.BoolVar(&loggingConfig.StdoutLogging, "with-stdout-logging", false, "Use stdout logging")
 }
 
 // ProcessSubprocessArgs parses arguments
-func ProcessSubprocessArgs(loggingDefaults LoggingConfig) *SubprocessConfig {
+func ProcessSubprocessArgs() *SubprocessConfig {
 	subprocessConfig := &SubprocessConfig{}
-	flag.BoolVar(&subprocessConfig.JournalLogging, "with-journal-logging", loggingDefaults.JournalLogging, "Use journal logging")
-	flag.BoolVar(&subprocessConfig.TextLogging, "with-text-logging", loggingDefaults.TextLogging, "Use text logging")
-	flag.BoolVar(&subprocessConfig.StdoutLogging, "with-stdout-logging", loggingDefaults.StdoutLogging, "Use stdout logging")
-	flag.StringVar(&subprocessConfig.GPUConfigFile, "gpu-config-file", "", "Configuration file for GPU discovery")
+
+	RegisterLoggingArgs(&subprocessConfig.LoggingConfig)
+
+	err := RegisterDryRunArgs(&subprocessConfig.DryRunConfig)
+	if err != nil {
+		log.Fatalf("Failed to register dry run arguments: %v", err)
+	}
+
 	h := flag.Bool("help", false, "Help message")
 	flag.Parse()
 	if h != nil && *h {
 		printHelpAndExit()
 	}
+
 	return subprocessConfig
 }

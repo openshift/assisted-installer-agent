@@ -11,28 +11,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Config struct {
-	Request string
-}
+var request string
 
-func processRequestArg() string {
-	var executableConfig Config
-	ret := &executableConfig
-	flag.StringVar(&ret.Request, "request", "",
-		"The request details. See models.DomainResolutionRequest")
-	flag.Parse()
+func main() {
+	flag.StringVar(&request, "request", "", "The request details. See models.DomainResolutionRequest")
+	subprocessConfig := config.ProcessSubprocessArgs()
 
-	if executableConfig.Request == "" {
+	if request == "" {
 		flag.CommandLine.Usage()
 		os.Exit(1)
 	}
-	return executableConfig.Request
-}
-
-func main() {
-	request := processRequestArg()
-	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
 
 	util.SetLogging("domain_resolution",
 		subprocessConfig.TextLogging,

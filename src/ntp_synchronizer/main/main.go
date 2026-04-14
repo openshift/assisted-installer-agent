@@ -16,8 +16,7 @@ func DryRunNtp() (string, string, int) {
 }
 
 func main() {
-	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
+	subprocessConfig := config.ProcessSubprocessArgs()
 	util.SetLogging("ntp_synchronizer", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.StdoutLogging, subprocessConfig.ForcedHostID)
 	if flag.NArg() != 1 {
 		log.Fatalf("Expecting exactly single argument to ntp_synchronizer. Received %d", len(os.Args)-1)

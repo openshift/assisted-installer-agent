@@ -14,7 +14,7 @@ WORKDIR /app
 RUN make build
 
 
-FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:f225a0f8eb7d258011e1f7c8b025dc7dd155d6ffc66c17cd203dcec88935b455
+FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
 
 ARG release=main
 ARG version=latest

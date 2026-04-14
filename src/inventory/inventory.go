@@ -13,15 +13,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ReadInventory(subprocessConfig *config.SubprocessConfig, c *Options) *models.Inventory {
-	d := util.NewDependencies(&subprocessConfig.DryRunConfig, c.GhwChrootRoot)
+func ReadInventory(inventoryConfig *config.InventoryConfig, c *Options) *models.Inventory {
+	d := util.NewDependencies(&inventoryConfig.DryRunConfig, c.GhwChrootRoot)
 	ret := models.Inventory{
-		BmcAddress:   GetBmcAddress(subprocessConfig, d),
-		BmcV6address: GetBmcV6Address(subprocessConfig, d),
+		BmcAddress:   GetBmcAddress(inventoryConfig, d),
+		BmcV6address: GetBmcV6Address(inventoryConfig, d),
 		Boot:         GetBoot(d),
 		CPU:          GetCPU(d),
-		Disks:        GetDisks(subprocessConfig, d),
-		Gpus:         GetGPUs(subprocessConfig, d),
+		Disks:        GetDisks(inventoryConfig, d),
+		Gpus:         GetGPUs(inventoryConfig, d),
 		Hostname:     GetHostname(d),
 		Interfaces:   GetInterfaces(d),
 		Memory:       GetMemory(d),
@@ -33,11 +33,11 @@ func ReadInventory(subprocessConfig *config.SubprocessConfig, c *Options) *model
 	return &ret
 }
 
-func CreateInventoryInfo(subprocessConfig *config.SubprocessConfig) []byte {
-	in := ReadInventory(subprocessConfig, &Options{GhwChrootRoot: "/host"})
+func CreateInventoryInfo(inventoryConfig *config.InventoryConfig) []byte {
+	in := ReadInventory(inventoryConfig, &Options{GhwChrootRoot: "/host"})
 
-	if subprocessConfig.DryRunEnabled {
-		applyDryRunConfig(subprocessConfig, in)
+	if inventoryConfig.DryRunEnabled {
+		applyDryRunConfig(inventoryConfig, in)
 	}
 
 	b, _ := json.Marshal(&in)

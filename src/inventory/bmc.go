@@ -14,16 +14,16 @@ import (
 const MaxIpmiChannel = 12
 
 type bmc struct {
-	dependicies      util.IDependencies
-	subprocessConfig *config.SubprocessConfig
+	dependencies    util.IDependencies
+	inventoryConfig *config.InventoryConfig
 }
 
-func newBMC(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) *bmc {
-	return &bmc{dependicies: dependencies, subprocessConfig: subprocessConfig}
+func newBMC(inventoryConfig *config.InventoryConfig, dependencies util.IDependencies) *bmc {
+	return &bmc{dependencies: dependencies, inventoryConfig: inventoryConfig}
 }
 
 func (b *bmc) getIpForChannnel(ch int) string {
-	o, e, exitCode := b.dependicies.Execute("ipmitool", "lan", "print", strconv.FormatInt(int64(ch), 10))
+	o, e, exitCode := b.dependencies.Execute("ipmitool", "lan", "print", strconv.FormatInt(int64(ch), 10))
 	if exitCode != 0 || strings.HasPrefix(e, "Invalid channel") {
 		return ""
 	}
@@ -42,7 +42,7 @@ func (b *bmc) getIsEnabled(value interface{}) bool {
 }
 
 func (b *bmc) getBmcAddress() string {
-	if b.subprocessConfig.DryRunEnabled {
+	if b.inventoryConfig.DryRunEnabled {
 		// This action is too slow and unnecessary, so skip it in dry run
 		return "0.0.0.0"
 	}
@@ -63,12 +63,12 @@ func (b *bmc) getBmcAddress() string {
 	return "0.0.0.0"
 }
 
-func GetBmcAddress(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) string {
-	return newBMC(subprocessConfig, dependencies).getBmcAddress()
+func GetBmcAddress(inventoryConfig *config.InventoryConfig, dependencies util.IDependencies) string {
+	return newBMC(inventoryConfig, dependencies).getBmcAddress()
 }
 
 func (b *bmc) getV6Address(ch int, addressType string) string {
-	o, _, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), addressType+"_addr")
+	o, _, exitCode := b.dependencies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), addressType+"_addr")
 	if exitCode != 0 {
 		return ""
 	}
@@ -112,7 +112,7 @@ func (b *bmc) getV6Address(ch int, addressType string) string {
 }
 
 func (b *bmc) getAddrMode(ch int) string {
-	o, _, exitCode := b.dependicies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), "enables")
+	o, _, exitCode := b.dependencies.Execute("ipmitool", "lan6", "print", strconv.FormatInt(int64(ch), 10), "enables")
 	if exitCode != 0 {
 		return ""
 	}
@@ -127,7 +127,7 @@ func (b *bmc) getAddrMode(ch int) string {
 }
 
 func (b *bmc) getBmcV6Address() string {
-	if b.subprocessConfig.DryRunEnabled {
+	if b.inventoryConfig.DryRunEnabled {
 		// This action is too slow and unnecessary, so skip it in dry run
 		return "::/0"
 	}
@@ -153,6 +153,6 @@ func (b *bmc) getBmcV6Address() string {
 	return "::/0"
 }
 
-func GetBmcV6Address(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) string {
-	return newBMC(subprocessConfig, dependencies).getBmcV6Address()
+func GetBmcV6Address(inventoryConfig *config.InventoryConfig, dependencies util.IDependencies) string {
+	return newBMC(inventoryConfig, dependencies).getBmcV6Address()
 }

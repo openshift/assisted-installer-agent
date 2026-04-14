@@ -11,31 +11,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Config struct {
-	Request string
-}
+var request string
 
-var executableConfig Config
+func main() {
+	flag.StringVar(&request, "request", "", "The request details. See models.ContainerImageAvailabilityRequest")
 
-func processArgs() {
-	ret := &executableConfig
-	flag.StringVar(&ret.Request, "request", "", "The request details. See models.ContainerImageAvailabilityRequest")
+	subprocessConfig := config.ProcessSubprocessArgs()
 
-	flag.Parse()
-
-	if executableConfig.Request == "" {
+	if request == "" {
 		flag.CommandLine.Usage()
 		os.Exit(1)
 	}
-}
 
-func main() {
-	processArgs()
-	subprocessConfig := config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
-	config.ProcessDryRunArgs(&subprocessConfig.DryRunConfig)
 	util.SetLogging("container_image_availability", subprocessConfig.TextLogging, subprocessConfig.JournalLogging, subprocessConfig.StdoutLogging, subprocessConfig.ForcedHostID)
-	log.StandardLogger().Infof("Checking image availability, requested images: %s", executableConfig.Request)
-	stdout, stderr, exitCode := container_image_availability.Run(subprocessConfig, executableConfig.Request,
+	log.StandardLogger().Infof("Checking image availability, requested images: %s", request)
+	stdout, stderr, exitCode := container_image_availability.Run(subprocessConfig, request,
 		&container_image_availability.ProcessExecuter{}, log.StandardLogger())
 	fmt.Fprint(os.Stdout, stdout)
 	fmt.Fprint(os.Stderr, stderr)

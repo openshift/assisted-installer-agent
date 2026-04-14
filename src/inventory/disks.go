@@ -25,12 +25,12 @@ const (
 )
 
 type disks struct {
-	dependencies     util.IDependencies
-	subprocessConfig *config.SubprocessConfig
+	dependencies    util.IDependencies
+	inventoryConfig *config.InventoryConfig
 }
 
-func newDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) *disks {
-	return &disks{dependencies: dependencies, subprocessConfig: subprocessConfig}
+func newDisks(inventoryConfig *config.InventoryConfig, dependencies util.IDependencies) *disks {
+	return &disks{dependencies: dependencies, inventoryConfig: inventoryConfig}
 }
 
 func getPureWWN(wwn string, byId string) string {
@@ -550,8 +550,8 @@ func (d *disks) getISCSIHostIPAddress(diskName string) string {
 	return ipAddress
 }
 
-func GetDisks(subprocessConfig *config.SubprocessConfig, dependencies util.IDependencies) []*models.Disk {
-	return newDisks(subprocessConfig, dependencies).getDisks()
+func GetDisks(inventoryConfig *config.InventoryConfig, dependencies util.IDependencies) []*models.Disk {
+	return newDisks(inventoryConfig, dependencies).getDisks()
 }
 
 // Check if the state of the iSCSI disk is running

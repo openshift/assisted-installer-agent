@@ -13,7 +13,6 @@ import (
 
 func Main() {
 	agentConfig := config.ProcessArgs()
-	config.ProcessDryRunArgs(&agentConfig.DryRunConfig)
 	util.SetLogging("agent_next_step_runner", agentConfig.TextLogging, agentConfig.JournalLogging, agentConfig.StdoutLogging, agentConfig.ForcedHostID)
 
 	ctx := context.Background()

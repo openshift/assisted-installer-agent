@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type LogsSenderConfig struct {
@@ -26,6 +28,12 @@ type LogsSenderConfig struct {
 func ProcessLogsSenderConfigArgs(defaultTextLogging, defaultJournalLogging bool) *LogsSenderConfig {
 	var leaveFiles bool
 	loggingConfig := &LogsSenderConfig{}
+
+	err := RegisterDryRunArgs(&loggingConfig.DryRunConfig)
+	if err != nil {
+		log.Fatalf("Failed to register dry run arguments: %v", err)
+	}
+
 	flag.BoolVar(&loggingConfig.JournalLogging, "with-journal-logging", defaultJournalLogging, "Use journal logging")
 	flag.BoolVar(&loggingConfig.TextLogging, "with-text-logging", defaultTextLogging, "Use text logging")
 	flag.StringVar(&loggingConfig.Since, "since", "", "Journalctl since flag, same format")

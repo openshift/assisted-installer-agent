@@ -22,13 +22,18 @@ func printHelpAndExit() {
 
 func ProcessArgs() *AgentConfig {
 	ret := &AgentConfig{}
+
+	err := RegisterDryRunArgs(&ret.DryRunConfig)
+	if err != nil {
+		log.Fatalf("Failed to register dry run arguments: %v", err)
+	}
+
+	RegisterLoggingArgs(&ret.LoggingConfig)
+
 	flag.StringVar(&ret.TargetURL, "url", "", "The target URL, including a scheme and optionally a port (overrides the host and port arguments")
 	flag.StringVar(&ret.InfraEnvID, "infra-env-id", "", "The value of infra-env-id")
 	flag.StringVar(&ret.AgentVersion, "agent-version", "", "Full image reference of the agent, for example 'quay.io/edge-infrastructure/assisted-installer-agent:v2.5.2'")
 	flag.IntVar(&ret.IntervalSecs, "interval", 60, "Interval between steps polling in seconds")
-	flag.BoolVar(&ret.JournalLogging, "with-journal-logging", true, "Use journal logging")
-	flag.BoolVar(&ret.TextLogging, "with-text-logging", false, "Output log to file")
-	flag.BoolVar(&ret.StdoutLogging, "with-stdout-logging", false, "Output log to stdout")
 	flag.StringVar(&ret.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
 	flag.BoolVar(&ret.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
 	flag.StringVar(&ret.HostID, "host-id", "", "Host identification")

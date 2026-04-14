@@ -52,7 +52,6 @@ func getMapKeysSorted(binaries map[string]func()) []string {
 
 func Main() {
 	agentConfig := config.ProcessArgs()
-	config.ProcessDryRunArgs(&agentConfig.DryRunConfig)
 	util.SetLogging("agent_registration", agentConfig.TextLogging, agentConfig.JournalLogging, agentConfig.StdoutLogging, agentConfig.ForcedHostID)
 	nextStepRunnerFactory := agent.NewNextStepRunnerFactory()
 	agent.RunAgent(agentConfig, nextStepRunnerFactory, logrus.StandardLogger())

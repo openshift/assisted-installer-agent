@@ -41,6 +41,8 @@ RUN if [[ "$TARGETPLATFORM" == "linux/amd64" || -z "$TARGETPLATFORM" ]] ; then d
             chrony \
             # for the 'nsenter' executable
             util-linux-core \
+            # rpm-ostree for download_boot_artifacts in case the /boot directory is too full
+            rpm-ostree \
             && dnf update --setopt=install_weak_deps=False --setopt=tsdocs=False -y systemd && dnf clean all && rm -rf /var/cache \
             # Clean unnecessary nmap files to reduce image size
             && find /usr/share/nmap/ -mindepth 1 -maxdepth 1 | grep -v nmap-payloads | xargs rm -rf \

@@ -17,7 +17,7 @@ WORKDIR /app
 RUN CGO_FLAG=1 make build
 
 
-FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:f225a0f8eb7d258011e1f7c8b025dc7dd155d6ffc66c17cd203dcec88935b455
+FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:175bafd5bc7893540ed6234bb979acfe3574fd6570e6762bbc527c757f854cea
 ARG release=main
 ARG version=latest
 

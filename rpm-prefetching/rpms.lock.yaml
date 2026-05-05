@@ -452,20 +452,20 @@ arches:
     name: numactl-libs
     evr: 2.0.19-3.el9
     sourcerpm: numactl-2.0.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-8.7p1-48.el9_7.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-8.7p1-49.el9_7.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 464217
-    checksum: sha256:bd9450a83d00d528e56191d05bc11ec94b616c13f8d89f02455c6fd060df8559
+    size: 464723
+    checksum: sha256:e62db1e7017bf25e38d9a9923412b6cda100e868bdb08d9ce13c06a8f6fc64c6
     name: openssh
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-clients-8.7p1-48.el9_7.aarch64.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-clients-8.7p1-49.el9_7.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 703700
-    checksum: sha256:958e905253df69a927ceca84c0a2fdd75107b5cc3a244ae5ca45becb633765ad
+    size: 706737
+    checksum: sha256:38775dc88ed7edcb1c16782decae726959b9ce9d5dea2b84a9095c9dcd333c67
     name: openssh-clients
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/p/protobuf-c-1.3.3-13.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 38582
@@ -995,20 +995,20 @@ arches:
     name: numactl-libs
     evr: 2.0.19-3.el9
     sourcerpm: numactl-2.0.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-8.7p1-48.el9_7.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-8.7p1-49.el9_7.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 487512
-    checksum: sha256:94bcd7a39cce25a18345ccb091bc2f7f217d1db65ecd560568990709da543eb1
+    size: 488245
+    checksum: sha256:6ed7a524c417ea416af631158b986ab147b6046e85b7d44300855007c9e4b872
     name: openssh
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-clients-8.7p1-48.el9_7.ppc64le.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-clients-8.7p1-49.el9_7.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 761928
-    checksum: sha256:16edef0f3ba6f6ca005e0dcceeee31f6df4ed3871e2da119fa4c64ae8588ef0d
+    size: 762676
+    checksum: sha256:2c3bffe6ecaf35941945c071ba44b85d7cf058d98d7e6d2d7a389b8ae5cfe716
     name: openssh-clients
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/p/protobuf-c-1.3.3-13.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 41163
@@ -1489,20 +1489,20 @@ arches:
     name: numactl-libs
     evr: 2.0.19-3.el9
     sourcerpm: numactl-2.0.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-8.7p1-48.el9_7.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-8.7p1-49.el9_7.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 459811
-    checksum: sha256:f0d5f3b02fbbdf785b310d54755b6994050b2067a632a230d79db33bb7d76633
+    size: 460352
+    checksum: sha256:77b565408569ca58ee31409663d620b18af23612336b7977dc93a7857f2c8437
     name: openssh
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-clients-8.7p1-48.el9_7.s390x.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-clients-8.7p1-49.el9_7.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 689011
-    checksum: sha256:894c0c9fae5b1a5d85b642994dd48bd577821ce394f377abe068c83eda9fa9a2
+    size: 689622
+    checksum: sha256:f97e60e808ff188c447691b63389f827c48c540f97df63da7a0b86ed1608bc75
     name: openssh-clients
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/p/protobuf-c-1.3.3-13.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 38450
@@ -1983,20 +1983,20 @@ arches:
     name: numactl-libs
     evr: 2.0.19-3.el9
     sourcerpm: numactl-2.0.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-8.7p1-48.el9_7.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-8.7p1-49.el9_7.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 475180
-    checksum: sha256:f9167df3110f931cded7e8500f501d1c0693bfbdc9cf92a77cde95f07a47f3c2
+    size: 475908
+    checksum: sha256:a859879d3067c54a6a0d213a3e8d6293d09cab06a69f5d242bb22c5a2b3c2ee4
     name: openssh
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-clients-8.7p1-48.el9_7.x86_64.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-clients-8.7p1-49.el9_7.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 735877
-    checksum: sha256:32685f9fc5a8b89d35da65d808f79530b49dba570ad2f3a5e26dba29324c9845
+    size: 737400
+    checksum: sha256:e69818f7a450a92dc507243bdff7a7bf33143ed3fcfdc80da7d54a519a784e6c
     name: openssh-clients
-    evr: 8.7p1-48.el9_7
-    sourcerpm: openssh-8.7p1-48.el9_7.src.rpm
+    evr: 8.7p1-49.el9_7
+    sourcerpm: openssh-8.7p1-49.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/p/pciutils-libs-3.7.0-7.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 43562

@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/alessio/shellescape"
+	"github.com/djherbis/times"
 	"github.com/go-openapi/swag"
 	"github.com/hashicorp/go-version"
 	"github.com/openshift/assisted-installer-agent/src/config"
@@ -28,6 +31,14 @@ const (
 	failedToPullImageExitCode = 2
 	defaultImagePullRetries   = 3
 	defaultImagePullTimeout   = 600
+	// nmConnectionsDir uses /proc/1/root to access the host's filesystem from
+	// within the next-step-runner container, which runs with --pid=host but does
+	// not mount /etc/NetworkManager/system-connections directly.
+	nmConnectionsDir = "/proc/1/root/etc/NetworkManager/system-connections"
+	// agentTUILogFile and agentTUILogDir are accessible at their normal paths
+	// because the next-step-runner container mounts /var/log from the host.
+	agentTUILogFile = "/var/log/agent/agent-tui.log"
+	agentTUILogDir  = "/var/log/agent"
 )
 
 var podmanBaseCmd = [...]string{
@@ -46,6 +57,17 @@ type install struct {
 	installParams models.InstallCmdRequest
 	filesystem    afero.Fs
 	agentConfig   *config.AgentConfig
+	birthTimeFn   func(string) (time.Time, bool)
+}
+
+// defaultBirthTimeFn returns the birth time of the file at the given path using
+// the statx syscall (kernel >= 4.11). Returns false if birth time is unavailable.
+func defaultBirthTimeFn(path string) (time.Time, bool) {
+	ts, err := times.Stat(path)
+	if err != nil || !ts.HasBirthTime() {
+		return time.Time{}, false
+	}
+	return ts.BirthTime(), true
 }
 
 func (a *install) Validate() error {
@@ -149,8 +171,13 @@ func (a *install) getFullInstallerCommand() string {
 		installerCmdArgs = append(installerCmdArgs, "--cacert", a.agentConfig.CACertificatePath)
 	}
 
-	if a.installParams.InstallerArgs != "" {
-		installerCmdArgs = append(installerCmdArgs, "--installer-args", a.installParams.InstallerArgs)
+	if installerArgs := a.buildInstallerArgs(); len(installerArgs) > 0 {
+		argsJSON, err := json.Marshal(installerArgs)
+		if err != nil {
+			log.WithError(err).Warn("Failed to marshal installer args, skipping")
+		} else {
+			installerCmdArgs = append(installerCmdArgs, "--installer-args", string(argsJSON))
+		}
 	}
 
 	if a.installParams.EnableSkipMcoReboot {
@@ -270,6 +297,122 @@ func (a *install) validateDisks() error {
 		}
 	}
 	return nil
+}
+
+// agentTUIStartTime returns the time the agent-tui started on this node.
+// It checks for the existence of the agent-tui log file to confirm the TUI
+// actually ran, then returns the birth time of the agent log directory.
+//
+// The log directory is created by agent-interactive-console.service's ExecStartPre
+// (mkdir -p /var/log/agent) just before the TUI launches. On an agent ISO boot the
+// directory does not exist beforehand, so its birth time is set exactly once at
+// service startup — making it a reliable proxy for TUI start time. Birth time is
+// used rather than mtime because mtime advances whenever a file is created inside
+// the directory (e.g. when agent-tui.log is created).
+//
+// Returns a zero time if the log file does not exist (not an ABI workflow or the
+// TUI did not produce output) or if birth time is unavailable on this system.
+func (a *install) agentTUIStartTime() time.Time {
+	if _, err := a.filesystem.Stat(agentTUILogFile); err != nil {
+		return time.Time{}
+	}
+	birthTimeFn := a.birthTimeFn
+	if birthTimeFn == nil {
+		birthTimeFn = defaultBirthTimeFn
+	}
+	btime, ok := birthTimeFn(agentTUILogDir)
+	if !ok {
+		return time.Time{}
+	}
+	return btime
+}
+
+// hasManualNetworkConfig returns true if NetworkManager keyfiles were created
+// during the agent-tui session on this node.
+//
+// The agent-tui gives users access to nmtui to configure networking. Any keyfile
+// the user creates via nmtui will appear in the NM connections directory AFTER the
+// agent-tui started. Auto-generated files (nm-initrd-generator, NMState configs via
+// pre-network-manager-config.sh) are created BEFORE the agent-tui starts, so they
+// are excluded by comparing their mtime to the TUI start time.
+//
+// If the agent-tui log file does not exist the TUI did not run on this node, so
+// we skip the check entirely. This limits the logic to ABI TUI scenarios and avoids
+// false positives in non-ABI workflows.
+//
+// Note: when NMState static configs are provided via agent-config.yaml, assisted-service
+// already adds --copy-network via StaticNetworkConfig, so those keyfiles do not need
+// to be detected here.
+func (a *install) hasManualNetworkConfig() bool {
+	tuiStart := a.agentTUIStartTime()
+	if tuiStart.IsZero() {
+		log.Info("Agent TUI log file not found, skipping manual network config detection")
+		return false
+	}
+
+	entries, err := afero.ReadDir(a.filesystem, nmConnectionsDir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Warnf("Could not read %s: %v", nmConnectionsDir, err)
+		}
+		return false
+	}
+	log.Infof("Checking %s for manually-created keyfiles (agent-tui started at %v)", nmConnectionsDir, tuiStart)
+	found := false
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		filePath := filepath.Join(nmConnectionsDir, entry.Name())
+
+		// Only consider files created at or after the agent-tui started. All auto-generated
+		// keyfiles (nm-initrd-generator, NMState via pre-network-manager-config.sh)
+		// are written before the TUI launches and will have an earlier mtime. We use
+		// >= rather than > to handle filesystems with second-level mtime precision
+		// where the user's keyfile and the TUI start may share the same timestamp.
+		info, err := a.filesystem.Stat(filePath)
+		if err != nil {
+			continue
+		}
+		log.Infof("Found NM keyfile: %s (mtime %v)", filePath, info.ModTime())
+		if info.ModTime().Before(tuiStart) {
+			log.Infof("Skipping NM keyfile created before agent-tui started (mtime %v < TUI start %v): %s",
+				info.ModTime(), tuiStart, filePath)
+			continue
+		}
+
+		content, err := afero.ReadFile(a.filesystem, filePath)
+		if err != nil {
+			continue
+		}
+		if strings.Contains(string(content), "[connection]") {
+			log.Infof("Found manually-created NetworkManager keyfile: %s (mtime %v)", filePath, info.ModTime())
+			found = true
+			break
+		}
+	}
+	if !found {
+		log.Infof("No manually-created NetworkManager keyfiles found in %s", nmConnectionsDir)
+	}
+	return found
+}
+
+// buildInstallerArgs returns the installer args to pass to coreos-installer,
+// combining any args already set via the assisted-service API with --copy-network
+// if manually-created NetworkManager keyfiles are detected on this host.
+func (a *install) buildInstallerArgs() []string {
+	var args []string
+	if a.installParams.InstallerArgs != "" {
+		if err := json.Unmarshal([]byte(a.installParams.InstallerArgs), &args); err != nil {
+			log.WithError(err).Warnf("Failed to unmarshal installer args: %s", a.installParams.InstallerArgs)
+		}
+	}
+	if a.hasManualNetworkConfig() && !funk.Contains(args, "--copy-network") {
+		log.Infof("Manually-created NetworkManager keyfiles detected in %s, adding --copy-network",
+			nmConnectionsDir)
+		args = append(args, "--copy-network")
+	}
+	return args
 }
 
 func (a *install) pathExists(path string) bool {

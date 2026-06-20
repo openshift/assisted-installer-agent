@@ -228,13 +228,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-4.el9_8
     sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-1.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-3.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 15441181
-    checksum: sha256:45505e00f1302b9a364961bc445ca79c2deb50fb4409a0623b547f7fde0119ff
+    size: 15440014
+    checksum: sha256:acd16386042760f8d7da72c69b81b92a3eed5b1b768f97c273f561967888239b
     name: podman
-    evr: 6:5.8.2-1.el9_8
-    sourcerpm: podman-5.8.2-1.el9_8.src.rpm
+    evr: 6:5.8.2-3.el9_8
+    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/python-unversioned-command-3.9.25-7.el9_8.noarch.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 16290
@@ -1184,13 +1184,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-4.el9_8
     sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-1.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-3.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 15407304
-    checksum: sha256:2aff5d9b2f705793198bc22c7a17f3b74f075b558ab15e075fe9ac1f74e3fd55
+    size: 15410172
+    checksum: sha256:3ddeeb5477e5bada962d46ed874f958553d5cb4dc75f504a24079c5f613021b0
     name: podman
-    evr: 6:5.8.2-1.el9_8
-    sourcerpm: podman-5.8.2-1.el9_8.src.rpm
+    evr: 6:5.8.2-3.el9_8
+    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/python-unversioned-command-3.9.25-7.el9_8.noarch.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 16290
@@ -2126,13 +2126,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-4.el9_8
     sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-1.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-3.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 16066588
-    checksum: sha256:6ef0e840e6022833cc2763d29cb9e812c32941428f211e0b4fa8ce30f92c54b5
+    size: 16072466
+    checksum: sha256:48ad08cd8b1a45c5d8190f9507ef14f97b2596fb67feb43ea87075fb47420dde
     name: podman
-    evr: 6:5.8.2-1.el9_8
-    sourcerpm: podman-5.8.2-1.el9_8.src.rpm
+    evr: 6:5.8.2-3.el9_8
+    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/python-unversioned-command-3.9.25-7.el9_8.noarch.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 16290
@@ -3040,13 +3040,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-4.el9_8
     sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-1.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-3.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 17259555
-    checksum: sha256:3dd516752c9e6c56d7b377a5b75f4bfb9d5133bc884fb26f26d8bfa7fd649ce4
+    size: 17299731
+    checksum: sha256:cfe0f322a4d20cab6793948b9b1c8b5c0c933799f2eba32d942e014dc97d0aa6
     name: podman
-    evr: 6:5.8.2-1.el9_8
-    sourcerpm: podman-5.8.2-1.el9_8.src.rpm
+    evr: 6:5.8.2-3.el9_8
+    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/python-unversioned-command-3.9.25-7.el9_8.noarch.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 16290

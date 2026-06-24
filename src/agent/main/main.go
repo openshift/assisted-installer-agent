@@ -53,6 +53,14 @@ func getMapKeysSorted(binaries map[string]func()) []string {
 func Main() {
 	agentConfig := config.ProcessArgs()
 	util.SetLogging("agent_registration", agentConfig.TextLogging, agentConfig.JournalLogging, agentConfig.StdoutLogging, agentConfig.ForcedHostID)
+
+	logger := logrus.StandardLogger()
+
+	// Check ironic agent readiness status before proceeding
+	if err := util.ValidateStatusFile(agentConfig.IronicStatusFilePath); err != nil {
+		logger.WithError(err).Fatal("Failed to validate ironic status file")
+	}
+
 	nextStepRunnerFactory := agent.NewNextStepRunnerFactory()
-	agent.RunAgent(agentConfig, nextStepRunnerFactory, logrus.StandardLogger())
+	agent.RunAgent(agentConfig, nextStepRunnerFactory, logger)
 }

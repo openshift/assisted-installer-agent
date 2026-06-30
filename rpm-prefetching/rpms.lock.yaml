@@ -221,13 +221,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-4.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 189817
-    checksum: sha256:d40f5f216b01dd69a7ef6c8c83010c81123a9bed27fc6722bcd94a1e10a1b740
+    size: 189815
+    checksum: sha256:ba2bdcde79978ac96dd46c74ce6d1f6ece25d5d8ac883df0570df2de779013be
     name: passt
-    evr: 0^20251210.gd04c480-4.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-5.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-3.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 15440014
@@ -1177,13 +1177,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-4.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 200509
-    checksum: sha256:8fa4aeef902aa6f6b28bbdf4edbf9780ecd9d36dbbf85f741c79b7278727f576
+    size: 200700
+    checksum: sha256:752b15cd401da21a94621c2e62613702f86b74d93828ca69999b3f0dd0be6ce3
     name: passt
-    evr: 0^20251210.gd04c480-4.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-5.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-3.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 15410172
@@ -2119,13 +2119,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-4.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 185272
-    checksum: sha256:3fdb05f5a7bbfa6a84d3274af68b1799d1a855a77d7748b88c3d2dd60289d0ad
+    size: 185538
+    checksum: sha256:5a600d8670fb563872280c435f6f4c94fec0e86dc523c4a5f84570184313ecc5
     name: passt
-    evr: 0^20251210.gd04c480-4.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-5.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-3.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 16072466
@@ -3033,13 +3033,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-4.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 294123
-    checksum: sha256:586b2b4f35c77536fd71e8a0d1f74e3feae49a23c900c317e99a465776330410
+    size: 294836
+    checksum: sha256:ef8db6d7789e52961c86b576ccc20cbe8366db03780710bb89b8a37d4e6bd153
     name: passt
-    evr: 0^20251210.gd04c480-4.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-4.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-5.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-3.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 17299731

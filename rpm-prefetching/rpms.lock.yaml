@@ -4,13 +4,13 @@ lockfileVendor: redhat
 arches:
 - arch: aarch64
   packages:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/a/aardvark-dns-1.17.0-1.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/a/aardvark-dns-1.17.1-1.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 863592
-    checksum: sha256:1e95300bcebe54a6d38a98041446fe707cd961565629fed07d40225014862a1a
+    size: 858454
+    checksum: sha256:7ffecb512c18f84feb402b351c72583df20182050c920e402acff43e36fef883
     name: aardvark-dns
-    evr: 2:1.17.0-1.el9
-    sourcerpm: aardvark-dns-1.17.0-1.el9.src.rpm
+    evr: 2:1.17.1-1.el9_8
+    sourcerpm: aardvark-dns-1.17.1-1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/b/boost-iostreams-1.75.0-13.el9_7.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 35719
@@ -228,13 +228,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-5.el9_8
     sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-3.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-5.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 15440014
-    checksum: sha256:acd16386042760f8d7da72c69b81b92a3eed5b1b768f97c273f561967888239b
+    size: 15473435
+    checksum: sha256:4906e3b5e9df12a24c51254eb2eae8bda306dbcaff3bc3ec1d888fdcca6d0df5
     name: podman
-    evr: 6:5.8.2-3.el9_8
-    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
+    evr: 6:5.8.2-5.el9_8
+    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 48428
@@ -505,13 +505,13 @@ arches:
   module_metadata: []
 - arch: ppc64le
   packages:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/a/aardvark-dns-1.17.0-1.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/a/aardvark-dns-1.17.1-1.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 1059039
-    checksum: sha256:14da5bb3020ab843029104b26196c2124e1302cc55c386b62c810927d324e56b
+    size: 1050788
+    checksum: sha256:094214c508549199d3096e50be0d40a8cdbe6f15f2764ff5fe08472857a0c71e
     name: aardvark-dns
-    evr: 2:1.17.0-1.el9
-    sourcerpm: aardvark-dns-1.17.0-1.el9.src.rpm
+    evr: 2:1.17.1-1.el9_8
+    sourcerpm: aardvark-dns-1.17.1-1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/b/boost-iostreams-1.75.0-13.el9_7.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 37058
@@ -764,13 +764,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-5.el9_8
     sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-3.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-5.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 15410172
-    checksum: sha256:3ddeeb5477e5bada962d46ed874f958553d5cb4dc75f504a24079c5f613021b0
+    size: 15473593
+    checksum: sha256:f690c742bf967b62ad15659b5e7ca40bf9e9390912c292ebe1d3e4a0ef788108
     name: podman
-    evr: 6:5.8.2-3.el9_8
-    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
+    evr: 6:5.8.2-5.el9_8
+    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 50838
@@ -1055,13 +1055,13 @@ arches:
   module_metadata: []
 - arch: s390x
   packages:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/a/aardvark-dns-1.17.0-1.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/a/aardvark-dns-1.17.1-1.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 941632
-    checksum: sha256:a3e21b543411825b56fe1741043bf282d978eb382adad898ddebe188f7860ee7
+    size: 936416
+    checksum: sha256:40746078d578f9a8936f3a37c11934221b4ca507f94adb308db5f7b08ed668ca
     name: aardvark-dns
-    evr: 2:1.17.0-1.el9
-    sourcerpm: aardvark-dns-1.17.0-1.el9.src.rpm
+    evr: 2:1.17.1-1.el9_8
+    sourcerpm: aardvark-dns-1.17.1-1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/b/boost-iostreams-1.75.0-13.el9_7.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 35513
@@ -1286,13 +1286,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-5.el9_8
     sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-3.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-5.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 16072466
-    checksum: sha256:48ad08cd8b1a45c5d8190f9507ef14f97b2596fb67feb43ea87075fb47420dde
+    size: 16187303
+    checksum: sha256:80c97fd93a9ea3812a6405ceff0484dd48126c03852a6b77deb00fb9dfebd53a
     name: podman
-    evr: 6:5.8.2-3.el9_8
-    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
+    evr: 6:5.8.2-5.el9_8
+    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 48338
@@ -1556,13 +1556,13 @@ arches:
   module_metadata: []
 - arch: x86_64
   packages:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/a/aardvark-dns-1.17.0-1.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/a/aardvark-dns-1.17.1-1.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 913252
-    checksum: sha256:ec358de7bb82149cb264315811a73332779e7a388d80abd6db0c23c3ade5975a
+    size: 908199
+    checksum: sha256:7018a1f963df1cb81c36b02e46132b1d5894e60da4582988bdd22de8650585bb
     name: aardvark-dns
-    evr: 2:1.17.0-1.el9
-    sourcerpm: aardvark-dns-1.17.0-1.el9.src.rpm
+    evr: 2:1.17.1-1.el9_8
+    sourcerpm: aardvark-dns-1.17.1-1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/b/boost-iostreams-1.75.0-13.el9_7.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 37390
@@ -1780,13 +1780,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-5.el9_8
     sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-3.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-5.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 17299731
-    checksum: sha256:cfe0f322a4d20cab6793948b9b1c8b5c0c933799f2eba32d942e014dc97d0aa6
+    size: 17322242
+    checksum: sha256:0a822e3dc97b0d4200ba98e868eab2d8532e1e10650412517bd01e4de9596eee
     name: podman
-    evr: 6:5.8.2-3.el9_8
-    sourcerpm: podman-5.8.2-3.el9_8.src.rpm
+    evr: 6:5.8.2-5.el9_8
+    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 48562

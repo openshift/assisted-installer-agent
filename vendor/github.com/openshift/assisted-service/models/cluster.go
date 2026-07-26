@@ -114,8 +114,8 @@ type Cluster struct {
 	//
 	HTTPSProxy string `json:"https_proxy,omitempty" gorm:"column:https_proxy"`
 
-	// Enable/disable hyperthreading on master nodes, worker nodes, or all nodes
-	// Enum: [masters workers all none]
+	// Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.
+	// Enum: [none masters arbiters workers masters,arbiters masters,workers arbiters,workers masters,arbiters,workers all]
 	Hyperthreading string `json:"hyperthreading,omitempty"`
 
 	// Unique identifier of the object.
@@ -166,9 +166,10 @@ type Cluster struct {
 
 	// Indicates the type of this object. Will be 'Cluster' if this is a complete object,
 	// 'AddHostsCluster' for cluster that add hosts to existing OCP cluster,
+	// 'DisconnectedCluster' for clusters with embedded ignition for offline installation,
 	//
 	// Required: true
-	// Enum: [Cluster AddHostsCluster]
+	// Enum: [Cluster AddHostsCluster DisconnectedCluster]
 	Kind *string `json:"kind"`
 
 	// last installation preparation
@@ -194,7 +195,14 @@ type Cluster struct {
 	Name string `json:"name,omitempty"`
 
 	// The desired network type used.
-	// Enum: [OpenShiftSDN OVNKubernetes]
+	// - OVNKubernetes: Default CNI for OpenShift (recommended)
+	// - OpenShiftSDN: Legacy SDN (deprecated in newer versions)
+	// - CiscoACI: Cisco ACI CNI (requires custom manifests)
+	// - Cilium: Isovalent Cilium CNI (requires custom manifests)
+	// - Calico: Tigera Calico CNI (requires custom manifests)
+	// - None: No CNI - user must provide custom CNI manifests
+	//
+	// Enum: [OpenShiftSDN OVNKubernetes CiscoACI Cilium Calico None]
 	NetworkType *string `json:"network_type,omitempty"`
 
 	// A comma-separated list of destination domain names, domains, IP addresses, or other network CIDRs to exclude from proxying.
@@ -248,7 +256,7 @@ type Cluster struct {
 
 	// Status of the OpenShift cluster.
 	// Required: true
-	// Enum: [insufficient ready error preparing-for-installation pending-for-input installing finalizing installed adding-hosts cancelled installing-pending-user-action]
+	// Enum: [insufficient ready error preparing-for-installation pending-for-input installing finalizing installed adding-hosts cancelled installing-pending-user-action unmonitored]
 	Status *string `json:"status"`
 
 	// Additional information pertaining to the status of the OpenShift cluster.
@@ -752,7 +760,7 @@ var clusterTypeHyperthreadingPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["masters","workers","all","none"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["none","masters","arbiters","workers","masters,arbiters","masters,workers","arbiters,workers","masters,arbiters,workers","all"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -762,17 +770,32 @@ func init() {
 
 const (
 
+	// ClusterHyperthreadingNone captures enum value "none"
+	ClusterHyperthreadingNone string = "none"
+
 	// ClusterHyperthreadingMasters captures enum value "masters"
 	ClusterHyperthreadingMasters string = "masters"
+
+	// ClusterHyperthreadingArbiters captures enum value "arbiters"
+	ClusterHyperthreadingArbiters string = "arbiters"
 
 	// ClusterHyperthreadingWorkers captures enum value "workers"
 	ClusterHyperthreadingWorkers string = "workers"
 
+	// ClusterHyperthreadingMastersArbiters captures enum value "masters,arbiters"
+	ClusterHyperthreadingMastersArbiters string = "masters,arbiters"
+
+	// ClusterHyperthreadingMastersWorkers captures enum value "masters,workers"
+	ClusterHyperthreadingMastersWorkers string = "masters,workers"
+
+	// ClusterHyperthreadingArbitersWorkers captures enum value "arbiters,workers"
+	ClusterHyperthreadingArbitersWorkers string = "arbiters,workers"
+
+	// ClusterHyperthreadingMastersArbitersWorkers captures enum value "masters,arbiters,workers"
+	ClusterHyperthreadingMastersArbitersWorkers string = "masters,arbiters,workers"
+
 	// ClusterHyperthreadingAll captures enum value "all"
 	ClusterHyperthreadingAll string = "all"
-
-	// ClusterHyperthreadingNone captures enum value "none"
-	ClusterHyperthreadingNone string = "none"
 )
 
 // prop value enum
@@ -902,7 +925,7 @@ var clusterTypeKindPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Cluster","AddHostsCluster"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Cluster","AddHostsCluster","DisconnectedCluster"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -917,6 +940,9 @@ const (
 
 	// ClusterKindAddHostsCluster captures enum value "AddHostsCluster"
 	ClusterKindAddHostsCluster string = "AddHostsCluster"
+
+	// ClusterKindDisconnectedCluster captures enum value "DisconnectedCluster"
+	ClusterKindDisconnectedCluster string = "DisconnectedCluster"
 )
 
 // prop value enum
@@ -1062,7 +1088,7 @@ var clusterTypeNetworkTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["OpenShiftSDN","OVNKubernetes"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["OpenShiftSDN","OVNKubernetes","CiscoACI","Cilium","Calico","None"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -1077,6 +1103,18 @@ const (
 
 	// ClusterNetworkTypeOVNKubernetes captures enum value "OVNKubernetes"
 	ClusterNetworkTypeOVNKubernetes string = "OVNKubernetes"
+
+	// ClusterNetworkTypeCiscoACI captures enum value "CiscoACI"
+	ClusterNetworkTypeCiscoACI string = "CiscoACI"
+
+	// ClusterNetworkTypeCilium captures enum value "Cilium"
+	ClusterNetworkTypeCilium string = "Cilium"
+
+	// ClusterNetworkTypeCalico captures enum value "Calico"
+	ClusterNetworkTypeCalico string = "Calico"
+
+	// ClusterNetworkTypeNone captures enum value "None"
+	ClusterNetworkTypeNone string = "None"
 )
 
 // prop value enum
@@ -1192,7 +1230,7 @@ var clusterTypeStatusPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["insufficient","ready","error","preparing-for-installation","pending-for-input","installing","finalizing","installed","adding-hosts","cancelled","installing-pending-user-action"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["insufficient","ready","error","preparing-for-installation","pending-for-input","installing","finalizing","installed","adding-hosts","cancelled","installing-pending-user-action","unmonitored"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -1234,6 +1272,9 @@ const (
 
 	// ClusterStatusInstallingPendingUserAction captures enum value "installing-pending-user-action"
 	ClusterStatusInstallingPendingUserAction string = "installing-pending-user-action"
+
+	// ClusterStatusUnmonitored captures enum value "unmonitored"
+	ClusterStatusUnmonitored string = "unmonitored"
 )
 
 // prop value enum

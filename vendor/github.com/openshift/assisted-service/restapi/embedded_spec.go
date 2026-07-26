@@ -239,6 +239,58 @@ func init() {
         }
       }
     },
+    "/v2/clusters/disconnected": {
+      "post": {
+        "description": "Create a disconnected OpenShift cluster for offline installation with embedded ignition",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "v2RegisterDisconnectedCluster",
+        "parameters": [
+          {
+            "description": "Parameters for creating a disconnected cluster.",
+            "name": "new-cluster-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/disconnected-cluster-create-params"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/cluster"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/clusters/import": {
       "post": {
         "description": "Import an AI cluster using minimal data associated with existing OCP cluster, in order to allow adding day2 hosts to that cluster",
@@ -1010,9 +1062,6 @@ func init() {
             "userAuth": [
               "user"
             ]
-          },
-          {
-            "urlAuth": []
           },
           {
             "agentAuth": []
@@ -1864,7 +1913,7 @@ func init() {
             "required": true
           },
           {
-            "maxLength": 104857600,
+            "maxLength": 262144000,
             "type": "file",
             "x-mimetype": "application/zip",
             "description": "The log file to be uploaded.",
@@ -1900,6 +1949,12 @@ func init() {
         "responses": {
           "204": {
             "description": "Success."
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
           },
           "401": {
             "description": "Unauthorized.",
@@ -3868,10 +3923,11 @@ func init() {
           {
             "enum": [
               "full-iso",
-              "minimal-iso"
+              "minimal-iso",
+              "disconnected-iso"
             ],
             "type": "string",
-            "description": "Overrides the ISO type for the disovery ignition, either 'full-iso' or 'minimal-iso'.",
+            "description": "Overrides the ISO type for the discovery ignition.",
             "name": "discovery_iso_type",
             "in": "query"
           }
@@ -5721,12 +5777,67 @@ func init() {
     },
     "/v2/operators/bundles": {
       "get": {
-        "description": "Retrieves a list of avaliable bundles.",
+        "description": "Retrieves a list of available bundles filtered by support level.",
         "tags": [
           "operators"
         ],
-        "summary": "Get list of avaliable bundles",
+        "summary": "Get list of available bundles",
         "operationId": "V2ListBundles",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Version of the OpenShift cluster. If the parameter is not specified, no filtering is applied.",
+            "name": "openshift_version",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "x86_64",
+              "aarch64",
+              "arm64",
+              "ppc64le",
+              "s390x",
+              "multi"
+            ],
+            "type": "string",
+            "default": "x86_64",
+            "description": "The CPU architecture of the image (x86_64/arm64/etc). openshift_version must be set.",
+            "name": "cpu_architecture",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "baremetal",
+              "none",
+              "nutanix",
+              "vsphere",
+              "external"
+            ],
+            "type": "string",
+            "description": "The provider platform type. openshift_version must be set.",
+            "name": "platform_type",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "External platform name when platform type is set to external. The value of this parameter will be ignored if platform_type is not external or if openshift_version is not set.",
+            "name": "external_platform_name",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "enum": [
+                "SNO"
+              ],
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "Array of feature IDs that affect bundle composition (e.g., [\"SNO\"] for Single Node OpenShift).",
+            "name": "feature_ids",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -5735,6 +5846,12 @@ func init() {
               "items": {
                 "$ref": "#/definitions/bundle"
               }
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
             }
           },
           "500": {
@@ -5748,7 +5865,7 @@ func init() {
     },
     "/v2/operators/bundles/{id}": {
       "get": {
-        "description": "Retrieves an array of operator properties for the specified bundle.",
+        "description": "Retrieves an array of operator properties for the specified bundle when some features are activated.",
         "tags": [
           "operators"
         ],
@@ -5757,10 +5874,23 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "Identifier of the bundle, for example, ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai-nvidia` + "`" + `.",
+            "description": "Identifier of the bundle, for example, ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai` + "`" + `.",
             "name": "id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "array",
+            "items": {
+              "enum": [
+                "SNO"
+              ],
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "Array of feature IDs that affect bundle composition (e.g., [\"SNO\"] for Single Node OpenShift).",
+            "name": "feature_ids",
+            "in": "query"
           }
         ],
         "responses": {
@@ -5768,6 +5898,12 @@ func init() {
             "description": "Success",
             "schema": {
               "$ref": "#/definitions/bundle"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
             }
           },
           "404": {
@@ -5987,6 +6123,112 @@ func init() {
         }
       }
     },
+    "/v2/support-levels/features/detailed": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Retrieves detailed features information including support level, incompatibilities, and operator dependencies.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "GetDetailedSupportedFeatures",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Version of the OpenShift cluster.",
+            "name": "openshift_version",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "x86_64",
+              "arm64",
+              "ppc64le",
+              "s390x",
+              "multi"
+            ],
+            "type": "string",
+            "default": "x86_64",
+            "description": "The CPU architecture of the image (x86_64/arm64/etc).",
+            "name": "cpu_architecture",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "baremetal",
+              "none",
+              "nutanix",
+              "vsphere",
+              "external"
+            ],
+            "type": "string",
+            "description": "The provider platform type.",
+            "name": "platform_type",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "External platform name when platform type is set to external. The value of this parameter will be ignored if platform_type is not external.",
+            "name": "external_platform_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/feature"
+                  }
+                },
+                "operators": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/operator"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/supported-operators": {
       "get": {
         "description": "Retrieves the list of supported operators.",
@@ -6023,7 +6265,13 @@ func init() {
                   "self-node-remediation",
                   "fence-agents-remediation",
                   "node-maintenance",
-                  "kube-descheduler"
+                  "kube-descheduler",
+                  "cluster-observability",
+                  "numa-resources",
+                  "oadp",
+                  "metallb",
+                  "loki",
+                  "openshift-logging"
                 ]
               }
             }
@@ -6447,13 +6695,18 @@ func init() {
           "x-go-custom-tag": "gorm:\"column:https_proxy\""
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "id": {
@@ -6517,11 +6770,12 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "kind": {
-          "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object,\n'AddHostsCluster' for cluster that add hosts to existing OCP cluster,\n",
+          "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object,\n'AddHostsCluster' for cluster that add hosts to existing OCP cluster,\n'DisconnectedCluster' for clusters with embedded ignition for offline installation,\n",
           "type": "string",
           "enum": [
             "Cluster",
-            "AddHostsCluster"
+            "AddHostsCluster",
+            "DisconnectedCluster"
           ]
         },
         "last-installation-preparation": {
@@ -6561,11 +6815,15 @@ func init() {
           "type": "string"
         },
         "network_type": {
-          "description": "The desired network type used.",
+          "description": "The desired network type used.\n- OVNKubernetes: Default CNI for OpenShift (recommended)\n- OpenShiftSDN: Legacy SDN (deprecated in newer versions)\n- CiscoACI: Cisco ACI CNI (requires custom manifests)\n- Cilium: Isovalent Cilium CNI (requires custom manifests)\n- Calico: Tigera Calico CNI (requires custom manifests)\n- None: No CNI - user must provide custom CNI manifests\n",
           "type": "string",
           "enum": [
             "OpenShiftSDN",
-            "OVNKubernetes"
+            "OVNKubernetes",
+            "CiscoACI",
+            "Cilium",
+            "Calico",
+            "None"
           ],
           "x-nullable": true
         },
@@ -6652,7 +6910,8 @@ func init() {
             "installed",
             "adding-hosts",
             "cancelled",
-            "installing-pending-user-action"
+            "installing-pending-user-action",
+            "unmonitored"
           ]
         },
         "status_info": {
@@ -6799,13 +7058,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "all",
           "enum": [
-            "masters",
-            "workers",
             "none",
+            "masters",
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
             "all"
           ]
         },
@@ -6838,11 +7102,15 @@ func init() {
           "minLength": 1
         },
         "network_type": {
-          "description": "The desired network type used.",
+          "description": "The desired network type used.\n- OVNKubernetes: Default CNI for OpenShift (recommended)\n- OpenShiftSDN: Legacy SDN (deprecated in newer versions)\n- CiscoACI: Cisco ACI CNI (requires custom manifests)\n- Cilium: Isovalent Cilium CNI (requires custom manifests)\n- Calico: Tigera Calico CNI (requires custom manifests)\n- None: No CNI - user must provide custom CNI manifests\nNote: Third-party CNIs (CiscoACI, Cilium, Calico, None) require uploading\nCNI manifests via the custom manifests API before installation.\n",
           "type": "string",
           "enum": [
             "OpenShiftSDN",
-            "OVNKubernetes"
+            "OVNKubernetes",
+            "CiscoACI",
+            "Cilium",
+            "Calico",
+            "None"
           ],
           "x-nullable": true
         },
@@ -7055,6 +7323,7 @@ func init() {
         "mtv-requirements-satisfied",
         "osc-requirements-satisfied",
         "network-type-valid",
+        "custom-manifests-requirements-satisfied",
         "platform-requirements-satisfied",
         "node-feature-discovery-requirements-satisfied",
         "nvidia-gpu-requirements-satisfied",
@@ -7062,6 +7331,7 @@ func init() {
         "servicemesh-requirements-satisfied",
         "serverless-requirements-satisfied",
         "openshift-ai-requirements-satisfied",
+        "openshift-ai-gpu-requirements-satisfied",
         "authorino-requirements-satisfied",
         "nmstate-requirements-satisfied",
         "amd-gpu-requirements-satisfied",
@@ -7070,7 +7340,13 @@ func init() {
         "self-node-remediation-requirements-satisfied",
         "fence-agents-remediation-requirements-satisfied",
         "node-maintenance-requirements-satisfied",
-        "kube-descheduler-requirements-satisfied"
+        "kube-descheduler-requirements-satisfied",
+        "cluster-observability-requirements-satisfied",
+        "numa-resources-requirements-satisfied",
+        "oadp-requirements-satisfied",
+        "metallb-requirements-satisfied",
+        "loki-requirements-satisfied",
+        "openshift-logging-requirements-satisfied"
       ]
     },
     "cluster_default_config": {
@@ -7441,6 +7717,25 @@ func init() {
         }
       }
     },
+    "disconnected-cluster-create-params": {
+      "type": "object",
+      "required": [
+        "name",
+        "openshift_version"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name of the OpenShift cluster.",
+          "type": "string",
+          "maxLength": 54,
+          "minLength": 1
+        },
+        "openshift_version": {
+          "description": "Version of the OpenShift cluster.",
+          "type": "string"
+        }
+      }
+    },
     "disk": {
       "type": "object",
       "properties": {
@@ -7549,14 +7844,19 @@ func init() {
       "type": "object",
       "properties": {
         "enable_on": {
-          "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable disk encryption on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "none",
           "enum": [
             "none",
-            "all",
             "masters",
-            "workers"
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "mode": {
@@ -7885,10 +8185,37 @@ func init() {
         "$ref": "#/definitions/event"
       }
     },
+    "feature": {
+      "type": "object",
+      "required": [
+        "feature-support-level-id",
+        "support_level",
+        "incompatibilities"
+      ],
+      "properties": {
+        "feature-support-level-id": {
+          "$ref": "#/definitions/feature-support-level-id"
+        },
+        "incompatibilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature-support-level-id"
+          }
+        },
+        "reason": {
+          "$ref": "#/definitions/incompatibility-reason"
+        },
+        "support_level": {
+          "$ref": "#/definitions/support-level"
+        }
+      }
+    },
     "feature-support-level-id": {
       "type": "string",
       "enum": [
         "SNO",
+        "TNA",
+        "TNF",
         "VIP_AUTO_ALLOC",
         "CUSTOM_MANIFEST",
         "SINGLE_NODE_EXPANSION",
@@ -7911,10 +8238,13 @@ func init() {
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
         "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
         "EXTERNAL_PLATFORM",
         "OVN_NETWORK_TYPE",
         "SDN_NETWORK_TYPE",
+        "CILIUM_NETWORK_TYPE",
+        "CALICO_NETWORK_TYPE",
+        "CISCO_ACI_NETWORK_TYPE",
+        "NONE_NETWORK_TYPE",
         "NODE_FEATURE_DISCOVERY",
         "NVIDIA_GPU",
         "PIPELINES",
@@ -7931,8 +8261,47 @@ func init() {
         "SELF_NODE_REMEDIATION",
         "FENCE_AGENTS_REMEDIATION",
         "NODE_MAINTENANCE",
-        "KUBE_DESCHEDULER"
-      ]
+        "KUBE_DESCHEDULER",
+        "CLUSTER_OBSERVABILITY",
+        "NUMA_RESOURCES",
+        "OADP",
+        "METALLB",
+        "DUAL_STACK_PRIMARY_IPV6",
+        "LOKI",
+        "OPENSHIFT_LOGGING"
+      ],
+      "x-nullable": false
+    },
+    "fencing-credentials-params": {
+      "type": "object",
+      "required": [
+        "address",
+        "username",
+        "password"
+      ],
+      "properties": {
+        "address": {
+          "description": "The URL of the host's BMC, for example https://bmc1.example.com.",
+          "type": "string"
+        },
+        "certificate_verification": {
+          "description": "Whether to enable or disable certificate verification when connecting to the host's BMC.",
+          "type": "string",
+          "default": "Enabled",
+          "enum": [
+            "Enabled",
+            "Disabled"
+          ]
+        },
+        "password": {
+          "description": "The password to connect to the host's BMC.",
+          "type": "string"
+        },
+        "username": {
+          "description": "The username to connect to the host's BMC.",
+          "type": "string"
+        }
+      }
     },
     "finalizing-stage": {
       "description": "Cluster finalizing stage managed by controller",
@@ -8090,6 +8459,11 @@ func init() {
         },
         "domain_name_resolutions": {
           "description": "The domain name resolution result.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
+        },
+        "fencing_credentials": {
+          "description": "The host's BMC credentials that will be used in TNF.",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
         },
@@ -8410,6 +8784,7 @@ func init() {
         "Waiting for controller",
         "Installing",
         "Writing image to disk",
+        "Copying registry data to disk",
         "Rebooting",
         "Waiting for ignition",
         "Configuring",
@@ -8464,6 +8839,11 @@ func init() {
             "$ref": "#/definitions/disk-skip-formatting-params"
           },
           "x-nullable": true
+        },
+        "fencing_credentials": {
+          "description": "The host's BMC credentials that will be used in TNF.",
+          "x-nullable": true,
+          "$ref": "#/definitions/fencing-credentials-params"
         },
         "host_name": {
           "type": "string",
@@ -8568,7 +8948,13 @@ func init() {
         "self-node-remediation-requirements-satisfied",
         "fence-agents-remediation-requirements-satisfied",
         "node-maintenance-requirements-satisfied",
-        "kube-descheduler-requirements-satisfied"
+        "kube-descheduler-requirements-satisfied",
+        "cluster-observability-requirements-satisfied",
+        "numa-resources-requirements-satisfied",
+        "oadp-requirements-satisfied",
+        "metallb-requirements-satisfied",
+        "loki-requirements-satisfied",
+        "openshift-logging-requirements-satisfied"
       ]
     },
     "host_network": {
@@ -8747,7 +9133,8 @@ func init() {
       "type": "string",
       "enum": [
         "full-iso",
-        "minimal-iso"
+        "minimal-iso",
+        "disconnected-iso"
       ]
     },
     "import-cluster-params": {
@@ -8776,6 +9163,15 @@ func init() {
           "type": "string"
         }
       }
+    },
+    "incompatibility-reason": {
+      "type": "string",
+      "enum": [
+        "cpuArchitecture",
+        "platform",
+        "openshiftVersion",
+        "ociExternalIntegrationDisabled"
+      ]
     },
     "infra-env": {
       "type": "object",
@@ -8877,6 +9273,12 @@ func init() {
           "description": "Name of the infra-env.",
           "type": "string"
         },
+        "network_discovery_delay_seconds": {
+          "description": "The number of seconds to wait before mapping host MACs to interfaces when applying static network config on minimal ISO.\nThis can be used on hosts that need time to discover their NICs.",
+          "type": "integer",
+          "format": "int64",
+          "x-nullable": true
+        },
         "openshift_version": {
           "description": "Version of the OpenShift cluster (used to infer the RHCOS version - temporary until generic logic implemented).",
           "type": "string"
@@ -8890,6 +9292,12 @@ func init() {
         "pull_secret_set": {
           "description": "True if the pull secret has been added to the cluster.",
           "type": "boolean"
+        },
+        "rendezvous_ip": {
+          "description": "The IP address of the host that will act as the rendezvous (bootstrap) node for agent-based installations.\nThis is optional for disconnected-iso image type and specifies which host will run the assisted service\nduring the bootstrap phase. All other hosts will connect to this IP to coordinate the installation.",
+          "type": "string",
+          "pattern": "^(?:$|(?:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])|(?:([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|:(:[0-9a-fA-F]{1,4}){1,7}|:|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))))$",
+          "x-nullable": true
         },
         "size_bytes": {
           "type": "integer"
@@ -8976,6 +9384,12 @@ func init() {
           "description": "Name of the infra-env.",
           "type": "string"
         },
+        "network_discovery_delay_seconds": {
+          "description": "The number of seconds to wait before mapping host MACs to interfaces when applying static network config on minimal ISO.\nThis can be used on hosts that need time to discover their NICs.",
+          "type": "integer",
+          "format": "int64",
+          "x-nullable": true
+        },
         "openshift_version": {
           "description": "Version of the OpenShift cluster (used to infer the RHCOS version - temporary until generic logic implemented).",
           "type": "string"
@@ -8986,6 +9400,12 @@ func init() {
         "pull_secret": {
           "description": "The pull secret obtained from Red Hat OpenShift Cluster Manager at console.redhat.com/openshift/install/pull-secret.",
           "type": "string"
+        },
+        "rendezvous_ip": {
+          "description": "The IP address of the host that will act as the rendezvous (bootstrap) node for agent-based installations.\nThis is optional for disconnected-iso image type and specifies which host will run the assisted service\nduring the bootstrap phase. All other hosts will connect to this IP to coordinate the installation.",
+          "type": "string",
+          "pattern": "^(?:$|(?:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])|(?:([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|:(:[0-9a-fA-F]{1,4}){1,7}|:|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))))$",
+          "x-nullable": true
         },
         "ssh_authorized_key": {
           "description": "SSH public key for debugging the installation.",
@@ -9030,6 +9450,12 @@ func init() {
         "kernel_arguments": {
           "$ref": "#/definitions/kernel_arguments"
         },
+        "network_discovery_delay_seconds": {
+          "description": "The number of seconds to wait before mapping host MACs to interfaces when applying static network config on minimal ISO.\nThis can be used on hosts that need time to discover their NICs.",
+          "type": "integer",
+          "format": "int64",
+          "x-nullable": true
+        },
         "openshift_version": {
           "description": "Version of the OS image",
           "type": "string",
@@ -9041,6 +9467,12 @@ func init() {
         "pull_secret": {
           "description": "The pull secret obtained from Red Hat OpenShift Cluster Manager at console.redhat.com/openshift/install/pull-secret.",
           "type": "string"
+        },
+        "rendezvous_ip": {
+          "description": "The IP address of the host that will act as the rendezvous (bootstrap) node for agent-based installations.\nThis is optional for disconnected-iso image type and specifies which host will run the assisted service\nduring the bootstrap phase. All other hosts will connect to this IP to coordinate the installation.",
+          "type": "string",
+          "pattern": "^(?:$|(?:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])|(?:([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|:(:[0-9a-fA-F]{1,4}){1,7}|:|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))))$",
+          "x-nullable": true
         },
         "ssh_authorized_key": {
           "description": "SSH public key for debugging the installation.",
@@ -9348,7 +9780,7 @@ func init() {
     "ip": {
       "type": "string",
       "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
-      "x-go-custom-tag": "gorm:\"primaryKey\""
+      "x-go-custom-tag": "gorm:\"primaryKey;type:inet\""
     },
     "iscsi": {
       "type": "object",
@@ -9574,6 +10006,9 @@ func init() {
       "type": "array",
       "items": {
         "type": "object",
+        "required": [
+          "mac_address"
+        ],
         "properties": {
           "logical_nic_name": {
             "description": "nic name used in the yaml, which relates 1:1 to the mac address",
@@ -9582,7 +10017,8 @@ func init() {
           "mac_address": {
             "description": "mac address present on the host",
             "type": "string",
-            "pattern": "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"
+            "pattern": "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$",
+            "x-nullable": false
           }
         }
       }
@@ -9875,6 +10311,43 @@ func init() {
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/openshift-version"
+      }
+    },
+    "operator": {
+      "type": "object",
+      "required": [
+        "feature-support-level-id",
+        "support_level",
+        "incompatibilities",
+        "name",
+        "dependencies"
+      ],
+      "properties": {
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature-support-level-id"
+          }
+        },
+        "feature-support-level-id": {
+          "$ref": "#/definitions/feature-support-level-id"
+        },
+        "incompatibilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature-support-level-id"
+          }
+        },
+        "name": {
+          "description": "Name of the operator",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/definitions/incompatibility-reason"
+        },
+        "support_level": {
+          "$ref": "#/definitions/support-level"
+        }
       }
     },
     "operator-create-params": {
@@ -10446,7 +10919,7 @@ func init() {
     "subnet": {
       "type": "string",
       "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\/(?:(?:[0-9])|(?:[1-2][0-9])|(?:3[0-2])))|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,})/(?:(?:[0-9])|(?:[1-9][0-9])|(?:1[0-1][0-9])|(?:12[0-8])))$",
-      "x-go-custom-tag": "gorm:\"primaryKey\""
+      "x-go-custom-tag": "gorm:\"primaryKey;type:cidr\""
     },
     "support-level": {
       "type": "string",
@@ -10456,7 +10929,8 @@ func init() {
         "tech-preview",
         "dev-preview",
         "unavailable"
-      ]
+      ],
+      "x-nullable": false
     },
     "support-levels": {
       "description": "Map of feature ID or CPU architecture alongside their support level",
@@ -10725,13 +11199,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ],
           "x-nullable": true
         },
@@ -10772,11 +11251,15 @@ func init() {
           "x-nullable": true
         },
         "network_type": {
-          "description": "The desired network type used.",
+          "description": "The desired network type used.\n- OVNKubernetes: Default CNI for OpenShift (recommended)\n- OpenShiftSDN: Legacy SDN (deprecated in newer versions)\n- CiscoACI: Cisco ACI CNI (requires custom manifests)\n- Cilium: Isovalent Cilium CNI (requires custom manifests)\n- Calico: Tigera Calico CNI (requires custom manifests)\n- None: No CNI - user must provide custom CNI manifests\nNote: Third-party CNIs (CiscoACI, Cilium, Calico, None) require uploading\nCNI manifests via the custom manifests API before installation.\n",
           "type": "string",
           "enum": [
             "OpenShiftSDN",
-            "OVNKubernetes"
+            "OVNKubernetes",
+            "CiscoACI",
+            "Cilium",
+            "Calico",
+            "None"
           ],
           "x-nullable": true
         },
@@ -10882,23 +11365,74 @@ func init() {
         "$ref": "#/definitions/verified_vip"
       }
     },
+    "versioned-cluster-host-requirements-details": {
+      "type": "object",
+      "properties": {
+        "cpu_cores": {
+          "description": "Required number of CPU cores",
+          "type": "integer",
+          "x-nullable": true
+        },
+        "disk_size_gb": {
+          "description": "Required disk size in GB",
+          "type": "integer",
+          "x-nullable": true
+        },
+        "installation_disk_speed_threshold_ms": {
+          "description": "Required installation disk speed in ms",
+          "type": "integer",
+          "x-nullable": true
+        },
+        "network_latency_threshold_ms": {
+          "description": "Maximum network average latency (RTT) at L3 for role.",
+          "type": "number",
+          "format": "double",
+          "x-nullable": true
+        },
+        "packet_loss_percentage": {
+          "description": "Maximum packet loss allowed at L3 for role.",
+          "type": "number",
+          "format": "double",
+          "x-nullable": true
+        },
+        "ram_mib": {
+          "description": "Required number of RAM in MiB",
+          "type": "integer",
+          "x-nullable": true
+        }
+      }
+    },
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "arbiter": {
+          "description": "Arbiter node requirements",
+          "x-go-name": "ArbiterRequirements",
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
+        },
         "edge-worker": {
           "description": "Edge Worker OpenShift node requirements",
           "x-go-name": "EdgeWorkerRequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
         },
         "master": {
           "description": "Master node requirements",
           "x-go-name": "MasterRequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
+        },
+        "match_type": {
+          "description": "Determines how the version field is matched. \"exact\" applies only to the specified version (default). \"min_version\" applies to the specified version and all later versions.",
+          "type": "string",
+          "enum": [
+            "exact",
+            "min_version"
+          ],
+          "x-go-name": "MatchType"
         },
         "sno": {
           "description": "Single node OpenShift node requirements",
           "x-go-name": "SNORequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
         },
         "version": {
           "description": "Version of the component for which requirements are defined",
@@ -10907,7 +11441,7 @@ func init() {
         "worker": {
           "description": "Worker node requirements",
           "x-go-name": "WorkerRequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
         }
       }
     },
@@ -11206,6 +11740,58 @@ func init() {
             "description": "Success.",
             "schema": {
               "$ref": "#/definitions/cluster_default_config"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/v2/clusters/disconnected": {
+      "post": {
+        "description": "Create a disconnected OpenShift cluster for offline installation with embedded ignition",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "v2RegisterDisconnectedCluster",
+        "parameters": [
+          {
+            "description": "Parameters for creating a disconnected cluster.",
+            "name": "new-cluster-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/disconnected-cluster-create-params"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/cluster"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
             }
           },
           "401": {
@@ -12000,9 +12586,6 @@ func init() {
             "userAuth": [
               "user"
             ]
-          },
-          {
-            "urlAuth": []
           },
           {
             "agentAuth": []
@@ -12854,7 +13437,7 @@ func init() {
             "required": true
           },
           {
-            "maxLength": 104857600,
+            "maxLength": 262144000,
             "type": "file",
             "x-mimetype": "application/zip",
             "description": "The log file to be uploaded.",
@@ -12890,6 +13473,12 @@ func init() {
         "responses": {
           "204": {
             "description": "Success."
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
           },
           "401": {
             "description": "Unauthorized.",
@@ -14863,10 +15452,11 @@ func init() {
           {
             "enum": [
               "full-iso",
-              "minimal-iso"
+              "minimal-iso",
+              "disconnected-iso"
             ],
             "type": "string",
-            "description": "Overrides the ISO type for the disovery ignition, either 'full-iso' or 'minimal-iso'.",
+            "description": "Overrides the ISO type for the discovery ignition.",
             "name": "discovery_iso_type",
             "in": "query"
           }
@@ -16716,12 +17306,67 @@ func init() {
     },
     "/v2/operators/bundles": {
       "get": {
-        "description": "Retrieves a list of avaliable bundles.",
+        "description": "Retrieves a list of available bundles filtered by support level.",
         "tags": [
           "operators"
         ],
-        "summary": "Get list of avaliable bundles",
+        "summary": "Get list of available bundles",
         "operationId": "V2ListBundles",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Version of the OpenShift cluster. If the parameter is not specified, no filtering is applied.",
+            "name": "openshift_version",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "x86_64",
+              "aarch64",
+              "arm64",
+              "ppc64le",
+              "s390x",
+              "multi"
+            ],
+            "type": "string",
+            "default": "x86_64",
+            "description": "The CPU architecture of the image (x86_64/arm64/etc). openshift_version must be set.",
+            "name": "cpu_architecture",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "baremetal",
+              "none",
+              "nutanix",
+              "vsphere",
+              "external"
+            ],
+            "type": "string",
+            "description": "The provider platform type. openshift_version must be set.",
+            "name": "platform_type",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "External platform name when platform type is set to external. The value of this parameter will be ignored if platform_type is not external or if openshift_version is not set.",
+            "name": "external_platform_name",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "enum": [
+                "SNO"
+              ],
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "Array of feature IDs that affect bundle composition (e.g., [\"SNO\"] for Single Node OpenShift).",
+            "name": "feature_ids",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -16730,6 +17375,12 @@ func init() {
               "items": {
                 "$ref": "#/definitions/bundle"
               }
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
             }
           },
           "500": {
@@ -16743,7 +17394,7 @@ func init() {
     },
     "/v2/operators/bundles/{id}": {
       "get": {
-        "description": "Retrieves an array of operator properties for the specified bundle.",
+        "description": "Retrieves an array of operator properties for the specified bundle when some features are activated.",
         "tags": [
           "operators"
         ],
@@ -16752,10 +17403,23 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "Identifier of the bundle, for example, ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai-nvidia` + "`" + `.",
+            "description": "Identifier of the bundle, for example, ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai` + "`" + `.",
             "name": "id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "array",
+            "items": {
+              "enum": [
+                "SNO"
+              ],
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "Array of feature IDs that affect bundle composition (e.g., [\"SNO\"] for Single Node OpenShift).",
+            "name": "feature_ids",
+            "in": "query"
           }
         ],
         "responses": {
@@ -16763,6 +17427,12 @@ func init() {
             "description": "Success",
             "schema": {
               "$ref": "#/definitions/bundle"
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
             }
           },
           "404": {
@@ -16982,6 +17652,112 @@ func init() {
         }
       }
     },
+    "/v2/support-levels/features/detailed": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          }
+        ],
+        "description": "Retrieves detailed features information including support level, incompatibilities, and operator dependencies.",
+        "tags": [
+          "installer"
+        ],
+        "operationId": "GetDetailedSupportedFeatures",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Version of the OpenShift cluster.",
+            "name": "openshift_version",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "x86_64",
+              "arm64",
+              "ppc64le",
+              "s390x",
+              "multi"
+            ],
+            "type": "string",
+            "default": "x86_64",
+            "description": "The CPU architecture of the image (x86_64/arm64/etc).",
+            "name": "cpu_architecture",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "baremetal",
+              "none",
+              "nutanix",
+              "vsphere",
+              "external"
+            ],
+            "type": "string",
+            "description": "The provider platform type.",
+            "name": "platform_type",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "External platform name when platform type is set to external. The value of this parameter will be ignored if platform_type is not external.",
+            "name": "external_platform_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/feature"
+                  }
+                },
+                "operators": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/operator"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/supported-operators": {
       "get": {
         "description": "Retrieves the list of supported operators.",
@@ -17018,7 +17794,13 @@ func init() {
                   "self-node-remediation",
                   "fence-agents-remediation",
                   "node-maintenance",
-                  "kube-descheduler"
+                  "kube-descheduler",
+                  "cluster-observability",
+                  "numa-resources",
+                  "oadp",
+                  "metallb",
+                  "loki",
+                  "openshift-logging"
                 ]
               }
             }
@@ -17179,6 +17961,9 @@ func init() {
     },
     "MacInterfaceMapItems0": {
       "type": "object",
+      "required": [
+        "mac_address"
+      ],
       "properties": {
         "logical_nic_name": {
           "description": "nic name used in the yaml, which relates 1:1 to the mac address",
@@ -17187,7 +17972,8 @@ func init() {
         "mac_address": {
           "description": "mac address present on the host",
           "type": "string",
-          "pattern": "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$"
+          "pattern": "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$",
+          "x-nullable": false
         }
       }
     },
@@ -17560,13 +18346,18 @@ func init() {
           "x-go-custom-tag": "gorm:\"column:https_proxy\""
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "id": {
@@ -17630,11 +18421,12 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "kind": {
-          "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object,\n'AddHostsCluster' for cluster that add hosts to existing OCP cluster,\n",
+          "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object,\n'AddHostsCluster' for cluster that add hosts to existing OCP cluster,\n'DisconnectedCluster' for clusters with embedded ignition for offline installation,\n",
           "type": "string",
           "enum": [
             "Cluster",
-            "AddHostsCluster"
+            "AddHostsCluster",
+            "DisconnectedCluster"
           ]
         },
         "last-installation-preparation": {
@@ -17674,11 +18466,15 @@ func init() {
           "type": "string"
         },
         "network_type": {
-          "description": "The desired network type used.",
+          "description": "The desired network type used.\n- OVNKubernetes: Default CNI for OpenShift (recommended)\n- OpenShiftSDN: Legacy SDN (deprecated in newer versions)\n- CiscoACI: Cisco ACI CNI (requires custom manifests)\n- Cilium: Isovalent Cilium CNI (requires custom manifests)\n- Calico: Tigera Calico CNI (requires custom manifests)\n- None: No CNI - user must provide custom CNI manifests\n",
           "type": "string",
           "enum": [
             "OpenShiftSDN",
-            "OVNKubernetes"
+            "OVNKubernetes",
+            "CiscoACI",
+            "Cilium",
+            "Calico",
+            "None"
           ],
           "x-nullable": true
         },
@@ -17765,7 +18561,8 @@ func init() {
             "installed",
             "adding-hosts",
             "cancelled",
-            "installing-pending-user-action"
+            "installing-pending-user-action",
+            "unmonitored"
           ]
         },
         "status_info": {
@@ -17912,13 +18709,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "all",
           "enum": [
-            "masters",
-            "workers",
             "none",
+            "masters",
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
             "all"
           ]
         },
@@ -17951,11 +18753,15 @@ func init() {
           "minLength": 1
         },
         "network_type": {
-          "description": "The desired network type used.",
+          "description": "The desired network type used.\n- OVNKubernetes: Default CNI for OpenShift (recommended)\n- OpenShiftSDN: Legacy SDN (deprecated in newer versions)\n- CiscoACI: Cisco ACI CNI (requires custom manifests)\n- Cilium: Isovalent Cilium CNI (requires custom manifests)\n- Calico: Tigera Calico CNI (requires custom manifests)\n- None: No CNI - user must provide custom CNI manifests\nNote: Third-party CNIs (CiscoACI, Cilium, Calico, None) require uploading\nCNI manifests via the custom manifests API before installation.\n",
           "type": "string",
           "enum": [
             "OpenShiftSDN",
-            "OVNKubernetes"
+            "OVNKubernetes",
+            "CiscoACI",
+            "Cilium",
+            "Calico",
+            "None"
           ],
           "x-nullable": true
         },
@@ -18168,6 +18974,7 @@ func init() {
         "mtv-requirements-satisfied",
         "osc-requirements-satisfied",
         "network-type-valid",
+        "custom-manifests-requirements-satisfied",
         "platform-requirements-satisfied",
         "node-feature-discovery-requirements-satisfied",
         "nvidia-gpu-requirements-satisfied",
@@ -18175,6 +18982,7 @@ func init() {
         "servicemesh-requirements-satisfied",
         "serverless-requirements-satisfied",
         "openshift-ai-requirements-satisfied",
+        "openshift-ai-gpu-requirements-satisfied",
         "authorino-requirements-satisfied",
         "nmstate-requirements-satisfied",
         "amd-gpu-requirements-satisfied",
@@ -18183,7 +18991,13 @@ func init() {
         "self-node-remediation-requirements-satisfied",
         "fence-agents-remediation-requirements-satisfied",
         "node-maintenance-requirements-satisfied",
-        "kube-descheduler-requirements-satisfied"
+        "kube-descheduler-requirements-satisfied",
+        "cluster-observability-requirements-satisfied",
+        "numa-resources-requirements-satisfied",
+        "oadp-requirements-satisfied",
+        "metallb-requirements-satisfied",
+        "loki-requirements-satisfied",
+        "openshift-logging-requirements-satisfied"
       ]
     },
     "cluster_default_config": {
@@ -18554,6 +19368,25 @@ func init() {
         }
       }
     },
+    "disconnected-cluster-create-params": {
+      "type": "object",
+      "required": [
+        "name",
+        "openshift_version"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name of the OpenShift cluster.",
+          "type": "string",
+          "maxLength": 54,
+          "minLength": 1
+        },
+        "openshift_version": {
+          "description": "Version of the OpenShift cluster.",
+          "type": "string"
+        }
+      }
+    },
     "disk": {
       "type": "object",
       "properties": {
@@ -18662,14 +19495,19 @@ func init() {
       "type": "object",
       "properties": {
         "enable_on": {
-          "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable disk encryption on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "none",
           "enum": [
             "none",
-            "all",
             "masters",
-            "workers"
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "mode": {
@@ -18965,10 +19803,37 @@ func init() {
         "$ref": "#/definitions/event"
       }
     },
+    "feature": {
+      "type": "object",
+      "required": [
+        "feature-support-level-id",
+        "support_level",
+        "incompatibilities"
+      ],
+      "properties": {
+        "feature-support-level-id": {
+          "$ref": "#/definitions/feature-support-level-id"
+        },
+        "incompatibilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature-support-level-id"
+          }
+        },
+        "reason": {
+          "$ref": "#/definitions/incompatibility-reason"
+        },
+        "support_level": {
+          "$ref": "#/definitions/support-level"
+        }
+      }
+    },
     "feature-support-level-id": {
       "type": "string",
       "enum": [
         "SNO",
+        "TNA",
+        "TNF",
         "VIP_AUTO_ALLOC",
         "CUSTOM_MANIFEST",
         "SINGLE_NODE_EXPANSION",
@@ -18991,10 +19856,13 @@ func init() {
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
         "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
         "EXTERNAL_PLATFORM",
         "OVN_NETWORK_TYPE",
         "SDN_NETWORK_TYPE",
+        "CILIUM_NETWORK_TYPE",
+        "CALICO_NETWORK_TYPE",
+        "CISCO_ACI_NETWORK_TYPE",
+        "NONE_NETWORK_TYPE",
         "NODE_FEATURE_DISCOVERY",
         "NVIDIA_GPU",
         "PIPELINES",
@@ -19011,8 +19879,47 @@ func init() {
         "SELF_NODE_REMEDIATION",
         "FENCE_AGENTS_REMEDIATION",
         "NODE_MAINTENANCE",
-        "KUBE_DESCHEDULER"
-      ]
+        "KUBE_DESCHEDULER",
+        "CLUSTER_OBSERVABILITY",
+        "NUMA_RESOURCES",
+        "OADP",
+        "METALLB",
+        "DUAL_STACK_PRIMARY_IPV6",
+        "LOKI",
+        "OPENSHIFT_LOGGING"
+      ],
+      "x-nullable": false
+    },
+    "fencing-credentials-params": {
+      "type": "object",
+      "required": [
+        "address",
+        "username",
+        "password"
+      ],
+      "properties": {
+        "address": {
+          "description": "The URL of the host's BMC, for example https://bmc1.example.com.",
+          "type": "string"
+        },
+        "certificate_verification": {
+          "description": "Whether to enable or disable certificate verification when connecting to the host's BMC.",
+          "type": "string",
+          "default": "Enabled",
+          "enum": [
+            "Enabled",
+            "Disabled"
+          ]
+        },
+        "password": {
+          "description": "The password to connect to the host's BMC.",
+          "type": "string"
+        },
+        "username": {
+          "description": "The username to connect to the host's BMC.",
+          "type": "string"
+        }
+      }
     },
     "finalizing-stage": {
       "description": "Cluster finalizing stage managed by controller",
@@ -19170,6 +20077,11 @@ func init() {
         },
         "domain_name_resolutions": {
           "description": "The domain name resolution result.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
+        },
+        "fencing_credentials": {
+          "description": "The host's BMC credentials that will be used in TNF.",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
         },
@@ -19490,6 +20402,7 @@ func init() {
         "Waiting for controller",
         "Installing",
         "Writing image to disk",
+        "Copying registry data to disk",
         "Rebooting",
         "Waiting for ignition",
         "Configuring",
@@ -19544,6 +20457,11 @@ func init() {
             "$ref": "#/definitions/disk-skip-formatting-params"
           },
           "x-nullable": true
+        },
+        "fencing_credentials": {
+          "description": "The host's BMC credentials that will be used in TNF.",
+          "x-nullable": true,
+          "$ref": "#/definitions/fencing-credentials-params"
         },
         "host_name": {
           "type": "string",
@@ -19648,7 +20566,13 @@ func init() {
         "self-node-remediation-requirements-satisfied",
         "fence-agents-remediation-requirements-satisfied",
         "node-maintenance-requirements-satisfied",
-        "kube-descheduler-requirements-satisfied"
+        "kube-descheduler-requirements-satisfied",
+        "cluster-observability-requirements-satisfied",
+        "numa-resources-requirements-satisfied",
+        "oadp-requirements-satisfied",
+        "metallb-requirements-satisfied",
+        "loki-requirements-satisfied",
+        "openshift-logging-requirements-satisfied"
       ]
     },
     "host_network": {
@@ -19828,7 +20752,8 @@ func init() {
       "type": "string",
       "enum": [
         "full-iso",
-        "minimal-iso"
+        "minimal-iso",
+        "disconnected-iso"
       ]
     },
     "import-cluster-params": {
@@ -19857,6 +20782,15 @@ func init() {
           "type": "string"
         }
       }
+    },
+    "incompatibility-reason": {
+      "type": "string",
+      "enum": [
+        "cpuArchitecture",
+        "platform",
+        "openshiftVersion",
+        "ociExternalIntegrationDisabled"
+      ]
     },
     "infra-env": {
       "type": "object",
@@ -19958,6 +20892,13 @@ func init() {
           "description": "Name of the infra-env.",
           "type": "string"
         },
+        "network_discovery_delay_seconds": {
+          "description": "The number of seconds to wait before mapping host MACs to interfaces when applying static network config on minimal ISO.\nThis can be used on hosts that need time to discover their NICs.",
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "x-nullable": true
+        },
         "openshift_version": {
           "description": "Version of the OpenShift cluster (used to infer the RHCOS version - temporary until generic logic implemented).",
           "type": "string"
@@ -19971,6 +20912,12 @@ func init() {
         "pull_secret_set": {
           "description": "True if the pull secret has been added to the cluster.",
           "type": "boolean"
+        },
+        "rendezvous_ip": {
+          "description": "The IP address of the host that will act as the rendezvous (bootstrap) node for agent-based installations.\nThis is optional for disconnected-iso image type and specifies which host will run the assisted service\nduring the bootstrap phase. All other hosts will connect to this IP to coordinate the installation.",
+          "type": "string",
+          "pattern": "^(?:$|(?:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])|(?:([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|:(:[0-9a-fA-F]{1,4}){1,7}|:|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))))$",
+          "x-nullable": true
         },
         "size_bytes": {
           "type": "integer",
@@ -20058,6 +21005,13 @@ func init() {
           "description": "Name of the infra-env.",
           "type": "string"
         },
+        "network_discovery_delay_seconds": {
+          "description": "The number of seconds to wait before mapping host MACs to interfaces when applying static network config on minimal ISO.\nThis can be used on hosts that need time to discover their NICs.",
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "x-nullable": true
+        },
         "openshift_version": {
           "description": "Version of the OpenShift cluster (used to infer the RHCOS version - temporary until generic logic implemented).",
           "type": "string"
@@ -20068,6 +21022,12 @@ func init() {
         "pull_secret": {
           "description": "The pull secret obtained from Red Hat OpenShift Cluster Manager at console.redhat.com/openshift/install/pull-secret.",
           "type": "string"
+        },
+        "rendezvous_ip": {
+          "description": "The IP address of the host that will act as the rendezvous (bootstrap) node for agent-based installations.\nThis is optional for disconnected-iso image type and specifies which host will run the assisted service\nduring the bootstrap phase. All other hosts will connect to this IP to coordinate the installation.",
+          "type": "string",
+          "pattern": "^(?:$|(?:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])|(?:([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|:(:[0-9a-fA-F]{1,4}){1,7}|:|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))))$",
+          "x-nullable": true
         },
         "ssh_authorized_key": {
           "description": "SSH public key for debugging the installation.",
@@ -20112,6 +21072,13 @@ func init() {
         "kernel_arguments": {
           "$ref": "#/definitions/kernel_arguments"
         },
+        "network_discovery_delay_seconds": {
+          "description": "The number of seconds to wait before mapping host MACs to interfaces when applying static network config on minimal ISO.\nThis can be used on hosts that need time to discover their NICs.",
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "x-nullable": true
+        },
         "openshift_version": {
           "description": "Version of the OS image",
           "type": "string",
@@ -20123,6 +21090,12 @@ func init() {
         "pull_secret": {
           "description": "The pull secret obtained from Red Hat OpenShift Cluster Manager at console.redhat.com/openshift/install/pull-secret.",
           "type": "string"
+        },
+        "rendezvous_ip": {
+          "description": "The IP address of the host that will act as the rendezvous (bootstrap) node for agent-based installations.\nThis is optional for disconnected-iso image type and specifies which host will run the assisted service\nduring the bootstrap phase. All other hosts will connect to this IP to coordinate the installation.",
+          "type": "string",
+          "pattern": "^(?:$|(?:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])|(?:([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|:(:[0-9a-fA-F]{1,4}){1,7}|:|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))))$",
+          "x-nullable": true
         },
         "ssh_authorized_key": {
           "description": "SSH public key for debugging the installation.",
@@ -20430,7 +21403,7 @@ func init() {
     "ip": {
       "type": "string",
       "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
-      "x-go-custom-tag": "gorm:\"primaryKey\""
+      "x-go-custom-tag": "gorm:\"primaryKey;type:inet\""
     },
     "iscsi": {
       "type": "object",
@@ -20948,6 +21921,43 @@ func init() {
         "$ref": "#/definitions/openshift-version"
       }
     },
+    "operator": {
+      "type": "object",
+      "required": [
+        "feature-support-level-id",
+        "support_level",
+        "incompatibilities",
+        "name",
+        "dependencies"
+      ],
+      "properties": {
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature-support-level-id"
+          }
+        },
+        "feature-support-level-id": {
+          "$ref": "#/definitions/feature-support-level-id"
+        },
+        "incompatibilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature-support-level-id"
+          }
+        },
+        "name": {
+          "description": "Name of the operator",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/definitions/incompatibility-reason"
+        },
+        "support_level": {
+          "$ref": "#/definitions/support-level"
+        }
+      }
+    },
     "operator-create-params": {
       "type": "object",
       "properties": {
@@ -21517,7 +22527,7 @@ func init() {
     "subnet": {
       "type": "string",
       "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\/(?:(?:[0-9])|(?:[1-2][0-9])|(?:3[0-2])))|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,})/(?:(?:[0-9])|(?:[1-9][0-9])|(?:1[0-1][0-9])|(?:12[0-8])))$",
-      "x-go-custom-tag": "gorm:\"primaryKey\""
+      "x-go-custom-tag": "gorm:\"primaryKey;type:cidr\""
     },
     "support-level": {
       "type": "string",
@@ -21527,7 +22537,8 @@ func init() {
         "tech-preview",
         "dev-preview",
         "unavailable"
-      ]
+      ],
+      "x-nullable": false
     },
     "support-levels": {
       "description": "Map of feature ID or CPU architecture alongside their support level",
@@ -21770,13 +22781,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ],
           "x-nullable": true
         },
@@ -21817,11 +22833,15 @@ func init() {
           "x-nullable": true
         },
         "network_type": {
-          "description": "The desired network type used.",
+          "description": "The desired network type used.\n- OVNKubernetes: Default CNI for OpenShift (recommended)\n- OpenShiftSDN: Legacy SDN (deprecated in newer versions)\n- CiscoACI: Cisco ACI CNI (requires custom manifests)\n- Cilium: Isovalent Cilium CNI (requires custom manifests)\n- Calico: Tigera Calico CNI (requires custom manifests)\n- None: No CNI - user must provide custom CNI manifests\nNote: Third-party CNIs (CiscoACI, Cilium, Calico, None) require uploading\nCNI manifests via the custom manifests API before installation.\n",
           "type": "string",
           "enum": [
             "OpenShiftSDN",
-            "OVNKubernetes"
+            "OVNKubernetes",
+            "CiscoACI",
+            "Cilium",
+            "Calico",
+            "None"
           ],
           "x-nullable": true
         },
@@ -21927,23 +22947,74 @@ func init() {
         "$ref": "#/definitions/verified_vip"
       }
     },
+    "versioned-cluster-host-requirements-details": {
+      "type": "object",
+      "properties": {
+        "cpu_cores": {
+          "description": "Required number of CPU cores",
+          "type": "integer",
+          "x-nullable": true
+        },
+        "disk_size_gb": {
+          "description": "Required disk size in GB",
+          "type": "integer",
+          "x-nullable": true
+        },
+        "installation_disk_speed_threshold_ms": {
+          "description": "Required installation disk speed in ms",
+          "type": "integer",
+          "x-nullable": true
+        },
+        "network_latency_threshold_ms": {
+          "description": "Maximum network average latency (RTT) at L3 for role.",
+          "type": "number",
+          "format": "double",
+          "x-nullable": true
+        },
+        "packet_loss_percentage": {
+          "description": "Maximum packet loss allowed at L3 for role.",
+          "type": "number",
+          "format": "double",
+          "x-nullable": true
+        },
+        "ram_mib": {
+          "description": "Required number of RAM in MiB",
+          "type": "integer",
+          "x-nullable": true
+        }
+      }
+    },
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "arbiter": {
+          "description": "Arbiter node requirements",
+          "x-go-name": "ArbiterRequirements",
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
+        },
         "edge-worker": {
           "description": "Edge Worker OpenShift node requirements",
           "x-go-name": "EdgeWorkerRequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
         },
         "master": {
           "description": "Master node requirements",
           "x-go-name": "MasterRequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
+        },
+        "match_type": {
+          "description": "Determines how the version field is matched. \"exact\" applies only to the specified version (default). \"min_version\" applies to the specified version and all later versions.",
+          "type": "string",
+          "enum": [
+            "exact",
+            "min_version"
+          ],
+          "x-go-name": "MatchType"
         },
         "sno": {
           "description": "Single node OpenShift node requirements",
           "x-go-name": "SNORequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
         },
         "version": {
           "description": "Version of the component for which requirements are defined",
@@ -21952,7 +23023,7 @@ func init() {
         "worker": {
           "description": "Worker node requirements",
           "x-go-name": "WorkerRequirements",
-          "$ref": "#/definitions/cluster-host-requirements-details"
+          "$ref": "#/definitions/versioned-cluster-host-requirements-details"
         }
       }
     },

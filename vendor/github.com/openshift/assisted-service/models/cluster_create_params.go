@@ -68,8 +68,8 @@ type ClusterCreateParams struct {
 	//
 	HTTPSProxy *string `json:"https_proxy,omitempty"`
 
-	// Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.
-	// Enum: [masters workers none all]
+	// Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.
+	// Enum: [none masters arbiters workers masters,arbiters masters,workers arbiters,workers masters,arbiters,workers all]
 	Hyperthreading *string `json:"hyperthreading,omitempty"`
 
 	// Explicit ignition endpoint overrides the default ignition endpoint.
@@ -91,7 +91,16 @@ type ClusterCreateParams struct {
 	Name *string `json:"name"`
 
 	// The desired network type used.
-	// Enum: [OpenShiftSDN OVNKubernetes]
+	// - OVNKubernetes: Default CNI for OpenShift (recommended)
+	// - OpenShiftSDN: Legacy SDN (deprecated in newer versions)
+	// - CiscoACI: Cisco ACI CNI (requires custom manifests)
+	// - Cilium: Isovalent Cilium CNI (requires custom manifests)
+	// - Calico: Tigera Calico CNI (requires custom manifests)
+	// - None: No CNI - user must provide custom CNI manifests
+	// Note: Third-party CNIs (CiscoACI, Cilium, Calico, None) require uploading
+	// CNI manifests via the custom manifests API before installation.
+	//
+	// Enum: [OpenShiftSDN OVNKubernetes CiscoACI Cilium Calico None]
 	NetworkType *string `json:"network_type,omitempty"`
 
 	// An "*" or a comma-separated list of destination domain names, domains, IP addresses, or other network CIDRs to exclude from proxying.
@@ -428,7 +437,7 @@ var clusterCreateParamsTypeHyperthreadingPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["masters","workers","none","all"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["none","masters","arbiters","workers","masters,arbiters","masters,workers","arbiters,workers","masters,arbiters,workers","all"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -438,14 +447,29 @@ func init() {
 
 const (
 
+	// ClusterCreateParamsHyperthreadingNone captures enum value "none"
+	ClusterCreateParamsHyperthreadingNone string = "none"
+
 	// ClusterCreateParamsHyperthreadingMasters captures enum value "masters"
 	ClusterCreateParamsHyperthreadingMasters string = "masters"
+
+	// ClusterCreateParamsHyperthreadingArbiters captures enum value "arbiters"
+	ClusterCreateParamsHyperthreadingArbiters string = "arbiters"
 
 	// ClusterCreateParamsHyperthreadingWorkers captures enum value "workers"
 	ClusterCreateParamsHyperthreadingWorkers string = "workers"
 
-	// ClusterCreateParamsHyperthreadingNone captures enum value "none"
-	ClusterCreateParamsHyperthreadingNone string = "none"
+	// ClusterCreateParamsHyperthreadingMastersArbiters captures enum value "masters,arbiters"
+	ClusterCreateParamsHyperthreadingMastersArbiters string = "masters,arbiters"
+
+	// ClusterCreateParamsHyperthreadingMastersWorkers captures enum value "masters,workers"
+	ClusterCreateParamsHyperthreadingMastersWorkers string = "masters,workers"
+
+	// ClusterCreateParamsHyperthreadingArbitersWorkers captures enum value "arbiters,workers"
+	ClusterCreateParamsHyperthreadingArbitersWorkers string = "arbiters,workers"
+
+	// ClusterCreateParamsHyperthreadingMastersArbitersWorkers captures enum value "masters,arbiters,workers"
+	ClusterCreateParamsHyperthreadingMastersArbitersWorkers string = "masters,arbiters,workers"
 
 	// ClusterCreateParamsHyperthreadingAll captures enum value "all"
 	ClusterCreateParamsHyperthreadingAll string = "all"
@@ -583,7 +607,7 @@ var clusterCreateParamsTypeNetworkTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["OpenShiftSDN","OVNKubernetes"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["OpenShiftSDN","OVNKubernetes","CiscoACI","Cilium","Calico","None"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -598,6 +622,18 @@ const (
 
 	// ClusterCreateParamsNetworkTypeOVNKubernetes captures enum value "OVNKubernetes"
 	ClusterCreateParamsNetworkTypeOVNKubernetes string = "OVNKubernetes"
+
+	// ClusterCreateParamsNetworkTypeCiscoACI captures enum value "CiscoACI"
+	ClusterCreateParamsNetworkTypeCiscoACI string = "CiscoACI"
+
+	// ClusterCreateParamsNetworkTypeCilium captures enum value "Cilium"
+	ClusterCreateParamsNetworkTypeCilium string = "Cilium"
+
+	// ClusterCreateParamsNetworkTypeCalico captures enum value "Calico"
+	ClusterCreateParamsNetworkTypeCalico string = "Calico"
+
+	// ClusterCreateParamsNetworkTypeNone captures enum value "None"
+	ClusterCreateParamsNetworkTypeNone string = "None"
 )
 
 // prop value enum

@@ -1012,9 +1012,6 @@ func init() {
             ]
           },
           {
-            "urlAuth": []
-          },
-          {
             "agentAuth": []
           }
         ],
@@ -6447,13 +6444,18 @@ func init() {
           "x-go-custom-tag": "gorm:\"column:https_proxy\""
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "id": {
@@ -6799,13 +6801,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "all",
           "enum": [
-            "masters",
-            "workers",
             "none",
+            "masters",
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
             "all"
           ]
         },
@@ -7549,14 +7556,19 @@ func init() {
       "type": "object",
       "properties": {
         "enable_on": {
-          "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable disk encryption on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "none",
           "enum": [
             "none",
-            "all",
             "masters",
-            "workers"
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "mode": {
@@ -7889,6 +7901,7 @@ func init() {
       "type": "string",
       "enum": [
         "SNO",
+        "TNA",
         "VIP_AUTO_ALLOC",
         "CUSTOM_MANIFEST",
         "SINGLE_NODE_EXPANSION",
@@ -7911,7 +7924,6 @@ func init() {
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
         "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
         "EXTERNAL_PLATFORM",
         "OVN_NETWORK_TYPE",
         "SDN_NETWORK_TYPE",
@@ -10725,13 +10737,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ],
           "x-nullable": true
         },
@@ -10885,6 +10902,11 @@ func init() {
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "arbiter": {
+          "description": "Arbiter node requirements",
+          "x-go-name": "ArbiterRequirements",
+          "$ref": "#/definitions/cluster-host-requirements-details"
+        },
         "edge-worker": {
           "description": "Edge Worker OpenShift node requirements",
           "x-go-name": "EdgeWorkerRequirements",
@@ -12000,9 +12022,6 @@ func init() {
             "userAuth": [
               "user"
             ]
-          },
-          {
-            "urlAuth": []
           },
           {
             "agentAuth": []
@@ -17560,13 +17579,18 @@ func init() {
           "x-go-custom-tag": "gorm:\"column:https_proxy\""
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "id": {
@@ -17912,13 +17936,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "all",
           "enum": [
-            "masters",
-            "workers",
             "none",
+            "masters",
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
             "all"
           ]
         },
@@ -18662,14 +18691,19 @@ func init() {
       "type": "object",
       "properties": {
         "enable_on": {
-          "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable disk encryption on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "none",
           "enum": [
             "none",
-            "all",
             "masters",
-            "workers"
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "mode": {
@@ -18969,6 +19003,7 @@ func init() {
       "type": "string",
       "enum": [
         "SNO",
+        "TNA",
         "VIP_AUTO_ALLOC",
         "CUSTOM_MANIFEST",
         "SINGLE_NODE_EXPANSION",
@@ -18991,7 +19026,6 @@ func init() {
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
         "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
         "EXTERNAL_PLATFORM",
         "OVN_NETWORK_TYPE",
         "SDN_NETWORK_TYPE",
@@ -21770,13 +21804,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ],
           "x-nullable": true
         },
@@ -21930,6 +21969,11 @@ func init() {
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "arbiter": {
+          "description": "Arbiter node requirements",
+          "x-go-name": "ArbiterRequirements",
+          "$ref": "#/definitions/cluster-host-requirements-details"
+        },
         "edge-worker": {
           "description": "Edge Worker OpenShift node requirements",
           "x-go-name": "EdgeWorkerRequirements",

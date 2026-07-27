@@ -74,7 +74,7 @@ endif
 endif
 
 unit-test:
-	$(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
+	GOFLAGS=-mod=mod $(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell GOFLAGS=-mod=mod go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
 
 subsystem: build-image
 	$(DOCKER_COMPOSE) build --build-arg ASSISTED_INSTALLER_AGENT=$(ASSISTED_INSTALLER_AGENT) agent || exit 1 ; \

@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"crypto/rand"
@@ -98,6 +99,42 @@ parse error is: invalid config version (couldn't parse)`
 				withExpectedError(errorMessage).
 				withExpectedFailure().
 				checkResponse()
+		})
+	})
+
+	Context("Encapsulated MachineConfig", func() {
+		It("preserves encapsulated MachineConfig in filtered ignition", func() {
+			srv = serverMock(ignitionWithEncapsulatedMCMock)
+			stdout, _, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
+			Expect(exitCode).To(Equal(0), "API connectivity check should succeed")
+
+			var response models.APIVipConnectivityResponse
+			Expect(json.Unmarshal([]byte(stdout), &response)).To(Succeed(), "response should be valid JSON")
+			Expect(response.IsSuccess).To(BeTrue(), "ignition download should succeed")
+
+			var responseConfig v32_types.Config
+			Expect(json.Unmarshal([]byte(response.Ignition), &responseConfig)).To(Succeed(), "filtered ignition should be valid")
+
+			file := getIgnitionFile(&responseConfig, "/etc/ignition-machine-config-encapsulated.json")
+			Expect(file).NotTo(BeNil(), "encapsulated MachineConfig should be preserved in filtered ignition")
+			Expect(file.Contents.Source).NotTo(BeNil())
+			Expect(*file.Contents.Source).To(ContainSubstring("osImageURL"))
+		})
+
+		It("handles ignition without encapsulated MachineConfig", func() {
+			srv = serverMock(ignitionMock)
+			stdout, _, exitCode := CheckAPIConnectivity(getRequestStr(&srv.URL, false, nil, nil), log)
+			Expect(exitCode).To(Equal(0), "API connectivity check should succeed")
+
+			var response models.APIVipConnectivityResponse
+			Expect(json.Unmarshal([]byte(stdout), &response)).To(Succeed(), "response should be valid JSON")
+			Expect(response.IsSuccess).To(BeTrue(), "ignition download should succeed")
+
+			var responseConfig v32_types.Config
+			Expect(json.Unmarshal([]byte(response.Ignition), &responseConfig)).To(Succeed(), "filtered ignition should be valid")
+
+			file := getIgnitionFile(&responseConfig, "/etc/ignition-machine-config-encapsulated.json")
+			Expect(file).To(BeNil(), "should not contain encapsulated MachineConfig when not in original")
 		})
 	})
 
@@ -289,6 +326,39 @@ func ignitionMockInvalidFormat(w http.ResponseWriter, r *http.Request) {
 
 func ignitionMockEmpty(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte{})
+}
+
+func ignitionWithEncapsulatedMCMock(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Accept") != AcceptHeader {
+		logrus.Error("missing Accept header in request")
+		return
+	}
+
+	mcJSON := `{"apiVersion":"machineconfiguration.openshift.io/v1","kind":"MachineConfig","spec":{"osImageURL":"quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:abc123","config":{"ignition":{"version":"3.5.0"}},"kernelArguments":[],"extensions":[],"fips":false,"kernelType":"default"}}`
+	source := "data:," + url.PathEscape(mcJSON)
+
+	ignitionConfig := v32_types.Config{
+		Ignition: v32_types.Ignition{Version: "3.2.0"},
+		Storage: v32_types.Storage{
+			Files: []v32_types.File{
+				{
+					Node:          v32_types.Node{Path: "/etc/ignition-machine-config-encapsulated.json"},
+					FileEmbedded1: v32_types.FileEmbedded1{Contents: v32_types.Resource{Source: &source}},
+				},
+				{
+					Node:          v32_types.Node{Path: "/etc/some-large-file-to-strip"},
+					FileEmbedded1: v32_types.FileEmbedded1{Contents: v32_types.Resource{Source: &source}},
+				},
+			},
+		},
+	}
+
+	configBytes, err := json.Marshal(ignitionConfig)
+	if err != nil {
+		logrus.Error("failed to marshal config to json")
+		return
+	}
+	_, _ = w.Write(configBytes)
 }
 
 type responseChecker struct {

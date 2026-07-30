@@ -94,6 +94,9 @@ func filterIgnition(originalConfig *ignition_types.Config) *ignition_types.Confi
 
 	copyIgnitionDiskEncryptionInformation(originalConfig, &filteredConfig)
 	copyIgnitionManagedNetworkIndications(originalConfig, &filteredConfig)
+	// The encapsulated MachineConfig contains spec.osImageURL (the CoreOS image),
+	// which the service needs for persistent-boot day-2 host installs (MGMT-24903).
+	copyIgnitionFile(originalConfig, &filteredConfig, "/etc/ignition-machine-config-encapsulated.json")
 
 	// NOTE: add here any additional objects from the config (when needed by the service)
 

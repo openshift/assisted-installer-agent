@@ -7,7 +7,7 @@ ENV USER_UID=1001 \
 ENV COMPONENT_NAME=assisted-installer-agent
 ENV COMPONENT_VERSION=1.0.0
 ENV COMPONENT_TAG_EXTENSION=" "
-ENV GOFLAGS="-p=4"
+ENV GOFLAGS="-mod=mod -p=4"
 ENV GOEXPERIMENT=strictfipsruntime
 ENV BUILD_TAGS="strictfipsruntime"
 

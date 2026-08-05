@@ -32,13 +32,13 @@ arches:
     name: boost-thread
     evr: 1.75.0-13.el9_7
     sourcerpm: boost-1.75.0-13.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/conmon-2.2.1-1.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/conmon-2.2.1-2.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 53399
-    checksum: sha256:00899de60590da31e9f5fefe1066045ed793a5242ce1bf472ef774aadf0057b6
+    size: 53102
+    checksum: sha256:f8e63f7114dedea8867c3ccbcefc861f5402b361a6e514ee4f36426ecf2cbfd9
     name: conmon
-    evr: 3:2.2.1-1.el9
-    sourcerpm: conmon-2.2.1-1.el9.src.rpm
+    evr: 3:2.2.1-2.el9_8
+    sourcerpm: conmon-2.2.1-2.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/containers-common-5.8-1.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 170106
@@ -221,13 +221,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 189815
-    checksum: sha256:ba2bdcde79978ac96dd46c74ce6d1f6ece25d5d8ac883df0570df2de779013be
+    size: 189781
+    checksum: sha256:25709af82e1189b0dec4e5f951c54bf2ded44ca26d35e932bf75c1a83e70bd9b
     name: passt
-    evr: 0^20251210.gd04c480-5.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-6.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-5.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 15473435
@@ -480,20 +480,20 @@ arches:
     name: protobuf-c
     evr: 1.3.3-13.el9
     sourcerpm: protobuf-c-1.3.3-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/sg3_utils-1.47-10.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/sg3_utils-1.47-10.el9_8.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 1027346
-    checksum: sha256:f3a6f9d1a37bf333adea0ccc9ae8e98b771b407a5c4ff715cfa18e385cde75d4
+    size: 1019454
+    checksum: sha256:f5ff9207477c1d1ce367ccf5a75d4f5231b164b32a22ed9bb66ebbd01091cae9
     name: sg3_utils
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9.aarch64.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9_8.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 103562
-    checksum: sha256:f1ebbeb9135823c490a05c0d5e9c6a5fc5d314b9b2795a52fb9bd6adc96029aa
+    size: 107026
+    checksum: sha256:f92d9faa556db67cdc81ca8938e6ed7301ddd10cd8dc26a52580ad4b347f0d2f
     name: sg3_utils-libs
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/shadow-utils-subid-4.9-16.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 85318
@@ -533,13 +533,13 @@ arches:
     name: boost-thread
     evr: 1.75.0-13.el9_7
     sourcerpm: boost-1.75.0-13.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/conmon-2.2.1-1.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/conmon-2.2.1-2.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 55431
-    checksum: sha256:2ec5a0823444b8d00ae6829843d887af6b19a1ea88c5ad3f66769ca426d19650
+    size: 55287
+    checksum: sha256:13c9c05a8d08aa0b9beed89d1333b5b1022d5c09c415a9ca4b6db9da82d04ec0
     name: conmon
-    evr: 3:2.2.1-1.el9
-    sourcerpm: conmon-2.2.1-1.el9.src.rpm
+    evr: 3:2.2.1-2.el9_8
+    sourcerpm: conmon-2.2.1-2.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/containers-common-5.8-1.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 170148
@@ -757,13 +757,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 200700
-    checksum: sha256:752b15cd401da21a94621c2e62613702f86b74d93828ca69999b3f0dd0be6ce3
+    size: 200684
+    checksum: sha256:b798e11be1b65fee85cffac85ffdbc0a01112b11615cf5edcc4103ccd4e64cb5
     name: passt
-    evr: 0^20251210.gd04c480-5.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-6.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-5.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 15473593
@@ -1030,20 +1030,20 @@ arches:
     name: protobuf-c
     evr: 1.3.3-13.el9
     sourcerpm: protobuf-c-1.3.3-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/sg3_utils-1.47-10.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/sg3_utils-1.47-10.el9_8.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 1068204
-    checksum: sha256:66a9f542a9cc2a446305a61a3b329f126f6a214e2919264d915cd38e75455e4d
+    size: 1058797
+    checksum: sha256:64a40356377356e463b9467bafbcdb2b662c2a710fac7977e7aa2eb2092aa2ec
     name: sg3_utils
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9.ppc64le.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9_8.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 111241
-    checksum: sha256:e92ce3c37b9679518625ef616fcce1cb9e6676dadfb96224bcb9947d95f865ad
+    size: 114576
+    checksum: sha256:9d1354395d6593c4eeacc1a8125aec11c9b6cae28c215d7a0f23a74e98af9922
     name: sg3_utils-libs
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/shadow-utils-subid-4.9-16.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 97312
@@ -1083,13 +1083,13 @@ arches:
     name: boost-thread
     evr: 1.75.0-13.el9_7
     sourcerpm: boost-1.75.0-13.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/conmon-2.2.1-1.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/conmon-2.2.1-2.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 57985
-    checksum: sha256:6babf25f3ee39588edc294e4e5b1b1f8c34b4edc680107d8c60f0c988019c7fd
+    size: 57742
+    checksum: sha256:57e29ea5794f8a30e63ae107d007b6343a830f9017749adb4f81996a2f307b78
     name: conmon
-    evr: 3:2.2.1-1.el9
-    sourcerpm: conmon-2.2.1-1.el9.src.rpm
+    evr: 3:2.2.1-2.el9_8
+    sourcerpm: conmon-2.2.1-2.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/containers-common-5.8-1.el9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 170120
@@ -1279,13 +1279,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 185538
-    checksum: sha256:5a600d8670fb563872280c435f6f4c94fec0e86dc523c4a5f84570184313ecc5
+    size: 185545
+    checksum: sha256:56b441a7e96e1da443a06944af1311aa4c41d2781b219c9a1920b40f6198dc32
     name: passt
-    evr: 0^20251210.gd04c480-5.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-6.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-5.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 16187303
@@ -1531,20 +1531,20 @@ arches:
     name: protobuf-c
     evr: 1.3.3-13.el9
     sourcerpm: protobuf-c-1.3.3-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/sg3_utils-1.47-10.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/sg3_utils-1.47-10.el9_8.1.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 1012776
-    checksum: sha256:546d645d163c3f4750056e904a2d9bdb2d1931fc441f0256d89dac8a824d48fa
+    size: 1001984
+    checksum: sha256:b7701ee038f1b1e8a286eba118418a3fd64748024d59a3e19193f54434cff3ff
     name: sg3_utils
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9.s390x.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9_8.1.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 101820
-    checksum: sha256:f208fdc267be29e38162ede18dc0f11bad4b6a06009124b158ca7237481f48f0
+    size: 105204
+    checksum: sha256:ed106c4b7431cae2be4af6361e653305aad26480158f0a76e626c6da53ac7d9f
     name: sg3_utils-libs
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/shadow-utils-subid-4.9-16.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 85359
@@ -1584,13 +1584,13 @@ arches:
     name: boost-thread
     evr: 1.75.0-13.el9_7
     sourcerpm: boost-1.75.0-13.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/conmon-2.2.1-1.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/conmon-2.2.1-2.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 55683
-    checksum: sha256:49f0a60fcbc1e2957f40baddbb636e169b27ab97bce967f66696be0fec7bafd7
+    size: 55477
+    checksum: sha256:371ee8477701fb25f6fa0f86265954c8c872490525642267d6c70abe6e11515d
     name: conmon
-    evr: 3:2.2.1-1.el9
-    sourcerpm: conmon-2.2.1-1.el9.src.rpm
+    evr: 3:2.2.1-2.el9_8
+    sourcerpm: conmon-2.2.1-2.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/containers-common-5.8-1.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 170139
@@ -1773,13 +1773,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-5.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 294836
-    checksum: sha256:ef8db6d7789e52961c86b576ccc20cbe8366db03780710bb89b8a37d4e6bd153
+    size: 294867
+    checksum: sha256:3eb71e330f94e5eb4cc44ae807cd2fb5955c7af3b76b6904e42dfc9ec89e4024
     name: passt
-    evr: 0^20251210.gd04c480-5.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-5.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-6.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-5.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 17322242
@@ -2039,20 +2039,20 @@ arches:
     name: protobuf-c
     evr: 1.3.3-13.el9
     sourcerpm: protobuf-c-1.3.3-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/sg3_utils-1.47-10.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/sg3_utils-1.47-10.el9_8.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 1042323
-    checksum: sha256:fea95a4e4e997908784c163d3258064b750554634feb94db13bb28feb276305a
+    size: 1031007
+    checksum: sha256:dd1f897c9be5d6a0f6d5516e592e6061a97fb9b3e539c540af20fe2a1a4e467c
     name: sg3_utils
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9.x86_64.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/sg3_utils-libs-1.47-10.el9_8.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 106171
-    checksum: sha256:568a2ddc31d6da6b80ecbcd54e127829ece3d4bc082d132aab17232f727f45a2
+    size: 109745
+    checksum: sha256:5616097c8dc639a5b18531ec1f983dcb46c86d3a3c615b3cf7204e806513b288
     name: sg3_utils-libs
-    evr: 1.47-10.el9
-    sourcerpm: sg3_utils-1.47-10.el9.src.rpm
+    evr: 1.47-10.el9_8.1
+    sourcerpm: sg3_utils-1.47-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/shadow-utils-subid-4.9-16.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 86705

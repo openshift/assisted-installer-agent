@@ -4,7 +4,7 @@ USER 0
 
 ARG TARGETPLATFORM
 ENV GO111MODULE=on
-ENV GOFLAGS=-mod=mod
+ENV GOFLAGS=""
 
 WORKDIR /go/src/github.com/openshift/assisted-installer-agent
 

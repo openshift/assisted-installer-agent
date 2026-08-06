@@ -40,12 +40,12 @@ lint: ci-lint
 build: build-agent
 
 build-agent: $(BIN) src/agent #lint
-	GOFLAGS=-mod=mod $(GO_BUILD_VARS) go build -tags $(GO_BUILD_TAGS) -o $(BIN)/agent src/agent/main/main.go
+	$(GO_BUILD_VARS) go build -tags $(GO_BUILD_TAGS) -o $(BIN)/agent src/agent/main/main.go
 
 build-release: build-agent-release
 
 build-agent-release: $(BIN) src/agent #lint
-	GOFLAGS=-mod=mod $(GO_BUILD_VARS) go build -tags $(GO_BUILD_TAGS) -o $(BIN)/agent -ldflags "-s -w" src/agent/main/main.go
+	$(GO_BUILD_VARS) go build -tags $(GO_BUILD_TAGS) -o $(BIN)/agent -ldflags "-s -w" src/agent/main/main.go
 
 build-image:
 	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
@@ -72,7 +72,7 @@ endif
 endif
 
 unit-test:
-	GOFLAGS=-mod=mod $(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell GOFLAGS=-mod=mod go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
+	$(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
 
 subsystem: build-image
 	$(DOCKER_COMPOSE) build --build-arg ASSISTED_INSTALLER_AGENT=$(ASSISTED_INSTALLER_AGENT) agent || exit 1 ; \

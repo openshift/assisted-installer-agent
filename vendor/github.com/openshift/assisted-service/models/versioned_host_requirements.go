@@ -7,10 +7,12 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // VersionedHostRequirements versioned host requirements
@@ -18,17 +20,24 @@ import (
 // swagger:model versioned-host-requirements
 type VersionedHostRequirements struct {
 
+	// Arbiter node requirements
+	ArbiterRequirements *VersionedClusterHostRequirementsDetails `json:"arbiter,omitempty"`
+
 	// Edge Worker OpenShift node requirements
-	EdgeWorkerRequirements *ClusterHostRequirementsDetails `json:"edge-worker,omitempty"`
+	EdgeWorkerRequirements *VersionedClusterHostRequirementsDetails `json:"edge-worker,omitempty"`
 
 	// Master node requirements
-	MasterRequirements *ClusterHostRequirementsDetails `json:"master,omitempty"`
+	MasterRequirements *VersionedClusterHostRequirementsDetails `json:"master,omitempty"`
+
+	// Determines how the version field is matched. "exact" applies only to the specified version (default). "min_version" applies to the specified version and all later versions.
+	// Enum: [exact min_version]
+	MatchType string `json:"match_type,omitempty"`
 
 	// Single node OpenShift node requirements
-	SNORequirements *ClusterHostRequirementsDetails `json:"sno,omitempty"`
+	SNORequirements *VersionedClusterHostRequirementsDetails `json:"sno,omitempty"`
 
 	// Worker node requirements
-	WorkerRequirements *ClusterHostRequirementsDetails `json:"worker,omitempty"`
+	WorkerRequirements *VersionedClusterHostRequirementsDetails `json:"worker,omitempty"`
 
 	// Version of the component for which requirements are defined
 	Version string `json:"version,omitempty"`
@@ -38,11 +47,19 @@ type VersionedHostRequirements struct {
 func (m *VersionedHostRequirements) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateArbiterRequirements(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateEdgeWorkerRequirements(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateMasterRequirements(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMatchType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -57,6 +74,25 @@ func (m *VersionedHostRequirements) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *VersionedHostRequirements) validateArbiterRequirements(formats strfmt.Registry) error {
+	if swag.IsZero(m.ArbiterRequirements) { // not required
+		return nil
+	}
+
+	if m.ArbiterRequirements != nil {
+		if err := m.ArbiterRequirements.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("arbiter")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("arbiter")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -93,6 +129,48 @@ func (m *VersionedHostRequirements) validateMasterRequirements(formats strfmt.Re
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+var versionedHostRequirementsTypeMatchTypePropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["exact","min_version"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		versionedHostRequirementsTypeMatchTypePropEnum = append(versionedHostRequirementsTypeMatchTypePropEnum, v)
+	}
+}
+
+const (
+
+	// VersionedHostRequirementsMatchTypeExact captures enum value "exact"
+	VersionedHostRequirementsMatchTypeExact string = "exact"
+
+	// VersionedHostRequirementsMatchTypeMinVersion captures enum value "min_version"
+	VersionedHostRequirementsMatchTypeMinVersion string = "min_version"
+)
+
+// prop value enum
+func (m *VersionedHostRequirements) validateMatchTypeEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, versionedHostRequirementsTypeMatchTypePropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *VersionedHostRequirements) validateMatchType(formats strfmt.Registry) error {
+	if swag.IsZero(m.MatchType) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateMatchTypeEnum("match_type", "body", m.MatchType); err != nil {
+		return err
 	}
 
 	return nil
@@ -140,6 +218,10 @@ func (m *VersionedHostRequirements) validateWorkerRequirements(formats strfmt.Re
 func (m *VersionedHostRequirements) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateArbiterRequirements(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateEdgeWorkerRequirements(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -159,6 +241,22 @@ func (m *VersionedHostRequirements) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *VersionedHostRequirements) contextValidateArbiterRequirements(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ArbiterRequirements != nil {
+		if err := m.ArbiterRequirements.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("arbiter")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("arbiter")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

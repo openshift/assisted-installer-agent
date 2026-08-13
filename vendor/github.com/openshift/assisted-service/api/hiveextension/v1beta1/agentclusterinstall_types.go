@@ -22,7 +22,7 @@ const (
 	ClusterInstallationStoppedReason string = "ClusterInstallationStopped"
 	ClusterInstallationStoppedMsg    string = "The cluster installation stopped"
 	ClusterInsufficientAgentsReason  string = "InsufficientAgents"
-	ClusterInsufficientAgentsMsg     string = "The cluster currently requires exactly %d master agents and %d worker agents, but currently registered %d master agents and %d worker agents"
+	ClusterInsufficientAgentsMsg     string = "The cluster currently requires exactly %d master agents, %d arbiter agents and %d worker agents, but currently registered %d master agents, %d arbiter agents and %d worker agents"
 	ClusterUnapprovedAgentsReason    string = "UnapprovedAgents"
 	ClusterUnapprovedAgentsMsg       string = "The installation is pending on the approval of %d agents"
 	ClusterUnsyncedAgentsReason      string = "UnsyncedAgents"
@@ -105,7 +105,9 @@ type AgentClusterInstall struct {
 	Status AgentClusterInstallStatus `json:"status,omitempty"`
 }
 
-// AgentClusterInstallSpec defines the desired state of the AgentClusterInstall.
+// AgentClusterInstallSpec defines the desired configuration for installing an OpenShift cluster
+// using Agents, including networking, control plane and worker configuration, platform settings,
+// and installation customizations.
 type AgentClusterInstallSpec struct {
 
 	// ImageSetRef is a reference to a ClusterImageSet. The release image specified in the ClusterImageSet will be used
@@ -151,7 +153,18 @@ type AgentClusterInstallSpec struct {
 	// +optional
 	Compute []AgentMachinePool `json:"compute,omitempty"`
 
-	// APIVIP is the virtual IP used to reach the OpenShift cluster's API.
+	// Arbiter is the configuration for machines with the arbiter role in a Two Node + Arbiter (TNA)
+	// cluster topology. Arbiter nodes are lightweight control plane nodes that run only critical HA
+	// components like etcd, allowing for a 3-node quorum with reduced hardware requirements. Arbiter
+	// nodes have lower minimum CPU, memory, and disk requirements compared to standard master nodes.
+	// Only used when deploying TNA clusters (2 master nodes + 1 or more arbiter nodes).
+	// +optional
+	Arbiter *AgentMachinePool `json:"arbiter,omitempty"`
+
+	// APIVIP is the virtual IP address used to reach the OpenShift cluster's API server.
+	// Deprecated: use apiVIPs instead to support dual-stack configurations. This field is ignored
+	// when apiVIPs is set. For single-stack clusters, either field can be used; for dual-stack
+	// clusters, use apiVIPs.
 	// +optional
 	APIVIP string `json:"apiVIP,omitempty"`
 
@@ -163,7 +176,10 @@ type AgentClusterInstallSpec struct {
 	// +optional
 	APIVIPs []string `json:"apiVIPs,omitempty"`
 
-	// IngressVIP is the virtual IP used for cluster ingress traffic.
+	// IngressVIP is the virtual IP address used for cluster ingress traffic.
+	// Deprecated: use ingressVIPs instead to support dual-stack configurations. This field is ignored
+	// when ingressVIPs is set. For single-stack clusters, either field can be used; for dual-stack
+	// clusters, use ingressVIPs.
 	// +optional
 	IngressVIP string `json:"ingressVIP,omitempty"`
 
@@ -273,7 +289,10 @@ type AgentClusterInstallStatus struct {
 	// +optional
 	APIVIPs []string `json:"apiVIPs,omitempty"`
 
-	// IngressVIP is the virtual IP used for cluster ingress traffic.
+	// IngressVIP is the virtual IP address used for cluster ingress traffic.
+	// Deprecated: use ingressVIPs instead to support dual-stack configurations. This field is ignored
+	// when ingressVIPs is set. For single-stack clusters, either field can be used; for dual-stack
+	// clusters, use ingressVIPs.
 	// +optional
 	IngressVIP string `json:"ingressVIP,omitempty"`
 
@@ -332,7 +351,7 @@ type Networking struct {
 	//NetworkType is the Container Network Interface (CNI) plug-in to install
 	//The default value is OpenShiftSDN for IPv4, and OVNKubernetes for IPv6 or SNO
 	//
-	// +kubebuilder:validation:Enum=OpenShiftSDN;OVNKubernetes
+	// +kubebuilder:validation:Enum=OpenShiftSDN;OVNKubernetes;CiscoACI;Cilium;Calico;None
 	// +optional
 	NetworkType string `json:"networkType,omitempty"`
 
@@ -373,6 +392,12 @@ type ProvisionRequirements struct {
 	// +kubebuilder:validation:Minimum=0
 	// +optional
 	WorkerAgents int `json:"workerAgents,omitempty"`
+
+	// ArbiterAgents is the minimum number of matching approved and ready Agents with the arbiter role
+	// required to launch the install.
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	ArbiterAgents int `json:"arbiterAgents,omitempty"`
 }
 
 // HyperthreadingMode is the mode of hyperthreading for a machine.
@@ -387,8 +412,9 @@ const (
 )
 
 const (
-	MasterAgentMachinePool string = "master"
-	WorkerAgentMachinePool string = "worker"
+	MasterAgentMachinePool  string = "master"
+	ArbiterAgentMachinePool string = "arbiter"
+	WorkerAgentMachinePool  string = "worker"
 )
 
 // PlatformType is a specific supported infrastructure provider.
@@ -462,7 +488,7 @@ type DiskEncryption struct {
 	// Enable/disable disk encryption on master nodes, worker nodes, or all nodes.
 	//
 	// +kubebuilder:default=none
-	// +kubebuilder:validation:Enum=none;all;masters;workers
+	// +kubebuilder:validation:Enum=none;all;masters;arbiters;workers;"masters,arbiters";"masters,workers";"arbiters,workers";"masters,arbiters,workers"
 	EnableOn *string `json:"enableOn,omitempty"`
 
 	// The disk encryption mode to use.
@@ -540,7 +566,7 @@ const (
 )
 
 func init() {
-	SchemeBuilder.Register(&AgentClusterInstall{}, &AgentClusterInstallList{})
+	objectTypes = append(objectTypes, &AgentClusterInstall{}, &AgentClusterInstallList{})
 }
 
 // MirrorRegistryConfigMapReference contains reference to a ConfigMap for mirror registry

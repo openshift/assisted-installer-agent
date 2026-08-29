@@ -46,20 +46,20 @@ arches:
     name: containers-common
     evr: 5:5.8-1.el9
     sourcerpm: containers-common-5.8-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/criu-3.19-3.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/criu-3.19-4.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 555523
-    checksum: sha256:376aca78a8d78a052503fc4406ee84e4d0607c047e8486190b06ed3acd19a6c7
+    size: 552955
+    checksum: sha256:2f4934b17b8fb4bca5f418f383075c37ab3485f2db4e83d78bee808865e5bbd8
     name: criu
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/criu-libs-3.19-3.el9.aarch64.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/criu-libs-3.19-4.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 31064
-    checksum: sha256:34b7c037743e730a07117d9627725517d60ed356f945c9f42880573f552b7c4f
+    size: 36419
+    checksum: sha256:0c636b32a97822573321095b02d113735b93701d9ccbd3f12bd66dc7c0eee807
     name: criu-libs
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/c/crun-1.27-1.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 251772
@@ -228,13 +228,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-6.el9_8
     sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-5.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-6.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 15473435
-    checksum: sha256:4906e3b5e9df12a24c51254eb2eae8bda306dbcaff3bc3ec1d888fdcca6d0df5
+    size: 15475142
+    checksum: sha256:435eeb0795367465e019d464f9eac23b03ae52540d270ef1624f47628f2cc033
     name: podman
-    evr: 6:5.8.2-5.el9_8
-    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
+    evr: 6:5.8.2-6.el9_8
+    sourcerpm: podman-5.8.2-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 48428
@@ -445,13 +445,13 @@ arches:
     name: librdmacm
     evr: 61.0-2.el9
     sourcerpm: rdma-core-61.0-2.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/n/nftables-1.0.9-7.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/n/nftables-1.0.9-9.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 431040
-    checksum: sha256:a0af6ffaa225c77236875ff68230286b6559b8a857414e278af819f843a4fabb
+    size: 467195
+    checksum: sha256:71080fba834245674aa5ed3badf2cb675254b1860fc585d28dd88829b2d5a43a
     name: nftables
-    evr: 1:1.0.9-7.el9_8
-    sourcerpm: nftables-1.0.9-7.el9_8.src.rpm
+    evr: 1:1.0.9-9.el9_8
+    sourcerpm: nftables-1.0.9-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/n/numactl-libs-2.0.19-3.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 30594
@@ -547,20 +547,20 @@ arches:
     name: containers-common
     evr: 5:5.8-1.el9
     sourcerpm: containers-common-5.8-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/criu-3.19-3.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/criu-3.19-4.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 603115
-    checksum: sha256:127155d8ccc2e3b1971631e251b6bcf788072302b36d85d0cd9b86e5488327a0
+    size: 608553
+    checksum: sha256:7f091d686c20f52a1f70a28c9ca7f3aed796202fb2ab4f9af8398d38fe683649
     name: criu
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/criu-libs-3.19-3.el9.ppc64le.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/criu-libs-3.19-4.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 33613
-    checksum: sha256:f004060055d65ee045db9f4a445d9de0ca824a7b41bb48458bb9ac449a558ce0
+    size: 38994
+    checksum: sha256:84c3af47dc5270662f91eab5b8457c2372186ed7c751ba89ac05771a0f3763c2
     name: criu-libs
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/crun-1.27-1.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 292788
@@ -764,13 +764,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-6.el9_8
     sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-5.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-6.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 15473593
-    checksum: sha256:f690c742bf967b62ad15659b5e7ca40bf9e9390912c292ebe1d3e4a0ef788108
+    size: 15441187
+    checksum: sha256:99ceaf0fc7c7c0e4fe0d2a2831588e36f4f2066c437cc8de384e204c316e73ad
     name: podman
-    evr: 6:5.8.2-5.el9_8
-    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
+    evr: 6:5.8.2-6.el9_8
+    sourcerpm: podman-5.8.2-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 50838
@@ -995,13 +995,13 @@ arches:
     name: ndctl-libs
     evr: 82-1.el9
     sourcerpm: ndctl-82-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/n/nftables-1.0.9-7.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/n/nftables-1.0.9-9.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 464984
-    checksum: sha256:c126fb2fbf9d15802ad5cae38bf7efc4535dc2c2962cf1a0beaf009cb5bbbeca
+    size: 500821
+    checksum: sha256:c6029d5bf38140ae74e4aaa1417eb1a70de0965efeedb54f1bdc88d2e3f5352d
     name: nftables
-    evr: 1:1.0.9-7.el9_8
-    sourcerpm: nftables-1.0.9-7.el9_8.src.rpm
+    evr: 1:1.0.9-9.el9_8
+    sourcerpm: nftables-1.0.9-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/n/numactl-libs-2.0.19-3.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 34217
@@ -1097,20 +1097,20 @@ arches:
     name: containers-common
     evr: 5:5.8-1.el9
     sourcerpm: containers-common-5.8-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/criu-3.19-3.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/criu-3.19-4.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 534901
-    checksum: sha256:4bda534498f502506bb2eff2fa9fdddefe37e3a20bfdeb70a401f3c662e6d037
+    size: 542784
+    checksum: sha256:c3bacbbbb008a63fd384b79c4575d9200db72175d5042de52f6fae3ae2a6d6e6
     name: criu
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/criu-libs-3.19-3.el9.s390x.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/criu-libs-3.19-4.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 31157
-    checksum: sha256:fad9de9210d49010e73da6b23544bb759ee8d314b0200ae095b5b2ba7a96d7bb
+    size: 36524
+    checksum: sha256:442e1b3384e4694977918354a81945528b6f2631fcb819696db9f52fc204ff9d
     name: criu-libs
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/crun-1.27-1.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 249046
@@ -1286,13 +1286,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-6.el9_8
     sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-5.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-6.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 16187303
-    checksum: sha256:80c97fd93a9ea3812a6405ceff0484dd48126c03852a6b77deb00fb9dfebd53a
+    size: 16117531
+    checksum: sha256:021a6cdf58a412d60ba6e0b48cdec629597625aa352bb801412982874463161d
     name: podman
-    evr: 6:5.8.2-5.el9_8
-    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
+    evr: 6:5.8.2-6.el9_8
+    sourcerpm: podman-5.8.2-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 48338
@@ -1496,13 +1496,13 @@ arches:
     name: libpcap
     evr: 14:1.10.0-4.el9
     sourcerpm: libpcap-1.10.0-4.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/n/nftables-1.0.9-7.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/n/nftables-1.0.9-9.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 421784
-    checksum: sha256:48f174ea0231b3d58939cbba5291102893c4fc024f019ea8c5555a2daff88546
+    size: 457246
+    checksum: sha256:aa0ab6b278696fc9fa989128704ba480750e4009ae1ba7f71d47d34546e4f85e
     name: nftables
-    evr: 1:1.0.9-7.el9_8
-    sourcerpm: nftables-1.0.9-7.el9_8.src.rpm
+    evr: 1:1.0.9-9.el9_8
+    sourcerpm: nftables-1.0.9-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/n/numactl-libs-2.0.19-3.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 31214
@@ -1598,20 +1598,20 @@ arches:
     name: containers-common
     evr: 5:5.8-1.el9
     sourcerpm: containers-common-5.8-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/criu-3.19-3.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/criu-3.19-4.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 569988
-    checksum: sha256:991367e0ca6f3b1672f98ffccc32d43c2b959bf8b82562b79e9f9ff5be23642b
+    size: 575825
+    checksum: sha256:8b5d9ead51b4543ed5368b969ad0764f463a5ab448f552610c44cd8e4cde3acf
     name: criu
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/criu-libs-3.19-3.el9.x86_64.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/criu-libs-3.19-4.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 31913
-    checksum: sha256:37144e6c13da6a622fb1f15d0ff3a36fc359477db916a157fefb5d1934881614
+    size: 37299
+    checksum: sha256:3a9f645c6d495fc465fd65bfe02170e93552567bb45745bc6b8bf1402cd35464
     name: criu-libs
-    evr: 3.19-3.el9
-    sourcerpm: criu-3.19-3.el9.src.rpm
+    evr: 3.19-4.el9_8
+    sourcerpm: criu-3.19-4.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/crun-1.27-1.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 268116
@@ -1780,13 +1780,13 @@ arches:
     name: passt
     evr: 0^20251210.gd04c480-6.el9_8
     sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-5.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-6.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 17322242
-    checksum: sha256:0a822e3dc97b0d4200ba98e868eab2d8532e1e10650412517bd01e4de9596eee
+    size: 17293899
+    checksum: sha256:0000ef9786974d8ff2757c46d6b570dda35888dfddea8829142876863e1a7bf0
     name: podman
-    evr: 6:5.8.2-5.el9_8
-    sourcerpm: podman-5.8.2-5.el9_8.src.rpm
+    evr: 6:5.8.2-6.el9_8
+    sourcerpm: podman-5.8.2-6.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/s/slirp4netns-1.3.3-1.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 48562
@@ -1997,13 +1997,13 @@ arches:
     name: librdmacm
     evr: 61.0-2.el9
     sourcerpm: rdma-core-61.0-2.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/n/nftables-1.0.9-7.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/n/nftables-1.0.9-9.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 437853
-    checksum: sha256:175e5a5110125df894ef6f7cf7cb657cf16a3c5cee2b2847cb6e285d56c79396
+    size: 473262
+    checksum: sha256:c2ed618abe918bb6f8f4ce93ab0654289edf51693fc4bd15350ab71c54198f19
     name: nftables
-    evr: 1:1.0.9-7.el9_8
-    sourcerpm: nftables-1.0.9-7.el9_8.src.rpm
+    evr: 1:1.0.9-9.el9_8
+    sourcerpm: nftables-1.0.9-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/n/numactl-libs-2.0.19-3.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 31071

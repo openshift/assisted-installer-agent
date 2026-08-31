@@ -10,8 +10,9 @@ import (
 type AgentConfig struct {
 	DryRunConfig
 	ConnectivityConfig
-	IntervalSecs int
-	HostID       string
+	IntervalSecs         int
+	HostID               string
+	IronicStatusFilePath string
 	LoggingConfig
 }
 
@@ -37,8 +38,18 @@ func ProcessArgs() *AgentConfig {
 	flag.StringVar(&ret.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
 	flag.BoolVar(&ret.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
 	flag.StringVar(&ret.HostID, "host-id", "", "Host identification")
+	flag.StringVar(&ret.IronicStatusFilePath, "ironic-status-file", "", "Path to ironic agent status file for readiness check")
 	h := flag.Bool("help", false, "Help message")
 	flag.Parse()
+
+	// Set ironic status file path from CLI flag or environment variable
+	if ret.IronicStatusFilePath == "" {
+		ret.IronicStatusFilePath = os.Getenv("IRONIC_STATUS_FILE")
+	}
+	// If neither flag nor env var is set, use the default path
+	if ret.IronicStatusFilePath == "" {
+		ret.IronicStatusFilePath = "/run/ironic/status.json"
+	}
 	if h != nil && *h {
 		printHelpAndExit()
 	}

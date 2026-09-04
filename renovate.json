@@ -78,6 +78,19 @@
             ],
             "depNameTemplate": "registry.access.redhat.com/ubi9/ubi-minimal",
             "datasourceTemplate": "docker"
+        },
+        {
+            "customType": "regex",
+            "managerFilePatterns": [
+                "/^Dockerfile\\.assisted_installer_agent-mce$/",
+                "/^Dockerfile\\.assisted_installer_agent-downstream$/"
+            ],
+            "matchStrings": [
+                "FROM registry.redhat.io/ubi9/ubi-minimal-pqc:(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)\\n",
+                "FROM --platform=\\$BUILDPLATFORM registry.redhat.io/ubi9/ubi-minimal-pqc:(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)\\n"
+            ],
+            "depNameTemplate": "registry.redhat.io/ubi9/ubi-minimal-pqc",
+            "datasourceTemplate": "docker"
         }
     ],
     "packageRules": [
@@ -147,7 +160,8 @@
         {
             "matchPackageNames": [
                 "registry.access.redhat.com/ubi9/ubi",
-                "registry.access.redhat.com/ubi9/ubi-minimal"
+                "registry.access.redhat.com/ubi9/ubi-minimal",
+                "registry.redhat.io/ubi9/ubi-minimal-pqc"
             ],
             "groupName": "UBI Runtime Images",
             "addLabels": [
@@ -163,7 +177,8 @@
             ],
             "matchPackageNames": [
                 "registry.access.redhat.com/ubi9/ubi",
-                "registry.access.redhat.com/ubi9/ubi-minimal"
+                "registry.access.redhat.com/ubi9/ubi-minimal",
+                "registry.redhat.io/ubi9/ubi-minimal-pqc"
             ],
             "enabled": false
         },

@@ -25,7 +25,8 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
         git \
         openssl-devel \
         gcc \
-    && dnf clean all
+    && dnf clean all && \
+    update-crypto-policies --set DEFAULT:PQ
 
 ENV GOROOT=/usr/lib/golang
 ENV GOPATH=/opt/app-root/src/go

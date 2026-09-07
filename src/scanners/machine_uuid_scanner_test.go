@@ -77,6 +77,12 @@ var _ = Describe("Machine uuid test", func() {
 		id := ReadId(serialDiscovery, dependencies)
 		Expect(id).To(Equal(toUUID(TestUuid)))
 	})
+	It("OEM default serial", func() {
+		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: SerialOemDefault}, nil).Once()
+		serialDiscovery.On("Product").Return(&ghw.ProductInfo{UUID: TestUuid}, nil)
+		id := ReadId(serialDiscovery, dependencies)
+		Expect(id).To(Equal(toUUID(TestUuid)))
+	})
 	It("dash serial embedded", func() {
 		serialDiscovery.On("Baseboard").Return(&ghw.BaseboardInfo{SerialNumber: "123-456-789"}, nil).Once()
 		id := ReadId(serialDiscovery, dependencies)
@@ -89,6 +95,7 @@ var _ = Describe("Machine uuid test", func() {
 		uuid     string
 	}{
 		{useCase: "kaloom", mbSerial: SerialDefaultString, uuid: KaloomUUID},
+		{useCase: "oem-placeholder", mbSerial: SerialOemDefault, uuid: KaloomUUID},
 		{useCase: "proliantgen11", mbSerial: SerialProliantGen11, uuid: ZeroesUUID},
 		{useCase: "zeroes", mbSerial: SerialDefaultString, uuid: ZeroesUUID},
 		{useCase: "linode", mbSerial: SerialNotSpecified, uuid: "Not Settable"},

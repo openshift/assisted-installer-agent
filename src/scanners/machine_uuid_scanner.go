@@ -24,6 +24,7 @@ const (
 	SerialUnspecifiedSystemString    = "unspecified system serial number"     // BF cards
 	SerialNotSpecified               = "not specified"                        // Linode
 	SerialProliantGen11              = "PCA_number.ACC"                       // Proliant Gen 11
+	SerialOemDefault                 = "To be filled by O.E.M."               // Generic BIOS placeholder
 	ZeroesUUID                       = "00000000-0000-0000-0000-000000000000"
 	KaloomUUID                       = "03000200-0400-0500-0006-000700080009" // All hosts of this type have the same UUID
 )
@@ -34,7 +35,8 @@ var (
 
 var unknownSerialCases = []string{"", util.UNKNOWN, "none", "(none)", "-",
 	SerialUnspecifiedBaseBoardString, SerialUnspecifiedSystemString,
-	SerialDefaultString, SerialNotSpecified, strings.ToLower(SerialProliantGen11)}
+	SerialDefaultString, SerialNotSpecified, strings.ToLower(SerialProliantGen11),
+	strings.ToLower(SerialOemDefault)}
 var unknownUuidCases = []string{"", util.UNKNOWN, ZeroesUUID, KaloomUUID}
 
 func disableGHWWarnings() {

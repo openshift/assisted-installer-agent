@@ -18,7 +18,8 @@ func Main() {
 		log.Warnf("Expecting exactly single argument to free_addresses. Received %d", len(os.Args)-1)
 		os.Exit(-1)
 	}
-	stdout, stderr, exitCode := GetFreeAddresses(flag.Arg(0), &ProcessExecuter{}, log.StandardLogger())
+
+	stdout, stderr, exitCode := GetFreeAddresses(flag.Arg(0), &ProcessExecuter{}, log.StandardLogger(), subprocessConfig.DryRunEnabled)
 	fmt.Fprint(os.Stdout, stdout)
 	fmt.Fprint(os.Stderr, stderr)
 	os.Exit(exitCode)

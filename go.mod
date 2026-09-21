@@ -203,3 +203,5 @@ replace (
 )
 
 replace golang.org/x/net => github.com/openshift-sustaining/net v0.35.0-sec.3
+
+replace github.com/go-jose/go-jose/v4 => github.com/go-jose/go-jose/v3 v3.0.5

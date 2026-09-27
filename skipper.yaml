@@ -1,0 +1,18 @@
+registry: quay.io
+build-container-image: assisted_installer_agent-build
+
+containers:
+    assisted_installer_agent-build: Dockerfile.assisted_installer_agent-build
+    assisted_installer_agent: Dockerfile.assisted_installer_agent
+volumes:
+    - $HOME/.cache/go-build:$HOME/.cache/go-build
+    - $HOME/go/pkg:/go/pkg
+    - $HOME/.cache/golangci-lint:$HOME/.cache/golangci-lint
+    - $HOME/.docker:$HOME/.docker
+env:
+    ASSISTED_INSTALLER_AGENT: $ASSISTED_INSTALLER_AGENT
+    TAG: $TAG
+    FOCUS: $FOCUS
+    SKIP: $SKIP
+    CI: $CI
+    GOCACHE: "/go/pkg/mod"

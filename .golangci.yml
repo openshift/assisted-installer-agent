@@ -1,0 +1,85 @@
+version: "2"
+run:
+  concurrency: 4
+  timeout: 10m
+  issues-exit-code: 1
+  tests: true
+output:
+  print-issued-lines: true
+  print-linter-name: true
+linters:
+  enable:
+    - staticcheck
+    - unused
+    - govet
+    - gocyclo
+    - gosec
+    - unconvert
+    - copyloopvar
+  settings:
+    govet:
+      enable:
+        - shadow
+      settings:
+        printf:
+          funcs:
+            - Infof
+            - Warnf
+            - Errorf
+            - Fatalf
+    gosec:
+      excludes:
+        - G107
+        - G401
+        - G402
+        - G501
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST1001"
+        - "-ST1003"
+        - "-ST1005"
+        - "-ST1008"
+        - "-ST1016"
+        - "-ST1019"
+        - "-ST1023"
+        - "-QF1001"
+        - "-QF1003"
+        - "-QF1011"
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - text: '"ok" shadows declaration'
+        linters:
+          - govet
+    paths:
+      - build
+      - client
+      - docs
+      - models
+      - restapi
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  uniq-by-line: true
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - build
+      - client
+      - docs
+      - models
+      - restapi
+      - third_party$
+      - builtin$
+      - examples$

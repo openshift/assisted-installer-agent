@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+import sys
+import json
+import subprocess
+
+image = "subsystem_agent:latest"
+
+
+def run_command_with_output(command, env=None, cwd=None):
+    with subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            universal_newlines=True,
+            env=env,
+            cwd=cwd,
+    ) as p:
+        for line in p.stdout:
+            print(line, end="")  # process line here
+
+    if p.returncode != 0:
+        raise subprocess.CalledProcessError(p.returncode, p.args)
+
+
+if __name__ == "__main__":
+    args = " ".join(sys.argv[1:])
+    if "run" == sys.argv[1]:
+        command = " ".join(args.split(image, 1)[1:]).strip()
+    else:
+        command = f'docker {args}'
+    run_command_with_output(command)

@@ -1,0 +1,8 @@
+**/RCS/**
+/build
+reports
+.idea
+subsystem/logs
+.project
+subsystem/data/*.leases*
+*.log

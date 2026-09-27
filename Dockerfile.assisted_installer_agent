@@ -1,0 +1,96 @@
+FROM registry.redhat.io/openshift/golang-builder:golang-builder-v1.25-rhel9 AS builder
+ARG TARGETPLATFORM
+ENV GO111MODULE=on
+ENV GOFLAGS=""
+
+COPY --chown=1001 go.mod .
+RUN go mod download
+
+COPY --chown=1001 . .
+
+RUN TARGETPLATFORM=$TARGETPLATFORM make build-release
+
+# Extract the commit reference from which the image is built
+USER 0
+
+RUN git config --global --add safe.directory '*' && \
+    git rev-parse --short HEAD > /commit-reference.txt
+
+# Stage to extract repository configuration from CentOS Stream 9 - no package installation needed
+FROM quay.io/centos/centos:stream9 AS repo-source
+
+# Final stage - UBI minimal with extracted repos for missing packages
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:6fc28bcb6776e387d7a35a2056d9d2b985dc4e26031e98a2bd35a7137cd6fd71
+ARG TARGETPLATFORM
+
+# Install packages available in UBI minimal and dnf for metalink support
+RUN microdnf install -y \
+        findutils \
+        tar \
+        rsync \
+        iputils \
+        file \
+        hwdata \
+        openssh-clients \
+        util-linux-core \
+        podman \
+        sg3_utils \
+        nmap \
+        systemd \
+        dnf \
+    && microdnf clean all
+
+# Copy repository configuration from CentOS Stream 9 for packages not in UBI
+COPY --from=repo-source /etc/yum.repos.d/ /etc/yum.repos.d/
+COPY --from=repo-source /etc/pki/rpm-gpg/ /etc/pki/rpm-gpg/
+
+# Fix variable expansion in CentOS repos and enable specific repos for missing packages
+RUN ls /etc/yum.repos.d/ && \
+    sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/centos*.repo && \
+    sed -i 's/\$stream/9-stream/g' /etc/yum.repos.d/centos*.repo && \
+    sed -i 's/\$basearch/x86_64/g' /etc/yum.repos.d/centos*.repo && \
+    sed -i '/\[baseos\]/,/^\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/centos.repo && \
+    sed -i '/\[appstream\]/,/^\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/centos.repo
+
+# Install packages that require CentOS repos using dnf
+RUN dnf install -y --nodocs --setopt=install_weak_deps=False \
+        ipmitool \
+        fio \
+        dhclient \
+        chrony \
+        kmod \
+        golang \
+        rpm-ostree \
+    && dnf clean all
+
+# Set Go environment variables for compatibility with e2e tests
+ENV GOROOT=/usr/lib/golang \
+    GOPATH=/go \
+    PATH="/usr/lib/golang/bin:/go/bin:${PATH}"
+
+# Install architecture-specific packages from CentOS repos using dnf
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        dnf install -y --nodocs --setopt=install_weak_deps=False biosdevname dmidecode; \
+    elif [ "$(uname -m)" = "aarch64" ]; then \
+        dnf install -y --nodocs --setopt=install_weak_deps=False dmidecode; \
+    fi && dnf clean all
+
+# Clean up repository files to reduce security surface and remove unnecessary files
+RUN rm -rf /etc/yum.repos.d/* /etc/pki/rpm-gpg/* /var/cache/{yum,microdnf}/* && \
+    find /usr/share/nmap/ -mindepth 1 -maxdepth 1 | grep -v nmap-payloads | xargs rm -rf && \
+    rm -rf /usr/share/cracklib /usr/share/man /usr/share/doc
+
+
+# Copy the commit reference from the builder
+COPY --from=builder /commit-reference.txt /commit-reference.txt
+
+COPY --from=builder /opt/app-root/src/build/agent /usr/bin/agent
+
+# The step binaries are all symlinks to /usr/bin/agent
+RUN ln -s /usr/bin/agent /usr/bin/free_addresses && \
+    ln -s /usr/bin/agent /usr/bin/inventory && \
+    ln -s /usr/bin/agent /usr/bin/logs_sender && \
+    ln -s /usr/bin/agent /usr/bin/next_step_runner && \
+    ln -s /usr/bin/agent /usr/bin/disk_speed_check
+
+COPY scripts/installer/* /usr/local/bin/

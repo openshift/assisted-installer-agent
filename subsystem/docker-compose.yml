@@ -1,0 +1,69 @@
+version: "2.3"
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent_test
+    container_name: agent
+    depends_on:
+      - wiremock
+    volumes:
+      - ./logs:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /run/systemd/journal/socket:/run/systemd/journal/socket
+      - /dev/log:/dev/log
+      - ./dmi:/sys/class/dmi/id
+    privileged: true
+    networks:
+      - agent_network
+    environment:
+      - PULL_SECRET_TOKEN=OpenShiftToken
+      - WIREMOCK_PORT
+    command:
+      [
+        "/usr/bin/agent",
+        "--url",
+        "http://wiremock:${WIREMOCK_PORT}",
+        "--infra-env-id",
+        "11111111-1111-1111-1111-111111111111",
+        "--interval",
+        "5",
+        "--agent-version",
+        "quay.io/edge-infrastructure/assisted-installer-agent:latest",
+      ]
+
+  dhcpd:
+    image: quay.io/cloudctl/dhcp:latest
+    container_name: dhcpd
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ${ROOT_DIR}/subsystem/data:/etc/dhcp:z
+    networks:
+      - agent_network
+    environment:
+      - ROOT_DIR
+    command: ["-f", "-cf", "/etc/dhcp/dhcpd.conf", "-user", "root", "-group", "root", "--no-pid"]
+
+  wiremock:
+    container_name: wiremock
+    image: quay.io/ocpmetal/wiremock
+    ports:
+      - "${WIREMOCK_PORT}:${WIREMOCK_PORT}"
+    networks:
+      - agent_network
+    environment:
+      - WIREMOCK_PORT
+    volumes:
+      - ./wiremock:/home/wiremock
+    command: --port ${WIREMOCK_PORT}
+
+networks:
+  agent_network:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.100.0.0/16
+        - subnet: 2003:db8::/108

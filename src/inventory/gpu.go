@@ -37,10 +37,13 @@ func readGpuConfiguration(path string) (GPUConfig, error) {
 			PCI_CLASS_DISPLAY_VGA,
 			PCI_CLASS_DISPLAY_3D,
 			PCI_CLASS_DISPLAY_CONTROLLER,
-			PCI_CLASS_PROCESSING_ACCELERATOR,
 		},
-		Models:  []string{},
-		Vendors: []string{},
+		Models: []string{},
+		Vendors: []string{
+			PCI_CLASS_PROCESSING_ACCELERATOR + " 1002", // AMD Instinct (MI2xx/MI3xx)
+			PCI_CLASS_PROCESSING_ACCELERATOR + " 10de", // NVIDIA datacenter accelerators
+			PCI_CLASS_PROCESSING_ACCELERATOR + " 1da3", // Habana/Intel Gaudi
+		},
 	}
 
 	if path != "" {

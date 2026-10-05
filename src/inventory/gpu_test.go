@@ -7,6 +7,7 @@ import (
 	"github.com/jaypipes/ghw"
 	"github.com/jaypipes/pcidb"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-installer-agent/src/config"
 	"github.com/openshift/assisted-installer-agent/src/util"
@@ -134,6 +135,26 @@ var (
 			ID:   "1dd8",
 		},
 	}
+	card6 = ghw.PCIDevice{
+		Address: "0000:00:06.0",
+		Class: &pcidb.Class{
+			ID:   "03",
+			Name: "Display Controller",
+		},
+		Subclass: &pcidb.Subclass{
+			ID:   "00",
+			Name: "VGA compatible controller",
+		},
+		Product: &pcidb.Product{
+			VendorID: "1a03",
+			ID:       "2000",
+			Name:     "ASPEED Graphics Family",
+		},
+		Vendor: &pcidb.Vendor{
+			Name: "ASPEED Technology, Inc.",
+			ID:   "1a03",
+		},
+	}
 
 	gpu1 = models.Gpu{
 		Address:  "0000:00:02.0",
@@ -196,13 +217,62 @@ var _ = Describe("GPUs information discovery", func() {
 	})
 
 	It("should load information about multiple GPUs", func() {
-		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card1, &card2, &card3, &card4}}, nil).Once()
+		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card1, &card2, &card3, &card4, &card6}}, nil).Once()
 
 		gpus := GetGPUs(inventoryConfig, dependencies)
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu1, &gpu2, &gpu3, &gpu4))
 	})
+
+	It("should exclude ASPEED from GPU information", func() {
+		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card6}}, nil).Once()
+
+		gpus := GetGPUs(inventoryConfig, dependencies)
+
+		Expect(gpus).ToNot(BeNil())
+		Expect(gpus).To(BeEmpty())
+	})
+
+	DescribeTable("should include devices outside the exact excluded PCI pair",
+		func(vendorID, deviceID string) {
+			device := card6
+			device.Vendor = &pcidb.Vendor{ID: vendorID}
+			device.Product = &pcidb.Product{VendorID: vendorID, ID: deviceID}
+			dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&device}}, nil).Once()
+
+			gpus := GetGPUs(inventoryConfig, dependencies)
+
+			Expect(gpus).To(HaveLen(1))
+			Expect(gpus[0].VendorID).To(Equal(vendorID))
+			Expect(gpus[0].DeviceID).To(Equal(deviceID))
+		},
+		Entry("when only the device ID differs", "1a03", "2001"),
+		Entry("when only the vendor ID differs", "1a04", "2000"),
+	)
+
+	DescribeTable("should exclude ASPEED with custom GPU configuration",
+		func(yamlData string) {
+			dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card6}}, nil).Once()
+
+			tmpFile, err := os.CreateTemp("", "gpus*.yaml")
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Remove(tmpFile.Name())
+
+			_, err = tmpFile.WriteString(yamlData)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tmpFile.Close()).To(Succeed())
+
+			inventoryConfig.GPUConfigFile = tmpFile.Name()
+			gpus := GetGPUs(inventoryConfig, dependencies)
+
+			Expect(gpus).ToNot(BeNil())
+			Expect(gpus).To(BeEmpty())
+		},
+		Entry("by class", "---\nclasses:\n  - '0300'"),
+		Entry("by vendor", "---\nvendors:\n  - '0300 1a03'"),
+		Entry("by model", "---\nmodels:\n  - '0300 1a03 2000'"),
+	)
 
 	It("should load information about Gaudi GPUs only", func() {
 		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card1, &card2, &card3, &card4}}, nil).Once()

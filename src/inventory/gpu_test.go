@@ -114,6 +114,26 @@ var (
 			ID:   "1002",
 		},
 	}
+	card5 = ghw.PCIDevice{
+		Address: "0000:00:06.0",
+		Class: &pcidb.Class{
+			ID:   "12",
+			Name: "Processing accelerators",
+		},
+		Subclass: &pcidb.Subclass{
+			ID:   "00",
+			Name: "Processing accelerators",
+		},
+		Product: &pcidb.Product{
+			VendorID: "1dd8",
+			ID:       "1012",
+			Name:     "TAWK IPC Device",
+		},
+		Vendor: &pcidb.Vendor{
+			Name: "AMD Pensando Systems",
+			ID:   "1dd8",
+		},
+	}
 
 	gpu1 = models.Gpu{
 		Address:  "0000:00:02.0",
@@ -233,6 +253,15 @@ var _ = Describe("GPUs information discovery", func() {
 
 		Expect(gpus).ToNot(BeNil())
 		Expect(gpus).To(ConsistOf(&gpu1, &gpu2, &gpu3, &gpu3a))
+	})
+
+	It("should not report non-GPU processing accelerators (e.g. DPU/SmartNIC)", func() {
+		dependencies.On("PCI").Return(&ghw.PCIInfo{Devices: []*ghw.PCIDevice{&card3, &card5}}, nil).Once()
+
+		gpus := GetGPUs(inventoryConfig, dependencies)
+
+		Expect(gpus).ToNot(BeNil())
+		Expect(gpus).To(ConsistOf(&gpu3))
 	})
 
 	It("should handle error gracefully", func() {

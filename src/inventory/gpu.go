@@ -20,6 +20,12 @@ const (
 	PCI_CLASS_PROCESSING_ACCELERATOR = "1200"
 )
 
+// PCI vendor and device IDs for the exact GPU inventory exclusion
+const (
+	PCI_VENDOR_ASPEED      = "1a03"
+	PCI_DEVICE_ASPEED_2000 = "2000"
+)
+
 type GPUConfig struct {
 	Classes []string
 	Models  []string
@@ -123,6 +129,10 @@ func GetGPUs(inventoryConfig *config.InventoryConfig, dependencies util.IDepende
 	}
 
 	for _, device := range pciInfo.Devices {
+		if device.Vendor.ID == PCI_VENDOR_ASPEED && device.Product.ID == PCI_DEVICE_ASPEED_2000 {
+			continue
+		}
+
 		deviceClass := device.Class.ID + device.Subclass.ID
 		deviceVendor := deviceClass + device.Vendor.ID
 		deviceModel := deviceVendor + device.Product.ID

@@ -2,7 +2,7 @@ module github.com/openshift/assisted-installer-agent
 
 go 1.26.0
 
-toolchain go1.26.3
+toolchain go1.26.7
 
 exclude (
 	go.yaml.in/yaml/v2 v2.4.3

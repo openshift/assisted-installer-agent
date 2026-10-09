@@ -91,7 +91,7 @@ func HTMLConsumer() runtime.Consumer {
 		}
 
 		t := reflect.TypeOf(data)
-		if data == nil || t.Kind() != reflect.Ptr {
+		if data == nil || t.Kind() != reflect.Pointer {
 			return fmt.Errorf("data should be a non nil pointer")
 		}
 

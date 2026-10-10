@@ -210,3 +210,5 @@ replace (
 	sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-diff/v4 v4.4.1
 	sigs.k8s.io/yaml => sigs.k8s.io/yaml v1.4.0
 )
+
+replace github.com/moby/moby => github.com/moby/moby/v2 v2.0.0-beta.8

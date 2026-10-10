@@ -221,13 +221,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 189781
-    checksum: sha256:25709af82e1189b0dec4e5f951c54bf2ded44ca26d35e932bf75c1a83e70bd9b
+    size: 189854
+    checksum: sha256:eef904ebf970cb9e9f2405768062df3a0ae3c9df842fd98594390b6c065d2175
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-7.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 15495685
@@ -1128,13 +1128,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 200684
-    checksum: sha256:b798e11be1b65fee85cffac85ffdbc0a01112b11615cf5edcc4103ccd4e64cb5
+    size: 200456
+    checksum: sha256:8cf2adf6f52331e14675260b10784092fb59be29c8b453b22466f0e9a3210dd4
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-7.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 15459252
@@ -2021,13 +2021,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 185545
-    checksum: sha256:56b441a7e96e1da443a06944af1311aa4c41d2781b219c9a1920b40f6198dc32
+    size: 185241
+    checksum: sha256:056724afad25af3fee5f5a251d4035b9829c8d1f46c3aeba1ad19b0bab8af408
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-7.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 16220471
@@ -2886,13 +2886,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 294867
-    checksum: sha256:3eb71e330f94e5eb4cc44ae807cd2fb5955c7af3b76b6904e42dfc9ec89e4024
+    size: 294685
+    checksum: sha256:dbedc792ebba9fc3053bd5349091a3b653ed886b250be34ef9adc2b7e7b3f836
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-7.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 17307085

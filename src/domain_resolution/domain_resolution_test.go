@@ -168,7 +168,7 @@ var _ = Describe("Domain resolution", func() {
 
 func getTestIpv4(index int) net.IP {
 	// TEST-NET-1
-	return []byte{192, 0, 2, byte(index)}
+	return []byte{192, 0, 2, addressIndexToByte(index)}
 }
 
 func getTestIpv6(index int) net.IP {
@@ -177,8 +177,15 @@ func getTestIpv6(index int) net.IP {
 		32, 1, 13, 184,
 		0, 0, 0, 0,
 		0, 0, 0, 0,
-		0, 0, 0, byte(index),
+		0, 0, 0, addressIndexToByte(index),
 	}
+}
+
+func addressIndexToByte(index int) byte {
+	if index < 0 || index > 255 {
+		panic("test address index must be between 0 and 255")
+	}
+	return byte(index)
 }
 
 func generateResolution(ipv4Count, ipv6Count int) []net.IP {

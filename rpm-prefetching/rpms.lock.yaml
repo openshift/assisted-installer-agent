@@ -284,13 +284,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+24790+ef71b018
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+24790+ef71b018.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.15.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 1118620
-    checksum: sha256:8f9c5b8430f161c01ac0ade8033699038ced1912c3985773f2e6a11806e41096
+    size: 1119208
+    checksum: sha256:0b48b8f50378caa1ea0ab41113f84f5cbe9c5315cd12593d502703ad38644ea8
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.15
-    sourcerpm: bind-9.11.36-16.el8_10.15.src.rpm
+    evr: 32:9.11.36-16.el8_10.16
+    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/chrony-4.5-2.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 348708
@@ -466,13 +466,13 @@ arches:
     name: libnftnl
     evr: 1.2.2-3.el8
     sourcerpm: libnftnl-1.2.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libpcap-1.9.1-5.el8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libpcap-1.9.1-6.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 164832
-    checksum: sha256:047c37434ce63e08a2cd543c4e47df4a480f58c648e58877b4a752fddf19ffc8
+    size: 163952
+    checksum: sha256:c6adc27638b4a776a246cc273aadb59f25d8edfb6107704d8ae56eb9ed5855c8
     name: libpcap
-    evr: 14:1.9.1-5.el8
-    sourcerpm: libpcap-1.9.1-5.el8.src.rpm
+    evr: 14:1.9.1-6.el8_10
+    sourcerpm: libpcap-1.9.1-6.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/librdmacm-48.0-1.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 78084
@@ -608,10 +608,10 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/3ac480bb11e226255d33c708a746df58c9b7d045d73e60c90c15fbc08a75395f-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/d108ffcd9594352ab7cdae910598ac0c5855a41e5de907fcf00183325330554b-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 845552
-    checksum: sha256:3ac480bb11e226255d33c708a746df58c9b7d045d73e60c90c15fbc08a75395f
+    size: 847094
+    checksum: sha256:d108ffcd9594352ab7cdae910598ac0c5855a41e5de907fcf00183325330554b
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/b/boost-atomic-1.66.0-13.el8.ppc64le.rpm
@@ -894,13 +894,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+24790+ef71b018
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+24790+ef71b018.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.15.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 1274376
-    checksum: sha256:9133ec33ebfb136331fcfc40421799ce9684dccb09473def80e85f97377fe9cd
+    size: 1274768
+    checksum: sha256:65523e0d41c7ef71814a682b5334ea2701c8bd1de7ff5565431bd6c8755a8544
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.15
-    sourcerpm: bind-9.11.36-16.el8_10.15.src.rpm
+    evr: 32:9.11.36-16.el8_10.16
+    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/chrony-4.5-2.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 382192
@@ -1076,13 +1076,13 @@ arches:
     name: libnftnl
     evr: 1.2.2-3.el8
     sourcerpm: libnftnl-1.2.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libpcap-1.9.1-5.el8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libpcap-1.9.1-6.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 180628
-    checksum: sha256:7156ef734120ea98c27dabeba1d45185a54b4044e6d0471f8821253a41631a7d
+    size: 179940
+    checksum: sha256:7892ec042ce37d093073c4b4188767002fb46622866e30b6f0e6a804986be26a
     name: libpcap
-    evr: 14:1.9.1-5.el8
-    sourcerpm: libpcap-1.9.1-5.el8.src.rpm
+    evr: 14:1.9.1-6.el8_10
+    sourcerpm: libpcap-1.9.1-6.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/librdmacm-48.0-1.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 86876
@@ -1218,10 +1218,10 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/660127a9ef6d276f806dff1da9c3a5d6b592c41834cb1180cf13196b1cf00775-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/573bd866db9384e8f1cd876d0dd5ce18724324e845201fd72774861cc2821172-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 837721
-    checksum: sha256:660127a9ef6d276f806dff1da9c3a5d6b592c41834cb1180cf13196b1cf00775
+    size: 839292
+    checksum: sha256:573bd866db9384e8f1cd876d0dd5ce18724324e845201fd72774861cc2821172
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/b/boost-atomic-1.66.0-13.el8.s390x.rpm
@@ -1504,13 +1504,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+24790+ef71b018
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+24790+ef71b018.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.15.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 1093136
-    checksum: sha256:2cfe053978b2aa4b7740f3e8c5c42fce11b8ecfcf913c5a0653ecfab477c1a9a
+    size: 1093852
+    checksum: sha256:af662fea558ca33a40692d4cbbe4f61156061c5b3e6bd811cad354c21ff9e878
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.15
-    sourcerpm: bind-9.11.36-16.el8_10.15.src.rpm
+    evr: 32:9.11.36-16.el8_10.16
+    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/chrony-4.5-2.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 341936
@@ -1686,13 +1686,13 @@ arches:
     name: libnftnl
     evr: 1.2.2-3.el8
     sourcerpm: libnftnl-1.2.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libpcap-1.9.1-5.el8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libpcap-1.9.1-6.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 162916
-    checksum: sha256:0c2a450ee5d245cb5a8967530780a05adad2fc8fbb207f3e37d57bbfa94899eb
+    size: 162164
+    checksum: sha256:ea25cc40b81cfe14ee1b3d71a80bd68c9d5895fe1b9537b55ee67101f4ec669f
     name: libpcap
-    evr: 14:1.9.1-5.el8
-    sourcerpm: libpcap-1.9.1-5.el8.src.rpm
+    evr: 14:1.9.1-6.el8_10
+    sourcerpm: libpcap-1.9.1-6.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/librdmacm-48.0-1.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 75916
@@ -1828,10 +1828,10 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/d978ab03ab38d74c343b63e9462613315d9050843e62f12ea1c829bd51d4bded-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/550073b918da1fafd7115cf5408434353c03473024583c631b2b2d2f77bb20fe-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 840536
-    checksum: sha256:d978ab03ab38d74c343b63e9462613315d9050843e62f12ea1c829bd51d4bded
+    size: 841898
+    checksum: sha256:550073b918da1fafd7115cf5408434353c03473024583c631b2b2d2f77bb20fe
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/b/boost-atomic-1.66.0-13.el8.x86_64.rpm
@@ -2128,13 +2128,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+24790+ef71b018
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+24790+ef71b018.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.15.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 1203696
-    checksum: sha256:0f0c003fbec5d096c98aafc99f4a3db23cbcd1910003f8db83a371c88f6dd740
+    size: 1204428
+    checksum: sha256:5476f407f65441bb8c8b9273fac6a5df02d586cb46d87eabc550fb630b04e671
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.15
-    sourcerpm: bind-9.11.36-16.el8_10.15.src.rpm
+    evr: 32:9.11.36-16.el8_10.16
+    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/biosdevname-0.7.3-2.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 45312
@@ -2324,13 +2324,13 @@ arches:
     name: libnftnl
     evr: 1.2.2-3.el8
     sourcerpm: libnftnl-1.2.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libpcap-1.9.1-5.el8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libpcap-1.9.1-6.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 172780
-    checksum: sha256:7bff9ffead0f163e7790af3d9e3bb0a3a4a38bff4d1f3b6a183f9313faf00c83
+    size: 171956
+    checksum: sha256:82703a9a2d7bdd95871b856c36fb5a270e5697f2b649c2124cfc0bd2416c78b2
     name: libpcap
-    evr: 14:1.9.1-5.el8
-    sourcerpm: libpcap-1.9.1-5.el8.src.rpm
+    evr: 14:1.9.1-6.el8_10
+    sourcerpm: libpcap-1.9.1-6.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/librdmacm-48.0-1.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 80564
@@ -2480,7 +2480,7 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/e9ee1a19199229b7a0a0c3ff70c4929de96d7029dce1d19bb3a70f76973324c8-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/3c6502931cd087185cd8b07b7ed6ddfc390a9355c4c41530584095610c21bf08-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 866732
-    checksum: sha256:e9ee1a19199229b7a0a0c3ff70c4929de96d7029dce1d19bb3a70f76973324c8
+    size: 867284
+    checksum: sha256:3c6502931cd087185cd8b07b7ed6ddfc390a9355c4c41530584095610c21bf08

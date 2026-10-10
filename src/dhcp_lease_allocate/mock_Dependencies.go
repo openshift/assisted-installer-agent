@@ -4,12 +4,10 @@ package dhcp_lease_allocate
 
 import (
 	fs "io/fs"
+	net "net"
 
 	logrus "github.com/sirupsen/logrus"
 	mock "github.com/stretchr/testify/mock"
-
-	net "net"
-
 	netlink "github.com/vishvananda/netlink"
 )
 

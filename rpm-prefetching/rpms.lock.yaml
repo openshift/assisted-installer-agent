@@ -221,13 +221,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 189781
-    checksum: sha256:25709af82e1189b0dec4e5f951c54bf2ded44ca26d35e932bf75c1a83e70bd9b
+    size: 189854
+    checksum: sha256:eef904ebf970cb9e9f2405768062df3a0ae3c9df842fd98594390b6c065d2175
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/p/podman-5.8.2-7.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 15495685
@@ -431,13 +431,13 @@ arches:
     name: libnl3
     evr: 3.11.0-1.el9
     sourcerpm: libnl3-3.11.0-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libpcap-1.10.0-4.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libpcap-1.10.0-4.el9_8.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 176251
-    checksum: sha256:cd6462c66489eed11b8d9f1acf70a38a1a2629a969a31d0f511eca148783dcdd
+    size: 177153
+    checksum: sha256:c656f1ebc5833e01148f6dca75a1a43c89c8dfc78e7cf1fef29fcbedb04dac28
     name: libpcap
-    evr: 14:1.10.0-4.el9
-    sourcerpm: libpcap-1.10.0-4.el9.src.rpm
+    evr: 14:1.10.0-4.el9_8.1
+    sourcerpm: libpcap-1.10.0-4.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/librdmacm-61.0-2.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 80794
@@ -757,13 +757,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 200684
-    checksum: sha256:b798e11be1b65fee85cffac85ffdbc0a01112b11615cf5edcc4103ccd4e64cb5
+    size: 200456
+    checksum: sha256:8cf2adf6f52331e14675260b10784092fb59be29c8b453b22466f0e9a3210dd4
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/p/podman-5.8.2-7.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 15459252
@@ -974,13 +974,13 @@ arches:
     name: libnl3
     evr: 3.11.0-1.el9
     sourcerpm: libnl3-3.11.0-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libpcap-1.10.0-4.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libpcap-1.10.0-4.el9_8.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 188789
-    checksum: sha256:0f664a5a3b8020718905e2b06e27354d07aed325d6f8e2254dedee4a63a729f8
+    size: 188750
+    checksum: sha256:869f87eb224be7529826ba8b5d0e22eb2cf020d8aed7478fea580ac0e8767144
     name: libpcap
-    evr: 14:1.10.0-4.el9
-    sourcerpm: libpcap-1.10.0-4.el9.src.rpm
+    evr: 14:1.10.0-4.el9_8.1
+    sourcerpm: libpcap-1.10.0-4.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/librdmacm-61.0-2.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 89369
@@ -1279,13 +1279,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 185545
-    checksum: sha256:56b441a7e96e1da443a06944af1311aa4c41d2781b219c9a1920b40f6198dc32
+    size: 185241
+    checksum: sha256:056724afad25af3fee5f5a251d4035b9829c8d1f46c3aeba1ad19b0bab8af408
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/p/podman-5.8.2-7.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 16220471
@@ -1489,13 +1489,13 @@ arches:
     name: libnl3
     evr: 3.11.0-1.el9
     sourcerpm: libnl3-3.11.0-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libpcap-1.10.0-4.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libpcap-1.10.0-4.el9_8.1.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 172787
-    checksum: sha256:8eeed3015f2ea273202e6ae622a208a88758ee07dfa9a237fe7e2447646645a8
+    size: 173695
+    checksum: sha256:de762a16f3a0419f0114aa2431885917563bd8b7d5e56c3c8e9e5abeb1f33ceb
     name: libpcap
-    evr: 14:1.10.0-4.el9
-    sourcerpm: libpcap-1.10.0-4.el9.src.rpm
+    evr: 14:1.10.0-4.el9_8.1
+    sourcerpm: libpcap-1.10.0-4.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/n/nftables-1.0.9-9.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 457246
@@ -1773,13 +1773,13 @@ arches:
     name: nmap-ncat
     evr: 3:7.92-5.el9
     sourcerpm: nmap-7.92-5.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-6.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/passt-0^20251210.gd04c480-7.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 294867
-    checksum: sha256:3eb71e330f94e5eb4cc44ae807cd2fb5955c7af3b76b6904e42dfc9ec89e4024
+    size: 294685
+    checksum: sha256:dbedc792ebba9fc3053bd5349091a3b653ed886b250be34ef9adc2b7e7b3f836
     name: passt
-    evr: 0^20251210.gd04c480-6.el9_8
-    sourcerpm: passt-0^20251210.gd04c480-6.el9_8.src.rpm
+    evr: 0^20251210.gd04c480-7.el9_8
+    sourcerpm: passt-0^20251210.gd04c480-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/podman-5.8.2-7.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 17307085
@@ -1983,13 +1983,13 @@ arches:
     name: libnl3
     evr: 3.11.0-1.el9
     sourcerpm: libnl3-3.11.0-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libpcap-1.10.0-4.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libpcap-1.10.0-4.el9_8.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 180846
-    checksum: sha256:3c0c51cc6b947970812238914713f1f96aa5e9bdaaceb6ee50249540ad89f05b
+    size: 181323
+    checksum: sha256:b60aac59b75ad9a26fb7b8c5fe431c696ea4c9d2803bd1e0b3d3cfc24ca33735
     name: libpcap
-    evr: 14:1.10.0-4.el9
-    sourcerpm: libpcap-1.10.0-4.el9.src.rpm
+    evr: 14:1.10.0-4.el9_8.1
+    sourcerpm: libpcap-1.10.0-4.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/librdmacm-61.0-2.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 80794

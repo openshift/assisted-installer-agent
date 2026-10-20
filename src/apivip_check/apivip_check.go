@@ -185,13 +185,9 @@ func downloadIgnition(connectivityReq models.APIVipConnectivityRequest) (string,
 			return "", errors.Errorf("unable to parse cert")
 		}
 
-		client = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					RootCAs: caCertPool,
-				},
-			},
-		}
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.TLSClientConfig = &tls.Config{RootCAs: caCertPool}
+		client = &http.Client{Transport: transport}
 	} else {
 		client = &http.Client{}
 	}

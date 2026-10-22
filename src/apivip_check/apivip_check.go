@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/coreos/ignition/v2/config/v3_2"
 	ignition_types "github.com/coreos/ignition/v2/config/v3_2/types"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/http/httpproxy"
 )
 
 const ignitionVersion string = "3.2.0"
@@ -170,27 +172,39 @@ func createResponse(url string, success bool, ignition string, downloadError str
 	return string(bytes)
 }
 
-func downloadIgnition(connectivityReq models.APIVipConnectivityRequest) (string, error) {
-	var client *http.Client
+// newIgnitionHTTPClient reads the proxy environment for each download because
+// http.ProxyFromEnvironment caches it for the lifetime of the process.
+func newIgnitionHTTPClient(caCertificate *string) (*http.Client, error) {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	proxy := httpproxy.FromEnvironment().ProxyFunc()
+	transport.Proxy = func(req *http.Request) (*url.URL, error) {
+		return proxy(req.URL)
+	}
 
-	if connectivityReq.CaCertificate != nil {
+	if caCertificate != nil {
 		caCertPool := x509.NewCertPool()
 
-		decodedCaCert, err := b64.StdEncoding.DecodeString(*connectivityReq.CaCertificate)
+		decodedCaCert, err := b64.StdEncoding.DecodeString(*caCertificate)
 		if err != nil {
-			return "", errors.Wrap(err, "ignition endpoint CA certificate is not valid base64")
+			return nil, errors.Wrap(err, "ignition endpoint CA certificate is not valid base64")
 		}
 
 		if ok := caCertPool.AppendCertsFromPEM(decodedCaCert); !ok {
-			return "", errors.Errorf("unable to parse cert")
+			return nil, errors.Errorf("unable to parse cert")
 		}
 
-		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport.TLSClientConfig = &tls.Config{RootCAs: caCertPool}
-		client = &http.Client{Transport: transport}
-	} else {
-		client = &http.Client{}
 	}
+
+	return &http.Client{Transport: transport}, nil
+}
+
+func downloadIgnition(connectivityReq models.APIVipConnectivityRequest) (string, error) {
+	client, err := newIgnitionHTTPClient(connectivityReq.CaCertificate)
+	if err != nil {
+		return "", err
+	}
+	defer client.CloseIdleConnections()
 
 	req, err := http.NewRequest("GET", *connectivityReq.URL, nil)
 	if err != nil {

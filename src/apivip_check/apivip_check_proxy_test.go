@@ -3,14 +3,13 @@ package apivip_check
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
-	"regexp"
 	"sync/atomic"
 
 	. "github.com/onsi/ginkgo"
@@ -19,7 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const proxyTestScenarioEnv = "ASSISTED_INSTALLER_AGENT_PROXY_TEST_SCENARIO"
 const proxyTestHostname = "ignition.invalid"
 
 var _ = Describe("HTTPS proxy with custom CA", func() {
@@ -30,26 +28,13 @@ var _ = Describe("HTTPS proxy with custom CA", func() {
 		{"downloads ignition through HTTPS_PROXY", "proxy"},
 		{"bypasses HTTPS_PROXY when NO_PROXY matches", "no_proxy"},
 	} {
-		test := test
 		It(test.name, func() {
-			runProxyTestScenario(test.scenario, test.name)
+			runProxyTestScenario(test.scenario)
 		})
 	}
 })
 
-func runProxyTestScenario(scenario, specName string) {
-	if os.Getenv(proxyTestScenarioEnv) == "" {
-		// ProxyFromEnvironment reads the environment once per process. Run each
-		// scenario in a fresh process with only its Ginkgo spec selected.
-		//nolint:gosec // G204: re-execute the running test binary with fixed scenario names.
-		cmd := exec.Command(os.Args[0], "-test.run=^TestSubsystem$", "-test.timeout=1m", "-ginkgo.focus="+regexp.QuoteMeta(specName)+"$")
-		cmd.Env = append(os.Environ(), proxyTestScenarioEnv+"="+scenario)
-		output, err := cmd.CombinedOutput()
-		Expect(err).NotTo(HaveOccurred(), "proxy scenario %q failed:\n%s", scenario, output)
-		return
-	}
-	Expect(os.Getenv(proxyTestScenarioEnv)).To(Equal(scenario))
-
+func runProxyTestScenario(scenario string) {
 	serverConfig, caPEM, err := certsetup()
 	Expect(err).NotTo(HaveOccurred())
 	server, err := httpsServerMock(serverConfig, ignitionMock)
@@ -105,14 +90,12 @@ func runProxyTestScenario(scenario, specName string) {
 	}))
 	defer proxy.Close()
 
-	// Ginkgo v1's GinkgoT().Setenv is a no-op; these changes stay in this child process.
-	Expect(os.Setenv("HTTPS_PROXY", proxy.URL)).To(Succeed())
-	Expect(os.Setenv("https_proxy", "")).To(Succeed())
-	Expect(os.Setenv("NO_PROXY", "")).To(Succeed())
-	Expect(os.Setenv("no_proxy", "")).To(Succeed())
+	noProxy := ""
 	if scenario == "no_proxy" {
-		Expect(os.Setenv("NO_PROXY", proxyTestHostname)).To(Succeed())
+		noProxy = proxyTestHostname
 	}
+	restoreEnv := useProxyEnv(proxy.URL, noProxy)
+	defer restoreEnv()
 
 	encodedCA := base64.StdEncoding.EncodeToString(caPEM)
 	stdout, stderr, exitCode := CheckAPIConnectivity(getRequestStr(&targetURL, false, &encodedCA, nil), logrus.New())
@@ -130,5 +113,40 @@ func runProxyTestScenario(scenario, specName string) {
 		Expect(response.IsSuccess).To(BeFalse())
 		Expect(response.DownloadError).To(ContainSubstring("request failed"))
 		Expect(connectCount.Load()).To(BeZero(), "NO_PROXY should bypass the proxy")
+	}
+}
+
+// useProxyEnv restores the environment after each spec. Ginkgo v1's Setenv is a no-op.
+func useProxyEnv(httpsProxy, noProxy string) func() {
+	keys := []string{"HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy"}
+	type previousValue struct {
+		value string
+		set   bool
+	}
+	previous := make(map[string]previousValue, len(keys))
+	for _, key := range keys {
+		value, set := os.LookupEnv(key)
+		previous[key] = previousValue{value: value, set: set}
+	}
+
+	Expect(os.Setenv("HTTPS_PROXY", httpsProxy)).To(Succeed())
+	Expect(os.Setenv("https_proxy", "")).To(Succeed())
+	Expect(os.Setenv("NO_PROXY", noProxy)).To(Succeed())
+	Expect(os.Setenv("no_proxy", "")).To(Succeed())
+
+	return func() {
+		var restoreErrors []error
+		for _, key := range keys {
+			var err error
+			if value := previous[key]; value.set {
+				err = os.Setenv(key, value.value)
+			} else {
+				err = os.Unsetenv(key)
+			}
+			if err != nil {
+				restoreErrors = append(restoreErrors, fmt.Errorf("restore %s: %w", key, err))
+			}
+		}
+		Expect(errors.Join(restoreErrors...)).To(Succeed())
 	}
 }

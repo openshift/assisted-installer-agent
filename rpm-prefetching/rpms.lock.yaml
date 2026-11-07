@@ -284,13 +284,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+25171+d379b437
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+25171+d379b437.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/b/bind-export-libs-9.11.36-18.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 1119208
-    checksum: sha256:0b48b8f50378caa1ea0ab41113f84f5cbe9c5315cd12593d502703ad38644ea8
+    size: 1120108
+    checksum: sha256:69e7782dbd2276b70676c309ff11135c096238b3b45fe222970a8190bd5929d5
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.16
-    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
+    evr: 32:9.11.36-18.el8_10
+    sourcerpm: bind-9.11.36-18.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/chrony-4.5-2.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 348708
@@ -608,10 +608,10 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/f8deda0f274ffa6e36e7164eb849a6a0d0ed8e3c2b140b903bb28421ae5eb63c-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/8e7c83cb5d97cf735061a252c566237d55684b42b7bdf0b0c068c48dd367eb38-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 865007
-    checksum: sha256:f8deda0f274ffa6e36e7164eb849a6a0d0ed8e3c2b140b903bb28421ae5eb63c
+    size: 866233
+    checksum: sha256:8e7c83cb5d97cf735061a252c566237d55684b42b7bdf0b0c068c48dd367eb38
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/b/boost-atomic-1.66.0-13.el8.ppc64le.rpm
@@ -894,13 +894,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+25171+d379b437
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+25171+d379b437.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/b/bind-export-libs-9.11.36-18.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 1274768
-    checksum: sha256:65523e0d41c7ef71814a682b5334ea2701c8bd1de7ff5565431bd6c8755a8544
+    size: 1276588
+    checksum: sha256:716f667ece38ef8b5a4e35e3364876aedf825de830570fe65d21ce96fb2652fa
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.16
-    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
+    evr: 32:9.11.36-18.el8_10
+    sourcerpm: bind-9.11.36-18.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/chrony-4.5-2.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 382192
@@ -1218,10 +1218,10 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/3c3a792b7712e7f6e97e9a6eb5ff9a2ee9106463516293929fea52d6277ebe03-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/e1c5a146aa2c3cd3b7d84de2034eb21934edf7ba3f7d38b0ba1b27ab672b1e9a-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 858757
-    checksum: sha256:3c3a792b7712e7f6e97e9a6eb5ff9a2ee9106463516293929fea52d6277ebe03
+    size: 860229
+    checksum: sha256:e1c5a146aa2c3cd3b7d84de2034eb21934edf7ba3f7d38b0ba1b27ab672b1e9a
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/b/boost-atomic-1.66.0-13.el8.s390x.rpm
@@ -1504,13 +1504,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+25171+d379b437
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+25171+d379b437.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/b/bind-export-libs-9.11.36-18.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 1093852
-    checksum: sha256:af662fea558ca33a40692d4cbbe4f61156061c5b3e6bd811cad354c21ff9e878
+    size: 1094996
+    checksum: sha256:e89bf69a028c235146d7e2fc729c7eddaf2a2dac59b690e29add51c153ccfd9e
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.16
-    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
+    evr: 32:9.11.36-18.el8_10
+    sourcerpm: bind-9.11.36-18.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/chrony-4.5-2.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 341936
@@ -1828,10 +1828,10 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/1024c06a66ab488a9c16fd93b8badf0498090335575fb0d2821a6bc748e53c14-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/318c18d0ed87ae9d5ee2e2ef620f7ee09c7dd923f05a54822355ae8b38acf3c2-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 861040
-    checksum: sha256:1024c06a66ab488a9c16fd93b8badf0498090335575fb0d2821a6bc748e53c14
+    size: 862200
+    checksum: sha256:318c18d0ed87ae9d5ee2e2ef620f7ee09c7dd923f05a54822355ae8b38acf3c2
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/b/boost-atomic-1.66.0-13.el8.x86_64.rpm
@@ -2128,13 +2128,13 @@ arches:
     name: slirp4netns
     evr: 1.2.3-1.module+el8.10.0+25171+d379b437
     sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+25171+d379b437.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/bind-export-libs-9.11.36-16.el8_10.16.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/bind-export-libs-9.11.36-18.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 1204428
-    checksum: sha256:5476f407f65441bb8c8b9273fac6a5df02d586cb46d87eabc550fb630b04e671
+    size: 1205968
+    checksum: sha256:8a40472ecd64e4aed474a967149061d93e81773c8460a9032e314e4ad7054c78
     name: bind-export-libs
-    evr: 32:9.11.36-16.el8_10.16
-    sourcerpm: bind-9.11.36-16.el8_10.16.src.rpm
+    evr: 32:9.11.36-18.el8_10
+    sourcerpm: bind-9.11.36-18.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/b/biosdevname-0.7.3-2.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 45312
@@ -2480,7 +2480,7 @@ arches:
     sourcerpm: timedatex-0.5-3.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/43e1263d8cf1c57e0c4360e9145982f40f3ceb3b9baa4ffa8f6c29f81e1866d0-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/5c3856ad324ec9a0dd4b7996af6ef7e072cadc3a01fbf58d8b39bb57f78b2488-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 886743
-    checksum: sha256:43e1263d8cf1c57e0c4360e9145982f40f3ceb3b9baa4ffa8f6c29f81e1866d0
+    size: 887604
+    checksum: sha256:5c3856ad324ec9a0dd4b7996af6ef7e072cadc3a01fbf58d8b39bb57f78b2488

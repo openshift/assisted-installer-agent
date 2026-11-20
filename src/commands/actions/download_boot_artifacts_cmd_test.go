@@ -1,11 +1,18 @@
 package actions
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
+	"math/big"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"syscall"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,6 +21,36 @@ import (
 )
 
 var _ = Describe("download boot artifacts cmd", func() {
+	It("uses the environment proxy with a custom CA", func() {
+		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+		Expect(err).NotTo(HaveOccurred(), "failed to generate the test CA key")
+		ca := &x509.Certificate{SerialNumber: big.NewInt(1), NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour), IsCA: true, BasicConstraintsValid: true}
+		der, err := x509.CreateCertificate(rand.Reader, ca, ca, publicKey, privateKey)
+		Expect(err).NotTo(HaveOccurred(), "failed to create the test CA certificate")
+
+		tempDir, err := os.MkdirTemp("", "download-artifact-proxy-")
+		Expect(err).NotTo(HaveOccurred(), "failed to create a directory for the test CA")
+		defer os.RemoveAll(tempDir)
+		certPath := filepath.Join(tempDir, "ca.crt")
+		cert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+		Expect(os.WriteFile(certPath, cert, 0600)).To(Succeed(), "failed to write the test CA certificate")
+
+		client, err := createHTTPClient(certPath)
+		Expect(err).NotTo(HaveOccurred(), "failed to create the custom-CA HTTP client")
+		transport, ok := client.Transport.(*http.Transport)
+		Expect(ok).To(BeTrue(), "custom-CA client must use an HTTP transport")
+		Expect(transport.Proxy).NotTo(BeNil(), "custom-CA transport must set a proxy function")
+		Expect(transport.TLSClientConfig).NotTo(BeNil(), "custom-CA transport must retain TLS configuration")
+		Expect(transport.TLSClientConfig.RootCAs).NotTo(BeNil(), "custom-CA transport must retain the root CA pool")
+
+		request, err := http.NewRequest(http.MethodGet, "https://artifacts.example.test/kernel", nil)
+		Expect(err).NotTo(HaveOccurred(), "failed to create the boot artifact test request")
+		got, err := transport.Proxy(request)
+		Expect(err).NotTo(HaveOccurred(), "custom-CA transport could not resolve a proxy for the request")
+		want, err := http.ProxyFromEnvironment(request)
+		Expect(err).NotTo(HaveOccurred(), "could not resolve the expected environment proxy")
+		Expect(got).To(Equal(want), "custom-CA transport must use http.ProxyFromEnvironment")
+	})
 
 	It("succeeds when given all args", func() {
 		param := "{\"initrd_url\":\"http://test.com/api/v2/pxe-initrd?api_key=123&arch=x86_64&version=4.10\"," +

@@ -1,11 +1,18 @@
 package actions
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
+	"math/big"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"syscall"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,6 +21,36 @@ import (
 )
 
 var _ = Describe("download boot artifacts cmd", func() {
+	It("uses the environment proxy with a custom CA", func() {
+		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+		Expect(err).NotTo(HaveOccurred())
+		ca := &x509.Certificate{SerialNumber: big.NewInt(1), NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour), IsCA: true, BasicConstraintsValid: true}
+		der, err := x509.CreateCertificate(rand.Reader, ca, ca, publicKey, privateKey)
+		Expect(err).NotTo(HaveOccurred())
+
+		tempDir, err := os.MkdirTemp("", "download-artifact-proxy-")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(tempDir)
+		certPath := filepath.Join(tempDir, "ca.crt")
+		cert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+		Expect(os.WriteFile(certPath, cert, 0600)).To(Succeed())
+
+		client, err := createHTTPClient(certPath)
+		Expect(err).NotTo(HaveOccurred())
+		transport, ok := client.Transport.(*http.Transport)
+		Expect(ok).To(BeTrue())
+		Expect(transport.Proxy).NotTo(BeNil())
+		Expect(transport.TLSClientConfig).NotTo(BeNil())
+		Expect(transport.TLSClientConfig.RootCAs).NotTo(BeNil())
+
+		request, err := http.NewRequest(http.MethodGet, "https://artifacts.example.test/kernel", nil)
+		Expect(err).NotTo(HaveOccurred())
+		got, err := transport.Proxy(request)
+		Expect(err).NotTo(HaveOccurred())
+		want, err := http.ProxyFromEnvironment(request)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(Equal(want))
+	})
 
 	It("succeeds when given all args", func() {
 		param := "{\"initrd_url\":\"http://test.com/api/v2/pxe-initrd?api_key=123&arch=x86_64&version=4.10\"," +

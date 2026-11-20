@@ -153,6 +153,7 @@ func createHTTPClient(caCertPath string) (*http.Client, error) {
 		}
 
 		t := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
 			TLSClientConfig: &tls.Config{
 				RootCAs:    caCertPool,
 				MinVersion: tls.VersionTLS12,
@@ -171,8 +172,12 @@ func download(httpClient *http.Client, filePath, url string, retry int) error {
 		if downloadErr == nil && (res.StatusCode >= 200 && res.StatusCode < 300) {
 			break
 		}
+		statusCode := 0
+		if res != nil {
+			statusCode = res.StatusCode
+		}
 		downloadErr = fmt.Errorf("failed downloading boot artifact from %s, status code received: %d, attempt %d/%d, download error: %w",
-			url, res.StatusCode, attempts, retry, downloadErr)
+			url, statusCode, attempts, retry, downloadErr)
 		log.Warn(downloadErr.Error())
 		time.Sleep(defaultRetryDelay)
 	}

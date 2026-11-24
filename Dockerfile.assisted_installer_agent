@@ -33,7 +33,6 @@ RUN microdnf install -y \
         hwdata \
         openssh-clients \
         util-linux-core \
-        podman \
         sg3_utils \
         nmap \
         systemd \
@@ -53,7 +52,10 @@ RUN ls /etc/yum.repos.d/ && \
     sed -i '/\[appstream\]/,/^\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/centos.repo
 
 # Install packages that require CentOS repos using dnf
+# podman is here temporarily (RHEL-305253): UBI lacks the aardvark-dns that its netavark needs.
+# containers-common is excluded from CentOS because it conflicts with UBI's redhat-release.
 RUN dnf install -y --nodocs --setopt=install_weak_deps=False \
+        --setopt=baseos.excludepkgs=containers-common --setopt=appstream.excludepkgs=containers-common \
         ipmitool \
         fio \
         dhclient \
@@ -61,6 +63,7 @@ RUN dnf install -y --nodocs --setopt=install_weak_deps=False \
         kmod \
         golang \
         rpm-ostree \
+        podman \
     && dnf clean all
 
 # Set Go environment variables for compatibility with e2e tests
